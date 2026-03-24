@@ -3,26 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON SNAKE 3D</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <title>NEON SNAKE: STABLE</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Orbitron', sans-serif; touch-action: none; }
-        #ui { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; pointer-events: none; color: #00f2ff; display: flex; justify-content: space-between; box-sizing: border-box; }
-        .score-box { background: rgba(0, 242, 255, 0.1); border: 1px solid #00f2ff; padding: 10px 20px; backdrop-filter: blur(5px); }
-        #msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #ff0055; display: none; pointer-events: auto; }
-        button { background: #ff0055; border: none; color: white; padding: 10px 20px; font-family: 'Orbitron'; cursor: pointer; margin-top: 10px; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; }
+        #hud { position: absolute; top: 10px; width: 100%; text-align: center; color: #00f2ff; font-weight: bold; pointer-events: none; font-size: 20px; }
+        #msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ff0055; text-align: center; display: none; background: rgba(0,0,0,0.8); padding: 20px; border: 2px solid #ff0055; }
+        button { background: #00f2ff; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div id="ui">
-    <div class="score-box">SCORE: <span id="score">0</span></div>
-    <div class="score-box">BEST: <span id="best">0</span></div>
-</div>
-
+<div id="hud">SCORE: <span id="score">0</span></div>
 <div id="msg">
-    <h1>CORE CRITICAL</h1>
-    <button onclick="resetGame()">REBOOT SYSTEM</button>
+    <h1>GAME OVER</h1>
+    <button onclick="location.reload()">TRY AGAIN</button>
 </div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
@@ -30,157 +24,123 @@
 <script type="module">
     import * as THREE from 'three';
 
-    let scene, camera, renderer, food;
-    let snake = [], cubePool = [];
-    let direction = { x: 1, z: 0 }, nextDir = { x: 1, z: 0 };
-    let gridSize = 20, score = 0, highState = false;
-    let lastTick = 0, tickRate = 0.15; // Seconds per move
-
-    // Touch handling
-    let touchStart = null;
+    let scene, camera, renderer, food, snake = [];
+    let dir = { x: 1, z: 0 }, nextDir = { x: 1, z: 0 };
+    let size = 20, lastTick = 0, interval = 150; 
+    let gameOver = false;
 
     init();
 
     function init() {
+        // 1. Scene Setup
         scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050505);
+
+        // 2. Camera - High angle to ensure visibility
         camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(15, 20, 15);
+        camera.position.set(0, 25, 15);
         camera.lookAt(0, 0, 0);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true });
+        // 3. Renderer - Use basic settings for maximum compatibility
+        renderer = new THREE.WebGLRenderer({ antialias: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        // Lighting
-        const ambient = new THREE.AmbientLight(0x404040, 2);
-        scene.add(ambient);
-        const light = new THREE.PointLight(0x00f2ff, 10, 50);
-        light.position.set(0, 10, 0);
-        scene.add(light);
+        // 4. Lights - Bright ambient so nothing stays black
+        scene.add(new THREE.AmbientLight(0xffffff, 1));
+        const pLight = new THREE.PointLight(0x00f2ff, 2, 100);
+        pLight.position.set(0, 10, 0);
+        scene.add(pLight);
 
-        // Grid Floor
-        const grid = new THREE.GridHelper(gridSize, gridSize, 0x00f2ff, 0x002233);
+        // 5. Grid
+        const grid = new THREE.GridHelper(size, size, 0x222222, 0x444444);
         grid.position.y = -0.5;
         scene.add(grid);
 
-        // Start Snake
-        resetGame();
+        // 6. Create Snake Head
+        addSegment(0, 0);
+        
+        // 7. Create Food
+        const fGeo = new THREE.SphereGeometry(0.4);
+        const fMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+        food = new THREE.Mesh(fGeo, fMat);
+        scene.add(food);
+        resetFood();
 
-        // Input
+        // 8. Controls
         window.addEventListener('keydown', e => {
-            if (e.key === 'ArrowUp' && direction.z !== 1) nextDir = { x: 0, z: -1 };
-            if (e.key === 'ArrowDown' && direction.z !== -1) nextDir = { x: 0, z: 1 };
-            if (e.key === 'ArrowLeft' && direction.x !== 1) nextDir = { x: -1, z: 0 };
-            if (e.key === 'ArrowRight' && direction.x !== -1) nextDir = { x: 1, z: 0 };
-            // WASD Support
-            if (e.key.toLowerCase() === 'w' && direction.z !== 1) nextDir = { x: 0, z: -1 };
-            if (e.key.toLowerCase() === 's' && direction.z !== -1) nextDir = { x: 0, z: 1 };
-            if (e.key.toLowerCase() === 'a' && direction.x !== 1) nextDir = { x: -1, z: 0 };
-            if (e.key.toLowerCase() === 'd' && direction.x !== -1) nextDir = { x: 1, z: 0 };
+            if ((e.key === 'ArrowUp' || e.key === 'w') && dir.z !== 1) nextDir = { x: 0, z: -1 };
+            if ((e.key === 'ArrowDown' || e.key === 's') && dir.z !== -1) nextDir = { x: 0, z: 1 };
+            if ((e.key === 'ArrowLeft' || e.key === 'a') && dir.x !== 1) nextDir = { x: -1, z: 0 };
+            if ((e.key === 'ArrowRight' || e.key === 'd') && dir.x !== -1) nextDir = { x: 1, z: 0 };
         });
 
-        window.addEventListener('touchstart', e => touchStart = e.touches[0]);
-        window.addEventListener('touchmove', e => {
-            if (!touchStart) return;
-            let dx = e.touches[0].clientX - touchStart.clientX;
-            let dz = e.touches[0].clientY - touchStart.clientY;
-            if (Math.abs(dx) > Math.abs(dz)) {
-                if (dx > 30 && direction.x !== -1) nextDir = { x: 1, z: 0 };
-                else if (dx < -30 && direction.x !== 1) nextDir = { x: -1, z: 0 };
-            } else {
-                if (dz > 30 && direction.z !== -1) nextDir = { x: 0, z: 1 };
-                else if (dz < -30 && direction.z !== 1) nextDir = { x: 0, z: -1 };
-            }
+        // Mobile Tap Zones
+        window.addEventListener('touchstart', e => {
+            const x = e.touches[0].clientX / window.innerWidth;
+            const y = e.touches[0].clientY / window.innerHeight;
+            if (y < 0.3 && dir.z !== 1) nextDir = { x: 0, z: -1 };
+            else if (y > 0.7 && dir.z !== -1) nextDir = { x: 0, z: 1 };
+            else if (x < 0.3 && dir.x !== 1) nextDir = { x: -1, z: 0 };
+            else if (x > 0.7 && dir.x !== -1) nextDir = { x: 1, z: 0 };
         });
 
-        animate();
+        requestAnimationFrame(loop);
     }
 
-    function createCube(color) {
-        const mesh = new THREE.Mesh(
-            new THREE.BoxGeometry(0.9, 0.9, 0.9),
-            new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.5 })
-        );
-        scene.add(mesh);
-        return mesh;
+    function addSegment(x, z) {
+        const sGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        const sMat = new THREE.MeshStandardMaterial({ color: 0x00f2ff, emissive: 0x00f2ff, emissiveIntensity: 0.5 });
+        const seg = new THREE.Mesh(sGeo, sMat);
+        seg.position.set(x, 0, z);
+        scene.add(seg);
+        snake.unshift(seg);
     }
 
-    function spawnFood() {
-        if (!food) food = createCube(0xff0055);
+    function resetFood() {
         food.position.set(
-            Math.floor(Math.random() * gridSize) - gridSize/2,
+            Math.floor(Math.random() * (size - 1)) - (size/2 - 0.5),
             0,
-            Math.floor(Math.random() * gridSize) - gridSize/2
+            Math.floor(Math.random() * (size - 1)) - (size/2 - 0.5)
         );
     }
 
-    window.resetGame = function() {
-        snake.forEach(segment => scene.remove(segment));
-        snake = [createCube(0x00f2ff)];
-        snake[0].position.set(0,0,0);
-        direction = { x: 1, z: 0 };
-        nextDir = { x: 1, z: 0 };
-        score = 0;
-        document.getElementById('score').innerText = "0";
-        document.getElementById('msg').style.display = "none";
-        spawnFood();
-        highState = false;
-    }
+    function loop(now) {
+        if (gameOver) return;
+        requestAnimationFrame(loop);
 
-    function animate(now) {
-        requestAnimationFrame(animate);
-        now *= 0.001; // convert to seconds
-
-        if (highState) return;
-
-        if (now - lastTick > tickRate) {
+        if (now - lastTick > interval) {
             lastTick = now;
-            direction = nextDir;
+            dir = nextDir;
 
             const head = snake[0].position.clone();
-            head.x += direction.x;
-            head.z += direction.z;
+            head.x += dir.x;
+            head.z += dir.z;
 
-            // Wall Collision
-            if (Math.abs(head.x) > gridSize/2 || Math.abs(head.z) > gridSize/2) {
-                gameOver(); return;
-            }
+            // Collisions
+            if (Math.abs(head.x) > size/2 || Math.abs(head.z) > size/2) return endGame();
+            for (let s of snake) if (s.position.distanceTo(head) < 0.1) return endGame();
 
-            // Body Collision
-            for (let i = 0; i < snake.length; i++) {
-                if (snake[i].position.distanceTo(head) < 0.1) { gameOver(); return; }
+            // Eat
+            if (head.distanceTo(food.position) < 0.5) {
+                addSegment(head.x, head.z);
+                resetFood();
+                document.getElementById('score').innerText = snake.length - 1;
+                interval = Math.max(80, interval - 2);
+            } else {
+                // Move
+                for (let i = snake.length - 1; i > 0; i--) {
+                    snake[i].position.copy(snake[i-1].position);
+                }
+                snake[0].position.copy(head);
             }
-
-            // Check Food
-            if (head.distanceTo(food.position) < 0.1) {
-                score++;
-                document.getElementById('score').innerText = score;
-                snake.push(createCube(0x00f2ff));
-                spawnFood();
-                tickRate = Math.max(0.05, 0.15 - (score * 0.002)); // Speed up
-            }
-
-            // Move Body
-            for (let i = snake.length - 1; i > 0; i--) {
-                snake[i].position.copy(snake[i-1].position);
-            }
-            snake[0].position.copy(head);
         }
-
-        // Visual Pulse
-        if (food) food.scale.setScalar(1 + Math.sin(Date.now() * 0.01) * 0.1);
         renderer.render(scene, camera);
     }
 
-    function gameOver() {
-        highState = true;
-        document.getElementById('msg').style.display = "block";
-        const best = localStorage.getItem('snake_best') || 0;
-        if (score > best) {
-            localStorage.setItem('snake_best', score);
-            document.getElementById('best').innerText = score;
-        }
+    function endGame() {
+        gameOver = true;
+        document.getElementById('msg').style.display = 'block';
     }
 
     window.onresize = () => {
@@ -188,8 +148,6 @@
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     };
-
-    document.getElementById('best').innerText = localStorage.getItem('snake_best') || 0;
 </script>
 </body>
 </html>
