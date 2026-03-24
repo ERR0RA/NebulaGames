@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EGG WARS: SHELL ARENA</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Arial', sans-serif; }
+        #crosshair { 
+            position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; 
+            border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); 
+            pointer-events: none; mix-blend-mode: difference;
+        }
+        #ui { position: absolute; bottom: 20px; left: 20px; color: white; text-shadow: 2px 2px #000; font-size: 24px; }
+        #msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; background: rgba(0,0,0,0.5); padding: 20px; display: none; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="crosshair"></div>
+<div id="ui">AMMO: <span id="ammo">10</span> | EGGS CRACKED: <span id="score">0</span></div>
+<div id="msg"><h2>CLICK TO START</h2><p>(ESC to exit mouse lock)</p></div>
+
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+
+<script type="module">
+    import * as THREE from 'three';
+
+    let scene, camera, renderer, player, clock;
+    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+    let canJump = false, velocity = new THREE.Vector3();
+    let bullets = [], enemies = [];
+    let score = 0, ammo = 10;
+
+    init();
+
+    function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Sky blue
+        scene.fog = new THREE.Fog(0x87CEEB, 0, 100);
+
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        clock = new THREE.Clock();
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const light = new THREE.HemisphereLight(0xffffff, 0x444444, 2);
+        scene.add(light);
+
+        // Floor
+        const floorGeo = new THREE.PlaneGeometry(200, 200);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x7cfc00 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI/2;
+        scene.add(floor);
+
+        // Player (Invisible wrapper for camera)
+        player = new THREE.Group();
+        player.position.y = 2;
+        scene.add(player);
+        player.add(camera);
+
+        // Gun model (simple block)
+        const gun = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 1), new THREE.MeshStandardMaterial({color: 0x333333}));
+        gun.position.set(0.5, -0.5, -1);
+        camera.add(gun);
+
+        // Event Listeners
+        document.addEventListener('click', () => {
+            if (document.pointerLockElement !== document.body) {
+                document.body.requestPointerLock();
+            } else {
+                shoot();
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (document.pointerLockElement === document.body) {
+                player.rotation.y -= e.movementX * 0.002;
+                camera.rotation.x -= e.movementY * 0.002;
+                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+            }
+        });
+
+        const onKey = (val) => (e) => {
+            const k = e.code;
+            if (k === 'KeyW') moveForward = val;
+            if (k === 'KeyS') moveBackward = val;
+            if (k === 'KeyA') moveLeft = val;
+            if (k === 'KeyD') moveRight = val;
+            if (k === 'Space' && val && canJump) { velocity.y += 15; canJump = false; }
+        };
+        document.addEventListener('keydown', onKey(true));
+        document.addEventListener('keyup', onKey(false));
+
+        for(let i=0; i<8; i++) spawnEnemy();
+        
+        animate();
+    }
+
+    function spawnEnemy() {
+        const eggGeo = new THREE.IcosahedronGeometry(1, 2);
+        eggGeo.scale(1, 1.4, 1); // Egg shape
+        const eggMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const egg = new THREE.Mesh(eggGeo, eggMat);
+        
+        egg.position.set((Math.random()-0.5)*100, 1.4, (Math.random()-0.5)*100);
+        scene.add(egg);
+        enemies.push(egg);
+    }
+
+    function shoot() {
+        if (ammo <= 0) { ammo = 10; return; } // Auto-reload
+        ammo--;
+        document.getElementById('ammo').innerText = ammo;
+
+        const b = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0xffff00}));
+        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
+        b.position.copy(player.position).add(dir.clone().multiplyScalar(1));
+        b.userData = { velocity: dir.multiplyScalar(2) };
+        scene.add(b);
+        bullets.push(b);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const delta = clock.getDelta();
+
+        // Movement
+        const speed = 15 * delta;
+        const dir = new THREE.Vector3();
+        if (moveForward) dir.z -= 1;
+        if (moveBackward) dir.z += 1;
+        if (moveLeft) dir.x -= 1;
+        if (moveRight) dir.x += 1;
+        
+        dir.applyQuaternion(player.quaternion).normalize().multiplyScalar(speed);
+        player.position.add(dir);
+
+        // Gravity
+        velocity.y -= 30 * delta;
+        player.position.y += velocity.y * delta;
+        if (player.position.y < 2) {
+            player.position.y = 2;
+            velocity.y = 0;
+            canJump = true;
+        }
+
+        // Bullets
+        bullets.forEach((b, i) => {
+            b.position.add(b.userData.velocity);
+            enemies.forEach((en, ei) => {
+                if (b.position.distanceTo(en.position) < 1.5) {
+                    scene.remove(en); scene.remove(b);
+                    enemies.splice(ei, 1); bullets.splice(i, 1);
+                    score++; document.getElementById('score').innerText = score;
+                    spawnEnemy();
+                }
+            });
+            if (b.position.length() > 200) { scene.remove(b); bullets.splice(i, 1); }
+        });
+
+        renderer.render(scene, camera);
+    }
+</script>
+</body>
+</html>
