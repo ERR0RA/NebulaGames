@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLOCKBAS 2D</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Courier New', Courier, monospace; }
+        canvas { display: block; image-rendering: pixelated; }
+        #ui { 
+            position: absolute; top: 10px; left: 10px; 
+            background: rgba(0,0,0,0.5); color: white; padding: 10px; border-radius: 5px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    BLOCKS MINED: <span id="count">0</span><br>
+    <small>LEFT CLICK: MINE | SHIFT+CLICK: BUILD</small>
+</div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const countEl = document.getElementById('count');
+
+    // Game Constants
+    const TILE_SIZE = 32;
+    const WORLD_W = 100; // 100 blocks wide
+    const WORLD_H = 40;  // 40 blocks deep
+    
+    // Player Stats
+    let player = {
+        x: 50 * TILE_SIZE,
+        y: 10 * TILE_SIZE,
+        vx: 0,
+        vy: 0,
+        w: 24,
+        h: 48,
+        grounded: false
+    };
+
+    const keys = {};
+    let world = [];
+    let minedCount = 0;
+
+    // Initialize World
+    function initWorld() {
+        for (let x = 0; x < WORLD_W; x++) {
+            world[x] = [];
+            let surface = 15 + Math.sin(x * 0.2) * 3; // Rolling hills
+            for (let y = 0; y < WORLD_H; y++) {
+                if (y > surface + 5) world[x][y] = 'stone';
+                else if (y > surface) world[x][y] = 'dirt';
+                else if (y > surface - 1) world[x][y] = 'grass';
+                else world[x][y] = null;
+            }
+        }
+    }
+
+    // Controls
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    canvas.addEventListener('mousedown', e => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left + (player.x - canvas.width/2);
+        const my = e.clientY - rect.top + (player.y - canvas.height/2);
+        
+        const gx = Math.floor(mx / TILE_SIZE);
+        const gy = Math.floor(my / TILE_SIZE);
+
+        if (gx >= 0 && gx < WORLD_W && gy >= 0 && gy < WORLD_H) {
+            if (e.shiftKey || e.button === 2) {
+                if (!world[gx][gy]) world[gx][gy] = 'dirt'; // Build
+            } else {
+                if (world[gx][gy]) {
+                    world[gx][gy] = null; // Mine
+                    minedCount++;
+                    countEl.innerText = minedCount;
+                }
+            }
+        }
+    });
+
+    // Disable context menu for right-click building
+    window.addEventListener('contextmenu', e => e.preventDefault());
+
+    function update() {
+        // Horizontal Movement
+        if (keys['KeyA']) player.vx = -4;
+        else if (keys['KeyD']) player.vx = 4;
+        else player.vx *= 0.8;
+
+        // Gravity & Jump
+        player.vy += 0.5;
+        if (keys['Space'] && player.grounded) {
+            player.vy = -10;
+            player.grounded = false;
+        }
+
+        // Apply Velocity
+        player.x += player.vx;
+        checkCollision(true); // Check X
+        player.y += player.vy;
+        checkCollision(false); // Check Y
+
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    function checkCollision(isX) {
+        const left = Math.floor(player.x / TILE_SIZE);
+        const right = Math.floor((player.x + player.w) / TILE_SIZE);
+        const top = Math.floor(player.y / TILE_SIZE);
+        const bottom = Math.floor((player.y + player.h) / TILE_SIZE);
+
+        for (let x = left; x <= right; x++) {
+            for (let y = top; y <= bottom; y++) {
+                if (world[x] && world[x][y]) {
+                    if (isX) {
+                        if (player.vx > 0) player.x = x * TILE_SIZE - player.w;
+                        else if (player.vx < 0) player.x = (x + 1) * TILE_SIZE;
+                        player.vx = 0;
+                    } else {
+                        if (player.vy > 0) {
+                            player.y = y * TILE_SIZE - player.h;
+                            player.grounded = true;
+                        } else if (player.vy < 0) {
+                            player.y = (y + 1) * TILE_SIZE;
+                        }
+                        player.vy = 0;
+                    }
+                }
+            }
+        }
+        if (!isX && player.vy > 0) player.grounded = false;
+    }
+
+    function draw() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        ctx.save();
+        // Camera Follow
+        ctx.translate(-player.x + canvas.width / 2, -player.y + canvas.height / 2);
+
+        // Draw World
+        for (let x = 0; x < WORLD_W; x++) {
+            for (let y = 0; y < WORLD_H; y++) {
+                if (!world[x][y]) continue;
+                
+                if (world[x][y] === 'grass') ctx.fillStyle = '#4daa3d';
+                else if (world[x][y] === 'dirt') ctx.fillStyle = '#6b4c35';
+                else if (world[x][y] === 'stone') ctx.fillStyle = '#7a7a7a';
+
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
+        // Draw Player
+        ctx.fillStyle = '#ffdbac';
+        ctx.fillRect(player.x, player.y, player.w, player.h);
+        ctx.fillStyle = '#304ffe'; // Shirt
+        ctx.fillRect(player.x, player.y + 15, player.w, player.h - 15);
+
+        ctx.restore();
+    }
+
+    initWorld();
+    update();
+</script>
+</body>
+</html>
