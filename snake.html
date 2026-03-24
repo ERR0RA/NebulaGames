@@ -3,178 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VANGUARD SNAKE: RTX ON</title>
+    <title>NEON SNAKE: 2D OVERDRIVE</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; touch-action: none; }
-        #hud { position: absolute; top: 20px; width: 100%; text-align: center; color: #00f2ff; pointer-events: none; text-shadow: 0 0 10px #00f2ff; font-size: 24px; z-index: 10; }
-        #game-over { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; color: #ff0055; z-index: 100; }
-        button { background: #00f2ff; border: none; padding: 15px 30px; font-family: 'Orbitron'; font-weight: 900; cursor: pointer; border-radius: 4px; box-shadow: 0 0 20px #00f2ff; }
+        body { 
+            margin: 0; 
+            background: #050508; 
+            color: #00f2ff; 
+            font-family: 'Orbitron', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden; 
+            touch-action: none;
+        }
+        canvas { 
+            border: 2px solid #00f2ff; 
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); 
+            background: #000;
+            max-width: 95vw;
+            max-height: 70vh;
+        }
+        #hud { margin-bottom: 10px; text-align: center; }
+        .score-val { font-size: 24px; font-weight: 900; text-shadow: 0 0 10px #00f2ff; }
+        #game-over { 
+            position: absolute; 
+            background: rgba(0,0,0,0.9); 
+            inset: 0; 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 10;
+        }
+        button { 
+            background: #00f2ff; 
+            border: none; 
+            padding: 15px 30px; 
+            font-family: 'Orbitron'; 
+            font-weight: 900; 
+            cursor: pointer; 
+            margin-top: 20px; 
+            box-shadow: 0 0 15px #00f2ff;
+        }
     </style>
 </head>
 <body>
 
-<div id="hud">SYSTEM STABILITY: <span id="score">0</span></div>
+<div id="hud">
+    SCORE: <span id="score" class="score-val">0</span><br>
+    <small>[WASD] OR [ARROWS] TO NAVIGATE</small>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
 <div id="game-over">
-    <h1>SEQUENCE TERMINATED</h1>
+    <h1 style="color: #ff0055; font-size: 40px;">CRITICAL FAILURE</h1>
     <button onclick="location.reload()">RE-INITIALIZE</button>
 </div>
 
-<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const gameOverEl = document.getElementById('game-over');
 
-<script type="module">
-    import * as THREE from 'three';
+    // Game Constants
+    const gridSize = 20; 
+    const tileCount = 30; 
+    canvas.width = gridSize * tileCount;
+    canvas.height = gridSize * tileCount;
 
-    let scene, camera, renderer, food, snake = [];
-    let dir = { x: 1, z: 0 }, nextDir = { x: 1, z: 0 };
-    let size = 20, lastTick = 0, interval = 130;
-    let isDead = false;
+    let snake = [{x: 10, y: 10}, {x: 9, y: 10}, {x: 8, y: 10}];
+    let food = {x: 15, y: 15};
+    let dx = 1;
+    let dy = 0;
+    let nextDx = 1;
+    let nextDy = 0;
+    let score = 0;
+    let gameSpeed = 100;
+    let lastTime = 0;
 
-    init();
+    // Controls
+    window.addEventListener('keydown', e => {
+        const key = e.key.toLowerCase();
+        if ((key === 'arrowup' || key === 'w') && dy === 0) { nextDx = 0; nextDy = -1; }
+        if ((key === 'arrowdown' || key === 's') && dy === 0) { nextDx = 0; nextDy = 1; }
+        if ((key === 'arrowleft' || key === 'a') && dx === 0) { nextDx = -1; nextDy = 0; }
+        if ((key === 'arrowright' || key === 'd') && dx === 0) { nextDx = 1; nextDy = 0; }
+    });
 
-    function init() {
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x020205);
-        scene.fog = new THREE.Fog(0x020205, 10, 50);
-
-        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 18, 18);
-        camera.lookAt(0, 0, 0);
-
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.toneMapping = THREE.ReinhardToneMapping;
-        document.body.appendChild(renderer.domElement);
-
-        // --- Realistic Lighting ---
-        const amb = new THREE.AmbientLight(0xffffff, 0.2);
-        scene.add(amb);
+    // Mobile Swipes
+    let touchX, touchY;
+    window.addEventListener('touchstart', e => {
+        touchX = e.touches[0].clientX;
+        touchY = e.touches[0].clientY;
+    });
+    window.addEventListener('touchmove', e => {
+        if (!touchX || !touchY) return;
+        let diffX = touchX - e.touches[0].clientX;
+        let diffY = touchY - e.touches[0].clientY;
         
-        const spot = new THREE.SpotLight(0x00f2ff, 500);
-        spot.position.set(0, 15, 0);
-        spot.angle = 1;
-        scene.add(spot);
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX > 0 && dx === 0) { nextDx = -1; nextDy = 0; }
+            else if (dx === 0) { nextDx = 1; nextDy = 0; }
+        } else {
+            if (diffY > 0 && dy === 0) { nextDx = 0; nextDy = -1; }
+            else if (dy === 0) { nextDx = 0; nextDy = 1; }
+        }
+        touchX = null; touchY = null;
+    });
 
-        // --- Reflective Floor ---
-        const grid = new THREE.GridHelper(size, size, 0x00f2ff, 0x051520);
-        grid.position.y = -0.51;
-        scene.add(grid);
+    function draw() {
+        // Clear Background with a slight fade for motion trail
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // --- Create Food (Glow Orb) ---
-        const fGeo = new THREE.SphereGeometry(0.5, 32, 32);
-        const fMat = new THREE.MeshStandardMaterial({ 
-            color: 0xff0055, 
-            emissive: 0xff0055, 
-            emissiveIntensity: 5,
-            metalness: 1,
-            roughness: 0
+        // Draw Grid Lines (Subtle)
+        ctx.strokeStyle = '#001122';
+        for(let i=0; i<canvas.width; i+=gridSize) {
+            ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width, i); ctx.stroke();
+        }
+
+        // Draw Food (Pulsing Glow)
+        const pulse = Math.sin(Date.now() / 100) * 5;
+        ctx.fillStyle = '#ff0055';
+        ctx.shadowBlur = 15 + pulse;
+        ctx.shadowColor = '#ff0055';
+        ctx.fillRect(food.x * gridSize + 2, food.y * gridSize + 2, gridSize - 4, gridSize - 4);
+
+        // Draw Snake
+        snake.forEach((part, index) => {
+            const isHead = index === 0;
+            ctx.fillStyle = isHead ? '#00f2ff' : '#006677';
+            ctx.shadowBlur = isHead ? 20 : 5;
+            ctx.shadowColor = '#00f2ff';
+            
+            // Draw Block
+            ctx.fillRect(part.x * gridSize + 1, part.y * gridSize + 1, gridSize - 2, gridSize - 2);
+            
+            // Draw Block Highlight (makes it seeable/3D look)
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.strokeRect(part.x * gridSize + 3, part.y * gridSize + 3, gridSize - 8, gridSize - 8);
         });
-        food = new THREE.Mesh(fGeo, fMat);
-        scene.add(food);
-        spawnFood();
-
-        // --- Initial Snake ---
-        for(let i=0; i<3; i++) addSegment(-i, 0);
-
-        // Controls
-        window.addEventListener('keydown', e => {
-            const k = e.key.toLowerCase();
-            if ((k === 'arrowup' || k === 'w') && dir.z !== 1) nextDir = { x: 0, z: -1 };
-            if ((k === 'arrowdown' || k === 's') && dir.z !== -1) nextDir = { x: 0, z: 1 };
-            if ((k === 'arrowleft' || k === 'a') && dir.x !== 1) nextDir = { x: -1, z: 0 };
-            if ((k === 'arrowright' || k === 'd') && dir.x !== -1) nextDir = { x: 1, z: 0 };
-        });
-
-        // Mobile Tap Zones
-        window.addEventListener('touchstart', e => {
-            const x = e.touches[0].clientX / window.innerWidth;
-            const y = e.touches[0].clientY / window.innerHeight;
-            if (y < 0.3 && dir.z !== 1) nextDir = { x: 0, z: -1 };
-            else if (y > 0.7 && dir.z !== -1) nextDir = { x: 0, z: 1 };
-            else if (x < 0.3 && dir.x !== 1) nextDir = { x: -1, z: 0 };
-            else if (x > 0.7 && dir.x !== -1) nextDir = { x: 1, z: 0 };
-        });
-
-        update();
+        ctx.shadowBlur = 0; // Reset shadow for performance
     }
 
-    function addSegment(x, z) {
-        const geo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
-        const mat = new THREE.MeshStandardMaterial({ 
-            color: 0x00f2ff, 
-            emissive: 0x00f2ff, 
-            emissiveIntensity: 0.8,
-            metalness: 0.8,
-            roughness: 0.1 
-        });
-        const seg = new THREE.Mesh(geo, mat);
-        seg.position.set(x, 0, z);
-        scene.add(seg);
-        snake.push(seg);
+    function move() {
+        dx = nextDx;
+        dy = nextDy;
+        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+        // Wall Collision
+        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) return end();
+
+        // Self Collision
+        for (let i = 0; i < snake.length; i++) {
+            if (snake[i].x === head.x && snake[i].y === head.y) return end();
+        }
+
+        snake.unshift(head);
+
+        // Food Collection
+        if (head.x === food.x && head.y === food.y) {
+            score += 10;
+            scoreEl.innerText = score;
+            spawnFood();
+            if (gameSpeed > 50) gameSpeed -= 2;
+        } else {
+            snake.pop();
+        }
     }
 
     function spawnFood() {
-        food.position.set(
-            Math.floor(Math.random() * (size - 2)) - (size/2 - 1),
-            0,
-            Math.floor(Math.random() * (size - 2)) - (size/2 - 1)
-        );
+        food = {
+            x: Math.floor(Math.random() * tileCount),
+            y: Math.floor(Math.random() * tileCount)
+        };
+        // Don't spawn food on snake body
+        snake.forEach(part => {
+            if (part.x === food.x && part.y === food.y) spawnFood();
+        });
     }
 
-    function update(time) {
-        if (isDead) return;
-        requestAnimationFrame(update);
-
-        // Bobbing animation for food
-        food.position.y = Math.sin(time * 0.005) * 0.2;
-        food.rotation.y += 0.05;
-
-        if (time - lastTick > interval) {
-            lastTick = time;
-            dir = nextDir;
-
-            const headPos = snake[0].position.clone();
-            headPos.x += dir.x;
-            headPos.z += dir.z;
-
-            // --- FIXED COLLECTION LOGIC ---
-            // Using a 1.0 unit threshold for easier collection
-            if (headPos.distanceTo(food.position) < 1.0) {
-                const tail = snake[snake.length-1].position.clone();
-                addSegment(tail.x, tail.z);
-                spawnFood();
-                document.getElementById('score').innerText = snake.length - 3;
-                interval = Math.max(70, interval - 1);
-            }
-
-            // Wall Death
-            if (Math.abs(headPos.x) > size/2 || Math.abs(headPos.z) > size/2) return endGame();
-            
-            // Self Death
-            for (let i = 1; i < snake.length; i++) {
-                if (headPos.distanceTo(snake[i].position) < 0.5) return endGame();
-            }
-
-            // Move body
-            for (let i = snake.length - 1; i > 0; i--) {
-                snake[i].position.copy(snake[i-1].position);
-            }
-            snake[0].position.copy(headPos);
-        }
-
-        renderer.render(scene, camera);
+    function main(currentTime) {
+        window.requestAnimationFrame(main);
+        const delta = currentTime - lastTime;
+        if (delta < gameSpeed) return;
+        
+        lastTime = currentTime;
+        move();
+        draw();
     }
 
-    function endGame() {
-        isDead = true;
-        document.getElementById('game-over').style.display = 'flex';
+    function end() {
+        gameOverEl.style.display = 'flex';
+        dx = 0; dy = 0;
     }
 
-    window.onresize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    };
+    spawnFood();
+    window.requestAnimationFrame(main);
 </script>
 </body>
 </html>
