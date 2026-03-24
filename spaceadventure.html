@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vanguard Mobile VR</title>
+    <title>Vanguard: Deep Space Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; touch-action: none; }
-        #ui { position: absolute; inset: 0; pointer-events: none; color: #00f2ff; padding: 20px; }
-        .bar { width: 150px; height: 10px; border: 1px solid #00f2ff; margin-top: 5px; }
-        #hp-fill { width: 100%; height: 100%; background: #ff0055; }
-        
-        /* Mobile Controls */
-        #joy-bound { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; border: 2px solid rgba(0,242,255,0.3); border-radius: 50%; pointer-events: auto; }
+        #ui { position: absolute; inset: 0; pointer-events: none; color: #00f2ff; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
+        .stats { background: rgba(0,20,40,0.7); padding: 10px; border: 1px solid #00f2ff; width: 180px; font-size: 12px; }
+        #joy-bound { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; border: 2px solid #00f2ff; border-radius: 50%; pointer-events: auto; }
         #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 15px #00f2ff; }
-        #fire-zone { position: absolute; inset: 0 0 0 50%; pointer-events: auto; } /* Tap right half to fire */
-        
-        #reset-btn { position: absolute; top: 20px; right: 20px; pointer-events: auto; background: none; border: 1px solid #ff0055; color: #ff0055; padding: 5px 10px; cursor: pointer; }
+        #fire-zone { position: absolute; right: 0; top: 0; bottom: 0; width: 50%; pointer-events: auto; }
+        .speed-meter { height: 4px; background: #111; margin-top: 5px; width: 100%; }
+        #speed-fill { height: 100%; width: 0%; background: #00f2ff; transition: width 0.1s; }
     </style>
 </head>
 <body>
 
 <div id="ui">
-    <div>HULL INTEGRITY</div>
-    <div class="bar"><div id="hp-fill"></div></div>
+    <div class="stats">
+        THRUST: <span id="speed-txt">0</span>%
+        <div class="speed-meter"><div id="speed-fill"></div></div>
+        HULL: <span id="hp-txt">100</span>%<br>
+        HOSTILES: <span id="e-count">0</span>
+    </div>
     <div id="joy-bound"><div id="joy-stick"></div></div>
     <div id="fire-zone"></div>
-    <button id="reset-btn" onclick="location.reload()">EMERGENCY RESET</button>
 </div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
@@ -34,9 +34,11 @@
 <script type="module">
     import * as THREE from 'three';
 
-    let scene, camera, renderer, ship, planet;
-    let velocity = new THREE.Vector3(), input = { x: 0, y: 0 }, hp = 100;
-    let enemies = [], lasers = [], asteroids = [];
+    let scene, camera, renderer, ship;
+    let throttle = 0; // 0 to 1
+    let turnSpeed = 0, pitchSpeed = 0;
+    let velocity = new THREE.Vector3();
+    let hp = 100, enemies = [], lasers = [];
 
     init();
 
@@ -44,95 +46,85 @@
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 15000);
         
-        renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+        renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
         document.body.appendChild(renderer.domElement);
 
-        // Simple stable lighting
-        const ambient = new THREE.AmbientLight(0x404040, 2);
-        scene.add(ambient);
-        const sun = new THREE.DirectionalLight(0xffffff, 3);
-        sun.position.set(10, 10, 10);
+        scene.add(new THREE.AmbientLight(0x404040, 2));
+        const sun = new THREE.DirectionalLight(0xffffff, 2);
+        sun.position.set(5, 5, 5);
         scene.add(sun);
 
-        // Big Planet (Visual Anchor)
-        planet = new THREE.Mesh(
-            new THREE.SphereGeometry(500, 32, 32),
-            new THREE.MeshStandardMaterial({ color: 0x112244 })
-        );
-        planet.position.set(0, -600, -1200);
+        // Planet
+        const planet = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 32), new THREE.MeshStandardMaterial({color: 0x112244}));
+        planet.position.set(0, -500, -1000);
         scene.add(planet);
 
-        // Asteroids
-        const rockGeo = new THREE.DodecahedronGeometry(1, 0);
-        for(let i=0; i<80; i++) {
-            const rock = new THREE.Mesh(rockGeo, new THREE.MeshStandardMaterial({color: 0x444444}));
-            rock.position.set((Math.random()-0.5)*2000, (Math.random()-0.5)*2000, (Math.random()-0.5)*2000);
-            rock.scale.setScalar(Math.random()*15 + 5);
-            scene.add(rock);
-            asteroids.push(rock);
-        }
+        // Starfield
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = [];
+        for(let i=0; i<3000; i++) starPos.push((Math.random()-0.5)*10000, (Math.random()-0.5)*10000, (Math.random()-0.5)*10000);
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+        scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 1.5})));
 
-        // Ship Group
+        // Ship
         ship = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.ConeGeometry(0.5, 3, 4), new THREE.MeshStandardMaterial({color: 0x00f2ff}));
-        body.rotation.x = Math.PI/2;
-        ship.add(body);
+        const shipMesh = new THREE.Mesh(new THREE.ConeGeometry(0.5, 3, 4), new THREE.MeshStandardMaterial({color: 0x00f2ff}));
+        shipMesh.rotation.x = Math.PI/2;
+        ship.add(shipMesh);
         scene.add(ship);
-        
-        camera.position.set(0, 1.5, 6);
         ship.add(camera);
+        camera.position.set(0, 1.2, 6);
 
-        // Mobile Joystick Logic
+        // Mobile Controls
         const stick = document.getElementById('joy-stick');
         const bound = document.getElementById('joy-bound');
-        
         bound.addEventListener('touchmove', (e) => {
             const t = e.touches[0];
-            const rect = bound.getBoundingClientRect();
-            const dx = t.clientX - (rect.left + 60);
-            const dy = t.clientY - (rect.top + 60);
-            const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 45);
-            const ang = Math.atan2(dy, dx);
+            const r = bound.getBoundingClientRect();
+            const dx = t.clientX - (r.left + 60);
+            const dy = t.clientY - (r.top + 60);
+            const d = Math.min(Math.sqrt(dx*dx + dy*dy), 50);
+            const a = Math.atan2(dy, dx);
             
-            input.x = (Math.cos(ang) * dist) / 45;
-            input.y = (Math.sin(ang) * dist) / 45;
-            stick.style.transform = `translate(${input.x*45}px, ${input.y*45}px)`;
+            turnSpeed = -(Math.cos(a) * d) / 50;
+            // Up/Down on joystick controls throttle
+            const rawThrottle = -(Math.sin(a) * d) / 50; 
+            throttle = Math.max(0, Math.min(1, throttle + rawThrottle * 0.05));
+            
+            stick.style.transform = `translate(${(Math.cos(a)*d)}px, ${(Math.sin(a)*d)}px)`;
         });
-
         bound.addEventListener('touchend', () => {
-            input.x = 0; input.y = 0;
+            turnSpeed = 0;
             stick.style.transform = `translate(0,0)`;
         });
 
         document.getElementById('fire-zone').addEventListener('touchstart', fire);
 
-        // Keyboard support
+        // Keyboard
         window.onkeydown = (e) => {
-            if(e.code === 'KeyW') input.y = -1;
-            if(e.code === 'KeyS') input.y = 1;
-            if(e.code === 'KeyA') input.x = -1;
-            if(e.code === 'KeyD') input.x = 1;
+            if(e.code === 'KeyW') throttle = Math.min(1, throttle + 0.1);
+            if(e.code === 'KeyS') throttle = Math.max(0, throttle - 0.1);
+            if(e.code === 'KeyA') turnSpeed = 1;
+            if(e.code === 'KeyD') turnSpeed = -1;
             if(e.code === 'Space') fire();
         };
-        window.onkeyup = () => { input.x = 0; input.y = 0; };
+        window.onkeyup = (e) => { if(e.code === 'KeyA' || e.code === 'KeyD') turnSpeed = 0; };
 
-        spawnEnemies();
+        for(let i=0; i<8; i++) spawnEnemy();
         animate();
     }
 
-    function spawnEnemies() {
-        for(let i=0; i<6; i++) {
-            const e = new THREE.Mesh(new THREE.OctahedronGeometry(2), new THREE.MeshStandardMaterial({color: 0xff0055}));
-            e.position.set((Math.random()-0.5)*800, (Math.random()-0.5)*800, -800);
-            scene.add(e);
-            enemies.push(e);
-        }
+    function spawnEnemy() {
+        const e = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 3), new THREE.MeshStandardMaterial({color: 0xff0055}));
+        e.position.set((Math.random()-0.5)*1000, (Math.random()-0.5)*800, -1000);
+        scene.add(e);
+        enemies.push({mesh: e, hp: 100});
     }
 
     function fire() {
-        const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 2), new THREE.MeshBasicMaterial({color: 0xff0000}));
+        const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 4), new THREE.MeshBasicMaterial({color: 0x00f2ff}));
         l.position.copy(ship.position);
         l.rotation.copy(ship.rotation);
         scene.add(l);
@@ -142,37 +134,42 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // Movement
-        ship.rotation.y -= input.x * 0.05;
-        ship.rotation.x -= input.y * 0.03;
-        
-        velocity.z = -0.5; // Constant forward speed
+        // Physics: Acceleration & Steering
+        ship.rotation.y += turnSpeed * 0.04;
+        const targetSpeed = throttle * -2.5;
+        velocity.z = THREE.MathUtils.lerp(velocity.z, targetSpeed, 0.05);
         ship.translateZ(velocity.z);
 
-        // Laser movement
+        // Laser Logic
         lasers.forEach((l, i) => {
-            l.translateZ(-5);
-            if(l.position.distanceTo(ship.position) > 1000) {
+            l.translateZ(-6);
+            if(l.position.distanceTo(ship.position) > 2000) {
                 scene.remove(l); lasers.splice(i, 1);
+            }
+            enemies.forEach((en, ei) => {
+                if(l.position.distanceTo(en.mesh.position) < 15) {
+                    en.hp -= 50; scene.remove(l); lasers.splice(i, 1);
+                    if(en.hp <= 0) { scene.remove(en.mesh); enemies.splice(ei, 1); }
+                }
+            });
+        });
+
+        // Simple Enemy AI
+        enemies.forEach(en => {
+            const dist = en.mesh.position.distanceTo(ship.position);
+            if(dist < 1000) {
+                en.mesh.lookAt(ship.position);
+                en.mesh.translateZ(0.5); // Enemies chase you
             }
         });
 
-        // Crash logic (very simple for performance)
-        asteroids.forEach(a => {
-            if(ship.position.distanceTo(a.position) < a.scale.x + 1) {
-                hp -= 1;
-                document.getElementById('hp-fill').style.width = hp + "%";
-            }
-        });
+        // UI
+        document.getElementById('speed-fill').style.width = (throttle * 100) + "%";
+        document.getElementById('speed-txt').innerText = Math.round(throttle * 100);
+        document.getElementById('e-count').innerText = enemies.length;
 
         renderer.render(scene, camera);
     }
-
-    window.onresize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    };
 </script>
 </body>
 </html>
