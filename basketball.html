@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2P BASKETBALL: FIXED</title>
+    <title>B-BALL: GLITCH-PROOF</title>
     <style>
         body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Arial Black', sans-serif; overflow: hidden; }
         canvas { background: #2c3e50; border: 5px solid #ecf0f1; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        #scoreboard { display: flex; justify-content: space-between; width: 800px; font-size: 50px; margin-bottom: 15px; }
+        #scoreboard { display: flex; justify-content: space-between; width: 800px; font-size: 50px; margin-bottom: 10px; }
         .p1 { color: #e74c3c; } .p2 { color: #3498db; }
-        #tip { margin-top: 15px; color: #7f8c8d; font-size: 14px; }
+        #ai-btn { background: #f1c40f; border: none; padding: 10px 20px; font-family: inherit; font-weight: bold; cursor: pointer; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div id="scoreboard">
     <div class="p1" id="s1">0</div>
-    <div style="font-size: 20px; align-self: center; color: #f1c40f;">STREET HOOPS</div>
+    <button id="ai-btn" onclick="aiEnabled = !aiEnabled; this.innerText = aiEnabled ? 'BOT: ON' : 'BOT: OFF'">BOT: OFF</button>
     <div class="p2" id="s2">0</div>
 </div>
 
 <canvas id="court"></canvas>
-<div id="tip">P1: WAD | P2: ARROWS</div>
 
 <script>
     const canvas = document.getElementById('court');
@@ -29,124 +28,121 @@
     canvas.width = 800; canvas.height = 400;
 
     const gravity = 0.45;
-    const friction = 0.99;
-    const maxSpeed = 15;
-    let score1 = 0, score2 = 0;
+    const friction = 0.985;
+    const ballMaxSpeed = 18;
+    let score1 = 0, score2 = 0, aiEnabled = false;
 
     const ball = { x: 400, y: 150, vx: 0, vy: 0, r: 12 };
 
     class Player {
-        constructor(x, color, left, up, right) {
+        constructor(x, color, left, up, right, team) {
             this.x = x; this.y = 300; this.vx = 0; this.vy = 0;
-            this.w = 40; this.h = 60; this.color = color;
+            this.w = 35; this.h = 60; this.color = color;
             this.controls = { left, up, right };
-            this.grounded = false;
+            this.team = team; this.grounded = false;
         }
 
-        update() {
-            if (keys[this.controls.left]) this.vx = -6;
-            else if (keys[this.controls.right]) this.vx = 6;
-            else this.vx *= 0.85;
-
-            if (keys[this.controls.up] && this.grounded) {
-                this.vy = -13;
-                this.grounded = false;
+        update(isManual) {
+            if (isManual) {
+                if (keys[this.controls.left]) this.vx = -6.5;
+                else if (keys[this.controls.right]) this.vx = 6.5;
+                else this.vx *= 0.85;
+                if (keys[this.controls.up] && this.grounded) { this.vy = -13; this.grounded = false; }
+            } else {
+                // Improved AI Tracking
+                let dist = ball.x - (this.x + this.w/2);
+                this.vx = Math.abs(dist) > 10 ? Math.sign(dist) * 5 : 0;
+                if (ball.y < this.y - 20 && Math.abs(dist) < 30 && this.grounded) {
+                    this.vy = -12; this.grounded = false;
+                }
             }
 
             this.vy += gravity;
             this.x += this.vx;
             this.y += this.vy;
 
-            // Bounds
-            if (this.y + this.h > canvas.height) {
-                this.y = canvas.height - this.h;
-                this.vy = 0;
-                this.grounded = true;
-            }
+            // Strict World Bounds for Players
+            if (this.y + this.h > canvas.height) { this.y = canvas.height - this.h; this.vy = 0; this.grounded = true; }
             if (this.x < 0) this.x = 0;
             if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
 
-            // --- FIXED BALL COLLISION ---
-            let pCenterX = this.x + this.w / 2;
-            let pCenterY = this.y + this.h / 2;
-            let dx = ball.x - pCenterX;
-            let dy = ball.y - pCenterY;
-            
-            // Check if ball is inside the player rectangle
+            // --- REWRITTEN COLLISION RESOLVER ---
+            // Finds the closest point on the player rectangle to the ball center
             let closestX = Math.max(this.x, Math.min(ball.x, this.x + this.w));
             let closestY = Math.max(this.y, Math.min(ball.y, this.y + this.h));
-            let distDX = ball.x - closestX;
-            let distDY = ball.y - closestY;
-            let distance = Math.sqrt(distDX * distDX + distDY * distDY);
+            
+            let dx = ball.x - closestX;
+            let dy = ball.y - closestY;
+            let distance = Math.sqrt(dx * dx + dy * dy);
 
             if (distance < ball.r) {
-                // Collision normal
-                let angle = Math.atan2(distDY, distDX);
-                
-                // 1. Move ball OUT of player (Anti-glitch)
-                ball.x = closestX + Math.cos(angle) * (ball.r + 1);
-                ball.y = closestY + Math.sin(angle) * (ball.r + 1);
+                // Normalizes the collision vector to prevent "sticking"
+                let overlap = ball.r - distance;
+                let nx = distance === 0 ? 0 : dx / distance;
+                let ny = distance === 0 ? -1 : dy / distance;
 
-                // 2. Transfer velocity
-                ball.vx = Math.cos(angle) * 10 + this.vx;
-                ball.vy = Math.sin(angle) * 10 + this.vy;
+                // Push ball out of player physically
+                ball.x += nx * (overlap + 1);
+                ball.y += ny * (overlap + 1);
+
+                // Reflect velocity and add player momentum
+                ball.vx = (nx * 10) + (this.vx * 0.5);
+                ball.vy = (ny * 10) + (this.vy * 0.5);
             }
         }
 
         draw() {
             ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y, this.w, this.h);
-            ctx.fillStyle = "#fff"; // Head
-            ctx.fillRect(this.x + 5, this.y - 25, 30, 25);
+            ctx.fillStyle = "#ffdbac"; // Head
+            ctx.fillRect(this.x + 5, this.y - 25, 25, 25);
         }
     }
 
-    const p1 = new Player(100, '#e74c3c', 'KeyA', 'KeyW', 'KeyD');
-    const p2 = new Player(660, '#3498db', 'ArrowLeft', 'ArrowUp', 'ArrowRight');
+    const p1 = new Player(100, '#e74c3c', 'KeyA', 'KeyW', 'KeyD', 1);
+    const p2 = new Player(665, '#3498db', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 2);
 
     const keys = {};
     window.onkeydown = e => keys[e.code] = true;
     window.onkeyup = e => keys[e.code] = false;
 
-    function reset() {
-        ball.x = 400; ball.y = 150;
-        ball.vx = (Math.random() - 0.5) * 10;
-        ball.vy = 0;
+    function reset() { 
+        ball.x = 400; ball.y = 100; 
+        ball.vx = (Math.random() - 0.5) * 5; 
+        ball.vy = 0; 
     }
 
     function loop() {
-        p1.update();
-        p2.update();
+        p1.update(true);
+        p2.update(!aiEnabled);
 
-        // Ball Physics
-        ball.vy += gravity * 0.7;
-        ball.vx *= friction;
-        
-        // Speed Cap
-        ball.vx = Math.max(-maxSpeed, Math.min(maxSpeed, ball.vx));
-        ball.vy = Math.max(-maxSpeed, Math.min(maxSpeed, ball.vy));
+        // Ball Physics Sub-stepping (Checks 2x for stability)
+        for (let i = 0; i < 2; i++) {
+            ball.vy += (gravity * 0.6) / 2;
+            ball.vx *= friction;
+            
+            // Speed Clamping
+            ball.vx = Math.max(-ballMaxSpeed, Math.min(ballMaxSpeed, ball.vx));
+            ball.vy = Math.max(-ballMaxSpeed, Math.min(ballMaxSpeed, ball.vy));
 
-        ball.x += ball.vx;
-        ball.y += ball.vy;
+            ball.x += ball.vx / 2;
+            ball.y += ball.vy / 2;
 
-        // Wall Bounce
-        if (ball.x - ball.r < 0 || ball.x + ball.r > canvas.width) {
-            ball.vx *= -0.8;
-            ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+            // Bounce Floor & Walls
+            if (ball.y + ball.r > canvas.height) {
+                ball.y = canvas.height - ball.r;
+                ball.vy *= -0.7;
+            }
+            if (ball.x - ball.r < 0 || ball.x + ball.r > canvas.width) {
+                ball.vx *= -0.8;
+                ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+            }
         }
-        if (ball.y + ball.r > canvas.height) {
-            ball.y = canvas.height - ball.r;
-            ball.vy *= -0.6;
-        }
 
-        // --- HOOPS ---
-        // Left Hoop (P1's side, P2 scores here)
-        if (ball.x < 50 && ball.y > 180 && ball.y < 200 && ball.vy > 0) {
-            score2++; document.getElementById('s2').innerText = score2; reset();
-        }
-        // Right Hoop (P2's side, P1 scores here)
-        if (ball.x > 750 && ball.y > 180 && ball.y < 200 && ball.vy > 0) {
-            score1++; document.getElementById('s1').innerText = score1; reset();
+        // Hoops
+        if (ball.vy > 0 && ball.y > 190 && ball.y < 210) {
+            if (ball.x < 50) { score2++; document.getElementById('s2').innerText = score2; reset(); }
+            if (ball.x > 750) { score1++; document.getElementById('s1').innerText = score1; reset(); }
         }
 
         draw();
@@ -156,25 +152,17 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Mid-court line
-        ctx.strokeStyle = "rgba(255,255,255,0.2)";
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(400,0); ctx.lineTo(400,400); ctx.stroke();
-
-        // Hoops
+        // Net/Backboard
         ctx.fillStyle = "#f1c40f";
-        ctx.fillRect(0, 190, 50, 10); // Red's hoop
-        ctx.fillRect(750, 190, 50, 10); // Blue's hoop
+        ctx.fillRect(0, 200, 50, 10);
+        ctx.fillRect(750, 200, 50, 10);
 
-        p1.draw();
-        p2.draw();
+        p1.draw(); p2.draw();
 
         // Ball
         ctx.fillStyle = "#e67e22";
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
-        ctx.fill();
-        ctx.strokeStyle = "#000"; ctx.stroke();
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "black"; ctx.stroke();
     }
 
     loop();
