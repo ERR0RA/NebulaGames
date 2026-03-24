@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vanguard: Enemy Skies</title>
+    <title>Vanguard: Titan Hunter</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; touch-action: none; }
         #ui { position: absolute; inset: 0; pointer-events: none; color: #00f2ff; padding: 15px; }
-        .hud-top { display: flex; justify-content: space-between; font-size: 14px; text-shadow: 0 0 5px #00f2ff; }
-        #joy-bound { position: absolute; bottom: 40px; left: 40px; width: 100px; height: 100px; border: 2px solid #00f2ff; border-radius: 50%; pointer-events: auto; }
-        #joy-stick { position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; background: #00f2ff; border-radius: 50%; }
+        .hud-top { display: flex; justify-content: space-between; font-size: 14px; }
+        .health-bar { width: 200px; height: 10px; background: #111; border: 1px solid #00f2ff; margin-top: 5px; position: relative; }
+        #hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff0055, #ff5500); }
+        #joy-bound { position: absolute; bottom: 40px; left: 40px; width: 110px; height: 110px; border: 2px solid rgba(0,242,255,0.4); border-radius: 50%; pointer-events: auto; }
+        #joy-stick { position: absolute; top: 35px; left: 35px; width: 40px; height: 40px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 15px #00f2ff; }
         #fire-zone { position: absolute; right: 0; top: 0; bottom: 0; width: 50%; pointer-events: auto; }
-        .health-bar { width: 150px; height: 6px; background: #111; border: 1px solid #ff0055; margin-top: 5px; }
-        #hp-fill { height: 100%; width: 100%; background: #ff0055; transition: width 0.2s; }
+        #speed-readout { font-size: 20px; font-weight: 900; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -21,7 +22,7 @@
 <div id="ui">
     <div class="hud-top">
         <div>HULL INTEGRITY<div class="health-bar"><div id="hp-fill"></div></div></div>
-        <div>THREATS: <span id="e-count">0</span></div>
+        <div id="speed-readout">VELOCITY: <span id="vel-num">0</span></div>
     </div>
     <div id="joy-bound"><div id="joy-stick"></div></div>
     <div id="fire-zone"></div>
@@ -32,80 +33,92 @@
 <script type="module">
     import * as THREE from 'three';
 
-    let scene, camera, renderer, ship;
-    let throttle = 0, turnSpeed = 0, pitchSpeed = 0;
+    let scene, camera, renderer, ship, thruster;
+    let velocity = 0, targetVelocity = 0;
+    let turnX = 0, turnY = 0;
     let hp = 100, enemies = [], lasers = [], enemyLasers = [];
 
     init();
 
     function init() {
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 15000);
         
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0x404040, 2));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.3));
         const sun = new THREE.DirectionalLight(0xffffff, 2);
-        sun.position.set(10, 10, 10);
+        sun.position.set(10, 20, 10);
         scene.add(sun);
 
-        // Environment
-        const starGeo = new THREE.BufferGeometry();
-        const starPos = [];
-        for(let i=0; i<2000; i++) starPos.push((Math.random()-0.5)*5000, (Math.random()-0.5)*5000, (Math.random()-0.5)*5000);
-        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-        scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 1})));
-
-        // Ship
+        // Ship Construction
         ship = new THREE.Group();
-        const shipMesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 3), new THREE.MeshStandardMaterial({color: 0x00f2ff}));
-        ship.add(shipMesh);
+        const hull = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 4), new THREE.MeshStandardMaterial({color: 0x333333}));
+        ship.add(hull);
+        
+        // Visual Thruster
+        thruster = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.01, 1), new THREE.MeshBasicMaterial({color: 0x00f2ff, transparent: true, opacity: 0.8}));
+        thruster.position.z = 2.5;
+        thruster.rotation.x = Math.PI/2;
+        ship.add(thruster);
+
         scene.add(ship);
         ship.add(camera);
-        camera.position.set(0, 1, 6);
+        camera.position.set(0, 1.5, 7);
 
-        // Touch Controls
+        // Input Logic
         const stick = document.getElementById('joy-stick');
         const bound = document.getElementById('joy-bound');
+        
         bound.addEventListener('touchmove', (e) => {
             const t = e.touches[0];
             const r = bound.getBoundingClientRect();
-            const dx = t.clientX - (r.left + 50);
-            const dy = t.clientY - (r.top + 50);
-            const d = Math.min(Math.sqrt(dx*dx + dy*dy), 40);
+            const dx = t.clientX - (r.left + 55);
+            const dy = t.clientY - (r.top + 55);
+            const d = Math.min(Math.sqrt(dx*dx + dy*dy), 45);
             const a = Math.atan2(dy, dx);
-            turnSpeed = -(Math.cos(a) * d) / 40;
-            pitchSpeed = (Math.sin(a) * d) / 40;
-            throttle = Math.max(0, Math.min(1, throttle + (pitchSpeed * -0.02)));
+            
+            turnY = -(Math.cos(a) * d) / 45; // Steering
+            const accelInput = -(Math.sin(a) * d) / 45; 
+            
+            // Apply Acceleration/Deceleration
+            targetVelocity += accelInput * 0.5;
+            targetVelocity = THREE.MathUtils.clamp(targetVelocity, -1, 5); // Max speed 5
+            
             stick.style.transform = `translate(${(Math.cos(a)*d)}px, ${(Math.sin(a)*d)}px)`;
         });
+
         bound.addEventListener('touchend', () => { 
-            turnSpeed = 0; pitchSpeed = 0; 
+            turnY = 0; 
             stick.style.transform = `translate(0,0)`;
         });
+
         document.getElementById('fire-zone').addEventListener('touchstart', () => fire(true));
 
-        for(let i=0; i<6; i++) spawnEnemy();
+        spawnTitans();
         animate();
     }
 
-    function spawnEnemy() {
-        const eGroup = new THREE.Group();
-        const eMesh = new THREE.Mesh(new THREE.OctahedronGeometry(2), new THREE.MeshStandardMaterial({color: 0xff0055}));
-        eGroup.add(eMesh);
-        eGroup.position.set((Math.random()-0.5)*600, (Math.random()-0.5)*400, -800);
-        scene.add(eGroup);
-        enemies.push({mesh: eGroup, hp: 100, lastFire: 0});
+    function spawnTitans() {
+        for(let i=0; i<4; i++) {
+            const titan = new THREE.Mesh(
+                new THREE.BoxGeometry(20, 10, 40), 
+                new THREE.MeshStandardMaterial({color: 0xff0055, roughness: 0.2})
+            );
+            titan.position.set((Math.random()-0.5)*1500, (Math.random()-0.5)*500, -1000 - Math.random()*1000);
+            scene.add(titan);
+            enemies.push({mesh: titan, hp: 100, lastFire: 0});
+        }
     }
 
     function fire(isPlayer, origin = ship) {
-        const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 4), new THREE.MeshBasicMaterial({color: isPlayer ? 0x00f2ff : 0xff0055}));
+        const l = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 5), new THREE.MeshBasicMaterial({color: isPlayer ? 0x00f2ff : 0xff0000}));
         l.position.copy(origin.position);
         l.rotation.copy(origin.rotation);
-        l.userData = { isPlayer, life: 100 };
+        l.userData = { life: 120 };
         scene.add(l);
         (isPlayer ? lasers : enemyLasers).push(l);
     }
@@ -113,52 +126,51 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // Ship physics
-        ship.rotation.y += turnSpeed * 0.04;
-        ship.rotation.x += pitchSpeed * 0.02;
-        ship.translateZ(throttle * -2.5);
+        // Smooth Velocity Interpolation (Acceleration)
+        velocity = THREE.MathUtils.lerp(velocity, targetVelocity, 0.05);
+        ship.rotation.y += turnY * 0.04;
+        ship.translateZ(-velocity);
+
+        // Thruster Visual Scaling
+        thruster.scale.set(1, velocity * 1.5, 1);
+        document.getElementById('vel-num').innerText = Math.abs(Math.round(velocity * 20));
 
         // Player Lasers
         lasers.forEach((l, i) => {
-            l.translateZ(-8);
-            if(l.userData.life-- < 0) { scene.remove(l); lasers.splice(i, 1); }
+            l.translateZ(-10);
+            if(l.userData.life-- < 0) { scene.remove(l); lasers.splice(i, 1); return; }
             enemies.forEach((en, ei) => {
-                if(l.position.distanceTo(en.mesh.position) < 15) {
-                    en.hp -= 25; scene.remove(l); lasers.splice(i, 1);
+                if(l.position.distanceTo(en.mesh.position) < 25) {
+                    en.hp -= 10; scene.remove(l); lasers.splice(i, 1);
                     if(en.hp <= 0) { scene.remove(en.mesh); enemies.splice(ei, 1); }
                 }
             });
         });
 
-        // Enemy AI & Shooting
+        // Giant AI logic
         enemies.forEach(en => {
             const dist = en.mesh.position.distanceTo(ship.position);
-            if(dist < 800) {
+            if(dist < 2000) {
                 en.mesh.lookAt(ship.position);
-                en.mesh.translateZ(0.6); // Chase
-                if(dist < 400 && Date.now() - en.lastFire > 2000) {
-                    fire(false, en.mesh);
-                    en.lastFire = Date.now();
+                en.mesh.translateZ(0.2); // Slow, imposing movement
+                if(dist < 1200 && Date.now() - en.lastFire > 1500) {
+                    fire(false, en.mesh); en.lastFire = Date.now();
                 }
             }
         });
 
         // Enemy Lasers
         enemyLasers.forEach((l, i) => {
-            l.translateZ(8);
+            l.translateZ(10);
             if(l.position.distanceTo(ship.position) < 8) {
                 hp -= 5;
                 document.getElementById('hp-fill').style.width = hp + "%";
                 scene.remove(l); enemyLasers.splice(i, 1);
-                // Simple Screen Shake
-                camera.position.x += (Math.random()-0.5) * 0.5;
             }
             if(l.userData.life-- < 0) { scene.remove(l); enemyLasers.splice(i, 1); }
         });
 
-        document.getElementById('e-count').innerText = enemies.length;
         if(hp <= 0) location.reload();
-
         renderer.render(scene, camera);
     }
 </script>
