@@ -3,32 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hyper-Realistic Space Adventure</title>
+    <title>3D Space: Planetary Landing</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; color: #fff; }
-        #hud { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; z-index: 10; }
-        .hud-top { display: flex; justify-content: space-between; text-shadow: 0 0 10px #00f2ff; }
-        .crosshair { position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; border: 2px solid rgba(0, 242, 255, 0.5); transform: translate(-50%, -50%); border-radius: 50%; }
-        .crosshair::after { content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #00f2ff; transform: translate(-50%, -50%); border-radius: 50%; }
-        
-        #joystick-container { position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 1px solid rgba(0,242,255,0.3); pointer-events: auto; }
-        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 20px #00f2ff; }
-        
-        #loading { position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 1.5rem; letter-spacing: 5px; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; color: #00f2ff; }
+        #hud { position: absolute; inset: 0; pointer-events: none; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        .stat-box { background: rgba(0, 20, 30, 0.7); padding: 10px; border: 1px solid #00f2ff; width: 200px; }
+        #msg { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); font-size: 1.5rem; text-align: center; opacity: 0; transition: 0.5s; }
+        #joystick { position: absolute; bottom: 40px; left: 40px; width: 100px; height: 100px; border: 2px solid #00f2ff; border-radius: 50%; pointer-events: auto; }
+        #stick { position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; background: #00f2ff; border-radius: 50%; }
     </style>
 </head>
 <body>
 
-<div id="loading">INITIALIZING QUANTUM DRIVE...</div>
-
 <div id="hud">
-    <div class="hud-top">
-        <div>VELOCITY: <span id="vel-val">0</span> KM/S</div>
-        <div>COORDINATES: <span id="pos-val">0, 0, 0</span></div>
+    <div class="stat-box">
+        ALTITUDE: <span id="alt">0</span><br>
+        SPEED: <span id="spd">0</span><br>
+        STATUS: <span id="status">ORBITING</span>
     </div>
-    <div class="crosshair"></div>
-    <div id="joystick-container"><div id="joystick-knob"></div></div>
+    <div id="msg">STABILIZING FOR LANDING...</div>
+    <div id="joystick"><div id="stick"></div></div>
 </div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
@@ -36,140 +31,107 @@
 <script type="module">
     import * as THREE from 'three';
 
-    let scene, camera, renderer, starField, nebula, ship;
-    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+    let scene, camera, renderer, ship, planet;
     let velocity = new THREE.Vector3();
-    let rotationVector = new THREE.Vector2();
-    const JOYSTICK_SENS = 0.002;
+    let isLanding = false;
+    let input = { w: false, s: false, a: false, d: false };
 
     init();
 
     function init() {
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 10000);
         
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // --- Realistic Lighting ---
-        const sunLight = new THREE.PointLight(0xffffff, 5000, 10000);
-        sunLight.position.set(200, 100, 500);
-        scene.add(sunLight);
-        scene.add(new THREE.AmbientLight(0x111122, 0.5));
+        // Lights
+        const sun = new THREE.DirectionalLight(0xffffff, 2);
+        sun.position.set(500, 500, 500);
+        scene.add(sun);
+        scene.add(new THREE.AmbientLight(0x111122));
 
-        // --- Starfield (6000 particles) ---
-        const starGeo = new THREE.BufferGeometry();
-        const starCoords = [];
-        for(let i=0; i<6000; i++) {
-            starCoords.push((Math.random()-0.5)*10000, (Math.random()-0.5)*10000, (Math.random()-0.5)*10000);
-        }
-        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
-        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, transparent: true });
-        starField = new THREE.Points(starGeo, starMat);
-        scene.add(starField);
-
-        // --- Procedural Nebula ---
-        const nebulaGeo = new THREE.SphereGeometry(8000, 32, 32);
-        const nebulaMat = new THREE.MeshBasicMaterial({ 
-            color: 0x1a0033, 
-            side: THREE.BackSide, 
-            fog: false 
+        // Planet
+        const planetGeo = new THREE.SphereGeometry(300, 64, 64);
+        const planetMat = new THREE.MeshStandardMaterial({ 
+            color: 0x2244ff, 
+            roughness: 0.8,
+            metalness: 0.2,
+            emissive: 0x001133
         });
-        nebula = new THREE.Mesh(nebulaGeo, nebulaMat);
-        scene.add(nebula);
+        planet = new THREE.Mesh(planetGeo, planetMat);
+        planet.position.set(0, -400, -800);
+        scene.add(planet);
 
-        // --- Ship/Cockpit Placeholder ---
-        const shipGroup = new THREE.Group();
-        const hull = new THREE.Mesh(
-            new THREE.BoxGeometry(2, 0.5, 5), 
-            new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9, roughness: 0.1 })
-        );
-        shipGroup.add(hull);
-        ship = shipGroup;
+        // Atmosphere Glow
+        const atmosGeo = new THREE.SphereGeometry(310, 32, 32);
+        const atmosMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.1, side: THREE.BackSide });
+        const atmos = new THREE.Mesh(atmosGeo, atmosMat);
+        planet.add(atmos);
+
+        // Stars
+        const stars = new THREE.BufferGeometry();
+        const pos = [];
+        for(let i=0; i<5000; i++) pos.push((Math.random()-0.5)*5000, (Math.random()-0.5)*5000, (Math.random()-0.5)*5000);
+        stars.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        scene.add(new THREE.Points(stars, new THREE.PointsMaterial({color: 0xffffff, size: 2})));
+
+        // AI Ships
+        for(let i=0; i<5; i++) {
+            const bot = new THREE.Mesh(new THREE.ConeGeometry(2, 8, 4), new THREE.MeshStandardMaterial({color: 0x555555}));
+            bot.position.set(Math.random()*400-200, Math.random()*400, -200 - Math.random()*400);
+            scene.add(bot);
+        }
+
+        // Ship
+        ship = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 3), new THREE.MeshStandardMaterial({color: 0x888888}));
+        ship.add(body);
         scene.add(ship);
-        
-        // Hide loading
-        document.getElementById('loading').style.display = 'none';
+        camera.position.set(0, 2, 7);
+        ship.add(camera);
+
+        window.onkeydown = (e) => input[e.key.toLowerCase()] = true;
+        window.onkeyup = (e) => input[e.key.toLowerCase()] = false;
 
         animate();
     }
 
-    // --- Inputs ---
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'w') moveForward = true;
-        if (e.key === 's') moveBackward = true;
-        if (e.key === 'a') moveLeft = true;
-        if (e.key === 'd') moveRight = true;
-    });
-    window.addEventListener('keyup', (e) => {
-        if (e.key === 'w') moveForward = false;
-        if (e.key === 's') moveBackward = false;
-        if (e.key === 'a') moveLeft = false;
-        if (e.key === 'd') moveRight = false;
-    });
-
-    // Mobile Joystick
-    const knob = document.getElementById('joystick-knob');
-    const container = document.getElementById('joystick-container');
-    container.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const rect = container.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const dx = touch.clientX - centerX;
-        const dy = touch.clientY - centerY;
-        const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 40);
-        const angle = Math.atan2(dy, dx);
-        
-        rotationVector.x = (dx / 40) * JOYSTICK_SENS;
-        rotationVector.y = (dy / 40) * JOYSTICK_SENS;
-        
-        knob.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
-        moveForward = dy < -10;
-    });
-    container.addEventListener('touchend', () => {
-        rotationVector.set(0, 0);
-        moveForward = false;
-        knob.style.transform = `translate(0,0)`;
-    });
-
     function animate() {
         requestAnimationFrame(animate);
 
-        // Physics
-        const speed = 0.8;
-        if (moveForward) velocity.z -= speed;
-        if (moveBackward) velocity.z += speed;
-        if (moveLeft) ship.rotation.y += 0.02;
-        if (moveRight) ship.rotation.y -= 0.02;
+        const distToPlanet = ship.position.distanceTo(planet.position) - 300;
+        
+        if (!isLanding) {
+            if (input.w) velocity.z -= 0.1;
+            if (input.s) velocity.z += 0.1;
+            if (input.a) ship.rotation.y += 0.03;
+            if (input.d) ship.rotation.y -= 0.03;
+            
+            velocity.multiplyScalar(0.97);
+            ship.translateZ(velocity.z);
+        }
 
-        velocity.multiplyScalar(0.98); // Friction/Damping
-        ship.translateZ(velocity.z * 0.01);
+        // Landing Logic
+        if (distToPlanet < 10) {
+            document.getElementById('msg').style.opacity = 1;
+            if (Math.abs(velocity.z) < 0.5) {
+                isLanding = true;
+                document.getElementById('status').innerText = "LANDED";
+                velocity.set(0,0,0);
+            }
+        } else {
+            document.getElementById('msg').style.opacity = 0;
+            document.getElementById('status').innerText = "IN FLIGHT";
+        }
 
-        // Update Camera to follow Ship
-        camera.position.lerp(new THREE.Vector3(
-            ship.position.x, 
-            ship.position.y + 0.5, 
-            ship.position.z
-        ), 0.1);
-        camera.rotation.copy(ship.rotation);
-
-        // Update HUD
-        document.getElementById('vel-val').innerText = Math.abs(Math.round(velocity.z));
-        document.getElementById('pos-val').innerText = `${Math.round(ship.position.x)}, ${Math.round(ship.position.y)}, ${Math.round(ship.position.z)}`;
+        document.getElementById('alt').innerText = Math.round(distToPlanet);
+        document.getElementById('spd').innerText = (Math.abs(velocity.z) * 100).toFixed(0);
 
         renderer.render(scene, camera);
     }
-
-    window.onresize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    };
 </script>
 </body>
 </html>
