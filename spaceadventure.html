@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hyper-Realistic Space Adventure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; color: #fff; }
+        #hud { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; z-index: 10; }
+        .hud-top { display: flex; justify-content: space-between; text-shadow: 0 0 10px #00f2ff; }
+        .crosshair { position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; border: 2px solid rgba(0, 242, 255, 0.5); transform: translate(-50%, -50%); border-radius: 50%; }
+        .crosshair::after { content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #00f2ff; transform: translate(-50%, -50%); border-radius: 50%; }
+        
+        #joystick-container { position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 1px solid rgba(0,242,255,0.3); pointer-events: auto; }
+        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 20px #00f2ff; }
+        
+        #loading { position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; font-size: 1.5rem; letter-spacing: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="loading">INITIALIZING QUANTUM DRIVE...</div>
+
+<div id="hud">
+    <div class="hud-top">
+        <div>VELOCITY: <span id="vel-val">0</span> KM/S</div>
+        <div>COORDINATES: <span id="pos-val">0, 0, 0</span></div>
+    </div>
+    <div class="crosshair"></div>
+    <div id="joystick-container"><div id="joystick-knob"></div></div>
+</div>
+
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+
+<script type="module">
+    import * as THREE from 'three';
+
+    let scene, camera, renderer, starField, nebula, ship;
+    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+    let velocity = new THREE.Vector3();
+    let rotationVector = new THREE.Vector2();
+    const JOYSTICK_SENS = 0.002;
+
+    init();
+
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
+        
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        document.body.appendChild(renderer.domElement);
+
+        // --- Realistic Lighting ---
+        const sunLight = new THREE.PointLight(0xffffff, 5000, 10000);
+        sunLight.position.set(200, 100, 500);
+        scene.add(sunLight);
+        scene.add(new THREE.AmbientLight(0x111122, 0.5));
+
+        // --- Starfield (6000 particles) ---
+        const starGeo = new THREE.BufferGeometry();
+        const starCoords = [];
+        for(let i=0; i<6000; i++) {
+            starCoords.push((Math.random()-0.5)*10000, (Math.random()-0.5)*10000, (Math.random()-0.5)*10000);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, transparent: true });
+        starField = new THREE.Points(starGeo, starMat);
+        scene.add(starField);
+
+        // --- Procedural Nebula ---
+        const nebulaGeo = new THREE.SphereGeometry(8000, 32, 32);
+        const nebulaMat = new THREE.MeshBasicMaterial({ 
+            color: 0x1a0033, 
+            side: THREE.BackSide, 
+            fog: false 
+        });
+        nebula = new THREE.Mesh(nebulaGeo, nebulaMat);
+        scene.add(nebula);
+
+        // --- Ship/Cockpit Placeholder ---
+        const shipGroup = new THREE.Group();
+        const hull = new THREE.Mesh(
+            new THREE.BoxGeometry(2, 0.5, 5), 
+            new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9, roughness: 0.1 })
+        );
+        shipGroup.add(hull);
+        ship = shipGroup;
+        scene.add(ship);
+        
+        // Hide loading
+        document.getElementById('loading').style.display = 'none';
+
+        animate();
+    }
+
+    // --- Inputs ---
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'w') moveForward = true;
+        if (e.key === 's') moveBackward = true;
+        if (e.key === 'a') moveLeft = true;
+        if (e.key === 'd') moveRight = true;
+    });
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'w') moveForward = false;
+        if (e.key === 's') moveBackward = false;
+        if (e.key === 'a') moveLeft = false;
+        if (e.key === 'd') moveRight = false;
+    });
+
+    // Mobile Joystick
+    const knob = document.getElementById('joystick-knob');
+    const container = document.getElementById('joystick-container');
+    container.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = touch.clientX - centerX;
+        const dy = touch.clientY - centerY;
+        const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 40);
+        const angle = Math.atan2(dy, dx);
+        
+        rotationVector.x = (dx / 40) * JOYSTICK_SENS;
+        rotationVector.y = (dy / 40) * JOYSTICK_SENS;
+        
+        knob.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+        moveForward = dy < -10;
+    });
+    container.addEventListener('touchend', () => {
+        rotationVector.set(0, 0);
+        moveForward = false;
+        knob.style.transform = `translate(0,0)`;
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Physics
+        const speed = 0.8;
+        if (moveForward) velocity.z -= speed;
+        if (moveBackward) velocity.z += speed;
+        if (moveLeft) ship.rotation.y += 0.02;
+        if (moveRight) ship.rotation.y -= 0.02;
+
+        velocity.multiplyScalar(0.98); // Friction/Damping
+        ship.translateZ(velocity.z * 0.01);
+
+        // Update Camera to follow Ship
+        camera.position.lerp(new THREE.Vector3(
+            ship.position.x, 
+            ship.position.y + 0.5, 
+            ship.position.z
+        ), 0.1);
+        camera.rotation.copy(ship.rotation);
+
+        // Update HUD
+        document.getElementById('vel-val').innerText = Math.abs(Math.round(velocity.z));
+        document.getElementById('pos-val').innerText = `${Math.round(ship.position.x)}, ${Math.round(ship.position.y)}, ${Math.round(ship.position.z)}`;
+
+        renderer.render(scene, camera);
+    }
+
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+</script>
+</body>
+</html>
