@@ -3,279 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pac-Man Ultra Neon</title>
+    <title>PAC-MAN ULTRA: HUNTER AI</title>
     <style>
         :root {
-            --bg: #050505;
-            --wall: #2c3e50;
             --neon-blue: #00f2ff;
-            --pacman: #ffeb3b;
+            --pacman: #ffff00;
         }
-
         body {
-            background-color: var(--bg);
-            color: white;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
+            background: #050505; color: white; margin: 0;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100vh;
+            font-family: 'Courier New', Courier, monospace; overflow: hidden;
         }
-
-        .game-header {
-            text-align: center;
-            margin-bottom: 10px;
+        .hud {
+            width: 440px; display: flex; justify-content: space-between;
+            margin-bottom: 10px; font-size: 1.2rem; font-weight: bold;
+            text-shadow: 0 0 10px var(--neon-blue);
         }
-
         #game-container {
-            position: relative;
-            border: 4px solid var(--neon-blue);
-            box-shadow: 0 0 20px var(--neon-blue);
-            border-radius: 8px;
+            position: relative; border: 4px solid var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.4); border-radius: 8px;
         }
-
-        canvas {
-            display: block;
+        canvas { display: block; background: #000; }
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10;
         }
-
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 400px;
-            font-size: 1.5rem;
-            margin-top: 10px;
-            text-shadow: 0 0 5px var(--neon-blue);
-        }
-
-        .controls-hint {
-            margin-top: 15px;
-            color: #666;
-            font-size: 0.8rem;
+        .btn {
+            border: 2px solid var(--neon-blue); color: var(--neon-blue);
+            padding: 10px 20px; cursor: pointer; background: none; margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <div class="game-header">
-        <h1>PAC-MAN <span style="color: var(--neon-blue)">ULTRA</span></h1>
+    <div class="hud">
+        <div>SCORE: <span id="score">0</span></div>
+        <div>LVL: <span id="level">1</span></div>
+        <div id="lives">❤️❤️❤️</div>
     </div>
 
     <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="canvas"></canvas>
+        <div id="overlay">
+            <h1 id="status">GAME OVER</h1>
+            <button class="btn" onclick="initGame()">RESTART</button>
+        </div>
     </div>
-
-    <div class="stats">
-        <span>SCORE: <span id="score">0</span></span>
-        <span>LIVES: <span id="lives">3</span></span>
-    </div>
-
-    <div class="controls-hint">USE ARROW KEYS TO MOVE</div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
-        const livesEl = document.getElementById('lives');
+        const TILE = 20;
 
-        const SIZE = 20;
-        let score = 0;
-        let lives = 3;
-        let animationId;
-
-        // 1 = Wall, 0 = Dot, 2 = Empty, 3 = Power Pellet
-        const map = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
-            [1,3,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,3,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
-            [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
-            [1,1,1,1,0,1,1,1,2,1,2,1,1,1,0,1,1,1,1],
-            [2,2,2,1,0,1,2,2,2,2,2,2,2,1,0,1,2,2,2],
-            [1,1,1,1,0,1,2,1,1,2,1,1,2,1,0,1,1,1,1],
-            [2,2,2,2,0,2,2,1,2,2,2,1,2,2,0,2,2,2,2],
-            [1,1,1,1,0,1,2,1,1,1,1,1,2,1,0,1,1,1,1],
-            [2,2,2,1,0,1,2,2,2,2,2,2,2,1,0,1,2,2,2],
-            [1,1,1,1,0,1,2,1,1,1,1,1,2,1,0,1,1,1,1],
-            [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
-            [1,3,0,1,0,0,0,0,0,2,0,0,0,0,0,1,0,3,1],
-            [1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1],
-            [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        const mapLayout = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1],
+            [1,3,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,3,1],
+            [1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1],
+            [1,0,0,0,0,1,1,0,1,1,1,1,1,0,1,1,0,0,0,0,1],
+            [1,1,1,1,0,1,2,2,2,2,2,2,2,2,2,1,0,1,1,1,1],
+            [2,2,2,1,0,1,2,1,1,4,4,4,1,1,2,1,0,1,2,2,2],
+            [1,1,1,1,0,2,2,1,4,4,4,4,4,1,2,2,0,1,1,1,1],
+            [1,0,0,0,0,1,2,1,1,1,1,1,1,1,2,1,0,0,0,0,1],
+            [1,0,1,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,1,0,1],
+            [1,3,0,0,0,0,0,1,1,1,0,1,1,1,0,0,0,0,0,3,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
-        canvas.width = map[0].length * SIZE;
-        canvas.height = map.length * SIZE;
+        let map = [], score = 0, level = 1, lives = 3, gameActive = true;
+        let powerMode = false;
 
-        const pacman = {
-            x: 9 * SIZE,
-            y: 15 * SIZE,
-            dir: 0,
-            nextDir: 0,
-            speed: 2,
-            radius: 8,
-            mouth: 0,
-            mouthSpeed: 0.1
-        };
+        canvas.width = mapLayout[0].length * TILE;
+        canvas.height = mapLayout.length * TILE;
 
+        const player = { x: 10*TILE, y: 8*TILE, dir: 0, nextDir: 0, speed: 2 };
         const ghosts = [
-            { x: 9 * SIZE, y: 9 * SIZE, color: '#ff0000', dir: 1, speed: 1.5 },
-            { x: 8 * SIZE, y: 9 * SIZE, color: '#ffb8ff', dir: 2, speed: 1.5 },
-            { x: 10 * SIZE, y: 9 * SIZE, color: '#00ffff', dir: 3, speed: 1.5 }
+            { x: 10*TILE, y: 6*TILE, color: '#ff0000', dir: 0, speed: 1.5, type: 'stalker' },
+            { x: 9*TILE, y: 7*TILE, color: '#ffb8ff', dir: 0, speed: 1.5, type: 'ambush' },
+            { x: 11*TILE, y: 7*TILE, color: '#00ffff', dir: 0, speed: 1.5, type: 'random' }
         ];
 
-        function drawMap() {
-            for (let r = 0; r < map.length; r++) {
-                for (let c = 0; c < map[r].length; c++) {
-                    if (map[r][c] === 1) {
-                        ctx.fillStyle = '#1a2a6c';
-                        ctx.fillRect(c * SIZE, r * SIZE, SIZE, SIZE);
-                        ctx.strokeStyle = '#00f2ff';
-                        ctx.strokeRect(c * SIZE + 2, r * SIZE + 2, SIZE - 4, SIZE - 4);
-                    } else if (map[r][c] === 0) {
-                        ctx.fillStyle = "#fff";
-                        ctx.beginPath();
-                        ctx.arc(c * SIZE + SIZE / 2, r * SIZE + SIZE / 2, 2, 0, Math.PI * 2);
-                        ctx.fill();
-                    } else if (map[r][c] === 3) {
-                        ctx.fillStyle = "#fff";
-                        ctx.beginPath();
-                        ctx.arc(c * SIZE + SIZE / 2, r * SIZE + SIZE / 2, 5, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-            }
-        }
+        function canMove(x, y, dir, isGhost = false) {
+            let nx = x, ny = y;
+            let step = 2; 
+            if (dir === 0) nx += step; else if (dir === 1) ny += step;
+            else if (dir === 2) nx -= step; else if (dir === 3) ny -= step;
 
-        function drawPacman() {
-            ctx.fillStyle = '#ffeb3b';
-            ctx.beginPath();
-            let angle = 0.2 * Math.PI * Math.abs(Math.sin(pacman.mouth));
-            let rotation = pacman.dir * Math.PI / 2;
-            ctx.moveTo(pacman.x + SIZE/2, pacman.y + SIZE/2);
-            ctx.arc(pacman.x + SIZE/2, pacman.y + SIZE/2, pacman.radius, rotation + angle, rotation + 2 * Math.PI - angle);
-            ctx.fill();
-            pacman.mouth += pacman.mouthSpeed;
-        }
-
-        function drawGhosts() {
-            ghosts.forEach(g => {
-                ctx.fillStyle = g.color;
-                ctx.beginPath();
-                ctx.arc(g.x + SIZE/2, g.y + SIZE/2, 8, Math.PI, 0);
-                ctx.lineTo(g.x + SIZE/2 + 8, g.y + SIZE/2 + 8);
-                ctx.lineTo(g.x + SIZE/2 - 8, g.y + SIZE/2 + 8);
-                ctx.fill();
-                // Eyes
-                ctx.fillStyle = 'white';
-                ctx.fillRect(g.x + 6, g.y + 6, 3, 3);
-                ctx.fillRect(g.x + 11, g.y + 6, 3, 3);
-            });
-        }
-
-        function canMove(x, y, dir) {
-            let nextX = x, nextY = y;
-            if (dir === 0) nextX += 2; // Right
-            if (dir === 1) nextY += 2; // Down
-            if (dir === 2) nextX -= 2; // Left
-            if (dir === 3) nextY -= 2; // Up
-
-            const r = Math.floor((nextY + (dir === 1 ? SIZE - 1 : 0)) / SIZE);
-            const c = Math.floor((nextX + (dir === 0 ? SIZE - 1 : 0)) / SIZE);
+            const r1 = Math.floor(ny/TILE), c1 = Math.floor(nx/TILE);
+            const r2 = Math.floor((ny+TILE-1)/TILE), c2 = Math.floor((nx+TILE-1)/TILE);
             
-            // Check boundaries and walls
-            if (map[r] && map[r][c] !== 1) {
-                // Specific check for corner clipping
-                const r2 = Math.floor(nextY / SIZE);
-                const c2 = Math.floor(nextX / SIZE);
-                const r3 = Math.floor((nextY + SIZE - 1) / SIZE);
-                const c3 = Math.floor((nextX + SIZE - 1) / SIZE);
-                return map[r2][c2] !== 1 && map[r3][c3] !== 1 && map[r2][c3] !== 1 && map[r3][c2] !== 1;
-            }
-            return false;
+            const cell1 = map[r1]?.[c1];
+            const cell2 = map[r2]?.[c2];
+
+            // Ghosts can enter the ghost house (4), Pacman cannot.
+            if (isGhost) return cell1 !== 1 && cell2 !== 1;
+            return cell1 !== 1 && cell1 !== 4 && cell2 !== 1 && cell2 !== 4;
         }
 
         function update() {
-            // Try to change to next direction
-            if (pacman.nextDir !== pacman.dir && canMove(pacman.x, pacman.y, pacman.nextDir)) {
-                if (pacman.x % SIZE === 0 && pacman.y % SIZE === 0) {
-                    pacman.dir = pacman.nextDir;
+            if (!gameActive) return;
+
+            // Smooth Pacman Movement
+            if (player.x % TILE === 0 && player.y % TILE === 0) {
+                if (canMove(player.x, player.y, player.nextDir)) player.dir = player.nextDir;
+            }
+            if (canMove(player.x, player.y, player.dir)) {
+                if (player.dir === 0) player.x += player.speed;
+                if (player.dir === 1) player.y += player.speed;
+                if (player.dir === 2) player.x -= player.speed;
+                if (player.dir === 3) player.y -= player.speed;
+            }
+
+            // Eating logic
+            let r = Math.round(player.y/TILE), c = Math.round(player.x/TILE);
+            if (map[r]?.[c] === 0 || map[r]?.[c] === 3) {
+                if (map[r][c] === 3) {
+                    powerMode = true;
+                    setTimeout(() => powerMode = false, 8000);
                 }
-            }
-
-            if (canMove(pacman.x, pacman.y, pacman.dir)) {
-                if (pacman.dir === 0) pacman.x += pacman.speed;
-                if (pacman.dir === 1) pacman.y += pacman.speed;
-                if (pacman.dir === 2) pacman.x -= pacman.speed;
-                if (pacman.dir === 3) pacman.y -= pacman.speed;
-            }
-
-            // Dot eating
-            const r = Math.round(pacman.y / SIZE);
-            const c = Math.round(pacman.x / SIZE);
-            if (map[r][c] === 0) {
                 map[r][c] = 2;
                 score += 10;
-                scoreEl.innerText = score;
-            } else if (map[r][c] === 3) {
-                map[r][c] = 2;
-                score += 50;
-                scoreEl.innerText = score;
-                // Add power-up logic here if desired!
+                document.getElementById('score').innerText = score;
+                checkWin();
             }
 
-            // Ghost Movement (Randomized hunter logic)
+            // Ghost AI
             ghosts.forEach(g => {
-                if (g.x % SIZE === 0 && g.y % SIZE === 0) {
-                    const possible = [0, 1, 2, 3].filter(d => canMove(g.x, g.y, d));
-                    g.dir = possible[Math.floor(Math.random() * possible.length)];
+                if (g.x % TILE === 0 && g.y % TILE === 0) {
+                    let possible = [0,1,2,3].filter(d => canMove(g.x, g.y, d, true) && Math.abs(d - g.dir) !== 2);
+                    
+                    if (g.type === 'stalker' && !powerMode) {
+                        // Intelligent Pathing: Pick direction that gets closer to player
+                        possible.sort((a, b) => {
+                            let distA = Math.hypot((g.x + (a===0?20:a===2?-20:0)) - player.x, (g.y + (a===1?20:a===3?-20:0)) - player.y);
+                            let distB = Math.hypot((g.x + (b===0?20:b===2?-20:0)) - player.x, (g.y + (b===1?20:b===3?-20:0)) - player.y);
+                            return distA - distB;
+                        });
+                        g.dir = possible[0];
+                    } else {
+                        g.dir = possible[Math.floor(Math.random() * possible.length)];
+                    }
                 }
-                if (g.dir === 0) g.x += g.speed;
-                if (g.dir === 1) g.y += g.speed;
-                if (g.dir === 2) g.x -= g.speed;
-                if (g.dir === 3) g.y -= g.speed;
+                let s = powerMode ? g.speed * 0.5 : g.speed;
+                if (g.dir === 0) g.x += s; if (g.dir === 1) g.y += s;
+                if (g.dir === 2) g.x -= s; if (g.dir === 3) g.y -= s;
 
-                // Collision detection
-                if (Math.abs(pacman.x - g.x) < 10 && Math.abs(pacman.y - g.y) < 10) {
-                    lives--;
-                    livesEl.innerText = lives;
-                    resetPositions();
-                    if (lives <= 0) alert("GAME OVER! Score: " + score);
+                // Kill collision
+                if (Math.hypot(player.x - g.x, player.y - g.y) < 15) {
+                    if (powerMode) {
+                        g.x = 10*TILE; g.y = 7*TILE; score += 200;
+                    } else {
+                        die();
+                    }
                 }
             });
         }
 
-        function resetPositions() {
-            pacman.x = 9 * SIZE;
-            pacman.y = 15 * SIZE;
-            ghosts.forEach((g, i) => {
-                g.x = (8 + i) * SIZE;
-                g.y = 9 * SIZE;
-            });
+        function die() {
+            lives--;
+            document.getElementById('lives').innerText = '❤️'.repeat(lives);
+            if (lives <= 0) {
+                gameActive = false;
+                document.getElementById('overlay').style.display = 'flex';
+            } else {
+                player.x = 10*TILE; player.y = 8*TILE;
+            }
+        }
+
+        function checkWin() {
+            if (!map.flat().includes(0)) {
+                level++;
+                document.getElementById('level').innerText = level;
+                ghosts.forEach(g => g.speed += 0.2);
+                map = JSON.parse(JSON.stringify(mapLayout));
+            }
+        }
+
+        function initGame() {
+            map = JSON.parse(JSON.stringify(mapLayout));
+            score = 0; lives = 3; level = 1; gameActive = true;
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('lives').innerText = '❤️❤️❤️';
+            document.getElementById('score').innerText = '0';
+            loop();
         }
 
         function loop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawMap();
-            drawPacman();
-            drawGhosts();
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            // Draw Map
+            for(let r=0; r<map.length; r++) {
+                for(let c=0; c<map[r].length; c++) {
+                    if(map[r][c] === 1) {
+                        ctx.strokeStyle = '#1a1a2e'; ctx.strokeRect(c*TILE+2, r*TILE+2, 16, 16);
+                    } else if(map[r][c] === 0) {
+                        ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(c*TILE+10, r*TILE+10, 2, 0, 7); ctx.fill();
+                    } else if(map[r][c] === 3) {
+                        ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(c*TILE+10, r*TILE+10, 5, 0, 7); ctx.fill();
+                    }
+                }
+            }
+            // Draw Pacman
+            ctx.fillStyle = varColor('--pacman');
+            ctx.beginPath();
+            let rot = player.dir * Math.PI/2;
+            let open = 0.2 * Math.PI * Math.sin(Date.now()/100);
+            ctx.arc(player.x+10, player.y+10, 8, rot+open, rot+2*Math.PI-open);
+            ctx.lineTo(player.x+10, player.y+10); ctx.fill();
+
+            // Draw Ghosts
+            ghosts.forEach(g => {
+                ctx.fillStyle = powerMode ? '#2c3ef0' : g.color;
+                ctx.beginPath(); ctx.arc(g.x+10, g.y+10, 8, Math.PI, 0);
+                ctx.lineTo(g.x+18, g.y+18); ctx.lineTo(g.x+2, g.y+18); ctx.fill();
+            });
+
             update();
-            animationId = requestAnimationFrame(loop);
+            if (gameActive) requestAnimationFrame(loop);
         }
 
+        function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+
         window.addEventListener('keydown', e => {
-            if (e.key === 'ArrowRight') pacman.nextDir = 0;
-            if (e.key === 'ArrowDown') pacman.nextDir = 1;
-            if (e.key === 'ArrowLeft') pacman.nextDir = 2;
-            if (e.key === 'ArrowUp') pacman.nextDir = 3;
+            const k = {ArrowRight:0, ArrowDown:1, ArrowLeft:2, ArrowUp:3}[e.key];
+            if(k !== undefined) player.nextDir = k;
         });
 
-        loop();
+        initGame();
     </script>
 </body>
 </html>
