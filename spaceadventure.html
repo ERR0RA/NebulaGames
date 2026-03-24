@@ -3,29 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vanguard: Titan Fury</title>
+    <title>Vanguard: Titan Stalker</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; touch-action: none; color: #00f2ff; }
-        #hud { position: absolute; inset: 0; pointer-events: none; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
-        .panel { background: rgba(0, 20, 40, 0.8); border: 1px solid #00f2ff; padding: 15px; width: 260px; border-radius: 5px; box-shadow: 0 0 20px rgba(0,242,255,0.2); }
-        .bar-bg { width: 100%; height: 10px; background: #111; border: 1px solid #00f2ff; margin: 8px 0; }
-        #thr-bar { height: 100%; width: 0%; background: #00f2ff; transition: width 0.1s; }
-        #hp-bar { height: 100%; width: 100%; background: #ff0055; transition: width 0.3s; }
-        #warning { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); color: #ff0055; font-size: 24px; font-weight: 900; display: none; text-shadow: 0 0 10px #ff0055; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; color: #00f2ff; }
+        #hud { position: absolute; inset: 0; pointer-events: none; padding: 20px; }
+        .panel { background: rgba(0, 10, 20, 0.8); border: 1px solid #00f2ff; padding: 12px; width: 240px; border-radius: 4px; }
+        .bar-bg { width: 100%; height: 8px; background: #111; border: 1px solid #00f2ff; margin: 5px 0; }
+        #hp-fill { height: 100%; width: 100%; background: #ff0055; transition: width 0.2s; }
+        #thr-fill { height: 100%; width: 0%; background: #00f2ff; }
+        #joy { position: absolute; bottom: 40px; left: 40px; width: 100px; height: 100px; border: 2px solid rgba(0,242,255,0.3); border-radius: 50%; pointer-events: auto; }
+        #knob { position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; background: #00f2ff; border-radius: 50%; }
     </style>
 </head>
 <body>
 
 <div id="hud">
     <div class="panel">
-        HULL INTEGRITY
-        <div class="bar-bg"><div id="hp-bar"></div></div>
-        ENGINE OUTPUT: <span id="pwr-txt">0</span>%
-        <div class="bar-bg"><div id="thr-bar"></div></div>
-        [W/S] THROTTLE | [SPACE] FIRE
+        HULL: <div class="bar-bg"><div id="hp-fill"></div></div>
+        THROTTLE: <span id="pwr">0</span>%
+        <div class="bar-bg"><div id="thr-fill"></div></div>
+        [W/S] SPEED | [A/D] STEER
     </div>
-    <div id="warning">INCOMING FIRE</div>
+    <div id="joy"><div id="knob"></div></div>
 </div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
@@ -42,65 +42,57 @@
 
     function init() {
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 15000);
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 20000);
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.3));
-        const sun = new THREE.DirectionalLight(0xffffff, 2);
-        sun.position.set(10, 10, 10);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+        sun.position.set(50, 50, 50);
         scene.add(sun);
 
         // Starfield
         const starGeo = new THREE.BufferGeometry();
         const starPos = [];
-        for(let i=0; i<3000; i++) starPos.push((Math.random()-0.5)*12000, (Math.random()-0.5)*12000, (Math.random()-0.5)*12000);
+        for(let i=0; i<4000; i++) starPos.push((Math.random()-0.5)*15000, (Math.random()-0.5)*15000, (Math.random()-0.5)*15000);
         starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
         scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 2})));
 
         // Player Ship
         ship = new THREE.Group();
-        const hull = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 4), new THREE.MeshStandardMaterial({color: 0x444444, metalness: 0.9}));
-        ship.add(hull);
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 4), new THREE.MeshStandardMaterial({color: 0x222222, metalness: 1}));
+        ship.add(body);
         scene.add(ship);
         ship.add(camera);
         camera.position.set(0, 1.5, 8);
 
-        window.addEventListener('keydown', (e) => {
-            const k = e.key.toLowerCase();
-            if(k === 'w') keys.w = true;
-            if(k === 's') keys.s = true;
-            if(k === 'a') keys.a = true;
-            if(k === 'd') keys.d = true;
-            if(e.code === 'Space') fireLaser(true);
-        });
-        window.addEventListener('keyup', (e) => {
-            const k = e.key.toLowerCase();
-            if(k === 'w') keys.w = false;
-            if(k === 's') keys.s = false;
-            if(k === 'a') keys.a = false;
-            if(k === 'd') keys.d = false;
-        });
+        window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; if(e.code === 'Space') fire(true); });
+        window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
-        spawnTitans();
+        spawnAI();
         animate();
     }
 
-    function spawnTitans() {
-        for(let i=0; i<5; i++) {
-            const titan = new THREE.Mesh(new THREE.BoxGeometry(40, 20, 60), new THREE.MeshStandardMaterial({color: 0xff1144}));
-            titan.position.set((Math.random()-0.5)*3000, (Math.random()-0.5)*1000, -1500 - (Math.random()*1000));
+    function spawnAI() {
+        for(let i=0; i<4; i++) {
+            const titan = new THREE.Mesh(new THREE.BoxGeometry(35, 15, 50), new THREE.MeshStandardMaterial({color: 0xff0044}));
+            titan.position.set((Math.random()-0.5)*2000, (Math.random()-0.5)*500, -1000);
             scene.add(titan);
-            enemies.push({ mesh: titan, hp: 200, lastShot: Date.now() });
+            enemies.push({ 
+                mesh: titan, 
+                hp: 300, 
+                vel: new THREE.Vector3(),
+                lastShot: Date.now() + Math.random()*2000 
+            });
         }
     }
 
-    function fireLaser(isPlayer, origin = ship) {
+    function fire(isPlayer, origin = ship) {
         const l = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 6), new THREE.MeshBasicMaterial({color: isPlayer ? 0x00f2ff : 0xff0000}));
         l.position.copy(origin.position);
         l.rotation.copy(origin.rotation);
-        l.userData = { isPlayer, life: 150 };
+        l.userData = { life: 200 };
         scene.add(l);
         (isPlayer ? lasers : enemyLasers).push(l);
     }
@@ -108,62 +100,68 @@
     function animate() {
         requestAnimationFrame(animate);
 
-        // Physics & Input
+        // Player movement
         if(keys.w) throttle = Math.min(1, throttle + 0.01);
         if(keys.s) throttle = Math.max(0, throttle - 0.01);
         if(keys.a) ship.rotation.y += 0.035;
         if(keys.d) ship.rotation.y -= 0.035;
 
-        currentSpeed = THREE.MathUtils.lerp(currentSpeed, throttle * 7, 0.05);
+        currentSpeed = THREE.MathUtils.lerp(currentSpeed, throttle * 7.5, 0.04);
         ship.translateZ(-currentSpeed);
 
-        // Player Lasers Logic
+        // Enemy AI movement
+        enemies.forEach(en => {
+            const dist = en.mesh.position.distanceTo(ship.position);
+            en.mesh.lookAt(ship.position);
+
+            let moveSpeed = 0;
+            if(dist > 600) {
+                // Chase mode
+                moveSpeed = 3.5;
+            } else if(dist < 300) {
+                // Back off mode
+                moveSpeed = -2;
+            } else {
+                // Orbit/Strafing mode
+                en.mesh.translateX(1.5); 
+                moveSpeed = 1;
+            }
+            en.mesh.translateZ(moveSpeed);
+
+            // Enemy Shooting
+            if(dist < 1200 && Date.now() - en.lastShot > 2500) {
+                fire(false, en.mesh);
+                en.lastShot = Date.now();
+            }
+        });
+
+        // Projectile cleanup & collision
         lasers.forEach((l, i) => {
-            l.translateZ(-15);
+            l.translateZ(-18);
             if(l.userData.life-- < 0) { scene.remove(l); lasers.splice(i, 1); return; }
             enemies.forEach((en, ei) => {
-                if(l.position.distanceTo(en.mesh.position) < 35) {
+                if(l.position.distanceTo(en.mesh.position) < 30) {
                     en.hp -= 20; scene.remove(l); lasers.splice(i, 1);
                     if(en.hp <= 0) { scene.remove(en.mesh); enemies.splice(ei, 1); }
                 }
             });
         });
 
-        // Enemy AI & Shooting Logic
-        let alertPlayer = false;
-        enemies.forEach(en => {
-            const dist = en.mesh.position.distanceTo(ship.position);
-            if(dist < 2000) {
-                en.mesh.lookAt(ship.position);
-                // Fire if player is in range and enough time has passed
-                if(dist < 1200 && Date.now() - en.lastShot > 1800) {
-                    fireLaser(false, en.mesh);
-                    en.lastShot = Date.now() + (Math.random() * 1000); // Randomize fire rate
-                }
-            }
-        });
-
-        // Enemy Lasers Logic (Damaging Player)
         enemyLasers.forEach((el, i) => {
-            el.translateZ(10); // Enemy bolts fly toward the player
+            el.translateZ(12);
             if(el.position.distanceTo(ship.position) < 10) {
-                hp -= 10;
+                hp -= 5;
                 scene.remove(el); enemyLasers.splice(i, 1);
             }
             if(el.userData.life-- < 0) { scene.remove(el); enemyLasers.splice(i, 1); }
-            if(el.position.distanceTo(ship.position) < 200) alertPlayer = true;
         });
 
-        // UI Updates
-        document.getElementById('thr-bar').style.width = (throttle * 100) + "%";
-        document.getElementById('pwr-txt').innerText = Math.round(throttle * 100);
-        document.getElementById('hp-bar').style.width = hp + "%";
-        document.getElementById('warning').style.display = alertPlayer ? 'block' : 'none';
+        // HUD Updates
+        document.getElementById('pwr').innerText = Math.round(throttle * 100);
+        document.getElementById('thr-fill').style.width = (throttle * 100) + "%";
+        document.getElementById('hp-fill').style.width = hp + "%";
 
-        if(hp <= 0) {
-            alert("HULL DESTROYED - REBOOTING SYSTEMS");
-            location.reload();
-        }
+        if(hp <= 0) location.reload();
 
         renderer.render(scene, camera);
     }
