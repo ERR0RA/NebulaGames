@@ -1,1 +1,428 @@
-help me im skibidiidi43norf4mgrlbkmg45plt,;grmkevf
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master of the Board: Wooden Tic-Tac-Toe</title>
+    <style>
+        :root {
+            /* Wooden Theme Palette */
+            --bg-texture: url('https://www.transparenttextures.com/patterns/p4.png');
+            --bg-color: #3e2723; /* Darker bark base */
+            --board-bark: #5d4037; /* Lighter bark for standard board */
+            --subgrid-bark: #795548; /* Contrast for ultimate subgrids */
+            --cell-wood: #a1887f; /* Lighter carved wood */
+            --cell-wood-hover: #bcaaa4;
+            --control-wood: #8d6e63;
+            --text-engraved: #f5eadd; /* Light wood pulp/engraving fill */
+            --accent-wood: #bf360c; /* To highlight the active subgrid */
+            
+            /* Symbol Colors - Classic Red/Blue ink but on wood */
+            --x-color: #c62828;
+            --o-color: #1565c0;
+            
+            /* Font (a slightly rustic but readable sans-serif) */
+            --game-font: 'Georgia', serif;
+        }
+
+        body {
+            font-family: var(--game-font);
+            background-color: var(--bg-color);
+            background-image: var(--bg-texture);
+            color: var(--text-engraved);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            /* Engraved text effect */
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.7), 0 0 0 transparent; 
+        }
+
+        h1 {
+            color: var(--x-color);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            background-color: var(--control-wood);
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: inset 1px 1px 4px rgba(0,0,0,0.5), 2px 2px 8px rgba(0,0,0,0.3);
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #4e342e;
+        }
+
+        select, button {
+            padding: 10px 15px;
+            border-radius: 4px;
+            border: 1px solid #6d4c41;
+            background-color: var(--cell-wood);
+            color: #3e2723;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: var(--game-font);
+            font-size: 0.95rem;
+            /* Wood button depth */
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.4), inset -1px -1px 1px rgba(255,255,255,0.2);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        select:focus, button:hover {
+            background-color: var(--cell-wood-hover);
+        }
+
+        button:active {
+            transform: translateY(1px);
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        #status {
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+            height: 2.2rem;
+        }
+
+        /* --- Standard Grid Styling --- */
+        .game-container {
+            display: grid;
+            gap: 6px;
+            background-color: var(--board-bark);
+            padding: 12px;
+            border-radius: 8px;
+            /* Board bevel */
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.7), 4px 4px 10px rgba(0,0,0,0.5);
+            border: 1px solid #3e2723;
+        }
+
+        .cell {
+            width: 70px;
+            height: 70px;
+            background-color: var(--cell-wood);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background 0.15s;
+            /* Inset for carved look */
+            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.1);
+        }
+
+        .cell:hover { background-color: var(--cell-wood-hover); }
+        
+        /* Symbol Styling: Carved and Ink-Filled */
+        .cell.x, .cell.o {
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 2px rgba(0,0,0,0.8);
+        }
+        .cell.x { color: var(--x-color); }
+        .cell.o { color: var(--o-color); }
+
+        /* --- Ultimate Mode Styling --- */
+        .ultimate-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 15px;
+            background-color: #3e2723; /* Very deep wood for main frame */
+            border-radius: 8px;
+            box-shadow: inset 3px 3px 6px rgba(0,0,0,0.8), 5px 5px 12px rgba(0,0,0,0.6);
+        }
+
+        .sub-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            padding: 8px;
+            background-color: var(--subgrid-bark);
+            border-radius: 5px;
+            position: relative;
+            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        /* Target Subgrid Highlight - Red Hot Iron Look */
+        .sub-grid.active { 
+            box-shadow: 0 0 10px var(--accent-wood);
+            border: 2px solid var(--accent-wood);
+        }
+
+        /* Large Won Symbol Over Subgrid */
+        .sub-grid.won-x::after, .sub-grid.won-o::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 7rem; z-index: 10; border-radius: 5px;
+            background-color: rgba(62, 39, 35, 0.92); /* Opaque dark wood */
+            /* Large symbol drop shadow */
+            text-shadow: 3px 3px 4px rgba(0,0,0,0.8);
+        }
+        .sub-grid.won-x::after { content: 'X'; color: var(--x-color); }
+        .sub-grid.won-o::after { content: 'O'; color: var(--o-color); }
+    </style>
+</head>
+<body>
+
+    <h1>Ultimate Wooden Tic-Tac-Toe</h1>
+
+    <div class="controls">
+        <select id="gameMode">
+            <option value="standard">Standard Mode</option>
+            <option value="ultimate">Ultimate Mode</option>
+        </select>
+
+        <select id="gridSize">
+            <option value="3">Small (3x3)</option>
+            <option value="4">Medium (4x4)</option>
+            <option value="5">Big (5x5)</option>
+        </select>
+
+        <select id="playerCount">
+            <option value="1">1 Player (vs Bot)</option>
+            <option value="2">2 Players</option>
+        </select>
+
+        <select id="difficulty">
+            <option value="easy">Easy Bot</option>
+            <option value="medium">Medium Bot</option>
+            <option value="hard">Hard Bot</option>
+        </select>
+
+        <button onclick="initGame()">Carve New Board</button>
+    </div>
+
+    <div id="status">X's Turn</div>
+    <div id="board" class="game-container"></div>
+
+    <script>
+        let board = [];
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let isUltimate = false;
+        let nextSubGrid = -1; // For Ultimate mode
+        let mainBoardWinners = Array(9).fill(null);
+
+        const boardElement = document.getElementById('board');
+        const statusElement = document.getElementById('status');
+
+        function initGame() {
+            const mode = document.getElementById('gameMode').value;
+            const size = parseInt(document.getElementById('gridSize').value);
+            isUltimate = (mode === 'ultimate');
+            
+            currentPlayer = 'X';
+            gameActive = true;
+            nextSubGrid = -1;
+            statusElement.innerText = "Player X's Turn";
+            boardElement.innerHTML = '';
+            
+            if (isUltimate) {
+                setupUltimateBoard();
+            } else {
+                setupStandardBoard(size);
+            }
+        }
+
+        function setupStandardBoard(size) {
+            board = Array(size * size).fill(null);
+            boardElement.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            boardElement.className = "game-container";
+
+            for (let i = 0; i < size * size; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => handleMove(i));
+                boardElement.appendChild(cell);
+            }
+        }
+
+        function setupUltimateBoard() {
+            board = Array(9).fill(null).map(() => Array(9).fill(null));
+            mainBoardWinners = Array(9).fill(null);
+            boardElement.className = "ultimate-grid";
+            boardElement.style.gridTemplateColumns = "repeat(3, 1fr)";
+
+            for (let i = 0; i < 9; i++) {
+                const subGrid = document.createElement('div');
+                subGrid.classList.add('sub-grid');
+                subGrid.id = `sub-${i}`;
+                for (let j = 0; j < 9; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.sub = i;
+                    cell.dataset.index = j;
+                    cell.addEventListener('click', () => handleUltimateMove(i, j));
+                    subGrid.appendChild(cell);
+                }
+                boardElement.appendChild(subGrid);
+            }
+        }
+
+        function handleMove(index) {
+            if (board[index] || !gameActive) return;
+
+            makeMove(index);
+
+            if (gameActive && document.getElementById('playerCount').value === "1") {
+                setTimeout(botMove, 500);
+            }
+        }
+
+        function makeMove(index) {
+            board[index] = currentPlayer;
+            const cell = document.querySelector(`[data-index="${index}"]`);
+            cell.innerText = currentPlayer;
+            cell.classList.add(currentPlayer.toLowerCase());
+
+            if (checkWin(board, currentPlayer)) {
+                statusElement.innerText = `Player ${currentPlayer} Wins!`;
+                gameActive = false;
+            } else if (board.every(cell => cell !== null)) {
+                statusElement.innerText = "It's a Draw!";
+                gameActive = false;
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                statusElement.innerText = `Player ${currentPlayer}'s Turn`;
+            }
+        }
+
+        function handleUltimateMove(subIdx, cellIdx) {
+            if (!gameActive) return;
+            if (nextSubGrid !== -1 && subIdx !== nextSubGrid) return;
+            if (board[subIdx][cellIdx] || mainBoardWinners[subIdx]) return;
+
+            board[subIdx][cellIdx] = currentPlayer;
+            const cell = document.querySelector(`[data-sub="${subIdx}"][data-index="${cellIdx}"]`);
+            cell.innerText = currentPlayer;
+            cell.classList.add(currentPlayer.toLowerCase());
+
+            // Check if subgrid is won
+            if (checkWin(board[subIdx], currentPlayer)) {
+                mainBoardWinners[subIdx] = currentPlayer;
+                document.getElementById(`sub-${subIdx}`).classList.add(`won-${currentPlayer.toLowerCase()}`);
+            }
+
+            // Check overall game win
+            if (checkWin(mainBoardWinners, currentPlayer)) {
+                statusElement.innerText = `Player ${currentPlayer} Wins the Ultimate Game!`;
+                gameActive = false;
+                document.querySelectorAll('.sub-grid').forEach(g => g.classList.remove('active'));
+                return;
+            }
+
+            // Determine next subgrid
+            nextSubGrid = mainBoardWinners[cellIdx] ? -1 : cellIdx;
+            
+            // UI highlights
+            document.querySelectorAll('.sub-grid').forEach(g => g.classList.remove('active'));
+            if (nextSubGrid !== -1) {
+                document.getElementById(`sub-${nextSubGrid}`).classList.add('active');
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusElement.innerText = `Player ${currentPlayer}'s Turn`;
+
+            if (gameActive && document.getElementById('playerCount').value === "1" && currentPlayer === 'O') {
+                setTimeout(botMoveUltimate, 600);
+            }
+        }
+
+        // Logic Helpers
+        function checkWin(flatBoard, player) {
+            const size = Math.sqrt(flatBoard.length);
+            // Rows & Cols
+            for (let i = 0; i < size; i++) {
+                let rowCount = 0, colCount = 0;
+                for (let j = 0; j < size; j++) {
+                    if (flatBoard[i * size + j] === player) rowCount++;
+                    if (flatBoard[j * size + i] === player) colCount++;
+                }
+                if (rowCount === size || colCount === size) return true;
+            }
+            // Diagonals
+            let d1 = 0, d2 = 0;
+            for (let i = 0; i < size; i++) {
+                if (flatBoard[i * size + i] === player) d1++;
+                if (flatBoard[i * size + (size - 1 - i)] === player) d2++;
+            }
+            return d1 === size || d2 === size;
+        }
+
+        function botMove() {
+            if (!gameActive) return;
+            const diff = document.getElementById('difficulty').value;
+            let move;
+
+            if (diff === 'hard') move = getBestMove(board);
+            else if (diff === 'medium' && Math.random() > 0.5) move = getBestMove(board);
+            else {
+                const available = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
+                move = available[Math.floor(Math.random() * available.length)];
+            }
+            if (move !== undefined) makeMove(move);
+        }
+
+        function botMoveUltimate() {
+            if (!gameActive) return;
+            let subIdx = nextSubGrid;
+            
+            if (nextSubGrid === -1 || mainBoardWinners[nextSubGrid]) {
+                const availableGrids = mainBoardWinners.map((v, i) => v === null ? i : null).filter(v => v !== null);
+                subIdx = availableGrids[Math.floor(Math.random() * availableGrids.length)];
+            }
+
+            const availableCells = board[subIdx].map((v, i) => v === null ? i : null).filter(v => v !== null);
+            
+            // Basic Hard Logic for subgrid: win or block
+            let chosenCell = availableCells[0]; // Default
+            
+            // Try win sub
+            for (let cell of availableCells) {
+                let copy = [...board[subIdx]];
+                copy[cell] = 'O';
+                if (checkWin(copy, 'O')) { chosenCell = cell; break; }
+            }
+            // Try block sub
+            if (chosenCell === availableCells[0]) {
+                for (let cell of availableCells) {
+                    let copy = [...board[subIdx]];
+                    copy[cell] = 'X';
+                    if (checkWin(copy, 'X')) { chosenCell = cell; break; }
+                }
+            }
+
+            handleUltimateMove(subIdx, chosenCell);
+        }
+
+        // Mini-minimax for "Hard" mode on standard grid
+        function getBestMove(currentBoard) {
+            const available = currentBoard.map((v, i) => v === null ? i : null).filter(v => v !== null);
+            // Simple block/win check
+            for (let m of available) {
+                let copy = [...currentBoard];
+                copy[m] = 'O';
+                if (checkWin(copy, 'O')) return m;
+            }
+            for (let m of available) {
+                let copy = [...currentBoard];
+                copy[m] = 'X';
+                if (checkWin(copy, 'X')) return m;
+            }
+            return available[Math.floor(Math.random() * available.length)];
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
