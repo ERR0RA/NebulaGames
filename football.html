@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2v2 SQUAD FOOTBALL</title>
+    <style>
+        body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Arial Black', sans-serif; overflow: hidden; }
+        canvas { background: #27ae60; border: 5px solid #fff; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #hud { display: flex; justify-content: space-between; width: 800px; font-size: 40px; margin-bottom: 10px; }
+        .red { color: #e74c3c; } .blue { color: #3498db; }
+        .controls { font-size: 14px; opacity: 0.8; margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="hud">
+    <div class="red">RED: <span id="s1">0</span></div>
+    <div style="font-size: 18px; align-self: center;">2v2 SQUAD SWAP</div>
+    <div class="blue">BLUE: <span id="s2">0</span></div>
+</div>
+
+<canvas id="field"></canvas>
+
+<div class="controls">
+    RED: WAD (Move) + S (Swap) | BLUE: ARROWS (Move) + DOWN (Swap)
+</div>
+
+<script>
+    const canvas = document.getElementById('field');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 800; canvas.height = 400;
+
+    const gravity = 0.5;
+    const friction = 0.98;
+    let score1 = 0, score2 = 0;
+
+    const ball = { x: 400, y: 200, vx: 0, vy: 0, r: 10 };
+
+    class Player {
+        constructor(x, y, color, team, id) {
+            this.x = x; this.y = y; this.vx = 0; this.vy = 0;
+            this.w = 30; this.h = 45; this.color = color;
+            this.team = team; this.id = id;
+            this.active = false; this.grounded = false;
+        }
+
+        update(isManual, controls) {
+            if (isManual) {
+                if (keys[controls.left]) this.vx = -6;
+                else if (keys[controls.right]) this.vx = 6;
+                else this.vx *= 0.8;
+
+                if (keys[controls.up] && this.grounded) {
+                    this.vy = -11;
+                    this.grounded = false;
+                }
+            } else {
+                // Basic AI: Stay somewhat near the ball but don't steal from player
+                let targetX = ball.x + (this.team === 1 ? -100 : 100);
+                let dist = targetX - this.x;
+                if (Math.abs(dist) > 20) this.vx = Math.sign(dist) * 3;
+                else this.vx *= 0.8;
+            }
+
+            this.vy += gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // Bounds
+            if (this.y + this.h > canvas.height) {
+                this.y = canvas.height - this.h;
+                this.vy = 0; this.grounded = true;
+            }
+            if (this.x < 0) this.x = 0;
+            if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
+
+            // Ball Collision (Anti-glitch)
+            let cx = this.x + this.w/2;
+            let cy = this.y + this.h/2;
+            let dx = ball.x - cx;
+            let dy = ball.y - cy;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist < 35) {
+                let angle = Math.atan2(dy, dx);
+                ball.vx = Math.cos(angle) * 8 + this.vx;
+                ball.vy = Math.sin(angle) * 8 + this.vy;
+                // Push ball out
+                ball.x = cx + Math.cos(angle) * 36;
+                ball.y = cy + Math.sin(angle) * 36;
+            }
+        }
+
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = this.active ? 1 : 0.5;
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+            
+            // Selection indicator
+            if (this.active) {
+                ctx.strokeStyle = "#fff";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x - 4, this.y - 4, this.w + 8, this.h + 8);
+            }
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    const team1 = [new Player(150, 300, '#e74c3c', 1, 0), new Player(50, 300, '#e74c3c', 1, 1)];
+    const team2 = [new Player(620, 300, '#3498db', 2, 0), new Player(720, 300, '#3498db', 2, 1)];
+    
+    let activeP1 = 0;
+    let activeP2 = 0;
+    team1[0].active = true;
+    team2[0].active = true;
+
+    const keys = {};
+    window.onkeydown = e => {
+        keys[e.code] = true;
+        // Swap logic
+        if (e.code === 'KeyS') {
+            team1[activeP1].active = false;
+            activeP1 = (activeP1 + 1) % 2;
+            team1[activeP1].active = true;
+        }
+        if (e.code === 'ArrowDown') {
+            team2[activeP2].active = false;
+            activeP2 = (activeP2 + 1) % 2;
+            team2[activeP2].active = true;
+        }
+    };
+    window.onkeyup = e => keys[e.code] = false;
+
+    function reset() {
+        ball.x = 400; ball.y = 200; ball.vx = 0; ball.vy = 0;
+    }
+
+    function loop() {
+        // Update Red Team
+        team1.forEach((p, i) => p.update(i === activeP1, {up:'KeyW', left:'KeyA', right:'KeyD'}));
+        // Update Blue Team
+        team2.forEach((p, i) => p.update(i === activeP2, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight'}));
+
+        // Ball Physics
+        ball.vy += gravity * 0.5;
+        ball.vx *= friction;
+        ball.x += ball.vx; ball.y += ball.vy;
+
+        if (ball.x < 0 || ball.x > canvas.width) ball.vx *= -0.8;
+        if (ball.y > canvas.height - ball.r) { ball.y = canvas.height - ball.r; ball.vy *= -0.6; }
+
+        // Goals
+        if (ball.y > 250) {
+            if (ball.x < 20) { score2++; reset(); }
+            if (ball.x > 780) { score1++; reset(); }
+        }
+
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Nets
+        ctx.fillStyle = "rgba(255,255,255,0.3)";
+        ctx.fillRect(0, 250, 20, 150); // Left
+        ctx.fillRect(780, 250, 20, 150); // Right
+
+        team1.forEach(p => p.draw());
+        team2.forEach(p => p.draw());
+
+        // Ball
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        
+        document.getElementById('s1').innerText = score1;
+        document.getElementById('s2').innerText = score2;
+    }
+
+    loop();
+</script>
+</body>
+</html>
