@@ -3,39 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHELL SHOCKERS: STABLE</title>
+    <title>SHELL SHOCKERS: ULTIMATE STABLE</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Arial Black', sans-serif; }
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         #crosshair { 
-            position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; 
-            border: 2px solid #fff; border-radius: 50%; transform: translate(-50%, -50%); 
+            position: absolute; top: 50%; left: 50%; width: 15px; height: 15px; 
+            border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); 
             pointer-events: none; z-index: 10;
         }
         #hud { 
-            position: absolute; bottom: 30px; left: 30px; color: white; 
-            text-shadow: 3px 3px #000; font-size: 24px;
+            position: absolute; bottom: 20px; left: 20px; color: white; 
+            text-shadow: 2px 2px #000; pointer-events: none;
         }
-        #hp-container { width: 250px; height: 25px; background: rgba(0,0,0,0.6); border: 3px solid #fff; margin-bottom: 5px; }
-        #hp-fill { width: 100%; height: 100%; background: #ff0055; transition: width 0.1s; }
-        #msg { 
-            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); 
-            color: white; text-align: center; background: rgba(0,0,0,0.7); padding: 30px;
-            border: 5px solid #ffcc00; display: block;
+        #hp-bg { width: 200px; height: 15px; background: rgba(0,0,0,0.5); border: 2px solid #fff; }
+        #hp-bar { width: 100%; height: 100%; background: #ff4444; transition: width 0.1s; }
+        #overlay { 
+            position: absolute; inset: 0; background: rgba(0,0,0,0.6); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            color: white; cursor: pointer; z-index: 20;
         }
     </style>
 </head>
 <body>
 
 <div id="crosshair"></div>
-<div id="msg" onclick="this.style.display='none'; document.body.requestPointerLock();">
-    <h1>EGG ARENA</h1>
-    <p>CLICK TO DEPLOY</p>
-    <p style="font-size: 14px;">WASD - MOVE | SPACE - JUMP | CLICK - SHOOT</p>
+<div id="overlay" onclick="requestLock()">
+    <h1>ARENA READY</h1>
+    <p>CLICK TO START</p>
+    <p style="font-size: 0.8em;">WASD to Move | Mouse to Aim | Click to Shoot</p>
 </div>
 
 <div id="hud">
-    <div id="hp-container"><div id="hp-fill"></div></div>
-    SCORE: <span id="score">0</span>
+    <div id="hp-bg"><div id="hp-bar"></div></div>
+    <h2 id="score-text">EGGS CRACKED: 0</h2>
 </div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
@@ -43,13 +43,15 @@
 <script type="module">
     import * as THREE from 'three';
 
-    let scene, camera, renderer, player, clock;
-    let moveF = false, moveB = false, moveL = false, moveR = false;
+    let scene, camera, renderer, clock;
+    let player = new THREE.Object3D();
+    let pitchObject = new THREE.Object3D(); // Vertical look
+    let yawObject = new THREE.Object3D();   // Horizontal look
+
+    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
     let velocity = new THREE.Vector3(), canJump = false;
     let enemies = [], bullets = [], score = 0, health = 100;
-    
-    // Mouse Sensitivity Fix
-    let pitch = 0, yaw = 0;
+
     const SENSITIVITY = 0.002;
 
     init();
@@ -57,133 +59,147 @@
     function init() {
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0x87CEEB, 20, 150);
+        scene.fog = new THREE.Fog(0x87CEEB, 10, 100);
 
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         clock = new THREE.Clock();
+
+        // Setup Rotation Hierarchy (Prevents the "Sky Look" bug)
+        pitchObject.add(camera);
+        yawObject.add(pitchObject);
+        player.add(yawObject);
+        player.position.y = 2;
+        scene.add(player);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.5));
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 2));
 
-        // Arena
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x44aa44 }));
-        floor.rotation.x = -Math.PI/2;
+        // Floor
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(200, 200),
+            new THREE.MeshStandardMaterial({ color: 0x55aa55 })
+        );
+        floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        // Map Objects (Physics blocks)
-        const addBlock = (w,h,d,x,y,z) => {
-            const b = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({color: 0x888888}));
-            b.position.set(x,y,z);
+        // Simple Arena Obstacles
+        const boxGeo = new THREE.BoxGeometry(4, 4, 4);
+        const boxMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+        for(let i=0; i<10; i++) {
+            const b = new THREE.Mesh(boxGeo, boxMat);
+            b.position.set(Math.random()*60-30, 2, Math.random()*60-30);
             scene.add(b);
+        }
+
+        // Listeners
+        window.requestLock = () => {
+            document.body.requestPointerLock();
+            document.getElementById('overlay').style.display = 'none';
         };
-        addBlock(10, 8, 10, 0, 4, 0); // Center Tower
-        addBlock(20, 2, 5, 20, 1, -20);
-        addBlock(5, 15, 5, -30, 7.5, 30);
 
-        player = new THREE.Group();
-        player.position.set(10, 2, 10);
-        scene.add(player);
-
-        // Input
         document.addEventListener('mousemove', (e) => {
             if (document.pointerLockElement === document.body) {
-                yaw -= e.movementX * SENSITIVITY;
-                pitch -= e.movementY * SENSITIVITY;
-                pitch = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, pitch)); // Clamp look
-                
-                player.rotation.y = yaw;
-                camera.rotation.x = pitch;
+                yawObject.rotation.y -= e.movementX * SENSITIVITY;
+                pitchObject.rotation.x -= e.movementY * SENSITIVITY;
+                // Strict Clamp: 90 degrees up or down max
+                pitchObject.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitchObject.rotation.x));
             }
         });
 
+        const onKey = (v) => (e) => {
+            if (e.code === 'KeyW') moveForward = v;
+            if (e.code === 'KeyS') moveBackward = v;
+            if (e.code === 'KeyA') moveLeft = v;
+            if (e.code === 'KeyD') moveRight = v;
+            if (e.code === 'Space' && v && canJump) { velocity.y = 10; canJump = false; }
+        };
+        document.addEventListener('keydown', onKey(true));
+        document.addEventListener('keyup', onKey(false));
         document.addEventListener('mousedown', () => { if(document.pointerLockElement) shoot(); });
 
-        const keyHandler = (v) => (e) => {
-            if(e.code==='KeyW') moveF=v; if(e.code==='KeyS') moveB=v;
-            if(e.code==='KeyA') moveL=v; if(e.code==='KeyD') moveR=v;
-            if(e.code==='Space' && v && canJump) { velocity.y = 12; canJump = false; }
-        };
-        document.addEventListener('keydown', keyHandler(true));
-        document.addEventListener('keyup', keyHandler(false));
-
-        for(let i=0; i<8; i++) spawnEnemy();
+        for(let i=0; i<5; i++) spawnEnemy();
         animate();
     }
 
     function spawnEnemy() {
-        const isScrambler = Math.random() > 0.7;
-        const eggGeo = new THREE.IcosahedronGeometry(1, 2);
-        eggGeo.scale(isScrambler ? 0.6 : 1.2, isScrambler ? 0.8 : 1.6, isScrambler ? 0.6 : 1.2);
-        const egg = new THREE.Mesh(eggGeo, new THREE.MeshStandardMaterial({ color: isScrambler ? 0xffcc00 : 0xffffff }));
-        
-        egg.position.set((Math.random()-0.5)*100, 1.5, (Math.random()-0.5)*100);
-        egg.userData = { type: isScrambler ? 'fast' : 'tank', hp: isScrambler ? 1 : 3 };
+        const eggGeo = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
+        const egg = new THREE.Mesh(eggGeo, new THREE.MeshStandardMaterial({ color: 0xffffff }));
+        egg.position.set(Math.random()*80-40, 1, Math.random()*80-40);
         scene.add(egg);
         enemies.push(egg);
     }
 
     function shoot() {
-        const b = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial({color: 0xff0000}));
-        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
-        b.position.copy(player.position).add(dir.clone().multiplyScalar(1.2));
-        b.userData = { vel: dir.multiplyScalar(3) };
+        const b = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0xffff00}));
+        const vector = new THREE.Vector3(0, 0, -1);
+        vector.applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
+        
+        b.position.copy(player.position);
+        b.userData = { dir: vector.multiplyScalar(2) };
         scene.add(b);
         bullets.push(b);
     }
 
     function animate() {
         requestAnimationFrame(animate);
-        const dt = clock.getDelta();
+        const delta = Math.min(clock.getDelta(), 0.1); // Cap delta to prevent teleporting
 
-        // Player Movement
-        const mDir = new THREE.Vector3();
-        if(moveF) mDir.z -= 1; if(moveB) mDir.z += 1;
-        if(moveL) mDir.x -= 1; if(moveR) mDir.x += 1;
-        mDir.applyQuaternion(player.quaternion).normalize().multiplyScalar(18 * dt);
-        player.position.add(mDir);
+        // Movement Logic
+        velocity.x -= velocity.x * 10.0 * delta;
+        velocity.z -= velocity.z * 10.0 * delta;
+        velocity.y -= 30.0 * delta; // Gravity
 
-        // Gravity & Jump
-        velocity.y -= 35 * dt;
-        player.position.y += velocity.y * dt;
-        if(player.position.y < 2) { player.position.y = 2; velocity.y = 0; canJump = true; }
-        camera.position.y = 1.5; // Fixed head height
+        const moveDir = new THREE.Vector3();
+        if (moveForward) moveDir.z -= 1;
+        if (moveBackward) moveDir.z += 1;
+        if (moveLeft) moveDir.x -= 1;
+        if (moveRight) moveDir.x += 1;
+        moveDir.normalize();
 
-        // AI Logic
-        enemies.forEach((en, i) => {
-            const d = en.position.distanceTo(player.position);
-            const speed = en.userData.type === 'fast' ? 12 : 5;
-            if(d < 50) {
-                en.lookAt(player.position.x, en.position.y, player.position.z);
-                en.translateZ(speed * dt);
+        if (moveForward || moveBackward) velocity.z = moveDir.z * 150 * delta;
+        if (moveLeft || moveRight) velocity.x = moveDir.x * 150 * delta;
+
+        player.translateX(velocity.x * delta);
+        player.translateZ(velocity.z * delta);
+        player.position.y += velocity.y * delta;
+
+        if (player.position.y < 2) {
+            velocity.y = 0;
+            player.position.y = 2;
+            canJump = true;
+        }
+
+        // Enemy AI
+        enemies.forEach((en) => {
+            const dist = en.position.distanceTo(player.position);
+            if(dist < 30) {
+                en.lookAt(player.position.x, 1, player.position.z);
+                en.translateZ(4 * delta);
             }
-            if(d < 2.5) {
-                health -= 0.3;
-                document.getElementById('hp-fill').style.width = health + "%";
+            if(dist < 1.5) {
+                health -= 10 * delta;
+                document.getElementById('hp-bar').style.width = health + '%';
                 if(health <= 0) location.reload();
             }
         });
 
-        // Regen
-        if(health < 100) health += 0.05;
-
         // Bullets
-        bullets.forEach((b, bi) => {
-            b.position.add(b.userData.vel);
+        bullets.forEach((b, i) => {
+            b.position.add(b.userData.dir);
             enemies.forEach((en, ei) => {
-                if(b.position.distanceTo(en.position) < 2) {
-                    en.userData.hp--;
-                    scene.remove(b); bullets.splice(bi, 1);
-                    if(en.userData.hp <= 0) {
-                        scene.remove(en); enemies.splice(ei, 1);
-                        score++; document.getElementById('score').innerText = score;
-                        spawnEnemy();
-                    }
+                if(b.position.distanceTo(en.position) < 1) {
+                    scene.remove(en); scene.remove(b);
+                    enemies.splice(ei, 1); bullets.splice(i, 1);
+                    score++;
+                    document.getElementById('score-text').innerText = `EGGS CRACKED: ${score}`;
+                    spawnEnemy();
                 }
             });
-            if(b.position.length() > 300) { scene.remove(b); bullets.splice(bi, 1); }
+            if(b.position.length() > 200) { scene.remove(b); bullets.splice(i, 1); }
         });
 
         renderer.render(scene, camera);
