@@ -1,0 +1,83 @@
+// --- 2. UPDATED LIGHTING ---
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambientLight);
+
+const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+sun.position.set(0, 20, 0); // Start at high noon
+scene.add(sun);
+
+// Create a visual sun sphere
+const sunGeo = new THREE.SphereGeometry(2, 16, 16);
+const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff5b1 });
+const sunSphere = new THREE.Mesh(sunGeo, sunMat);
+scene.add(sunSphere);
+
+// --- 8. UPDATED GAME LOOP ---
+let prevTime = performance.now();
+let dayCycle = 0; // Tracks time
+
+function animate() {
+    requestAnimationFrame(animate);
+    const time = performance.now();
+    const delta = (time - prevTime) / 1000;
+
+    // --- DAY/NIGHT CALCULATIONS ---
+    dayCycle += delta * 0.1; // Adjust 0.1 to make days faster or slower
+    
+    // Move sun in a circle
+    const sunDist = 40;
+    sun.position.x = Math.cos(dayCycle) * sunDist;
+    sun.position.y = Math.sin(dayCycle) * sunDist;
+    sunSphere.position.copy(sun.position);
+
+    // Change Sky Color & Light Intensity based on sun height
+    const sunHeight = Math.sin(dayCycle); // Ranges from -1 to 1
+    
+    if (sunHeight > 0) {
+        // Day time
+        scene.background.setHSL(0.55, 0.5, 0.5 + sunHeight * 0.3);
+        scene.fog.color.copy(scene.background);
+        sun.intensity = sunHeight;
+    } else {
+        // Night time
+        scene.background.setHSL(0.6, 0.5, 0.1); // Dark blue/black
+        scene.fog.color.copy(scene.background);
+        sun.intensity = 0;
+    }
+
+    // --- PLAYER PHYSICS & MOVEMENT ---
+    if (controls.isLocked) {
+        velocity.x -= velocity.x * 10 * delta;
+        velocity.z -= velocity.z * 10 * delta;
+        velocity.y -= 30 * delta; 
+
+        if (moveFwd) velocity.z += 120 * delta;
+        if (moveBwd) velocity.z -= 120 * delta;
+        if (moveL) velocity.x -= 120 * delta;
+        if (moveR) velocity.x += 120 * delta;
+
+        controls.moveRight(velocity.x * delta);
+        controls.moveForward(velocity.z * delta);
+        camera.position.y += velocity.y * delta;
+
+        // Ground Collision
+        if (camera.position.y < 2.5) {
+            velocity.y = 0;
+            camera.position.y = 2.5;
+            canJump = true;
+        }
+
+        // Raycasting for highlight
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        const intersects = raycaster.intersectObjects(blocks);
+        if (intersects.length > 0) {
+            highlightBox.position.copy(intersects[0].object.position);
+            highlightBox.visible = true;
+        } else {
+            highlightBox.visible = false;
+        }
+    }
+
+    prevTime = time;
+    renderer.render(scene, camera);
+}
