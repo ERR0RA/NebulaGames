@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRICKET ULTRA 10000x</title>
+    <style>
+        :root {
+            --pitch: #2ecc71;
+            --grass: #27ae60;
+            --sky: #87ceeb;
+            --bat: #d35400;
+        }
+        body {
+            margin: 0; background: #111; color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; overflow: hidden; touch-action: none;
+        }
+        #ui {
+            position: absolute; top: 20px; width: 100%;
+            display: flex; justify-content: space-around; font-size: 2rem;
+            text-shadow: 2px 2px 0px #000; z-index: 10;
+        }
+        canvas {
+            background: linear-gradient(to bottom, var(--sky) 0%, var(--sky) 40%, var(--grass) 40%, var(--grass) 100%);
+            border: 5px solid #fff; border-radius: 10px; cursor: crosshair;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        #msg {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem; font-weight: bold; color: #f1c40f;
+            text-align: center; pointer-events: none; opacity: 0;
+            transition: 0.3s; z-index: 20;
+        }
+        .controls { margin-top: 15px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div>SCORE: <span id="score">0</span></div>
+        <div>WICKETS: <span id="wickets">3</span></div>
+    </div>
+
+    <div id="msg">OUT!</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="controls">CLICK OR SPACEBAR TO SWING</div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const wickEl = document.getElementById('wickets');
+        const msgEl = document.getElementById('msg');
+
+        canvas.width = 800;
+        canvas.height = 500;
+
+        let score = 0;
+        let wickets = 3;
+        let gameState = 'ready'; // ready, bowling, hit, out
+        
+        const ball = { x: 400, y: 150, r: 8, vx: 0, vy: 0, active: false, scale: 0.5 };
+        const bat = { x: 400, y: 430, w: 80, h: 15, angle: 0, swinging: false };
+        const stumps = { x: 385, y: 440, w: 30, h: 40 };
+
+        function drawStumps() {
+            ctx.fillStyle = '#bdc3c7';
+            ctx.fillRect(stumps.x, stumps.y, 5, stumps.h);
+            ctx.fillRect(stumps.x + 12, stumps.y, 5, stumps.h);
+            ctx.fillRect(stumps.x + 25, stumps.y, 5, stumps.h);
+        }
+
+        function drawPitch() {
+            ctx.fillStyle = '#eddc9a'; // Pitch color
+            ctx.beginPath();
+            ctx.moveTo(350, 150);
+            ctx.lineTo(450, 150);
+            ctx.lineTo(550, 500);
+            ctx.lineTo(250, 500);
+            ctx.fill();
+        }
+
+        function bowl() {
+            if (gameState !== 'ready') return;
+            gameState = 'bowling';
+            ball.x = 400;
+            ball.y = 150;
+            ball.scale = 0.5;
+            ball.vx = (Math.random() - 0.5) * 4;
+            ball.vy = 4 + Math.random() * 4;
+            ball.active = true;
+        }
+
+        function swing() {
+            if (bat.swinging) return;
+            bat.swinging = true;
+            
+            // Collision Check
+            if (ball.active && ball.y > 380 && ball.y < 460) {
+                const dist = Math.abs(ball.x - bat.x);
+                if (dist < 60) {
+                    hitBall();
+                }
+            }
+
+            setTimeout(() => { bat.swinging = false; }, 300);
+        }
+
+        function hitBall() {
+            ball.vy = -Math.random() * 15 - 5;
+            ball.vx = (ball.x - bat.x) * 0.5;
+            gameState = 'hit';
+            
+            const power = Math.abs(ball.vy);
+            let points = 0;
+            if (power > 16) points = 6;
+            else if (power > 12) points = 4;
+            else points = 1;
+
+            showMsg(points + " RUNS!");
+            score += points;
+            scoreEl.innerText = score;
+        }
+
+        function showMsg(text) {
+            msgEl.innerText = text;
+            msgEl.style.opacity = 1;
+            setTimeout(() => { msgEl.style.opacity = 0; }, 1000);
+        }
+
+        function update() {
+            if (ball.active) {
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+                ball.scale = 0.5 + (ball.y / 500);
+
+                // Check Clean Bowled
+                if (gameState === 'bowling' && ball.y > 440 && ball.x > stumps.x && ball.x < stumps.x + stumps.w) {
+                    wickets--;
+                    wickEl.innerText = wickets;
+                    ball.active = false;
+                    showMsg("OUT!");
+                    gameState = 'ready';
+                    if (wickets <= 0) resetGame();
+                }
+
+                // Ball leaves screen
+                if (ball.y < -50 || ball.y > 550 || ball.x < -50 || ball.x > 850) {
+                    ball.active = false;
+                    gameState = 'ready';
+                }
+            } else if (gameState === 'ready') {
+                setTimeout(bowl, 1000);
+            }
+        }
+
+        function resetGame() {
+            alert("Game Over! Final Score: " + score);
+            score = 0; wickets = 3;
+            scoreEl.innerText = 0; wickEl.innerText = 3;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPitch();
+            drawStumps();
+
+            // Draw Bat
+            ctx.save();
+            ctx.translate(bat.x, bat.y);
+            if (bat.swinging) ctx.rotate(-Math.PI / 4);
+            ctx.fillStyle = varColor('--bat');
+            ctx.fillRect(-bat.w / 2, -bat.h / 2, bat.w, bat.h);
+            ctx.restore();
+
+            // Draw Ball
+            if (ball.active) {
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.r * ball.scale, 0, Math.PI * 2);
+                ctx.fill();
+                // Ball Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.beginPath();
+                ctx.arc(ball.x, 480, (ball.r * ball.scale) / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            update();
+            requestAnimationFrame(draw);
+        }
+
+        function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+
+        window.addEventListener('keydown', (e) => { if (e.code === 'Space') swing(); });
+        canvas.addEventListener('mousedown', swing);
+        
+        // Bat following mouse
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            bat.x = e.clientX - rect.left;
+        });
+
+        draw();
+    </script>
+</body>
+</html>
