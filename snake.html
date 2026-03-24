@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON SNAKE 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Orbitron', sans-serif; touch-action: none; }
+        #ui { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; pointer-events: none; color: #00f2ff; display: flex; justify-content: space-between; box-sizing: border-box; }
+        .score-box { background: rgba(0, 242, 255, 0.1); border: 1px solid #00f2ff; padding: 10px 20px; backdrop-filter: blur(5px); }
+        #msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #ff0055; display: none; pointer-events: auto; }
+        button { background: #ff0055; border: none; color: white; padding: 10px 20px; font-family: 'Orbitron'; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <div class="score-box">SCORE: <span id="score">0</span></div>
+    <div class="score-box">BEST: <span id="best">0</span></div>
+</div>
+
+<div id="msg">
+    <h1>CORE CRITICAL</h1>
+    <button onclick="resetGame()">REBOOT SYSTEM</button>
+</div>
+
+<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+
+<script type="module">
+    import * as THREE from 'three';
+
+    let scene, camera, renderer, food;
+    let snake = [], cubePool = [];
+    let direction = { x: 1, z: 0 }, nextDir = { x: 1, z: 0 };
+    let gridSize = 20, score = 0, highState = false;
+    let lastTick = 0, tickRate = 0.15; // Seconds per move
+
+    // Touch handling
+    let touchStart = null;
+
+    init();
+
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 20, 15);
+        camera.lookAt(0, 0, 0);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambient = new THREE.AmbientLight(0x404040, 2);
+        scene.add(ambient);
+        const light = new THREE.PointLight(0x00f2ff, 10, 50);
+        light.position.set(0, 10, 0);
+        scene.add(light);
+
+        // Grid Floor
+        const grid = new THREE.GridHelper(gridSize, gridSize, 0x00f2ff, 0x002233);
+        grid.position.y = -0.5;
+        scene.add(grid);
+
+        // Start Snake
+        resetGame();
+
+        // Input
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowUp' && direction.z !== 1) nextDir = { x: 0, z: -1 };
+            if (e.key === 'ArrowDown' && direction.z !== -1) nextDir = { x: 0, z: 1 };
+            if (e.key === 'ArrowLeft' && direction.x !== 1) nextDir = { x: -1, z: 0 };
+            if (e.key === 'ArrowRight' && direction.x !== -1) nextDir = { x: 1, z: 0 };
+            // WASD Support
+            if (e.key.toLowerCase() === 'w' && direction.z !== 1) nextDir = { x: 0, z: -1 };
+            if (e.key.toLowerCase() === 's' && direction.z !== -1) nextDir = { x: 0, z: 1 };
+            if (e.key.toLowerCase() === 'a' && direction.x !== 1) nextDir = { x: -1, z: 0 };
+            if (e.key.toLowerCase() === 'd' && direction.x !== -1) nextDir = { x: 1, z: 0 };
+        });
+
+        window.addEventListener('touchstart', e => touchStart = e.touches[0]);
+        window.addEventListener('touchmove', e => {
+            if (!touchStart) return;
+            let dx = e.touches[0].clientX - touchStart.clientX;
+            let dz = e.touches[0].clientY - touchStart.clientY;
+            if (Math.abs(dx) > Math.abs(dz)) {
+                if (dx > 30 && direction.x !== -1) nextDir = { x: 1, z: 0 };
+                else if (dx < -30 && direction.x !== 1) nextDir = { x: -1, z: 0 };
+            } else {
+                if (dz > 30 && direction.z !== -1) nextDir = { x: 0, z: 1 };
+                else if (dz < -30 && direction.z !== 1) nextDir = { x: 0, z: -1 };
+            }
+        });
+
+        animate();
+    }
+
+    function createCube(color) {
+        const mesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.9, 0.9, 0.9),
+            new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.5 })
+        );
+        scene.add(mesh);
+        return mesh;
+    }
+
+    function spawnFood() {
+        if (!food) food = createCube(0xff0055);
+        food.position.set(
+            Math.floor(Math.random() * gridSize) - gridSize/2,
+            0,
+            Math.floor(Math.random() * gridSize) - gridSize/2
+        );
+    }
+
+    window.resetGame = function() {
+        snake.forEach(segment => scene.remove(segment));
+        snake = [createCube(0x00f2ff)];
+        snake[0].position.set(0,0,0);
+        direction = { x: 1, z: 0 };
+        nextDir = { x: 1, z: 0 };
+        score = 0;
+        document.getElementById('score').innerText = "0";
+        document.getElementById('msg').style.display = "none";
+        spawnFood();
+        highState = false;
+    }
+
+    function animate(now) {
+        requestAnimationFrame(animate);
+        now *= 0.001; // convert to seconds
+
+        if (highState) return;
+
+        if (now - lastTick > tickRate) {
+            lastTick = now;
+            direction = nextDir;
+
+            const head = snake[0].position.clone();
+            head.x += direction.x;
+            head.z += direction.z;
+
+            // Wall Collision
+            if (Math.abs(head.x) > gridSize/2 || Math.abs(head.z) > gridSize/2) {
+                gameOver(); return;
+            }
+
+            // Body Collision
+            for (let i = 0; i < snake.length; i++) {
+                if (snake[i].position.distanceTo(head) < 0.1) { gameOver(); return; }
+            }
+
+            // Check Food
+            if (head.distanceTo(food.position) < 0.1) {
+                score++;
+                document.getElementById('score').innerText = score;
+                snake.push(createCube(0x00f2ff));
+                spawnFood();
+                tickRate = Math.max(0.05, 0.15 - (score * 0.002)); // Speed up
+            }
+
+            // Move Body
+            for (let i = snake.length - 1; i > 0; i--) {
+                snake[i].position.copy(snake[i-1].position);
+            }
+            snake[0].position.copy(head);
+        }
+
+        // Visual Pulse
+        if (food) food.scale.setScalar(1 + Math.sin(Date.now() * 0.01) * 0.1);
+        renderer.render(scene, camera);
+    }
+
+    function gameOver() {
+        highState = true;
+        document.getElementById('msg').style.display = "block";
+        const best = localStorage.getItem('snake_best') || 0;
+        if (score > best) {
+            localStorage.setItem('snake_best', score);
+            document.getElementById('best').innerText = score;
+        }
+    }
+
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+
+    document.getElementById('best').innerText = localStorage.getItem('snake_best') || 0;
+</script>
+</body>
+</html>
