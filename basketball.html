@@ -1,39 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEBULA B-BALL: PHYSICAL EVOLUTION</title>
-    <style>
-        :root { --p1: #ff3e3e; --p2: #00d2ff; --accent: #f1c40f; }
-        body { margin: 0; background: #020205; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        #ui { position: absolute; top: 20px; display: flex; justify-content: space-between; width: 900px; pointer-events: none; z-index: 10; }
-        .score { font-size: 60px; font-weight: 900; font-family: monospace; text-shadow: 0 0 15px rgba(255,255,255,0.3); }
-        canvas { background: radial-gradient(circle, #1a1a2e 0%, #000 100%); border: 2px solid #333; box-shadow: 0 0 50px rgba(0,0,0,0.8); border-radius: 8px; }
-        #controls { position: absolute; bottom: 15px; background: rgba(0,0,0,0.7); padding: 10px 25px; border-radius: 50px; border: 1px solid #444; display: flex; gap: 30px; font-size: 0.85rem; }
-        b { color: var(--accent); }
-    </style>
-</head>
-<body>
-
-<div id="ui">
-    <div class="score" style="color: var(--p1)" id="s1">0</div>
-    <div style="text-align: center;">
-        <div id="mode-display" style="letter-spacing: 2px; font-weight: bold;">MODE: PVE</div>
-        <div style="font-size: 0.7rem; color: #888;">Press [M] to Toggle PvP</div>
-    </div>
-    <div class="score" style="color: var(--p2)" id="s2">0</div>
-</div>
-
-<canvas id="court"></canvas>
-
-<div id="controls">
-    <div>TEAM 1: <b>WASD</b> | Switch: <b>Q</b></div>
-    <div>TEAM 2: <b>ARROWS</b> | Switch: <b>R-SHIFT</b></div>
-</div>
-
-<script>
-    const canvas = document.getElementById('court');
+const canvas = document.getElementById('court');
     const ctx = canvas.getContext('2d');
     canvas.width = 1000; canvas.height = 600;
 
@@ -45,12 +10,11 @@
 
     const ball = { x: 500, y: 100, vx: 5, vy: 0, r: 15, rot: 0 };
 
-    // Island Platforms
     const platforms = [
-        { x: 0, y: 570, w: 1000, h: 40, color: '#111' }, // Floor
-        { x: 100, y: 400, w: 200, h: 15, color: '#222' }, // L-Island
-        { x: 700, y: 400, w: 200, h: 15, color: '#222' }, // R-Island
-        { x: 400, y: 250, w: 200, h: 15, color: '#222' }  // Mid-Island
+        { x: 0, y: 570, w: 1000, h: 40, color: '#111', id: 'floor' }, 
+        { x: 100, y: 400, w: 200, h: 15, color: '#222', id: 'p1' }, 
+        { x: 700, y: 400, w: 200, h: 15, color: '#222', id: 'p2' }, 
+        { x: 400, y: 250, w: 200, h: 15, color: '#222', id: 'p3' }  
     ];
 
     class Human {
@@ -73,24 +37,36 @@
 
                 if (jump && this.grounded) { this.vy = -14; this.grounded = false; }
             } else {
-                // Better AI
-                let targetX = (this.team === 1) ? ball.x - 40 : ball.x + 40;
+                // --- SMART AI PATHFINDING ---
+                let targetX = ball.x;
+                let shouldJump = false;
+
+                // 1. Decide if ball is too high
+                if (ball.y < this.y - 50) {
+                    // Check if there is a platform above the AI to help it reach the ball
+                    platforms.forEach(p => {
+                        if (p.id !== 'floor' && ball.x > p.x && ball.x < p.x + p.w) {
+                            targetX = p.x + p.w / 2; // Head toward the platform
+                            if (Math.abs(this.x - targetX) < 20) shouldJump = true;
+                        }
+                    });
+                }
+
+                // 2. Horizontal movement
                 let diff = targetX - this.x;
                 this.vx += Math.sign(diff) * 0.7;
                 this.vx = Math.max(-7, Math.min(7, this.vx));
 
-                if (ball.y < this.y && Math.abs(this.x - ball.x) < 60 && this.grounded) {
-                    this.vy = -12; this.grounded = false;
+                // 3. Jump logic (to hit ball or reach platform)
+                if ((shouldJump || (ball.y < this.y && Math.abs(this.x - ball.x) < 50)) && this.grounded) {
+                    this.vy = -13;
+                    this.grounded = false;
                 }
             }
 
             this.vy += gravity;
             this.x += this.vx;
             this.y += this.vy;
-
-            // Physics: Rotation/Tilt based on movement and arc
-            let targetAngle = (this.vx * 0.06) + (this.vy * 0.03);
-            this.angle += (targetAngle - this.angle) * 0.1;
 
             // Platform Collisions
             this.grounded = false;
@@ -101,11 +77,12 @@
                 }
             });
 
-            // Bounds
+            // Map Bounds for Players
             if (this.x < 0) this.x = 0;
             if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
+            if (this.y < 0) { this.y = 0; this.vy = 0; }
 
-            // --- FULL BODY HITBOX PHYSICS ---
+            // Full Body Ball Collision
             let closestX = Math.max(this.x, Math.min(ball.x, this.x + this.w));
             let closestY = Math.max(this.y, Math.min(ball.y, this.y + this.h));
             let dx = ball.x - closestX;
@@ -116,15 +93,13 @@
                 let overlap = ball.r - dist;
                 let nx = dx / (dist || 1);
                 let ny = dy / (dist || 1);
-                
                 ball.x += nx * overlap;
                 ball.y += ny * overlap;
-
-                // Kick factor: combine player velocity and normal bounce
-                ball.vx = nx * 10 + (this.vx * 0.8);
-                ball.vy = ny * 10 + (this.vy * 0.5) - 2;
+                ball.vx = nx * 12 + (this.vx * 0.5);
+                ball.vy = ny * 12 + (this.vy * 0.5);
             }
 
+            this.angle = (this.vx * 0.06) + (this.vy * 0.03);
             if(Math.abs(this.vx) > 1) this.anim += 0.2;
         }
 
@@ -132,28 +107,17 @@
             ctx.save();
             ctx.translate(this.x + this.w/2, this.y + this.h/2);
             ctx.rotate(this.angle);
-            
             ctx.strokeStyle = active ? "#fff" : this.color;
             ctx.lineWidth = 4;
-            ctx.lineCap = "round";
-            
             let walk = Math.sin(this.anim) * 15;
-            
-            // Torso & Legs
-            ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 15); ctx.stroke(); // Spine
-            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(-10 - walk, 35); ctx.stroke(); // Left Leg
-            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(10 + walk, 35); ctx.stroke(); // Right Leg
-            
-            // Arms (Swing with walk or reach up if jumping)
+            ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 15); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(-10 - walk, 35); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(10 + walk, 35); ctx.stroke();
             let armSwing = this.grounded ? walk : -25;
             ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-20, armSwing); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(20, -armSwing); ctx.stroke();
-
-            // Head
             ctx.fillStyle = "#ffdbac";
             ctx.beginPath(); ctx.arc(0, -35, 12, 0, Math.PI*2); ctx.fill();
-            
-            // Active Indicator
             if(active) {
                 ctx.fillStyle = "#f1c40f";
                 ctx.beginPath(); ctx.moveTo(-6, -65); ctx.lineTo(6, -65); ctx.lineTo(0, -55); ctx.fill();
@@ -177,49 +141,57 @@
     };
     window.onkeyup = e => keys[e.code] = false;
 
-    function reset() { ball.x = 500; ball.y = 100; ball.vx = (Math.random()-0.5)*8; ball.vy = 0; }
+    function reset() { 
+        ball.x = 500; ball.y = 100; 
+        ball.vx = (Math.random()-0.5)*10; ball.vy = 0; 
+    }
 
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Stars background
+        // Stars
         ctx.fillStyle = "white";
         for(let i=0; i<30; i++) ctx.fillRect((i*157)%canvas.width, (i*243)%canvas.height, 1, 1);
 
-        // Draw Islands
+        // Platforms
         platforms.forEach(p => {
             ctx.fillStyle = p.color;
-            ctx.shadowBlur = 15; ctx.shadowColor = "rgba(0,255,255,0.2)";
             ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.shadowBlur = 0;
         });
 
-        // Update Humans
+        // Teams
         t1.forEach((p, i) => p.update(i === t1Active));
         t2.forEach((p, i) => p.update(pvpMode && i === t2Active));
 
-        // Ball Physics
+        // --- BALL PHYSICS & MAP BOUNDS ---
         ball.vy += gravity;
         ball.vx *= friction;
         ball.x += ball.vx; ball.y += ball.vy;
         ball.rot += ball.vx * 0.05;
 
+        // Left/Right Walls
+        if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx *= -0.8; }
+        if (ball.x + ball.r > canvas.width) { ball.x = canvas.width - ball.r; ball.vx *= -0.8; }
+        // Ceiling
+        if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy *= -0.8; }
+
         // Ball vs Platforms
         platforms.forEach(p => {
             if (ball.y + ball.r > p.y && ball.y - ball.r < p.y + p.h &&
                 ball.x > p.x && ball.x < p.x + p.w) {
-                ball.vy *= -0.7;
-                ball.y = (ball.y < p.y) ? p.y - ball.r : p.y + p.h + ball.r;
+                // Determine if hit from top or bottom
+                if (ball.vy > 0 && ball.y < p.y + p.h/2) {
+                    ball.vy *= -0.7; ball.y = p.y - ball.r;
+                } else if (ball.vy < 0) {
+                    ball.vy *= -0.7; ball.y = p.y + p.h + ball.r;
+                }
             }
         });
 
-        if (ball.x < 0 || ball.x > canvas.width) ball.vx *= -0.8;
-
-        // Draw Hoops
+        // Scoring
         ctx.strokeStyle = "white"; ctx.lineWidth = 6;
         ctx.strokeRect(-5, 250, 60, 10); ctx.strokeRect(945, 250, 60, 10);
         
-        // Scoring
         if (ball.y > 245 && ball.y < 265 && ball.vy > 0) {
             if (ball.x < 55) { score2++; document.getElementById('s2').innerText = score2; reset(); }
             if (ball.x > 945) { score1++; document.getElementById('s1').innerText = score1; reset(); }
@@ -228,18 +200,11 @@
         t1.forEach((p, i) => p.draw(i === t1Active));
         t2.forEach((p, i) => p.draw(pvpMode && i === t2Active));
 
-        // Draw Ball
-        ctx.save();
-        ctx.translate(ball.x, ball.y);
-        ctx.rotate(ball.rot);
-        ctx.fillStyle = "#ff8800";
-        ctx.shadowBlur = 20; ctx.shadowColor = "#ff8800";
-        ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, Math.PI*2); ctx.fill();
+        // Ball Draw
+        ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(ball.rot);
+        ctx.fillStyle = "#ff8800"; ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, Math.PI*2); ctx.fill();
         ctx.restore();
 
         requestAnimationFrame(loop);
     }
     loop();
-</script>
-</body>
-</html>
