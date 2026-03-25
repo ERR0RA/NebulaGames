@@ -1,140 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>NEXUS CORE | Productivity OS</title>
+    <title>NEXUS-3D | High-Functioning Engine</title>
     <style>
-        :root { --neon: #00ff95; --bg: #050508; --panel: #111118; --user: #00d2ff; --border: #222; }
-        body { margin: 0; background: var(--bg); color: #eee; font-family: 'Inter', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Dashboard Header */
-        header { background: var(--panel); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
-        .logo { font-weight: 800; color: var(--neon); letter-spacing: 1px; }
-        #clock { font-family: monospace; color: var(--gray); font-size: 0.9rem; }
-
-        /* Multi-Pane Layout */
-        main { display: flex; flex: 1; overflow: hidden; gap: 2px; background: var(--border); }
-        
-        /* Left: Web/Work Workspace */
-        .workspace { flex: 2; background: #fff; display: flex; flex-direction: column; }
-        .tab-bar { background: #1a1a24; padding: 5px; display: flex; gap: 5px; }
-        #addr-input { flex: 1; background: #000; border: 1px solid #333; color: var(--neon); padding: 5px 15px; border-radius: 4px; outline: none; font-size: 0.8rem; }
-        
-        /* Right: AI & Tools Sidebar */
-        .sidebar { flex: 1; background: var(--panel); display: flex; flex-direction: column; min-width: 380px; }
-        
-        /* Widget Grid */
-        .widget-area { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-bottom: 1px solid var(--border); }
-        .widget { background: #000; padding: 10px; border-radius: 6px; border: 1px solid #333; }
-        .widget-title { font-size: 0.6rem; color: var(--neon); text-transform: uppercase; margin-bottom: 5px; }
-        
-        /* Chat/Agent Area */
-        #agent-flow { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; }
-        .msg { padding: 10px; border-radius: 4px; line-height: 1.4; }
-        .ai { background: #1a1a25; border-left: 2px solid var(--neon); }
-        .user { background: #222; border-right: 2px solid var(--user); align-self: flex-end; }
-
-        /* Task Input */
-        .input-box { padding: 15px; background: #000; display: flex; gap: 10px; }
-        input[type="text"] { flex: 1; background: #111; border: 1px solid #333; color: #fff; padding: 8px; border-radius: 4px; outline: none; }
+        body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; display: flex; }
+        #container { position: relative; width: 100vw; height: 100vh; }
+        canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+        #ui { position: absolute; top: 20px; left: 20px; pointer-events: none; }
+        #minimap { position: absolute; bottom: 20px; right: 20px; border: 2px solid #333; background: rgba(0,0,0,0.8); }
+        .stats { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="logo">NEXUS // CORE</div>
-    <div id="clock">00:00:00</div>
-</header>
-
-<main>
-    <section class="workspace">
-        <div class="tab-bar">
-            <input type="text" id="addr-input" placeholder="Enter URL to browse...">
-            <button onclick="loadURL()" style="background:var(--neon); border:none; border-radius:4px; padding:0 10px; cursor:pointer;">GO</button>
+<div id="container">
+    <canvas id="renderCanvas"></canvas>
+    <div id="ui">
+        <div class="stats">
+            <strong>NEXUS-3D ENGINE v1.0</strong><br>
+            FPS: <span id="fps">60</span><br>
+            POS: <span id="pos">0,0</span><br>
+            CONTROLS: [WASD] Move | [Mouse/Arrows] Turn
         </div>
-        <iframe id="view" src="about:blank" style="flex:1; border:none;"></iframe>
-    </section>
-
-    <section class="sidebar">
-        <div class="widget-area">
-            <div class="widget">
-                <div class="widget-title">Active Tasks</div>
-                <div id="task-list" style="font-size: 0.75rem; color: #888;">No pending tasks.</div>
-            </div>
-            <div class="widget">
-                <div class="widget-title">System Status</div>
-                <div style="font-size: 0.75rem; color: var(--neon);">LATENCY: 14ms<br>NODES: ACTIVE</div>
-            </div>
-        </div>
-
-        <div id="agent-flow">
-            <div class="msg ai"><b>SYSTEM:</b> Core initialized. Use the command line below to add tasks or ask questions.</div>
-        </div>
-
-        <div class="input-box">
-            <input type="text" id="cmd" placeholder="Type a command (e.g., 'task: Fix code' or 'How are you?')..." onkeypress="if(event.key==='Enter') execute()">
-        </div>
-    </section>
-</main>
+    </div>
+    <canvas id="minimap" width="150" height="150"></canvas>
+</div>
 
 <script>
-    const agent = document.getElementById('agent-flow');
-    const tasks = document.getElementById('task-list');
-    const cmdInput = document.getElementById('cmd');
+    const canvas = document.getElementById('renderCanvas');
+    const ctx = canvas.getContext('2d');
+    const mCanvas = document.getElementById('minimap');
+    const mCtx = mCanvas.getContext('2d');
 
-    // Persistence Logic
-    let data = JSON.parse(localStorage.getItem('nexus_core')) || { tasks: [] };
+    // Engine Settings
+    const res = 2; // Pixel resolution (higher = more retro)
+    canvas.width = window.innerWidth / res;
+    canvas.height = window.innerHeight / res;
 
-    function updateTasks() {
-        tasks.innerHTML = data.tasks.length ? data.tasks.map(t => `• ${t}`).join('<br>') : "No pending tasks.";
-        localStorage.setItem('nexus_core', JSON.stringify(data));
-    }
+    const map = [
+        [1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,0,1,1,1,0,1],
+        [1,0,1,0,0,0,0,1,0,1],
+        [1,0,0,0,2,0,0,0,0,1],
+        [1,0,1,0,0,0,0,1,0,1],
+        [1,0,1,1,1,0,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1],
+    ];
 
-    function addMsg(text, type) {
-        const div = document.createElement('div');
-        div.className = `msg ${type}`;
-        div.innerHTML = text;
-        agent.appendChild(div);
-        agent.scrollTop = agent.scrollHeight;
-    }
+    const player = { x: 2, y: 2, dir: 0, speed: 0.05, rotSpeed: 0.04 };
+    const keys = {};
 
-    function execute() {
-        const input = cmdInput.value.trim();
-        if(!input) return;
-        
-        addMsg(input, 'user');
-        cmdInput.value = "";
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
 
-        // Logic Router
-        if (input.startsWith("task:")) {
-            const task = input.replace("task:", "").trim();
-            data.tasks.push(task);
-            updateTasks();
-            addMsg(`Task recorded: <b>${task}</b>`, 'ai');
-        } else if (input.toLowerCase() === "clear tasks") {
-            data.tasks = [];
-            updateTasks();
-            addMsg("Task list purged.", 'ai');
-        } else {
-            // Smart Response Simulator
-            const response = input.includes("?") 
-                ? "I'll analyze that. Should I search for documentation or keep this in our logs?" 
-                : "Acknowledged. Data point saved to session memory.";
-            setTimeout(() => addMsg(response, 'ai'), 400);
+    function castRays() {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.fillStyle = '#111'; // Ceiling
+        ctx.fillRect(0, 0, w, h / 2);
+        ctx.fillStyle = '#222'; // Floor
+        ctx.fillRect(0, h / 2, w, h / 2);
+
+        for (let i = 0; i < w; i++) {
+            let rayAngle = (player.dir - 0.6) + (i / w) * 1.2;
+            let distance = 0;
+            let hitWall = false;
+            let wallType = 0;
+
+            let eyeX = Math.cos(rayAngle);
+            let eyeY = Math.sin(rayAngle);
+
+            while (!hitWall && distance < 16) {
+                distance += 0.05;
+                let testX = Math.floor(player.x + eyeX * distance);
+                let testY = Math.floor(player.y + eyeY * distance);
+
+                if (testX < 0 || testX >= 10 || testY < 0 || testY >= 9) {
+                    hitWall = true; distance = 16;
+                } else if (map[testY][testX] > 0) {
+                    hitWall = true;
+                    wallType = map[testY][testX];
+                }
+            }
+
+            // Fix Fish-eye effect
+            let ceiling = h / 2 - h / distance;
+            let floor = h - ceiling;
+            
+            // Shading based on distance
+            let brightness = Math.max(0, 255 - (distance * 15));
+            ctx.fillStyle = wallType === 2 ? `rgb(0, ${brightness}, ${brightness/2})` : `rgb(0, ${brightness}, 0)`;
+            ctx.fillRect(i, ceiling, 1, floor - ceiling);
         }
     }
 
-    function loadURL() {
-        const url = document.getElementById('addr-input').value;
-        document.getElementById('view').src = url.startsWith('http') ? url : 'https://' + url;
+    function drawMinimap() {
+        const size = 150 / 10;
+        mCtx.clearRect(0,0,150,150);
+        for(let y=0; y<9; y++) {
+            for(let x=0; x<10; x++) {
+                if(map[y][x] > 0) {
+                    mCtx.fillStyle = map[y][x] === 2 ? '#0ff' : '#555';
+                    mCtx.fillRect(x*size, y*size, size-1, size-1);
+                }
+            }
+        }
+        mCtx.fillStyle = "red";
+        mCtx.fillRect(player.x*size-2, player.y*size-2, 4, 4);
     }
 
-    // Live Clock
-    setInterval(() => {
-        document.getElementById('clock').innerText = new Date().toLocaleTimeString();
-    }, 1000);
+    function update() {
+        if (keys['KeyW']) {
+            let nx = player.x + Math.cos(player.dir) * player.speed;
+            let ny = player.y + Math.sin(player.dir) * player.speed;
+            if (map[Math.floor(ny)][Math.floor(nx)] === 0) { player.x = nx; player.y = ny; }
+        }
+        if (keys['KeyS']) {
+            let nx = player.x - Math.cos(player.dir) * player.speed;
+            let ny = player.y - Math.sin(player.dir) * player.speed;
+            if (map[Math.floor(ny)][Math.floor(nx)] === 0) { player.x = nx; player.y = ny; }
+        }
+        if (keys['ArrowLeft'] || keys['KeyA']) player.dir -= player.rotSpeed;
+        if (keys['ArrowRight'] || keys['KeyD']) player.dir += player.rotSpeed;
 
-    updateTasks();
+        document.getElementById('pos').innerText = `${player.x.toFixed(1)}, ${player.y.toFixed(1)}`;
+        
+        castRays();
+        drawMinimap();
+        requestAnimationFrame(update);
+    }
+
+    update();
 </script>
 </body>
 </html>
