@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sparx Reader</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #121212;
+      color: #ddd;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 15px;
+    }
+    h1 { color: #00ff9d; text-align: center; }
+    input, textarea, button {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+    input, textarea { background: #2a2a2a; color: #fff; }
+    button {
+      background: #00ff9d;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover { background: #00cc7a; }
+    .history {
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .item {
+      background: #333;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .back-btn {
+      background: #555;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-btn">← Back to Main Menu</a>
+    
+    <h1>📖 Sparx Reader - Bookwork Helper</h1>
+    
+    <input type="text" id="bookworkCode" placeholder="Enter Bookwork Code (e.g. 4C, 8B)">
+    <input type="text" id="answer" placeholder="Type the answer you used">
+    <button onclick="saveEntry()">💾 Save Bookwork Entry</button>
+
+    <h2>Saved Entries</h2>
+    <div class="history" id="history"></div>
+  </div>
+
+  <script>
+    function saveEntry() {
+      const code = document.getElementById('bookworkCode').value.trim().toUpperCase();
+      const ans = document.getElementById('answer').value.trim();
+
+      if (!code || !ans) {
+        alert("Please fill both fields!");
+        return;
+      }
+
+      let entries = JSON.parse(localStorage.getItem('sparxBookwork') || '[]');
+      entries.unshift({ code, answer: ans, time: new Date().toLocaleString() });
+
+      localStorage.setItem('sparxBookwork', JSON.stringify(entries));
+      loadHistory();
+
+      document.getElementById('bookworkCode').value = '';
+      document.getElementById('answer').value = '';
+    }
+
+    function loadHistory() {
+      const entries = JSON.parse(localStorage.getItem('sparxBookwork') || '[]');
+      const div = document.getElementById('history');
+
+      if (entries.length === 0) {
+        div.innerHTML = '<p style="color:#777;">No bookwork saved yet. Start adding some!</p>';
+        return;
+      }
+
+      let html = '';
+      entries.forEach((e, i) => {
+        html += `
+          <div class="item">
+            <div>
+              <strong style="color:#00ff9d;">${e.code}</strong> → ${e.answer}
+              <br><small>${e.time}</small>
+            </div>
+            <button onclick="deleteEntry(${i})" style="background:#ff4444;color:white;border:none;padding:6px 12px;border-radius:6px;">Delete</button>
+          </div>`;
+      });
+      div.innerHTML = html;
+    }
+
+    function deleteEntry(i) {
+      let entries = JSON.parse(localStorage.getItem('sparxBookwork') || '[]');
+      entries.splice(i, 1);
+      localStorage.setItem('sparxBookwork', JSON.stringify(entries));
+      loadHistory();
+    }
+
+    window.onload = loadHistory;
+  </script>
+</body>
+</html>
