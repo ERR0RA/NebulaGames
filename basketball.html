@@ -2,75 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEBULA B-BALL: HUMAN EVOLUTION</title>
+    <title>NEBULA ARENA: 2v2 ELITE</title>
     <style>
-        :root { --p1-color: #ff3e3e; --p2-color: #00d2ff; --accent: #f1c40f; }
+        :root { --p1: #ff3e3e; --p2: #00d2ff; --accent: #f1c40f; }
         body { margin: 0; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        #header { display: flex; justify-content: space-around; width: 900px; align-items: center; margin-bottom: 10px; }
-        .score { font-size: 60px; font-weight: 900; font-family: monospace; }
-        canvas { background: #1a1a1a; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.5); border: 2px solid #333; }
-        #controls-hint { margin-top: 10px; color: #888; font-size: 0.9rem; }
-        .active-tag { color: var(--accent); font-weight: bold; }
+        #ui-layer { position: absolute; top: 20px; display: flex; justify-content: space-between; width: 900px; pointer-events: none; }
+        .score { font-size: 70px; font-weight: 900; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        #menu { position: absolute; bottom: 20px; background: rgba(0,0,0,0.8); padding: 10px 20px; border-radius: 50px; border: 1px solid #444; display: flex; gap: 20px; font-size: 0.8rem; }
+        canvas { border: 2px solid #333; box-shadow: 0 0 100px rgba(0,0,0,1); background: #000; }
+        b { color: var(--accent); }
     </style>
 </head>
 <body>
 
-<div id="header">
-    <div class="score" style="color: var(--p1-color)" id="s1">0</div>
-    <div style="text-align:center">
-        <button id="ai-btn" style="background:none; border:1px solid #555; color:white; padding:5px 15px; cursor:pointer;" onclick="aiEnabled = !aiEnabled">OPPONENT: EXPERT</button>
-        <div id="sw-hint">Press <b class="active-tag">Q</b> to Switch Player</div>
-    </div>
-    <div class="score" style="color: var(--p2-color)" id="s2">0</div>
+<div id="ui-layer">
+    <div class="score" style="color: var(--p1)" id="s1">0</div>
+    <div class="score" style="color: var(--p2)" id="s2">0</div>
 </div>
 
 <canvas id="court"></canvas>
-<div id="controls-hint">WASD to Move | Team Red vs Team Blue</div>
+
+<div id="menu">
+    <div>TEAM 1: <b>WASD</b> | Switch: <b>Q</b></div>
+    <div>MODE: <b id="mode-text">PVE (VS BOT)</b> | Toggle: <b>M</b></div>
+    <div>TEAM 2 (PvP): <b>ARROWS</b> | Switch: <b>SHIFT</b></div>
+</div>
 
 <script>
     const canvas = document.getElementById('court');
     const ctx = canvas.getContext('2d');
-    canvas.width = 900; canvas.height = 450;
+    canvas.width = 1000; canvas.height = 500;
 
-    const gravity = 0.5;
-    const friction = 0.98;
-    let score1 = 0, score2 = 0, aiEnabled = true;
-    let controlledIndex = 0; // Which player on Team 1 you are
+    const gravity = 0.4;
+    const friction = 0.99;
+    let score1 = 0, score2 = 0;
+    let pvpMode = false;
+    let t1Active = 0, t2Active = 0;
 
-    const ball = { x: 450, y: 150, vx: 0, vy: 0, r: 12 };
+    const ball = { x: 500, y: 100, vx: 5, vy: 0, r: 14 };
 
     class Human {
-        constructor(x, y, color, team, id) {
-            this.x = x; this.y = y; this.vx = 0; this.vy = 0;
-            this.w = 30; this.h = 70;
-            this.color = color; this.team = team; this.id = id;
-            this.grounded = false;
-            this.anim = 0;
+        constructor(x, color, team, id, isBot) {
+            this.x = x; this.y = 350; this.vx = 0; this.vy = 0;
+            this.w = 30; this.h = 80; this.color = color;
+            this.team = team; this.id = id;
+            this.grounded = false; this.anim = 0;
         }
 
-        update(isUserControlled) {
-            if (isUserControlled) {
-                if (keys['KeyA']) this.vx = -7;
-                else if (keys['KeyD']) this.vx = 7;
+        update(isControlled) {
+            if (isControlled) {
+                const moveLeft = (this.team === 1) ? keys['KeyA'] : keys['ArrowLeft'];
+                const moveRight = (this.team === 1) ? keys['KeyD'] : keys['ArrowRight'];
+                const jump = (this.team === 1) ? keys['KeyW'] : keys['ArrowUp'];
+
+                if (moveLeft) this.vx = -7;
+                else if (moveRight) this.vx = 7;
                 else this.vx *= 0.8;
-                if (keys['KeyW'] && this.grounded) { this.vy = -13; this.grounded = false; }
+                if (jump && this.grounded) { this.vy = -13; this.grounded = false; }
             } else {
-                // "Human-Like" AI logic
-                let targetX;
-                if (this.team === 1) { 
-                    // Support AI: Stay slightly behind or ahead of the ball to help
-                    targetX = ball.x - 60; 
-                } else {
-                    // Enemy AI: Aggressive defense
-                    targetX = ball.x + (ball.vx * 10); // Predicts where ball is going
-                }
+                // BOT BEHAVIOR
+                let targetX = (this.team === 1) ? ball.x - 50 : ball.x + 50; 
+                // Defensive spacing
+                if (this.team === 2 && ball.x < 500) targetX = 800; 
                 
                 let dist = targetX - this.x;
-                this.vx += Math.sign(dist) * 0.8;
+                this.vx += Math.sign(dist) * 0.6;
                 this.vx = Math.max(-6, Math.min(6, this.vx));
 
-                // Jump if ball is overhead
-                if (ball.y < this.y - 40 && Math.abs(this.x - ball.x) < 50 && this.grounded) {
+                if (ball.y < this.y && Math.abs(this.x - ball.x) < 40 && this.grounded) {
                     this.vy = -12; this.grounded = false;
                 }
             }
@@ -78,87 +77,80 @@
             this.vy += gravity;
             this.x += this.vx; this.y += this.vy;
 
-            // Bounds & Collision
-            if (this.y + this.h > canvas.height - 20) { this.y = canvas.height - 20 - this.h; this.vy = 0; this.grounded = true; }
+            // Bounds
+            if (this.y + this.h > canvas.height - 30) { this.y = canvas.height - 30 - this.h; this.vy = 0; this.grounded = true; }
             if (this.x < 0) this.x = 0; if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
 
-            // Ball Interaction
-            let cx = Math.max(this.x, Math.min(ball.x, this.x + this.w));
-            let cy = Math.max(this.y, Math.min(ball.y, this.y + this.h));
-            let dx = ball.x - cx, dy = ball.y - cy;
-            let d = Math.sqrt(dx*dx + dy*dy);
-            if (d < ball.r) {
-                let angle = Math.atan2(dy, dx);
-                ball.vx = Math.cos(angle) * 13 + this.vx;
-                ball.vy = Math.sin(angle) * 10 + this.vy * 0.5;
-                ball.x = cx + Math.cos(angle) * (ball.r + 2);
+            // Ball Hit
+            let dx = ball.x - (this.x + this.w/2), dy = ball.y - (this.y + this.h/2);
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < ball.r + 30) {
+                ball.vx = dx * 0.5 + this.vx;
+                ball.vy = dy * 0.5 - 5;
             }
-            if (Math.abs(this.vx) > 0.5) this.anim += 0.15;
+            if(Math.abs(this.vx) > 1) this.anim += 0.2;
         }
 
-        draw(isActive) {
+        draw(active) {
             ctx.save();
-            ctx.lineWidth = 4;
-            ctx.lineCap = "round";
-            ctx.strokeStyle = isActive ? "#fff" : this.color;
+            ctx.strokeStyle = active ? "#fff" : this.color;
+            ctx.lineWidth = 3;
+            let walk = Math.sin(this.anim) * 12;
+            let cx = this.x + this.w/2;
             
-            // Draw Indicator
-            if (isActive) {
-                ctx.fillStyle = "#f1c40f";
-                ctx.beginPath(); ctx.moveTo(this.x + 10, this.y - 45); ctx.lineTo(this.x + 20, this.y - 45); ctx.lineTo(this.x + 15, this.y - 35); ctx.fill();
-            }
-
-            // Simple "Human" Stick Skeleton
-            let walk = Math.sin(this.anim) * 15;
-            let centerX = this.x + this.w/2;
-            
-            // Torso
+            // Body
             ctx.beginPath();
-            ctx.moveTo(centerX, this.y + 20); ctx.lineTo(centerX, this.y + 50);
-            // Arms
-            ctx.moveTo(centerX, this.y + 25); ctx.lineTo(centerX - 15 + walk, this.y + 40);
-            ctx.moveTo(centerX, this.y + 25); ctx.lineTo(centerX + 15 - walk, this.y + 40);
-            // Legs
-            ctx.moveTo(centerX, this.y + 50); ctx.lineTo(centerX - 10 - walk, this.y + 70);
-            ctx.moveTo(centerX, this.y + 50); ctx.lineTo(centerX + 10 + walk, this.y + 70);
+            ctx.moveTo(cx, this.y + 20); ctx.lineTo(cx, this.y + 50); // Spine
+            ctx.moveTo(cx, this.y + 50); ctx.lineTo(cx - walk, this.y + 80); // L-Leg
+            ctx.moveTo(cx, this.y + 50); ctx.lineTo(cx + walk, this.y + 80); // R-Leg
             ctx.stroke();
-
             // Head
             ctx.fillStyle = "#ffdbac";
-            ctx.beginPath(); ctx.arc(centerX, this.y + 10, 10, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, this.y + 10, 12, 0, Math.PI*2); ctx.fill();
+            if(active) { ctx.fillStyle = varColor(this.team); ctx.fillRect(cx-5, this.y - 25, 10, 10); }
             ctx.restore();
         }
     }
 
-    const team1 = [new Human(100, 300, '#ff3e3e', 1, 0), new Human(200, 300, '#ff3e3e', 1, 1)];
-    const team2 = [new Human(700, 300, '#00d2ff', 2, 2)];
+    const varColor = (t) => t === 1 ? '#ff3e3e' : '#00d2ff';
+    let t1 = [new Human(150, '#ff3e3e', 1, 0), new Human(250, '#ff3e3e', 1, 1)];
+    let t2 = [new Human(750, '#00d2ff', 2, 2), new Human(850, '#00d2ff', 2, 3)];
 
     const keys = {};
     window.onkeydown = e => {
         keys[e.code] = true;
-        if (e.code === 'KeyQ') controlledIndex = (controlledIndex + 1) % team1.length;
+        if (e.code === 'KeyQ') t1Active = (t1Active + 1) % 2;
+        if (e.code === 'ShiftRight') t2Active = (t2Active + 1) % 2;
+        if (e.code === 'KeyM') {
+            pvpMode = !pvpMode;
+            document.getElementById('mode-text').innerText = pvpMode ? "PVP (2v2)" : "PVE (VS BOT)";
+        }
     };
     window.onkeyup = e => keys[e.code] = false;
 
-    function reset() { ball.x = 450; ball.y = 150; ball.vx = 0; ball.vy = 0; }
+    function reset() { ball.x = 500; ball.y = 50; ball.vx = (Math.random()-0.5)*10; ball.vy = 0; }
 
     function loop() {
-        // Update Team 1
-        team1.forEach((p, i) => p.update(i === controlledIndex));
-        // Update Team 2 (AI)
-        team2.forEach(p => p.update(false));
+        // Background
+        ctx.fillStyle = "#050508"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        for(let i=0; i<50; i++) { ctx.fillStyle="#fff"; ctx.fillRect((i*137)%canvas.width, (i*243)%canvas.height, 1, 1); } // Stars
 
-        // Ball Physics
-        ball.vy += gravity; ball.vx *= friction;
+        // Update
+        t1.forEach((p, i) => p.update(i === t1Active));
+        t2.forEach((p, i) => p.update(pvpMode && i === t2Active));
+
+        // Ball Physics Fix
+        ball.vy += gravity;
+        ball.vx *= friction;
         ball.x += ball.vx; ball.y += ball.vy;
 
-        if (ball.y + ball.r > canvas.height - 20) { ball.y = canvas.height - 20 - ball.r; ball.vy *= -0.7; }
-        if (ball.x < 0 || ball.x > canvas.width) { ball.vx *= -0.8; ball.x = ball.x < 0 ? ball.r : canvas.width - ball.r; }
+        if (ball.y + ball.r > canvas.height - 30) { ball.y = canvas.height - 30 - ball.r; ball.vy *= -0.8; }
+        if (ball.x < 0 || ball.x > canvas.width) { ball.vx *= -0.7; ball.x = ball.x < 0 ? ball.r : canvas.width - ball.r; }
 
         // Goals
-        if (ball.vy > 0 && ball.y > 200 && ball.y < 220) {
-            if (ball.x < 50) { score2++; document.getElementById('s2').innerText = score2; reset(); }
-            if (ball.x > 850) { score1++; document.getElementById('s1').innerText = score1; reset(); }
+        if (ball.y > 200 && ball.y < 230 && ball.vy > 0) {
+            if (ball.x < 60) { score2++; document.getElementById('s2').innerText = score2; reset(); }
+            if (ball.x > 940) { score1++; document.getElementById('s1').innerText = score1; reset(); }
         }
 
         draw();
@@ -166,24 +158,22 @@
     }
 
     function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Court
-        ctx.fillStyle = "#333"; ctx.fillRect(0, 430, canvas.width, 20); // Floor
-        ctx.strokeStyle = "rgba(255,255,255,0.1)"; ctx.strokeRect(450, 0, 1, 450); // Midline
-
         // Hoops
-        ctx.fillStyle = "#ff5500";
-        ctx.fillRect(0, 210, 50, 5); ctx.fillRect(850, 210, 50, 5);
-
-        team1.forEach((p, i) => p.draw(i === controlledIndex));
-        team2.forEach(p => p.draw(false));
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 10;
+        ctx.strokeRect(-10, 200, 60, 10); ctx.strokeRect(950, 200, 60, 10);
+        
+        t1.forEach((p, i) => p.draw(i === t1Active));
+        t2.forEach((p, i) => p.draw(pvpMode && i === t2Active));
 
         // Ball
-        ctx.fillStyle = "#e67e22";
+        ctx.fillStyle = "#ff8800";
+        ctx.shadowBlur = 15; ctx.shadowColor = "#ff8800";
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // Floor
+        ctx.fillStyle = "#111"; ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
     }
-
     loop();
 </script>
 </body>
