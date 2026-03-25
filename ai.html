@@ -1,48 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NEXUS-3D | Pathfinding AI</title>
+    <title>NEXUS-3D | PvP Survival</title>
     <style>
         body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
         #container { display: flex; width: 100vw; height: 100vh; }
         canvas.view { width: 100%; height: 100%; image-rendering: pixelated; display: none; }
+        #p2Cam { border-left: 2px solid #333; }
+        
         #minimap { 
             position: absolute; top: 15px; left: 15px; 
             border: 1px solid #0f0; background: rgba(0,0,0,0.9); z-index: 30; 
             display: none;
         }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; z-index: 100; }
-        .menu-box { border: 2px solid #0f0; padding: 30px; text-align: center; background: #050505; }
-        .btn { background: #0f0; color: #000; border: none; padding: 12px 25px; margin: 8px; cursor: pointer; font-weight: bold; width: 240px; display: block; }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; z-index: 100; text-align: center;}
+        .menu-box { border: 2px solid #0f0; padding: 30px; background: #050505; }
+        .btn { background: #0f0; color: #000; border: none; padding: 12px 25px; margin: 8px; cursor: pointer; font-weight: bold; width: 240px; display: block; font-family: monospace; }
+        
         #hud { position: absolute; bottom: 15px; width: 100%; display: none; justify-content: space-around; pointer-events: none; }
-        .hp-bar { background: rgba(0,0,0,0.8); padding: 5px 15px; border: 1px solid #0f0; font-size: 0.8rem; }
+        #timer-box { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #f00; color: #f00; font-weight: bold; display: none; }
+        .hp-bar { background: rgba(0,0,0,0.8); padding: 5px 15px; border: 1px solid #0f0; }
     </style>
 </head>
 <body>
 
-    <div id="container"><canvas id="p1Cam" class="view"></canvas></div>
-    <canvas id="minimap" width="120" height="120"></canvas>
+    <div id="timer-box">SURVIVAL TIME: <span id="clock">04:00</span></div>
+    
+    <div id="container">
+        <canvas id="p1Cam" class="view"></canvas>
+        <canvas id="p2Cam" class="view"></canvas>
+    </div>
+    
+    <canvas id="minimap" width="100" height="100"></canvas>
 
     <div id="main-menu" class="overlay">
         <div class="menu-box">
-            <h1>AI_PATHFINDING_v5</h1>
-            <button class="btn" onclick="init()">START 3v1 SURVIVAL</button>
-            <p style="color:#444; font-size: 0.7rem; margin-top:10px;">MAP: 21x21 | AI: BFS_SHORTEST_PATH</p>
+            <h1>NEXUS_PVP_TAG</h1>
+            <button class="btn" onclick="init('pvp')">START PLAYER VS PLAYER</button>
+            <button class="btn" onclick="init('bot')">3v1 BOT SURVIVAL</button>
+            <p style="color:#444; font-size: 0.7rem; margin-top:10px;">P1 (WASD) SURVIVE | P2 (ARROWS) TAG</p>
         </div>
-    </div>
-
-    <div id="hud">
-        <div class="hp-bar">INTEGRITY: <span id="p1hp">100</span>%</div>
     </div>
 
 <script>
     const p1c = document.getElementById('p1Cam'), ctx1 = p1c.getContext('2d');
+    const p2c = document.getElementById('p2Cam'), ctx2 = p2c.getContext('2d');
     const mCtx = document.getElementById('minimap').getContext('2d');
 
-    const SIZE = 21; 
-    let world = [], active = false;
+    const SIZE = 31; // Increased Map Size
+    let world = [], active = false, gameMode = '';
+    let timeLeft = 240; // 4 Minutes
     const keys = {};
-    const p1 = { x: 1.5, y: 1.5, dir: 0, hp: 100 };
+
+    const p1 = { x: 1.5, y: 1.5, dir: 0, hp: 100, color: "#0f0" };
+    const p2 = { x: SIZE-1.5, y: SIZE-1.5, dir: Math.PI, hp: 100, color: "#f00" };
     let bots = [];
 
     window.onkeydown = e => keys[e.code] = true;
@@ -63,87 +75,70 @@
         walk(1,1);
     }
 
-    // BFS Pathfinding for Smarter Bots
-    function getNextStep(botX, botY, targetX, targetY) {
-        let startX = Math.floor(botX), startY = Math.floor(botY);
-        let endX = Math.floor(targetX), endY = Math.floor(targetY);
-        if (startX === endX && startY === endY) return {x: targetX, y: targetY};
-
-        let queue = [[startX, startY]];
-        let visited = new Set([startX + ',' + startY]);
-        let parent = {};
-
-        while (queue.length > 0) {
-            let [cx, cy] = queue.shift();
-            if (cx === endX && cy === endY) break;
-
-            for (let [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
-                let nx = cx + dx, ny = cy + dy;
-                let key = nx + ',' + ny;
-                if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && world[ny][nx] === 0 && !visited.has(key)) {
-                    visited.add(key);
-                    parent[key] = [cx, cy];
-                    queue.push([nx, ny]);
-                }
-            }
-        }
-
-        let curr = endX + ',' + endY;
-        let path = [];
-        while (parent[curr]) {
-            path.push(curr);
-            curr = parent[curr][0] + ',' + parent[curr][1];
-        }
-        
-        if (path.length === 0) return {x: botX, y: botY};
-        let next = path.pop().split(',').map(Number);
-        return {x: next[0] + 0.5, y: next[1] + 0.5};
-    }
-
-    function init() {
+    function init(m) {
+        gameMode = m;
         generateMaze();
         active = true;
         document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('hud').style.display = 'flex';
         document.getElementById('minimap').style.display = 'block';
+        document.getElementById('timer-box').style.display = 'block';
+        
         p1c.style.display = 'block';
-        bots = [
-            {x: SIZE-2.5, y: 1.5, s: 0.02},
-            {x: 1.5, y: SIZE-2.5, s: 0.02},
-            {x: SIZE-2.5, y: SIZE-2.5, s: 0.02}
-        ];
-        p1c.width = p1c.clientWidth/2; p1c.height = p1c.clientHeight/2;
-        loop();
+        if(m === 'pvp') {
+            p2c.style.display = 'block';
+            p1c.style.width = '50%';
+        } else {
+            p1c.style.width = '100%';
+            bots = [{x: 15, y: 15, s: 0.02}, {x: 5, y: 25, s: 0.02}, {x: 25, y: 5, s: 0.02}];
+        }
+        
+        setInterval(() => {
+            if(!active) return;
+            timeLeft--;
+            let m = Math.floor(timeLeft / 60);
+            let s = timeLeft % 60;
+            document.getElementById('clock').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+            if(timeLeft <= 0) { active = false; alert("P1 SURVIVED! P1 WINS!"); location.reload(); }
+        }, 1000);
+
+        resize(); loop();
     }
 
-    function render() {
-        const w = p1c.width, h = p1c.height;
-        ctx1.fillStyle="#000"; ctx1.fillRect(0,0,w,h);
+    function resize() {
+        p1c.width = p1c.clientWidth/2; p1c.height = p1c.clientHeight/2;
+        p2c.width = p2c.clientWidth/2; p2c.height = p2c.clientHeight/2;
+    }
+
+    function render(ctx, p, canvas) {
+        const w = canvas.width, h = canvas.height;
+        ctx.fillStyle="#000"; ctx.fillRect(0,0,w,h);
         let zBuf = new Array(w).fill(25);
 
         for(let i=0; i<w; i++) {
-            let a = (p1.dir - 0.6) + (i/w)*1.2;
+            let a = (p.dir - 0.6) + (i/w)*1.2;
             let d = 0, hit = false, sx = Math.cos(a), sy = Math.sin(a);
-            while(!hit && d < 18) {
+            while(!hit && d < 20) {
                 d += 0.1;
-                let tx = Math.floor(p1.x + sx*d), ty = Math.floor(p1.y + sy*d);
+                let tx = Math.floor(p.x + sx*d), ty = Math.floor(p.y + sy*d);
                 if(world[ty] && world[ty][tx]==1) hit = true;
             }
             zBuf[i] = d;
-            let wallH = h / (d * Math.cos(a - p1.dir));
-            ctx1.fillStyle = `rgb(0,${150/d},0)`;
-            ctx1.fillRect(i, h/2-wallH/2, 1, wallH);
+            let wallH = h / (d * Math.cos(a - p.dir));
+            ctx.fillStyle = `rgb(0,${180/d},50)`;
+            ctx.fillRect(i, h/2-wallH/2, 1, wallH);
         }
 
-        bots.forEach(b => {
-            let dx = b.x - p1.x, dy = b.y - p1.y, dist = Math.hypot(dx, dy);
-            let a = Math.atan2(dy, dx) - p1.dir;
+        // Render Opponent or Bots
+        const targets = gameMode === 'pvp' ? [(p === p1 ? p2 : p1)] : bots;
+        targets.forEach(t => {
+            let dx = t.x - p.x, dy = t.y - p.y, dist = Math.hypot(dx, dy);
+            let a = Math.atan2(dy, dx) - p.dir;
             while(a < -Math.PI) a += Math.PI*2; while(a > Math.PI) a -= Math.PI*2;
             if(Math.abs(a) < 0.6) {
                 let sx = (a + 0.6)/1.2 * w, sh = h / dist;
                 if(dist < zBuf[Math.floor(sx)]) {
-                    ctx1.fillStyle = "#f00";
-                    ctx1.fillRect(sx - sh/8, h/2 - sh/2, sh/4, sh);
+                    ctx.fillStyle = (t === p2 || t.s) ? "#f00" : "#0f0";
+                    ctx.fillRect(sx - sh/8, h/2 - sh/2, sh/4, sh);
                 }
             }
         });
@@ -152,31 +147,32 @@
     function loop() {
         if(!active) return;
         
+        // P1 (WASD)
         if(keys['KeyW']) { let nx=p1.x+Math.cos(p1.dir)*0.04, ny=p1.y+Math.sin(p1.dir)*0.04; if(!world[Math.floor(ny)][Math.floor(nx)]) {p1.x=nx; p1.y=ny;} }
         if(keys['KeyS']) { let nx=p1.x-Math.cos(p1.dir)*0.03, ny=p1.y-Math.sin(p1.dir)*0.03; if(!world[Math.floor(ny)][Math.floor(nx)]) {p1.x=nx; p1.y=ny;} }
         if(keys['KeyA']) p1.dir -= 0.05; if(keys['KeyD']) p1.dir += 0.05;
 
-        bots.forEach(b => {
-            if (Math.hypot(p1.x - b.x, p1.y - b.y) < 0.4) { p1.hp -= 0.5; if(p1.hp <= 0) location.reload(); }
-            
-            // Smarter movement using pathfinding
-            let next = getNextStep(b.x, b.y, p1.x, p1.y);
-            let dx = next.x - b.x, dy = next.y - b.y;
-            let dist = Math.hypot(dx, dy);
-            if (dist > 0.01) {
-                b.x += (dx/dist) * b.s;
-                b.y += (dy/dist) * b.s;
-            }
-        });
+        // P2 (Arrows)
+        if(gameMode === 'pvp') {
+            if(keys['ArrowUp']) { let nx=p2.x+Math.cos(p2.dir)*0.045, ny=p2.y+Math.sin(p2.dir)*0.045; if(!world[Math.floor(ny)][Math.floor(nx)]) {p2.x=nx; p2.y=ny;} }
+            if(keys['ArrowDown']) { let nx=p2.x-Math.cos(p2.dir)*0.03, ny=p2.y-Math.sin(p2.dir)*0.03; if(!world[Math.floor(ny)][Math.floor(nx)]) {p2.x=nx; p2.y=ny;} }
+            if(keys['ArrowLeft']) p2.dir -= 0.05; if(keys['ArrowRight']) p2.dir += 0.05;
 
-        render();
-        document.getElementById('p1hp').innerText = Math.floor(p1.hp);
-        
-        mCtx.clearRect(0,0,120,120);
-        let s = 120/SIZE;
+            // Tag Logic
+            if(Math.hypot(p1.x - p2.x, p1.y - p2.y) < 0.4) {
+                active = false; alert("TAGGED! P2 (RED) WINS!"); location.reload();
+            }
+        }
+
+        render(ctx1, p1, p1c);
+        if(gameMode === 'pvp') render(ctx2, p2, p2c);
+
+        // Minimap (Corner - Static Size)
+        mCtx.clearRect(0,0,100,100);
+        let s = 100/SIZE;
         for(let y=0; y<SIZE; y++) for(let x=0; x<SIZE; x++) if(world[y][x]) { mCtx.fillStyle="#222"; mCtx.fillRect(x*s,y*s,s,s); }
         mCtx.fillStyle="#0f0"; mCtx.fillRect(p1.x*s-1.5, p1.y*s-1.5, 3, 3);
-        mCtx.fillStyle="#f00"; bots.forEach(b => mCtx.fillRect(b.x*s-1, b.y*s-1, 2, 2));
+        if(gameMode === 'pvp') { mCtx.fillStyle="#f00"; mCtx.fillRect(p2.x*s-1.5, p2.y*s-1.5, 3, 3); }
 
         requestAnimationFrame(loop);
     }
