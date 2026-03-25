@@ -1,138 +1,171 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NEXUS-3D | High-Functioning Engine</title>
+    <title>NEXUS-3D | Procedural Survival</title>
     <style>
-        body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; display: flex; }
-        #container { position: relative; width: 100vw; height: 100vh; }
-        canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-        #ui { position: absolute; top: 20px; left: 20px; pointer-events: none; }
-        #minimap { position: absolute; bottom: 20px; right: 20px; border: 2px solid #333; background: rgba(0,0,0,0.8); }
-        .stats { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; }
+        body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
+        #canvas { display: block; width: 100vw; height: 100vh; image-rendering: pixelated; }
+        #minimap { position: absolute; top: 15px; left: 15px; border: 1px solid #0f0; background: rgba(0,0,0,0.8); }
+        #ui { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.8); padding: 15px; border: 1px solid #0f0; pointer-events: none; }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,0,0,0.3); display: none; justify-content: center; align-items: center; text-align: center; z-index: 100; }
+        .death-box { background: #000; padding: 40px; border: 3px solid #f00; color: #f00; }
+        .stats { color: #00d2ff; }
     </style>
 </head>
 <body>
 
-<div id="container">
-    <canvas id="renderCanvas"></canvas>
+    <canvas id="canvas"></canvas>
+    <canvas id="minimap" width="160" height="160"></canvas>
+    
     <div id="ui">
-        <div class="stats">
-            <strong>NEXUS-3D ENGINE v1.0</strong><br>
-            FPS: <span id="fps">60</span><br>
-            POS: <span id="pos">0,0</span><br>
-            CONTROLS: [WASD] Move | [Mouse/Arrows] Turn
+        <strong>NEXUS_PROCEDURAL_OS</strong><br>
+        LIVES: <span id="lives" style="color: #f00;">❤️❤️❤️</span> | HP: <span id="hp">100</span>%<br>
+        <span class="stats">MAP_SEED: <span id="seed"></span></span>
+    </div>
+
+    <div id="overlay">
+        <div class="death-box">
+            <h1 id="death-title">SYSTEM HALT</h1>
+            <p id="death-msg"></p>
+            <button onclick="respawn()" style="background:#f00; color:#000; border:none; padding:10px 20px; cursor:pointer; font-weight:bold;">REBOOT_PLAYER</button>
         </div>
     </div>
-    <canvas id="minimap" width="150" height="150"></canvas>
-</div>
 
 <script>
-    const canvas = document.getElementById('renderCanvas');
+    const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const mCanvas = document.getElementById('minimap');
     const mCtx = mCanvas.getContext('2d');
 
-    // Engine Settings
-    const res = 2; // Pixel resolution (higher = more retro)
-    canvas.width = window.innerWidth / res;
-    canvas.height = window.innerHeight / res;
+    canvas.width = window.innerWidth / 2;
+    canvas.height = window.innerHeight / 2;
 
-    const map = [
-        [1,1,1,1,1,1,1,1,1,1],
-        [1,0,0,0,0,0,0,0,0,1],
-        [1,0,1,1,0,1,1,1,0,1],
-        [1,0,1,0,0,0,0,1,0,1],
-        [1,0,0,0,2,0,0,0,0,1],
-        [1,0,1,0,0,0,0,1,0,1],
-        [1,0,1,1,1,0,1,1,0,1],
-        [1,0,0,0,0,0,0,0,0,1],
-        [1,1,1,1,1,1,1,1,1,1],
+    // --- PROCEDURAL MAP GENERATION (20x20) ---
+    const MAP_SIZE = 20;
+    let world = Array(MAP_SIZE).fill().map(() => Array(MAP_SIZE).fill(1));
+    
+    function generateMap() {
+        let x = 1, y = 1;
+        world[y][x] = 0;
+        for(let i=0; i<300; i++) { // Random walk to carve paths
+            let dir = Math.floor(Math.random() * 4);
+            if(dir === 0 && x < MAP_SIZE-2) x++;
+            else if(dir === 1 && x > 1) x--;
+            else if(dir === 2 && y < MAP_SIZE-2) y++;
+            else if(dir === 3 && y > 1) y--;
+            world[y][x] = 0;
+            if(Math.random() > 0.9) world[y][x] = 2; // Add some glow blocks
+        }
+        document.getElementById('seed').innerText = Math.floor(Math.random() * 9999);
+    }
+
+    const state = { 
+        player: { x: 1.5, y: 1.5, dir: 0, hp: 100, lives: 3 },
+        enemies: [
+            { x: 18, y: 18, speed: 0.015 },
+            { x: 1, y: 18, speed: 0.018 },
+            { x: 18, y: 1, speed: 0.02 }
+        ],
+        keys: {}
+    };
+
+    const deathMessages = [
+        "Your biological components failed.",
+        "Nexus Stalkers found your scent.",
+        "User.exe has stopped working.",
+        "Critical error: Heartbeat not found.",
+        "You were recycled by the grid."
     ];
 
-    const player = { x: 2, y: 2, dir: 0, speed: 0.05, rotSpeed: 0.04 };
-    const keys = {};
+    window.onkeydown = e => state.keys[e.code] = true;
+    window.onkeyup = e => state.keys[e.code] = false;
 
-    window.addEventListener('keydown', e => keys[e.code] = true);
-    window.addEventListener('keyup', e => keys[e.code] = false);
-
-    function castRays() {
-        const w = canvas.width;
-        const h = canvas.height;
-        ctx.fillStyle = '#111'; // Ceiling
-        ctx.fillRect(0, 0, w, h / 2);
-        ctx.fillStyle = '#222'; // Floor
-        ctx.fillRect(0, h / 2, w, h / 2);
-
-        for (let i = 0; i < w; i++) {
-            let rayAngle = (player.dir - 0.6) + (i / w) * 1.2;
-            let distance = 0;
-            let hitWall = false;
-            let wallType = 0;
-
-            let eyeX = Math.cos(rayAngle);
-            let eyeY = Math.sin(rayAngle);
-
-            while (!hitWall && distance < 16) {
-                distance += 0.05;
-                let testX = Math.floor(player.x + eyeX * distance);
-                let testY = Math.floor(player.y + eyeY * distance);
-
-                if (testX < 0 || testX >= 10 || testY < 0 || testY >= 9) {
-                    hitWall = true; distance = 16;
-                } else if (map[testY][testX] > 0) {
-                    hitWall = true;
-                    wallType = map[testY][testX];
-                }
-            }
-
-            // Fix Fish-eye effect
-            let ceiling = h / 2 - h / distance;
-            let floor = h - ceiling;
-            
-            // Shading based on distance
-            let brightness = Math.max(0, 255 - (distance * 15));
-            ctx.fillStyle = wallType === 2 ? `rgb(0, ${brightness}, ${brightness/2})` : `rgb(0, ${brightness}, 0)`;
-            ctx.fillRect(i, ceiling, 1, floor - ceiling);
+    function handleDeath() {
+        state.player.lives--;
+        if(state.player.lives <= 0) {
+            document.getElementById('death-title').innerText = "GAME OVER";
+            document.getElementById('death-msg').innerText = "The Nexus has consumed you entirely.";
+            document.querySelector('button').style.display = 'none';
+        } else {
+            document.getElementById('death-msg').innerText = deathMessages[Math.floor(Math.random() * deathMessages.length)];
         }
+        document.getElementById('overlay').style.display = 'flex';
     }
 
-    function drawMinimap() {
-        const size = 150 / 10;
-        mCtx.clearRect(0,0,150,150);
-        for(let y=0; y<9; y++) {
-            for(let x=0; x<10; x++) {
-                if(map[y][x] > 0) {
-                    mCtx.fillStyle = map[y][x] === 2 ? '#0ff' : '#555';
-                    mCtx.fillRect(x*size, y*size, size-1, size-1);
-                }
-            }
-        }
-        mCtx.fillStyle = "red";
-        mCtx.fillRect(player.x*size-2, player.y*size-2, 4, 4);
+    function respawn() {
+        state.player.hp = 100;
+        state.player.x = 1.5; state.player.y = 1.5;
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('lives').innerText = "❤️".repeat(state.player.lives);
     }
 
-    function update() {
-        if (keys['KeyW']) {
-            let nx = player.x + Math.cos(player.dir) * player.speed;
-            let ny = player.y + Math.sin(player.dir) * player.speed;
-            if (map[Math.floor(ny)][Math.floor(nx)] === 0) { player.x = nx; player.y = ny; }
+    function loop() {
+        // Less Sensitive Movement (Lower speeds/rotation)
+        const p = state.player;
+        if(state.keys['KeyW']) {
+            let nx = p.x + Math.cos(p.dir) * 0.04;
+            let ny = p.y + Math.sin(p.dir) * 0.04;
+            if(world[Math.floor(ny)][Math.floor(nx)] === 0) { p.x = nx; p.y = ny; }
         }
-        if (keys['KeyS']) {
-            let nx = player.x - Math.cos(player.dir) * player.speed;
-            let ny = player.y - Math.sin(player.dir) * player.speed;
-            if (map[Math.floor(ny)][Math.floor(nx)] === 0) { player.x = nx; player.y = ny; }
+        if(state.keys['KeyS']) {
+            let nx = p.x - Math.cos(p.dir) * 0.03;
+            let ny = p.y - Math.sin(p.dir) * 0.03;
+            if(world[Math.floor(ny)][Math.floor(nx)] === 0) { p.x = nx; p.y = ny; }
         }
-        if (keys['ArrowLeft'] || keys['KeyA']) player.dir -= player.rotSpeed;
-        if (keys['ArrowRight'] || keys['KeyD']) player.dir += player.rotSpeed;
+        if(state.keys['ArrowLeft'] || state.keys['KeyA']) p.dir -= 0.035;
+        if(state.keys['ArrowRight'] || state.keys['KeyD']) p.dir += 0.035;
 
-        document.getElementById('pos').innerText = `${player.x.toFixed(1)}, ${player.y.toFixed(1)}`;
+        // 3D Render
+        const w = canvas.width, h = canvas.height;
+        ctx.fillStyle = "#000"; ctx.fillRect(0,0,w,h);
         
-        castRays();
-        drawMinimap();
-        requestAnimationFrame(update);
+        for(let i=0; i<w; i++) {
+            let angle = (p.dir - 0.6) + (i/w) * 1.2;
+            let dist = 0, hit = false, type = 0;
+            let sx = Math.cos(angle), sy = Math.sin(angle);
+            while(!hit && dist < 15) {
+                dist += 0.1;
+                let tx = Math.floor(p.x + sx * dist), ty = Math.floor(p.y + sy * dist);
+                if(world[ty] && world[ty][tx] > 0) { hit = true; type = world[ty][tx]; }
+            }
+            let wallH = h / (dist * Math.cos(angle - p.dir));
+            ctx.fillStyle = type === 2 ? `rgb(0,255,255)` : `rgb(0,${200/dist},0)`;
+            ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
+        }
+
+        // AI Update
+        state.enemies.forEach(en => {
+            let dx = p.x - en.x, dy = p.y - en.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist < 0.4) {
+                p.hp -= 1;
+                if(p.hp <= 0) handleDeath();
+            } else {
+                en.x += (dx/dist) * en.speed;
+                en.y += (dy/dist) * en.speed;
+            }
+        });
+
+        // Minimap
+        mCtx.clearRect(0,0,160,160);
+        let s = 160/MAP_SIZE;
+        for(let y=0; y<MAP_SIZE; y++) {
+            for(let x=0; x<MAP_SIZE; x++) {
+                if(world[y][x] > 0) {
+                    mCtx.fillStyle = world[y][x] === 2 ? "#0ff" : "#222";
+                    mCtx.fillRect(x*s, y*s, s-1, s-1);
+                }
+            }
+        }
+        mCtx.fillStyle = "#fff"; mCtx.fillRect(p.x*s-2, p.y*s-2, 4, 4);
+        mCtx.fillStyle = "#f00"; state.enemies.forEach(en => mCtx.fillRect(en.x*s-2, en.y*s-2, 4, 4));
+
+        document.getElementById('hp').innerText = Math.floor(p.hp);
+        if(p.lives > 0) requestAnimationFrame(loop);
     }
 
-    update();
+    generateMap();
+    loop();
 </script>
 </body>
 </html>
