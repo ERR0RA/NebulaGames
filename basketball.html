@@ -1,211 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>NEBULA B-BALL: FIXED PHYSICS</title>
+    <meta charset="UTF-8"><title>NEBULA B-BALL: SOLID FLOOR</title>
     <style>
-        :root { --p1: #ff3e3e; --p2: #00d2ff; }
-        body { margin: 0; background: #020205; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; overflow: hidden; }
-        #ui { position: absolute; top: 20px; display: flex; justify-content: space-around; width: 1000px; pointer-events: none; z-index: 10; }
-        .score { font-size: 60px; font-weight: 900; }
-        canvas { background: radial-gradient(circle, #151525 0%, #000 100%); border: 2px solid #333; border-radius: 8px; }
+        body { margin: 0; background: #020205; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; color: white; font-family: sans-serif; }
+        canvas { background: #050510; border: 3px solid #333; box-shadow: 0 0 40px #000; }
+        #ui { position: absolute; top: 20px; display: flex; justify-content: space-between; width: 900px; pointer-events: none; }
     </style>
 </head>
 <body>
-
-<div id="ui">
-    <div class="score" style="color: var(--p1)" id="s1">0</div>
-    <div style="text-align: center;">
-        <div id="mode-text">MODE: PVE</div>
-        <div style="font-size: 0.8rem; color: #777;">[Q/Shift] Switch | [M] PvP</div>
-    </div>
-    <div class="score" style="color: var(--p2)" id="s2">0</div>
-</div>
-
-<canvas id="court"></canvas>
+    <div id="ui"><div id="s1" style="font-size: 40px; color: #ff3e3e">0</div><div id="s2" style="font-size: 40px; color: #00d2ff">0</div></div>
+    <canvas id="court"></canvas>
 
 <script>
     const canvas = document.getElementById('court');
     const ctx = canvas.getContext('2d');
     canvas.width = 1000; canvas.height = 600;
 
-    const gravity = 0.45;
-    const friction = 0.99;
-    let score1 = 0, score2 = 0, pvpMode = false;
-    let t1Active = 0, t2Active = 0;
+    const gravity = 0.5;
+    const friction = 0.98;
+    const FLOOR_Y = 560; // Fixed floor level
 
-    const ball = { x: 500, y: 100, vx: 5, vy: 0, r: 15, rot: 0 };
-    const platforms = [
-        { x: 0, y: 570, w: 1000, h: 30, type: 'floor' },
-        { x: 100, y: 400, w: 200, h: 15 },
-        { x: 700, y: 400, w: 200, h: 15 },
-        { x: 400, y: 250, w: 200, h: 15 }
-    ];
+    let score1 = 0, score2 = 0;
+    const ball = { x: 500, y: 100, vx: 5, vy: 0, r: 15 };
 
     class Human {
-        constructor(x, y, color, team) {
-            this.x = x; this.y = y; this.vx = 0; this.vy = 0;
-            this.w = 30; this.h = 85; this.color = color;
-            this.team = team; this.grounded = false;
-            this.angle = 0; this.anim = 0;
+        constructor(x, color, team) {
+            this.x = x; this.y = 400; this.vx = 0; this.vy = 0;
+            this.w = 30; this.h = 80; this.color = color; this.team = team;
+            this.grounded = false;
         }
-
         update(isCtrl) {
             if (isCtrl) {
                 const left = (this.team === 1) ? keys['KeyA'] : keys['ArrowLeft'];
                 const right = (this.team === 1) ? keys['KeyD'] : keys['ArrowRight'];
                 const jump = (this.team === 1) ? keys['KeyW'] : keys['ArrowUp'];
-                if (left) this.vx = -8; else if (right) this.vx = 8; else this.vx *= 0.85;
-                if (jump && this.grounded) { this.vy = -14; this.grounded = false; }
+                if (left) this.vx = -8; else if (right) this.vx = 8; else this.vx *= 0.8;
+                if (jump && this.grounded) { this.vy = -15; this.grounded = false; }
             } else {
-                // AI Logic
-                let targetX = ball.x;
-                this.vx += Math.sign(targetX - this.x) * 0.7;
-                this.vx = Math.max(-7, Math.min(7, this.vx));
-                if (ball.y < this.y && Math.abs(this.x - ball.x) < 60 && this.grounded) {
-                    this.vy = -13; this.grounded = false;
-                }
+                this.vx += Math.sign(ball.x - this.x) * 0.5;
+                this.vx = Math.max(-6, Math.min(6, this.vx));
+                if (ball.y < this.y && Math.abs(this.x - ball.x) < 50 && this.grounded) this.vy = -12;
             }
 
             this.vy += gravity; this.x += this.vx; this.y += this.vy;
 
-            // Platform Collision
-            this.grounded = false;
-            platforms.forEach(p => {
-                if (this.vy >= 0 && this.x + this.w > p.x && this.x < p.x + p.w &&
-                    this.y + this.h > p.y && this.y + this.h < p.y + 15) {
-                    this.y = p.y - this.h; this.vy = 0; this.grounded = true;
-                }
-            });
+            // --- PLAYER FLOOR CLAMP ---
+            if (this.y + this.h > FLOOR_Y) {
+                this.y = FLOOR_Y - this.h;
+                this.vy = 0;
+                this.grounded = true;
+            }
 
-            // Player Bounds
-            if (this.x < 0) this.x = 0; if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
-
-            // --- THE ANTI-STUCK COLLISION FIX ---
+            // Body-Ball Collision
             let cx = Math.max(this.x, Math.min(ball.x, this.x + this.w));
             let cy = Math.max(this.y, Math.min(ball.y, this.y + this.h));
-            let dx = ball.x - cx, dy = ball.y - cy, dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < ball.r && dist > 0) {
-                let nx = dx / dist, ny = dy / dist;
-                // Move ball out of player immediately
-                ball.x += nx * (ball.r - dist);
-                ball.y += ny * (ball.r - dist);
-
-                // Detect if ball is pinned in a corner
-                let nearWall = (ball.x < 50 || ball.x > canvas.width - 50);
-                let nearFloor = (ball.y > 520);
-
-                if (nearWall || nearFloor) {
-                    // Force a "pop" out of the corner
-                    ball.vx = -nx * 15; 
-                    ball.vy = -12; // Always pop upward
-                } else {
-                    // Normal kick physics
-                    ball.vx = nx * 12 + (this.vx * 0.5);
-                    ball.vy = ny * 12 + (this.vy * 0.5);
-                }
+            let dx = ball.x - cx, dy = ball.y - cy, dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < ball.r) {
+                let nx = dx/(dist||1), ny = dy/(dist||1);
+                ball.x += nx * (ball.r - dist); ball.y += ny * (ball.r - dist);
+                ball.vx = nx * 12 + this.vx; ball.vy = ny * 10 + this.vy;
             }
-
-            this.angle = (this.vx * 0.06) + (this.vy * 0.03);
-            if (Math.abs(this.vx) > 1) this.anim += 0.2;
         }
-
-        draw(active) {
-            ctx.save();
-            ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
-            ctx.rotate(this.angle);
-            ctx.strokeStyle = active ? "#fff" : this.color;
-            ctx.lineWidth = 4;
-            let walk = Math.sin(this.anim) * 15;
-            // Body
-            ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 15); ctx.stroke();
-            // Legs
-            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(-10 - walk, 35);
-            ctx.moveTo(0, 15); ctx.lineTo(10 + walk, 35); ctx.stroke();
-            // Arms
-            let armY = this.grounded ? walk : -20;
-            ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-20, armY);
-            ctx.moveTo(0, -15); ctx.lineTo(20, -armY); ctx.stroke();
-            // Head
-            ctx.fillStyle = "#ffdbac";
-            ctx.beginPath(); ctx.arc(0, -35, 12, 0, Math.PI * 2); ctx.fill();
-            // Indicator
-            if (active) {
-                ctx.fillStyle = "#f1c40f";
-                ctx.beginPath(); ctx.moveTo(-6, -65); ctx.lineTo(6, -65); ctx.lineTo(0, -55); ctx.fill();
-            }
-            ctx.restore();
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.w, this.h);
         }
     }
 
-    const t1 = [new Human(150, 400, '#ff3e3e', 1), new Human(250, 400, '#ff3e3e', 1)];
-    const t2 = [new Human(750, 400, '#00d2ff', 2), new Human(850, 400, '#00d2ff', 2)];
+    const t1 = [new Human(200, '#ff3e3e', 1)];
+    const t2 = [new Human(800, '#00d2ff', 2)];
     const keys = {};
-
-    window.onkeydown = e => {
-        keys[e.code] = true;
-        if (e.code === 'KeyQ') t1Active = (t1Active + 1) % 2;
-        if (e.code === 'ShiftRight') t2Active = (t2Active + 1) % 2;
-        if (e.code === 'KeyM') {
-            pvpMode = !pvpMode;
-            document.getElementById('mode-text').innerText = pvpMode ? "MODE: PVP" : "MODE: PVE";
-        }
-    };
+    window.onkeydown = e => keys[e.code] = true;
     window.onkeyup = e => keys[e.code] = false;
-
-    function reset() {
-        ball.x = 500; ball.y = 100;
-        ball.vx = (Math.random() - 0.5) * 10; ball.vy = 0;
-    }
 
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Background Islands
+        ctx.fillStyle = "#222";
+        ctx.fillRect(400, 300, 200, 20); // Center Island
         
-        // Draw Islands
-        platforms.forEach(p => {
-            ctx.fillStyle = "#222";
-            ctx.fillRect(p.x, p.y, p.w, p.h);
-        });
+        // Update Players
+        t1.forEach(p => p.update(true));
+        t2.forEach(p => p.update(false));
 
-        t1.forEach((p, i) => p.update(i === t1Active));
-        t2.forEach((p, i) => p.update(pvpMode && i === t2Active));
+        // --- THE BALL PHYSICS & FLOOR FIX ---
+        ball.vy += gravity;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
 
-        // Ball Physics
-        ball.vy += gravity; ball.vx *= friction;
-        ball.x += ball.vx; ball.y += ball.vy;
-        ball.rot += ball.vx * 0.05;
-
-        // Map Bounds for Ball
-        if (ball.x < ball.r) { ball.x = ball.r; ball.vx *= -0.8; }
-        if (ball.x > canvas.width - ball.r) { ball.x = canvas.width - ball.r; ball.vx *= -0.8; }
-        if (ball.y < ball.r) { ball.y = ball.r; ball.vy *= -0.8; }
-
-        platforms.forEach(p => {
-            if (ball.y + ball.r > p.y && ball.y - ball.r < p.y + 15 && ball.x > p.x && ball.x < p.x + p.w) {
-                ball.vy *= -0.7;
-                ball.y = (ball.vy > 0) ? p.y - ball.r : p.y + 15 + ball.r;
-            }
-        });
-
-        // Hoops & Scoring
-        ctx.strokeStyle = "white"; ctx.lineWidth = 6;
-        ctx.strokeRect(-5, 250, 60, 10); ctx.strokeRect(945, 250, 60, 10);
-        
-        if (ball.y > 245 && ball.y < 265 && ball.vy > 0) {
-            if (ball.x < 55) { score2++; document.getElementById('s2').innerText = score2; reset(); }
-            if (ball.x > 945) { score1++; document.getElementById('s1').innerText = score1; reset(); }
+        // 1. FLOOR CLAMP (Prevent falling through)
+        if (ball.y + ball.r > FLOOR_Y) {
+            ball.y = FLOOR_Y - ball.r; // Reset position to top of floor
+            ball.vy *= -0.7;           // Bounce
+            ball.vx *= friction;       // Roll friction
         }
 
-        t1.forEach((p, i) => p.draw(i === t1Active));
-        t2.forEach((p, i) => p.draw(pvpMode && i === t2Active));
+        // 2. WALL/CEILING BOUNDS
+        if (ball.x < ball.r) { ball.x = ball.r; ball.vx *= -0.7; }
+        if (ball.x > canvas.width - ball.r) { ball.x = canvas.width - ball.r; ball.vx *= -0.7; }
+        if (ball.y < ball.r) { ball.y = ball.r; ball.vy *= -0.7; }
 
-        // Draw Ball
-        ctx.save();
-        ctx.translate(ball.x, ball.y); ctx.rotate(ball.rot);
+        // 3. ISLAND COLLISION
+        if (ball.x > 400 && ball.x < 600 && ball.y + ball.r > 300 && ball.y - ball.r < 320) {
+            ball.vy *= -0.8;
+            ball.y = (ball.vy > 0) ? 300 - ball.r : 320 + ball.r;
+        }
+
+        // Draw Score Hoops
+        ctx.strokeStyle = "white"; ctx.strokeRect(0, 200, 50, 10); ctx.strokeRect(950, 200, 50, 10);
+        if (ball.y > 190 && ball.y < 210) {
+            if (ball.x < 50) { score2++; ball.x = 500; ball.y = 100; ball.vx = 5; }
+            if (ball.x > 950) { score1++; ball.x = 500; ball.y = 100; ball.vx = -5; }
+            document.getElementById('s1').innerText = score1;
+            document.getElementById('s2').innerText = score2;
+        }
+
+        // Draw Floor
+        ctx.fillStyle = "#111";
+        ctx.fillRect(0, FLOOR_Y, canvas.width, 40);
+
+        // Draw Entities
+        t1.forEach(p => p.draw());
+        t2.forEach(p => p.draw());
         ctx.fillStyle = "#ff8800";
-        ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
 
         requestAnimationFrame(loop);
     }
