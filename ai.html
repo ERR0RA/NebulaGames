@@ -2,106 +2,150 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS AI | Smart Browser</title>
+    <title>NEXUS OS | Gen-2 AI Browser</title>
     <style>
-        body { margin: 0; background: #0a0a0c; color: #00ff95; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        :root { --neon: #00ff95; --bg: #050508; --panel: #111116; --text: #e0e0e0; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Consolas', monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Navigation Header */
-        header { background: #111; padding: 12px; display: flex; gap: 10px; align-items: center; border-bottom: 2px solid #333; }
-        #addr { flex: 1; background: #000; border: 1px solid #00ff95; color: #00ff95; padding: 10px 20px; border-radius: 25px; outline: none; font-family: monospace; }
-        .btn { background: #222; color: #00ff95; border: 1px solid #00ff95; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: 0.3s; }
-        .btn:hover { background: #00ff95; color: #000; }
+        /* Top Navigation */
+        header { background: var(--panel); padding: 10px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #333; z-index: 100; }
+        #url-input { flex: 1; background: #000; border: 1px solid #444; color: var(--neon); padding: 10px; border-radius: 4px; outline: none; transition: 0.3s; }
+        #url-input:focus { border-color: var(--neon); box-shadow: 0 0 10px rgba(0,255,149,0.2); }
+        .btn { background: var(--neon); color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; }
 
-        /* Main Workspace */
-        main { display: flex; flex: 1; width: 100%; }
+        /* Main Interface */
+        main { display: flex; flex: 1; overflow: hidden; }
+        #browser-view { flex: 2.5; background: #fff; border: none; }
         
-        /* The Web View (Left) */
-        #web-frame { flex: 3; border: none; background: white; }
+        /* AI Sidebar */
+        #ai-sidebar { flex: 1; background: var(--panel); border-left: 1px solid #333; display: flex; flex-direction: column; position: relative; }
+        #chat-flow { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         
-        /* The AI Sidekick (Right) */
-        #ai-sidekick { flex: 1; background: #111; border-left: 2px solid #333; display: flex; flex-direction: column; padding: 15px; }
-        #ai-log { flex: 1; overflow-y: auto; font-size: 0.9rem; line-height: 1.5; margin-bottom: 10px; }
-        .ai-bubble { background: #1a1a1a; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #00d2ff; }
+        /* AI Elements */
+        .thought { color: #666; font-size: 0.8rem; font-style: italic; margin-bottom: 5px; }
+        .bubble { padding: 12px; border-radius: 8px; line-height: 1.4; max-width: 90%; }
+        .ai-msg { background: #1a1a25; border-left: 3px solid var(--neon); align-self: flex-start; }
+        .user-msg { background: #333; align-self: flex-end; color: var(--neon); }
         
-        /* Status Bar */
-        footer { background: #000; padding: 5px 15px; font-size: 0.7rem; border-top: 1px solid #333; color: #555; }
+        /* System Pulse */
+        .pulse { height: 2px; width: 100%; background: linear-gradient(90deg, transparent, var(--neon), transparent); animation: slide 2s infinite; }
+        @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: bold; letter-spacing: 2px;">NEXUS</div>
-    <input type="text" id="addr" placeholder="Type a URL or ask a question..." onkeypress="if(event.key==='Enter') handleInput()">
-    <button class="btn" onclick="handleInput()">EXECUTE</button>
+    <div style="color: var(--neon); font-weight: bold;">NEXUS_v2</div>
+    <input type="text" id="url-input" placeholder="Enter URL or command (e.g., 'Help me code' or 'Summarize')...">
+    <button class="btn" onclick="execute()">EXECUTE</button>
 </header>
+<div class="pulse"></div>
 
 <main>
-    <iframe id="web-frame" src="about:blank"></iframe>
+    <iframe id="browser-view" src="about:blank"></iframe>
     
-    <aside id="ai-sidekick">
-        <h3 style="margin-top:0; color: #00d2ff;">AI COPILOT</h3>
-        <div id="ai-log">
-            <div class="ai-bubble">System online. I am monitoring your session. Type a URL to browse, or ask me to explain a topic.</div>
+    <aside id="ai-sidebar">
+        <div id="chat-flow">
+            <div class="ai-msg bubble">System Initialized. I am Nexus. I can browse the web with you or assist in specialized tasks. What is your name?</div>
         </div>
-        <div style="font-size: 0.8rem; color: #888; text-align: center;">Press [Enter] to sync data</div>
     </aside>
 </main>
 
-<footer>
-    ENGINE: V8-NEXUS | STATUS: ENCRYPTED | MODE: MULTI-AGENT ADAPTIVE
-</footer>
-
 <script>
-    const frame = document.getElementById('web-frame');
-    const addr = document.getElementById('addr');
-    const log = document.getElementById('ai-log');
+    const chat = document.getElementById('chat-flow');
+    const view = document.getElementById('browser-view');
+    const input = document.getElementById('url-input');
 
-    function aiSay(text) {
-        const div = document.createElement('div');
-        div.className = 'ai-bubble';
-        div.innerText = text;
-        log.appendChild(div);
-        log.scrollTop = log.scrollHeight;
-    }
+    // AI State (Memory)
+    let state = {
+        userName: null,
+        lastTopic: null,
+        mode: "Standard",
+        history: []
+    };
 
-    function handleInput() {
-        const val = addr.value.trim();
-        if (!val) return;
+    function addMessage(text, type = 'ai', thought = null) {
+        const container = document.createElement('div');
+        container.style.display = "flex";
+        container.style.flexDirection = "column";
 
-        // 1. Check if it's a URL
-        if (val.includes('.') && !val.includes(' ')) {
-            let url = val.startsWith('http') ? val : 'https://' + val;
-            
-            aiSay(`Navigating to ${val}. I will analyze the page structure for you.`);
-            frame.src = url;
-            
-            // Note: Many sites (Google, YouTube, Facebook) block iFrame loading for security.
-            // This works best for documentation, personal sites, or educational wikis.
-        } 
-        // 2. Check if it's a Help Request
-        else {
-            processAIRequest(val);
+        if (thought) {
+            const tDiv = document.createElement('div');
+            tDiv.className = "thought";
+            tDiv.innerText = `[Thinking: ${thought}]`;
+            container.appendChild(tDiv);
         }
-        addr.value = "";
+
+        const mDiv = document.createElement('div');
+        mDiv.className = `bubble ${type}-msg`;
+        mDiv.innerText = text;
+        container.appendChild(mDiv);
+        
+        chat.appendChild(container);
+        chat.scrollTop = chat.scrollHeight;
     }
 
-    function processAIRequest(prompt) {
-        const input = prompt.toLowerCase();
-        aiSay(`Processing: "${prompt}"...`);
+    function execute() {
+        const rawInput = input.value.trim();
+        if (!rawInput) return;
+        
+        addMessage(rawInput, 'user');
+        input.value = "";
 
-        setTimeout(() => {
-            if (input.includes("summarize") || input.includes("explain")) {
-                aiSay("Expert Agent: Ready to summarize. Please copy and paste the text you want me to analyze here.");
-            } else if (input.includes("code") || input.includes("fix")) {
-                aiSay("Dev Agent: Optimization mode engaged. Paste your code snippet and I will look for bugs.");
-            } else if (input.includes("game")) {
-                aiSay("Creative Agent: I can help you build games! Would you like to add 'Super Jump' or 'Speed Boost' to our B-Ball code?");
-            } else {
-                aiSay("Nexus Core: I'm not sure how to help with that yet. Should I search for documentation on this topic?");
-            }
-        }, 800);
+        // 1. Identify User (First interaction)
+        if (!state.userName) {
+            state.userName = rawInput;
+            addMessage(`Confirmed. System registered to user: ${state.userName}. How can I assist you today?`, 'ai', "Identity confirmed, updating registry.");
+            return;
+        }
+
+        // 2. Logic Router
+        if (rawInput.includes('.') && !rawInput.includes(' ')) {
+            handleNavigation(rawInput);
+        } else {
+            handleAIRequest(rawInput.toLowerCase());
+        }
     }
+
+    function handleNavigation(url) {
+        let finalUrl = url.startsWith('http') ? url : 'https://' + url;
+        addMessage(`Navigating to ${url}...`, 'ai', "Initializing secure IFrame tunnel.");
+        view.src = finalUrl;
+        
+        // Contextual Adaptation
+        if (url.includes('github') || url.includes('stack')) {
+            state.mode = "Developer";
+            addMessage("I've switched to Developer Mode to assist with your technical browsing.", 'ai');
+        }
+    }
+
+    function handleAIRequest(query) {
+        let response = "";
+        let thought = "";
+
+        // Decision Tree Logic
+        if (query.includes("code") || query.includes("html") || query.includes("script")) {
+            thought = "Scanning internal libraries for code structures.";
+            response = `Since we're in ${state.mode} mode, I recommend using a Modular pattern for that script. Want a template?`;
+        } 
+        else if (query.includes("summarize") || query.includes("explain")) {
+            thought = "Preparing NLP summarization engine.";
+            response = "I'm ready. Paste the text from the current page, and I'll compress it into 3 key points.";
+        }
+        else if (query.includes("who am i")) {
+            thought = "Accessing local state memory.";
+            response = `You are ${state.userName}. We are currently in ${state.mode} mode.`;
+        }
+        else {
+            thought = "Heuristic match failed. Resorting to general dialogue.";
+            response = "I understand the request. I'm currently limited to local execution, but I can help you structure your thoughts or browse to a solution.";
+        }
+
+        setTimeout(() => addMessage(response, 'ai', thought), 600);
+    }
+
+    // Allow Enter key
+    input.addEventListener("keypress", (e) => { if(e.key === "Enter") execute(); });
 </script>
-
 </body>
 </html>
