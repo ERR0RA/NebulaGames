@@ -2,80 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS OMEGA | Persistent AI OS</title>
+    <title>NEXUS OMEGA | Semantic AI</title>
     <style>
-        :root { --neon: #00ff95; --bg: #050508; --panel: #0d0d12; --user: #00d2ff; --gray: #555; }
-        body { margin: 0; background: var(--bg); color: #eee; font-family: 'JetBrains Mono', 'Consolas', monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        :root { --neon: #00ff95; --bg: #050508; --panel: #0d0d12; --user: #00d2ff; }
+        body { margin: 0; background: var(--bg); color: #eee; font-family: 'JetBrains Mono', monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Header & Search */
-        header { background: var(--panel); padding: 10px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #222; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        #addr-bar { flex: 1; background: #000; border: 1px solid #333; color: var(--neon); padding: 12px; border-radius: 4px; outline: none; font-size: 0.9rem; }
-        .btn { background: var(--neon); color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; transition: 0.2s; }
-        .btn:hover { filter: brightness(1.2); box-shadow: 0 0 15px var(--neon); }
+        header { background: var(--panel); padding: 15px 25px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #222; }
+        #addr-bar { flex: 1; background: #000; border: 1px solid #333; color: var(--neon); padding: 12px; border-radius: 4px; outline: none; }
+        .btn { background: var(--neon); color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; }
 
-        /* Workspace */
-        main { display: flex; flex: 1; overflow: hidden; position: relative; }
-        #web-zone { flex: 2; background: #fff; position: relative; }
+        main { display: flex; flex: 1; overflow: hidden; }
+        #web-zone { flex: 2; background: #fff; }
         iframe { width: 100%; height: 100%; border: none; }
         
-        /* AI Sidebar */
-        #ai-sidebar { flex: 1; background: var(--panel); border-left: 1px solid #222; display: flex; flex-direction: column; min-width: 350px; }
-        #chat-flow { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
+        #ai-sidebar { flex: 1.2; background: var(--panel); border-left: 1px solid #222; display: flex; flex-direction: column; }
+        #chat-flow { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
         
-        /* Messages */
-        .msg { padding: 15px; border-radius: 4px; line-height: 1.6; font-size: 0.85rem; max-width: 90%; position: relative; animation: fadeIn 0.3s ease; }
-        .ai { background: #14141b; border-left: 2px solid var(--neon); align-self: flex-start; }
-        .user { background: #1a1a25; border-right: 2px solid var(--user); align-self: flex-end; color: var(--user); }
-        .thought { color: var(--gray); font-size: 0.7rem; display: block; margin-bottom: 8px; text-transform: uppercase; }
+        .msg { padding: 15px; border-radius: 6px; line-height: 1.6; font-size: 0.9rem; max-width: 85%; animation: fadeIn 0.3s ease; }
+        .ai { background: #14141b; border-left: 3px solid var(--neon); align-self: flex-start; }
+        .user { background: #1a1a25; border-right: 3px solid var(--user); align-self: flex-end; color: var(--user); }
+        .thought { color: #555; font-size: 0.7rem; display: block; margin-bottom: 8px; text-transform: uppercase; }
         
-        /* Code Block Styling */
-        pre { background: #000; padding: 10px; border-radius: 4px; border: 1px solid #333; overflow-x: auto; color: #fff; margin: 10px 0; }
-
-        /* System Logs */
-        #sys-log { background: #000; height: 100px; padding: 10px; font-size: 0.7rem; color: #0f0; border-top: 1px solid #222; overflow-y: auto; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: bold; color: var(--neon); letter-spacing: 2px;">NEXUS_OMEGA</div>
-    <input type="text" id="addr-bar" placeholder="Enter URL, search, or command AI..." autocomplete="off">
-    <button class="btn" onclick="nexusExec()">EXECUTE</button>
+    <div style="font-weight: bold; color: var(--neon);">NEXUS_OMEGA</div>
+    <input type="text" id="addr-bar" placeholder="Ask a question or enter a URL..." autocomplete="off">
+    <button class="btn" onclick="nexusRun()">EXECUTE</button>
 </header>
 
 <main>
-    <div id="web-zone">
-        <iframe id="viewport" src="about:blank"></iframe>
-    </div>
-    
-    <aside id="ai-sidebar">
-        <div id="chat-flow"></div>
-        <div id="sys-log">> SYSTEM READY... MEMORY LOADED.</div>
-    </aside>
+    <div id="web-zone"><iframe id="viewport" src="about:blank"></iframe></div>
+    <aside id="ai-sidebar"><div id="chat-flow"></div></aside>
 </main>
 
 <script>
     const chat = document.getElementById('chat-flow');
     const view = document.getElementById('viewport');
     const input = document.getElementById('addr-bar');
-    const sysLog = document.getElementById('sys-log');
 
-    // --- OMEGA CORE: PERSISTENCE & LOGIC ---
-    let db = JSON.parse(localStorage.getItem('nexus_db')) || {
-        user: null,
-        logs: [],
-        lastSubject: null
+    // --- SMART BRAIN: KNOWLEDGE & CONVERSATION ---
+    const BRAIN = {
+        knowledge: [
+            { keys: ["sky", "blue"], ans: "The sky appears blue due to Rayleigh scattering; shorter blue wavelengths scatter more in the atmosphere." },
+            { keys: ["capital", "france"], ans: "The capital of France is Paris." },
+            { keys: ["who", "created", "you"], ans: "I am a Nexus-series AI, built using JavaScript and HTML structure." },
+            { keys: ["pi", "math"], ans: "Pi is approximately 3.14159, representing the ratio of a circle's circumference to its diameter." }
+        ],
+        fillers: [
+            "That's a fascinating point. How does that impact your current project?",
+            "I see. Tell me more about why you're thinking about that.",
+            "Interesting perspective. Should we look up more data on that via the browser?",
+            "I'm following you. What's the next step in this line of thought?"
+        ]
     };
-
-    function save() { localStorage.setItem('nexus_db', JSON.stringify(db)); }
-
-    function log(txt) {
-        const time = new Date().toLocaleTimeString();
-        sysLog.innerHTML += `<div>[${time}] ${txt}</div>`;
-        sysLog.scrollTop = sysLog.scrollHeight;
-    }
 
     function addMsg(text, type, thought = null) {
         const div = document.createElement('div');
@@ -83,82 +66,55 @@
         div.innerHTML = (thought ? `<span class="thought">${thought}</span>` : "") + `<div>${text}</div>`;
         chat.appendChild(div);
         chat.scrollTop = chat.scrollHeight;
-        div.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    // Initial Greeting
-    if (!db.user) {
-        addMsg("System handshake initiated. I am Nexus Omega. Identify yourself to begin persistent session.", "ai", "IDENTITY_VOID");
-    } else {
-        addMsg(`Welcome back, ${db.user}. Last session state restored. Ready for commands.`, "ai", "RESTORE_COMPLETE");
-    }
-
-    async function nexusExec() {
+    function nexusRun() {
         const val = input.value.trim();
         if (!val) return;
-        
         addMsg(val, 'user');
         input.value = "";
-        log(`Processing Input: ${val.substring(0, 20)}...`);
 
-        // 1. Identity Logic
-        if (!db.user) {
-            db.user = val;
-            save();
-            addMsg(`User identity set to ${db.user}. Profile encrypted. How can I assist?`, "ai", "ENCRYPT_ID");
+        if (val.includes('.') && !val.includes(' ')) {
+            view.src = val.startsWith('http') ? val : 'https://' + val;
+            addMsg(`Navigating to ${val}...`, "ai", "NETWORK_BRIDGE");
             return;
         }
 
-        // 2. Routing Logic
-        if (val.includes('.') && !val.includes(' ')) {
-            handleNav(val);
-        } else if (val.toLowerCase().startsWith("run ")) {
-            handleEval(val.replace("run ", ""));
+        processSmartReply(val.toLowerCase());
+    }
+
+    function processSmartReply(query) {
+        let bestMatch = null;
+        let maxScore = 0;
+
+        // 1. SCORING ENGINE (Semantic matching)
+        BRAIN.knowledge.forEach(item => {
+            let score = 0;
+            item.keys.forEach(k => { if(query.includes(k)) score++; });
+            if (score > maxScore) {
+                maxScore = score;
+                bestMatch = item.ans;
+            }
+        });
+
+        // 2. DECISION LOGIC
+        let response = "";
+        let thought = "";
+
+        if (maxScore > 0) {
+            thought = "KNOWLEDGE_RETRIEVAL_SUCCESS";
+            response = bestMatch;
         } else {
-            handleBrain(val.toLowerCase());
-        }
-    }
-
-    function handleNav(url) {
-        let clean = url.startsWith('http') ? url : 'https://' + url;
-        log(`Routing to external address: ${url}`);
-        view.src = clean;
-        addMsg(`Opening ${url}. Note: Some sites block iFrame access for security.`, "ai", "NETWORK_BRIDGE");
-    }
-
-    function handleEval(code) {
-        try {
-            log("Executing Virtual Code...");
-            const result = eval(code);
-            addMsg(`Code executed successfully. Output: <pre>${result}</pre>`, "ai", "VIRTUAL_MACHINE");
-        } catch (e) {
-            addMsg(`Execution Error: ${e.message}`, "ai", "VM_CRASH");
-        }
-    }
-
-    function handleBrain(query) {
-        let res = "";
-        let th = "HEURISTIC_SEARCH";
-
-        if (query.match(/code|build|html|css|js/)) {
-            db.lastSubject = "coding";
-            th = "SYNTAX_ENGINE";
-            res = "I've initialized the Coding Module. Use 'run [code]' to test snippets directly in my console.";
-        } else if (query.includes("who am i")) {
-            res = `You are ${db.user}. You are currently controlling Nexus Omega via a local HTML bridge.`;
-        } else if (query.includes("search")) {
-            const q = query.replace("search ", "");
-            view.src = `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
-            res = `Searching for "${q}"... Check the viewport for results.`;
-        } else {
-            res = "Understood. I've logged this to our persistent memory. Would you like me to analyze this further or search the web?";
+            thought = "CONVERSATION_CONTINUITY_MODE";
+            // Picks a random filler to keep the conversation going
+            response = BRAIN.fillers[Math.floor(Math.random() * BRAIN.fillers.length)];
         }
 
-        save();
-        setTimeout(() => addMsg(res, "ai", th), 400);
+        setTimeout(() => addMsg(response, "ai", thought), 500);
     }
 
-    input.addEventListener("keypress", (e) => { if(e.key === "Enter") nexusExec(); });
+    addMsg("Neural links stable. Ask me a factual question or just chat with me.", "ai", "SYSTEM_READY");
+    input.addEventListener("keypress", (e) => { if(e.key === "Enter") nexusRun(); });
 </script>
 </body>
 </html>
