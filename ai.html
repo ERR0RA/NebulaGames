@@ -2,120 +2,163 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS G4 | Search-Enabled AI</title>
+    <title>NEXUS OMEGA | Persistent AI OS</title>
     <style>
-        :root { --neon: #00ff95; --bg: #08080a; --panel: #111116; --user: #00d2ff; }
-        body { margin: 0; background: var(--bg); color: #e0e0e0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        :root { --neon: #00ff95; --bg: #050508; --panel: #0d0d12; --user: #00d2ff; --gray: #555; }
+        body { margin: 0; background: var(--bg); color: #eee; font-family: 'JetBrains Mono', 'Consolas', monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Navigation & Search Bar */
-        header { background: var(--panel); padding: 12px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #222; }
-        #addr-bar { flex: 1; background: #000; border: 1px solid #333; color: var(--neon); padding: 12px; border-radius: 8px; outline: none; font-family: 'JetBrains Mono', monospace; }
-        .btn { background: var(--neon); color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.2s; }
-        .btn:hover { background: #fff; box-shadow: 0 0 15px var(--neon); }
+        /* Header & Search */
+        header { background: var(--panel); padding: 10px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #222; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        #addr-bar { flex: 1; background: #000; border: 1px solid #333; color: var(--neon); padding: 12px; border-radius: 4px; outline: none; font-size: 0.9rem; }
+        .btn { background: var(--neon); color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; transition: 0.2s; }
+        .btn:hover { filter: brightness(1.2); box-shadow: 0 0 15px var(--neon); }
 
-        main { display: flex; flex: 1; overflow: hidden; }
-        #web-view { flex: 2.2; border: none; background: white; }
+        /* Workspace */
+        main { display: flex; flex: 1; overflow: hidden; position: relative; }
+        #web-zone { flex: 2; background: #fff; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; }
         
         /* AI Sidebar */
-        #ai-sidebar { flex: 1; background: var(--panel); border-left: 1px solid #222; display: flex; flex-direction: column; }
-        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        #ai-sidebar { flex: 1; background: var(--panel); border-left: 1px solid #222; display: flex; flex-direction: column; min-width: 350px; }
+        #chat-flow { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
         
         /* Messages */
-        .msg { padding: 14px; border-radius: 12px; line-height: 1.5; font-size: 0.9rem; max-width: 85%; animation: slideIn 0.2s ease; position: relative; }
-        .ai { background: #1c1c24; border-left: 3px solid var(--neon); align-self: flex-start; }
-        .user { background: #252530; align-self: flex-end; color: var(--user); border-right: 3px solid var(--user); }
-        .thought { color: #555; font-size: 0.7rem; font-family: monospace; display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .msg { padding: 15px; border-radius: 4px; line-height: 1.6; font-size: 0.85rem; max-width: 90%; position: relative; animation: fadeIn 0.3s ease; }
+        .ai { background: #14141b; border-left: 2px solid var(--neon); align-self: flex-start; }
+        .user { background: #1a1a25; border-right: 2px solid var(--user); align-self: flex-end; color: var(--user); }
+        .thought { color: var(--gray); font-size: 0.7rem; display: block; margin-bottom: 8px; text-transform: uppercase; }
+        
+        /* Code Block Styling */
+        pre { background: #000; padding: 10px; border-radius: 4px; border: 1px solid #333; overflow-x: auto; color: #fff; margin: 10px 0; }
 
-        @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* System Logs */
+        #sys-log { background: #000; height: 100px; padding: 10px; font-size: 0.7rem; color: #0f0; border-top: 1px solid #222; overflow-y: auto; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: 900; color: var(--neon); font-size: 1.2rem;">NEXUS<span style="color:white">G4</span></div>
-    <input type="text" id="addr-bar" placeholder="Search the web or ask Nexus..." autocomplete="off">
-    <button class="btn" onclick="execute()">SEARCH / RUN</button>
+    <div style="font-weight: bold; color: var(--neon); letter-spacing: 2px;">NEXUS_OMEGA</div>
+    <input type="text" id="addr-bar" placeholder="Enter URL, search, or command AI..." autocomplete="off">
+    <button class="btn" onclick="nexusExec()">EXECUTE</button>
 </header>
 
 <main>
-    <iframe id="web-view" name="web-view" src="about:blank"></iframe>
+    <div id="web-zone">
+        <iframe id="viewport" src="about:blank"></iframe>
+    </div>
+    
     <aside id="ai-sidebar">
-        <div id="chat-window">
-            <div class="msg ai">
-                <span class="thought">Search Modules Loaded.</span>
-                I am now connected to the web. Type a topic to search, or a URL to visit. I can "see" what you're looking for.
-            </div>
-        </div>
+        <div id="chat-flow"></div>
+        <div id="sys-log">> SYSTEM READY... MEMORY LOADED.</div>
     </aside>
 </main>
 
 <script>
-    const chat = document.getElementById('chat-window');
-    const view = document.getElementById('web-view');
+    const chat = document.getElementById('chat-flow');
+    const view = document.getElementById('viewport');
     const input = document.getElementById('addr-bar');
+    const sysLog = document.getElementById('sys-log');
 
-    let memory = { lastSearch: null };
+    // --- OMEGA CORE: PERSISTENCE & LOGIC ---
+    let db = JSON.parse(localStorage.getItem('nexus_db')) || {
+        user: null,
+        logs: [],
+        lastSubject: null
+    };
 
-    function addMessage(text, type, thought = null) {
+    function save() { localStorage.setItem('nexus_db', JSON.stringify(db)); }
+
+    function log(txt) {
+        const time = new Date().toLocaleTimeString();
+        sysLog.innerHTML += `<div>[${time}] ${txt}</div>`;
+        sysLog.scrollTop = sysLog.scrollHeight;
+    }
+
+    function addMsg(text, type, thought = null) {
         const div = document.createElement('div');
         div.className = `msg ${type}`;
         div.innerHTML = (thought ? `<span class="thought">${thought}</span>` : "") + `<div>${text}</div>`;
         chat.appendChild(div);
         chat.scrollTop = chat.scrollHeight;
+        div.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    function execute() {
+    // Initial Greeting
+    if (!db.user) {
+        addMsg("System handshake initiated. I am Nexus Omega. Identify yourself to begin persistent session.", "ai", "IDENTITY_VOID");
+    } else {
+        addMsg(`Welcome back, ${db.user}. Last session state restored. Ready for commands.`, "ai", "RESTORE_COMPLETE");
+    }
+
+    async function nexusExec() {
         const val = input.value.trim();
         if (!val) return;
         
-        addMessage(val, 'user');
+        addMsg(val, 'user');
         input.value = "";
+        log(`Processing Input: ${val.substring(0, 20)}...`);
 
-        // 1. URL CHECK (Direct Navigation)
+        // 1. Identity Logic
+        if (!db.user) {
+            db.user = val;
+            save();
+            addMsg(`User identity set to ${db.user}. Profile encrypted. How can I assist?`, "ai", "ENCRYPT_ID");
+            return;
+        }
+
+        // 2. Routing Logic
         if (val.includes('.') && !val.includes(' ')) {
             handleNav(val);
-        } 
-        // 2. SEARCH COMMAND
-        else if (val.toLowerCase().startsWith("search ") || !val.includes(' ')) {
-            handleSearch(val.replace("search ", ""));
-        }
-        // 3. AI QUESTION
-        else {
-            processAI(val.toLowerCase());
+        } else if (val.toLowerCase().startsWith("run ")) {
+            handleEval(val.replace("run ", ""));
+        } else {
+            handleBrain(val.toLowerCase());
         }
     }
 
     function handleNav(url) {
-        let finalUrl = url.startsWith('http') ? url : 'https://' + url;
-        addMessage(`Navigating to site...`, 'ai', "URL REDIRECT");
-        view.src = finalUrl;
+        let clean = url.startsWith('http') ? url : 'https://' + url;
+        log(`Routing to external address: ${url}`);
+        view.src = clean;
+        addMsg(`Opening ${url}. Note: Some sites block iFrame access for security.`, "ai", "NETWORK_BRIDGE");
     }
 
-    function handleSearch(query) {
-        // Using DuckDuckGo as a clean, embeddable search proxy
-        const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}&kp=-1&kl=us-en`;
-        memory.lastSearch = query;
-        addMessage(`Searching the web for "${query}"...`, 'ai', "WEB CRAWLER ACTIVE");
-        view.src = searchUrl;
+    function handleEval(code) {
+        try {
+            log("Executing Virtual Code...");
+            const result = eval(code);
+            addMsg(`Code executed successfully. Output: <pre>${result}</pre>`, "ai", "VIRTUAL_MACHINE");
+        } catch (e) {
+            addMsg(`Execution Error: ${e.message}`, "ai", "VM_CRASH");
+        }
     }
 
-    function processAI(query) {
-        let response = "";
-        let thought = "HEURISTIC ANALYSIS";
+    function handleBrain(query) {
+        let res = "";
+        let th = "HEURISTIC_SEARCH";
 
-        if (query.includes("who") || query.includes("what is")) {
-            thought = "KNOWLEDGE RETRIEVAL";
-            response = "I've pulled up the most relevant search results in the browser window for you. Do you want me to explain any specific part of it?";
-            // Auto-search if it looks like a factual question
-            handleSearch(query);
+        if (query.match(/code|build|html|css|js/)) {
+            db.lastSubject = "coding";
+            th = "SYNTAX_ENGINE";
+            res = "I've initialized the Coding Module. Use 'run [code]' to test snippets directly in my console.";
+        } else if (query.includes("who am i")) {
+            res = `You are ${db.user}. You are currently controlling Nexus Omega via a local HTML bridge.`;
+        } else if (query.includes("search")) {
+            const q = query.replace("search ", "");
+            view.src = `https://www.bing.com/search?q=${encodeURIComponent(q)}`;
+            res = `Searching for "${q}"... Check the viewport for results.`;
         } else {
-            response = "I'm standing by. I can search for info, open websites, or help you write code. What's next?";
+            res = "Understood. I've logged this to our persistent memory. Would you like me to analyze this further or search the web?";
         }
 
-        setTimeout(() => addMessage(response, 'ai', thought), 400);
+        save();
+        setTimeout(() => addMsg(res, "ai", th), 400);
     }
 
-    input.addEventListener("keypress", (e) => { if(e.key === "Enter") execute(); });
+    input.addEventListener("keypress", (e) => { if(e.key === "Enter") nexusExec(); });
 </script>
 </body>
 </html>
