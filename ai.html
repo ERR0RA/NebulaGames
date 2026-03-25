@@ -2,32 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS GEN-3 | Contextual AI</title>
+    <title>NEXUS G4 | Search-Enabled AI</title>
     <style>
-        :root { --neon: #00ff95; --bg: #0a0a0c; --panel: #121217; --user: #00d2ff; }
-        body { margin: 0; background: var(--bg); color: #e0e0e0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        :root { --neon: #00ff95; --bg: #08080a; --panel: #111116; --user: #00d2ff; }
+        body { margin: 0; background: var(--bg); color: #e0e0e0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* UI Layout */
-        header { background: var(--panel); padding: 10px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #222; }
-        #addr-bar { flex: 1; background: #000; border: 1px solid #333; color: var(--neon); padding: 12px; border-radius: 8px; outline: none; font-family: monospace; }
-        .btn { background: var(--neon); color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 6px; }
+        /* Navigation & Search Bar */
+        header { background: var(--panel); padding: 12px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #222; }
+        #addr-bar { flex: 1; background: #000; border: 1px solid #333; color: var(--neon); padding: 12px; border-radius: 8px; outline: none; font-family: 'JetBrains Mono', monospace; }
+        .btn { background: var(--neon); color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.2s; }
+        .btn:hover { background: #fff; box-shadow: 0 0 15px var(--neon); }
 
         main { display: flex; flex: 1; overflow: hidden; }
-        #web-view { flex: 2.5; border: none; background: white; }
+        #web-view { flex: 2.2; border: none; background: white; }
         
-        /* Chat System */
-        #ai-sidebar { flex: 1.2; background: var(--panel); border-left: 1px solid #222; display: flex; flex-direction: column; }
+        /* AI Sidebar */
+        #ai-sidebar { flex: 1; background: var(--panel); border-left: 1px solid #222; display: flex; flex-direction: column; }
         #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
         
-        /* Message Bubbles */
-        .msg { padding: 14px; border-radius: 12px; line-height: 1.5; font-size: 0.9rem; max-width: 85%; animation: slideIn 0.2s ease; }
+        /* Messages */
+        .msg { padding: 14px; border-radius: 12px; line-height: 1.5; font-size: 0.9rem; max-width: 85%; animation: slideIn 0.2s ease; position: relative; }
         .ai { background: #1c1c24; border-left: 3px solid var(--neon); align-self: flex-start; }
         .user { background: #252530; align-self: flex-end; color: var(--user); border-right: 3px solid var(--user); }
-        .thought { color: #555; font-size: 0.75rem; font-family: monospace; display: block; margin-bottom: 5px; }
-
-        /* Scrollbar */
-        #chat-window::-webkit-scrollbar { width: 5px; }
-        #chat-window::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .thought { color: #555; font-size: 0.7rem; font-family: monospace; display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
 
         @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -35,18 +32,18 @@
 <body>
 
 <header>
-    <div style="font-weight: bold; color: var(--neon);">NEXUS<span style="color:white">G3</span></div>
-    <input type="text" id="addr-bar" placeholder="Enter URL or chat with Nexus..." autocomplete="off">
-    <button class="btn" onclick="execute()">RUN</button>
+    <div style="font-weight: 900; color: var(--neon); font-size: 1.2rem;">NEXUS<span style="color:white">G4</span></div>
+    <input type="text" id="addr-bar" placeholder="Search the web or ask Nexus..." autocomplete="off">
+    <button class="btn" onclick="execute()">SEARCH / RUN</button>
 </header>
 
 <main>
-    <iframe id="web-view" src="about:blank"></iframe>
+    <iframe id="web-view" name="web-view" src="about:blank"></iframe>
     <aside id="ai-sidebar">
         <div id="chat-window">
             <div class="msg ai">
-                <span class="thought">System Ready. Context Engine: Online.</span>
-                Welcome back. I am now running on the Gen-3 Context Engine. I can remember the subject of our conversation. How can I assist?
+                <span class="thought">Search Modules Loaded.</span>
+                I am now connected to the web. Type a topic to search, or a URL to visit. I can "see" what you're looking for.
             </div>
         </div>
     </aside>
@@ -57,22 +54,14 @@
     const view = document.getElementById('web-view');
     const input = document.getElementById('addr-bar');
 
-    // --- BRAIN UPGRADE: CONTEXT & MEMORY ---
-    let memory = {
-        lastSubject: null, // Tracks if we are talking about 'code', 'games', etc.
-        userName: null,
-        history: []
-    };
+    let memory = { lastSearch: null };
 
     function addMessage(text, type, thought = null) {
         const div = document.createElement('div');
         div.className = `msg ${type}`;
-        div.innerHTML = (thought ? `<span class="thought">[${thought}]</span>` : "") + `<div>${text}</div>`;
+        div.innerHTML = (thought ? `<span class="thought">${thought}</span>` : "") + `<div>${text}</div>`;
         chat.appendChild(div);
-        
-        // AUTO-SCROLL FIX
         chat.scrollTop = chat.scrollHeight;
-        div.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
     function execute() {
@@ -82,67 +71,48 @@
         addMessage(val, 'user');
         input.value = "";
 
+        // 1. URL CHECK (Direct Navigation)
         if (val.includes('.') && !val.includes(' ')) {
             handleNav(val);
-        } else {
-            processSmartAI(val.toLowerCase());
+        } 
+        // 2. SEARCH COMMAND
+        else if (val.toLowerCase().startsWith("search ") || !val.includes(' ')) {
+            handleSearch(val.replace("search ", ""));
+        }
+        // 3. AI QUESTION
+        else {
+            processAI(val.toLowerCase());
         }
     }
 
     function handleNav(url) {
         let finalUrl = url.startsWith('http') ? url : 'https://' + url;
-        addMessage(`Opening ${url}...`, 'ai', "Routing browser request.");
+        addMessage(`Navigating to site...`, 'ai', "URL REDIRECT");
         view.src = finalUrl;
     }
 
-    function processSmartAI(query) {
+    function handleSearch(query) {
+        // Using DuckDuckGo as a clean, embeddable search proxy
+        const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}&kp=-1&kl=us-en`;
+        memory.lastSearch = query;
+        addMessage(`Searching the web for "${query}"...`, 'ai', "WEB CRAWLER ACTIVE");
+        view.src = searchUrl;
+    }
+
+    function processAI(query) {
         let response = "";
-        let thought = "";
+        let thought = "HEURISTIC ANALYSIS";
 
-        // 1. CONTEXT CHECKING (The "Smart" Part)
-        // If the user uses pronouns like "it" or "that", use the last subject
-        let activeSubject = memory.lastSubject;
-        
-        if (query.match(/code|script|html|js|css|build/)) {
-            activeSubject = "coding";
-            memory.lastSubject = "coding";
-        } else if (query.match(/game|play|fun|basketball/)) {
-            activeSubject = "gaming";
-            memory.lastSubject = "gaming";
-        } else if (query.match(/who|name|identify/)) {
-            activeSubject = "identity";
+        if (query.includes("who") || query.includes("what is")) {
+            thought = "KNOWLEDGE RETRIEVAL";
+            response = "I've pulled up the most relevant search results in the browser window for you. Do you want me to explain any specific part of it?";
+            // Auto-search if it looks like a factual question
+            handleSearch(query);
+        } else {
+            response = "I'm standing by. I can search for info, open websites, or help you write code. What's next?";
         }
 
-        // 2. RESPONSE ENGINE
-        switch(activeSubject) {
-            case "coding":
-                thought = "Analyzing syntax requirements.";
-                response = query.includes("example") 
-                    ? "Here is a boilerplate: &lt;button onclick='alert(\"Hi\")'&gt;Click Me&lt;/button&gt;" 
-                    : "Coding mode active. I can help you structure scripts or debug HTML. What are we building?";
-                break;
-            case "gaming":
-                thought = "Calculating physics and game states.";
-                response = "I'm ready to upgrade our Basketball game. Should we add a score counter or a jump-height modifier?";
-                break;
-            case "identity":
-                thought = "Accessing local profile.";
-                response = "I am Nexus Gen-3, your contextual browser assistant. I live entirely in this HTML file.";
-                break;
-            default:
-                // Handle "it" or "more" based on context
-                if (query.includes("more") || query.includes("tell me")) {
-                    thought = `Recalling last subject: ${memory.lastSubject}`;
-                    response = memory.lastSubject 
-                        ? `Tell you more about ${memory.lastSubject}? I'd be happy to. Where should we dive deeper?` 
-                        : "I'm not sure what we're talking about yet. Give me a topic!";
-                } else {
-                    thought = "General heuristic search.";
-                    response = "I'm processing that. Want me to search the web for a detailed answer?";
-                }
-        }
-
-        setTimeout(() => addMessage(response, 'ai', thought), 500);
+        setTimeout(() => addMessage(response, 'ai', thought), 400);
     }
 
     input.addEventListener("keypress", (e) => { if(e.key === "Enter") execute(); });
