@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NEXUS-3D | Triple Mode</title>
+    <title>NEXUS-3D | 5v2 Tactical</title>
     <style>
         body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
         #container { display: flex; width: 100vw; height: 100vh; }
@@ -17,7 +17,7 @@
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; z-index: 100; text-align: center;}
         .menu-box { border: 2px solid #0f0; padding: 30px; background: #050505; box-shadow: 0 0 20px #0f0; }
         .btn { background: #0f0; color: #000; border: none; padding: 12px 25px; margin: 8px; cursor: pointer; font-weight: bold; width: 280px; display: block; font-family: monospace; }
-        .btn:hover { background: #fff; transform: scale(1.05); }
+        .btn:hover { background: #fff; }
         
         #timer-box { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #f00; color: #f00; font-weight: bold; display: none; z-index: 40; }
         #hud { position: absolute; bottom: 15px; width: 100%; display: none; justify-content: space-around; pointer-events: none; z-index: 40; }
@@ -26,7 +26,7 @@
 </head>
 <body>
 
-    <div id="timer-box">TIME LEFT: <span id="clock">04:00</span></div>
+    <div id="timer-box">EXTRACTION IN: <span id="clock">04:00</span></div>
     
     <div id="container">
         <canvas id="p1Cam" class="view"></canvas>
@@ -37,17 +37,17 @@
 
     <div id="main-menu" class="overlay">
         <div class="menu-box">
-            <h1>NEXUS_MODES_v6</h1>
-            <button class="btn" onclick="init('bot')">MODE 1: SOLO SURVIVAL (3 BOTS)</button>
-            <button class="btn" onclick="init('pvp')">MODE 2: PVP TAG (4 MINUTE)</button>
-            <button class="btn" onclick="init('3v2')">MODE 3: 3 BOTS VS 2 PLAYERS</button>
-            <p style="color:#444; font-size: 0.7rem; margin-top:10px;">P1: WASD | P2: ARROWS</p>
+            <h1>NEXUS_ULTIMATUM</h1>
+            <button class="btn" onclick="init('bot')">SOLO SURVIVAL (3 BOTS)</button>
+            <button class="btn" onclick="init('pvp')">PVP TAG (P1 vs P2)</button>
+            <button class="btn" onclick="init('5v2')">5 BOTS VS 2 PLAYERS</button>
+            <p style="color:#444; font-size: 0.7rem; margin-top:10px;">FIXED P2 CONTROLS | 31x31 LABYRINTH</p>
         </div>
     </div>
 
     <div id="hud">
-        <div class="stats">P1 HP: <span id="p1hp">100</span>%</div>
-        <div id="p2-stats" class="stats" style="display:none">P2 HP: <span id="p2hp">100</span>%</div>
+        <div class="stats">P1 INTEGRITY: <span id="p1hp">100</span>%</div>
+        <div id="p2-stats" class="stats" style="display:none">P2 INTEGRITY: <span id="p2hp">100</span>%</div>
     </div>
 
 <script>
@@ -82,7 +82,6 @@
         walk(1,1);
     }
 
-    // Advanced BFS Pathfinding
     function getNextStep(bx, by, tx, ty) {
         let sx = Math.floor(bx), sy = Math.floor(by);
         let ex = Math.floor(tx), ey = Math.floor(ty);
@@ -105,6 +104,22 @@
         return {x: n[0]+0.5, y: n[1]+0.5};
     }
 
+    function canMove(nx, ny) {
+        return world[Math.floor(ny)] && world[Math.floor(ny)][Math.floor(nx)] === 0;
+    }
+
+    function movePlayer(p, speed, rotSpeed, u, d, l, r) {
+        if(keys[l]) p.dir -= rotSpeed;
+        if(keys[r]) p.dir += rotSpeed;
+        let moveX = 0, moveY = 0;
+        if(keys[u]) { moveX += Math.cos(p.dir) * speed; moveY += Math.sin(p.dir) * speed; }
+        if(keys[d]) { moveX -= Math.cos(p.dir) * speed; moveY -= Math.sin(p.dir) * speed; }
+        
+        // Sliding Collision Fix
+        if(canMove(p.x + moveX, p.y)) p.x += moveX;
+        if(canMove(p.x, p.y + moveY)) p.y += moveY;
+    }
+
     function init(m) {
         gameMode = m;
         generateMaze();
@@ -112,11 +127,10 @@
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('minimap').style.display = 'block';
         document.getElementById('hud').style.display = 'flex';
+        document.getElementById('timer-box').style.display = 'block';
         
         p1c.style.display = 'block';
-        
-        // Mode Specific Setup
-        if(m === 'pvp' || m === '3v2') {
+        if(m === 'pvp' || m === '5v2') {
             p2c.style.display = 'block';
             p1c.style.width = '50%';
             document.getElementById('p2-stats').style.display = 'block';
@@ -124,27 +138,27 @@
             p1c.style.width = '100%';
         }
 
-        if(m === 'pvp') {
-            document.getElementById('timer-box').style.display = 'block';
-        }
-
-        if(m === 'bot' || m === '3v2') {
+        if(m === 'bot') {
+            bots = [{x: 15.5, y: 15.5, s: 0.022}, {x: 1.5, y: SIZE-1.5, s: 0.022}, {x: SIZE-1.5, y: 1.5, s: 0.022}];
+        } else if(m === '5v2') {
             bots = [
-                {x: 15.5, y: 15.5, s: 0.022}, 
-                {x: 1.5, y: SIZE-1.5, s: 0.022}, 
-                {x: SIZE-1.5, y: 1.5, s: 0.022}
+                {x: 15.5, y: 15.5, s: 0.02}, {x: 1.5, y: SIZE-1.5, s: 0.02}, 
+                {x: SIZE-1.5, y: 1.5, s: 0.02}, {x: 15.5, y: 1.5, s: 0.02},
+                {x: 1.5, y: 15.5, s: 0.02}
             ];
         }
 
-        if(m === 'pvp') {
-            let timer = setInterval(() => {
-                if(!active) { clearInterval(timer); return; }
-                timeLeft--;
-                let min = Math.floor(timeLeft/60), sec = timeLeft%60;
-                document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
-                if(timeLeft <= 0) { active = false; alert("TIME OUT! P1 (GREEN) WINS SURVIVAL!"); location.reload(); }
-            }, 1000);
-        }
+        let timer = setInterval(() => {
+            if(!active) { clearInterval(timer); return; }
+            timeLeft--;
+            let min = Math.floor(timeLeft/60), sec = timeLeft%60;
+            document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
+            if(timeLeft <= 0) { 
+                active = false; 
+                alert("TIME EXPIRED: YOU SURVIVED!"); 
+                location.reload(); 
+            }
+        }, 1000);
 
         resize(); loop();
     }
@@ -174,7 +188,7 @@
         }
 
         let targets = [...bots];
-        if(gameMode === 'pvp' || gameMode === '3v2') targets.push(p === p1 ? p2 : p1);
+        if(gameMode === 'pvp' || gameMode === '5v2') targets.push(p === p1 ? p2 : p1);
         
         targets.forEach(t => {
             let dx = t.x - p.x, dy = t.y - p.y, dist = Math.hypot(dx, dy);
@@ -183,7 +197,6 @@
             if(Math.abs(a) < 0.6) {
                 let sx = (a+0.6)/1.2 * w, sh = h / dist;
                 if(dist < zBuf[Math.floor(sx)]) {
-                    // P2 is red in PVP, Bots are red, P1 is green
                     ctx.fillStyle = (t === p2 || t.s) ? "#f00" : "#0f0";
                     ctx.fillRect(sx - sh/8, h/2 - sh/2, sh/4, sh);
                 }
@@ -194,24 +207,16 @@
     function loop() {
         if(!active) return;
         
-        // P1 WASD
-        if(keys['KeyW']) { let nx=p1.x+Math.cos(p1.dir)*0.04, ny=p1.y+Math.sin(p1.dir)*0.04; if(!world[Math.floor(ny)][Math.floor(nx)]) {p1.x=nx; p1.y=ny;} }
-        if(keys['KeyS']) { let nx=p1.x-Math.cos(p1.dir)*0.03, ny=p1.y-Math.sin(p1.dir)*0.03; if(!world[Math.floor(ny)][Math.floor(nx)]) {p1.x=nx; p1.y=ny;} }
-        if(keys['KeyA']) p1.dir -= 0.05; if(keys['KeyD']) p1.dir += 0.05;
-
-        // P2 Arrows
+        // P1 WASD | P2 Arrows (With Fix)
+        movePlayer(p1, 0.04, 0.05, 'KeyW', 'KeyS', 'KeyA', 'KeyD');
         if(gameMode !== 'bot') {
-            if(keys['ArrowUp']) { let nx=p2.x+Math.cos(p2.dir)*0.042, ny=p2.y+Math.sin(p2.dir)*0.042; if(!world[Math.floor(ny)][Math.floor(nx)]) {p2.x=nx; p2.y=ny;} }
-            if(keys['ArrowDown']) { let nx=p2.x-Math.cos(p2.dir)*0.03, ny=p2.y-Math.sin(p2.dir)*0.03; if(!world[Math.floor(ny)][Math.floor(nx)]) {p2.x=nx; p2.y=ny;} }
-            if(keys['ArrowLeft']) p2.dir -= 0.05; if(keys['ArrowRight']) p2.dir += 0.05;
+            movePlayer(p2, (gameMode==='pvp'?0.046:0.04), 0.05, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
         }
 
-        // Bot Pathfinding & Collision
         bots.forEach(b => {
-            let target = (gameMode === '3v2' && Math.hypot(p2.x-b.x, p2.y-b.y) < Math.hypot(p1.x-b.x, p1.y-b.y)) ? p2 : p1;
+            let target = (gameMode === '5v2' && Math.hypot(p2.x-b.x, p2.y-b.y) < Math.hypot(p1.x-b.x, p1.y-b.y)) ? p2 : p1;
             if(Math.hypot(target.x-b.x, target.y-b.y) < 0.4) { 
-                target.hp -= 0.5; 
-                if(target.hp <= 0) { active = false; alert("TERMINATED BY BOTS"); location.reload(); }
+                target.hp -= 0.5; if(target.hp <= 0) { active = false; alert("MISSION FAILED"); location.reload(); }
             } else {
                 let next = getNextStep(b.x, b.y, target.x, target.y);
                 let dx = next.x-b.x, dy = next.y-b.y, dist = Math.hypot(dx,dy);
@@ -219,18 +224,15 @@
             }
         });
 
-        // PvP Tag logic
         if(gameMode === 'pvp' && Math.hypot(p1.x - p2.x, p1.y - p2.y) < 0.4) {
-            active = false; alert("TAGGED! P2 (RED) WINS!"); location.reload();
+            active = false; alert("TAGGED! P2 WINS!"); location.reload();
         }
 
         render(ctx1, p1, p1c);
         if(gameMode !== 'bot') render(ctx2, p2, p2c);
-
         document.getElementById('p1hp').innerText = Math.floor(p1.hp);
         if(gameMode !== 'bot') document.getElementById('p2hp').innerText = Math.floor(p2.hp);
 
-        // Update Minimap
         mCtx.clearRect(0,0,110,110);
         let s = 110/SIZE;
         for(let y=0; y<SIZE; y++) for(let x=0; x<SIZE; x++) if(world[y][x]) { mCtx.fillStyle="#222"; mCtx.fillRect(x*s,y*s,s,s); }
