@@ -2,26 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEBULA ARENA: PHYSICAL EVOLUTION</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEBULA B-BALL: PHYSICAL EVOLUTION</title>
     <style>
         :root { --p1: #ff3e3e; --p2: #00d2ff; --accent: #f1c40f; }
         body { margin: 0; background: #020205; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         #ui { position: absolute; top: 20px; display: flex; justify-content: space-between; width: 900px; pointer-events: none; z-index: 10; }
-        .score { font-size: 60px; font-weight: 900; font-family: monospace; }
-        canvas { background: radial-gradient(circle, #1a1a2e 0%, #000 100%); border: 2px solid #333; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
-        #hud { position: absolute; bottom: 10px; font-size: 0.8rem; color: #666; }
+        .score { font-size: 60px; font-weight: 900; font-family: monospace; text-shadow: 0 0 15px rgba(255,255,255,0.3); }
+        canvas { background: radial-gradient(circle, #1a1a2e 0%, #000 100%); border: 2px solid #333; box-shadow: 0 0 50px rgba(0,0,0,0.8); border-radius: 8px; }
+        #controls { position: absolute; bottom: 15px; background: rgba(0,0,0,0.7); padding: 10px 25px; border-radius: 50px; border: 1px solid #444; display: flex; gap: 30px; font-size: 0.85rem; }
+        b { color: var(--accent); }
     </style>
 </head>
 <body>
 
 <div id="ui">
     <div class="score" style="color: var(--p1)" id="s1">0</div>
-    <div style="text-align: center; font-size: 1.2rem;"><b>Q</b>/<b>SHIFT</b>: Switch | <b>M</b>: PvP/AI</div>
+    <div style="text-align: center;">
+        <div id="mode-display" style="letter-spacing: 2px; font-weight: bold;">MODE: PVE</div>
+        <div style="font-size: 0.7rem; color: #888;">Press [M] to Toggle PvP</div>
+    </div>
     <div class="score" style="color: var(--p2)" id="s2">0</div>
 </div>
 
 <canvas id="court"></canvas>
-<div id="hud">Team 1: WASD | Team 2: Arrows</div>
+
+<div id="controls">
+    <div>TEAM 1: <b>WASD</b> | Switch: <b>Q</b></div>
+    <div>TEAM 2: <b>ARROWS</b> | Switch: <b>R-SHIFT</b></div>
+</div>
 
 <script>
     const canvas = document.getElementById('court');
@@ -29,27 +38,27 @@
     canvas.width = 1000; canvas.height = 600;
 
     const gravity = 0.45;
-    const friction = 0.98;
-    let score1 = 0, score2 = 0, pvpMode = false;
+    const friction = 0.99;
+    let score1 = 0, score2 = 0;
+    let pvpMode = false;
     let t1Active = 0, t2Active = 0;
 
-    const ball = { x: 500, y: 100, vx: 0, vy: 0, r: 12 };
+    const ball = { x: 500, y: 100, vx: 5, vy: 0, r: 15, rot: 0 };
 
-    // Jumpable Islands (Platforms)
+    // Island Platforms
     const platforms = [
-        { x: 0, y: 570, w: 1000, h: 30, color: '#111' }, // Main Floor
-        { x: 150, y: 400, w: 150, h: 15, color: '#222' }, // Left Island
-        { x: 700, y: 400, w: 150, h: 15, color: '#222' }, // Right Island
-        { x: 400, y: 300, w: 200, h: 15, color: '#222' }  // Center High Island
+        { x: 0, y: 570, w: 1000, h: 40, color: '#111' }, // Floor
+        { x: 100, y: 400, w: 200, h: 15, color: '#222' }, // L-Island
+        { x: 700, y: 400, w: 200, h: 15, color: '#222' }, // R-Island
+        { x: 400, y: 250, w: 200, h: 15, color: '#222' }  // Mid-Island
     ];
 
     class Human {
         constructor(x, y, color, team) {
             this.x = x; this.y = y; this.vx = 0; this.vy = 0;
-            this.w = 30; this.h = 80; this.color = color;
+            this.w = 30; this.h = 85; this.color = color;
             this.team = team; this.grounded = false;
-            this.angle = 0; // Rotation for falling/jumping
-            this.anim = 0;
+            this.angle = 0; this.anim = 0;
         }
 
         update(isCtrl) {
@@ -58,17 +67,19 @@
                 const right = (this.team === 1) ? keys['KeyD'] : keys['ArrowRight'];
                 const jump = (this.team === 1) ? keys['KeyW'] : keys['ArrowUp'];
 
-                if (left) this.vx = -7;
-                else if (right) this.vx = 7;
-                else this.vx *= 0.8;
+                if (left) this.vx = -8;
+                else if (right) this.vx = 8;
+                else this.vx *= 0.85;
+
                 if (jump && this.grounded) { this.vy = -14; this.grounded = false; }
             } else {
-                // Improved AI
+                // Better AI
                 let targetX = (this.team === 1) ? ball.x - 40 : ball.x + 40;
-                let dx = targetX - this.x;
-                this.vx += Math.sign(dx) * 0.5;
-                this.vx = Math.max(-6, Math.min(6, this.vx));
-                if (ball.y < this.y - 20 && Math.abs(this.x - ball.x) < 60 && this.grounded) {
+                let diff = targetX - this.x;
+                this.vx += Math.sign(diff) * 0.7;
+                this.vx = Math.max(-7, Math.min(7, this.vx));
+
+                if (ball.y < this.y && Math.abs(this.x - ball.x) < 60 && this.grounded) {
                     this.vy = -12; this.grounded = false;
                 }
             }
@@ -77,32 +88,41 @@
             this.x += this.vx;
             this.y += this.vy;
 
-            // Rotation Logic: Lean into movement/fall
-            let targetAngle = (this.vx * 0.05) + (this.vy * 0.02);
+            // Physics: Rotation/Tilt based on movement and arc
+            let targetAngle = (this.vx * 0.06) + (this.vy * 0.03);
             this.angle += (targetAngle - this.angle) * 0.1;
 
-            // Platform & Floor Collision
+            // Platform Collisions
             this.grounded = false;
             platforms.forEach(p => {
-                if (this.vy >= 0 && 
-                    this.x + this.w > p.x && this.x < p.x + p.w &&
+                if (this.vy >= 0 && this.x + this.w > p.x && this.x < p.x + p.w &&
                     this.y + this.h > p.y && this.y + this.h < p.y + p.h + 10) {
-                    this.y = p.y - this.h;
-                    this.vy = 0;
-                    this.grounded = true;
+                    this.y = p.y - this.h; this.vy = 0; this.grounded = true;
                 }
             });
 
+            // Bounds
             if (this.x < 0) this.x = 0;
             if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
 
-            // Hand Collision (Swatting the ball)
-            let handX = this.x + this.w/2 + (Math.cos(this.angle) * 20);
-            let handY = this.y + 30 + (Math.sin(this.angle) * 20);
-            let distH = Math.hypot(ball.x - handX, ball.y - handY);
-            if (distH < ball.r + 15) {
-                ball.vx = (ball.x - handX) * 0.8 + this.vx;
-                ball.vy = (ball.y - handY) * 0.8 + this.vy - 2;
+            // --- FULL BODY HITBOX PHYSICS ---
+            let closestX = Math.max(this.x, Math.min(ball.x, this.x + this.w));
+            let closestY = Math.max(this.y, Math.min(ball.y, this.y + this.h));
+            let dx = ball.x - closestX;
+            let dy = ball.y - closestY;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < ball.r) {
+                let overlap = ball.r - dist;
+                let nx = dx / (dist || 1);
+                let ny = dy / (dist || 1);
+                
+                ball.x += nx * overlap;
+                ball.y += ny * overlap;
+
+                // Kick factor: combine player velocity and normal bounce
+                ball.vx = nx * 10 + (this.vx * 0.8);
+                ball.vy = ny * 10 + (this.vy * 0.5) - 2;
             }
 
             if(Math.abs(this.vx) > 1) this.anim += 0.2;
@@ -119,54 +139,62 @@
             
             let walk = Math.sin(this.anim) * 15;
             
-            // Torso
-            ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 15); ctx.stroke();
-            // Legs
-            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(-10 - walk, 35); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(10 + walk, 35); ctx.stroke();
-            // Arms (Hands reach up/out)
-            let armY = -walk * 0.5;
-            ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-20, armY); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(20, -armY - 10); ctx.stroke();
+            // Torso & Legs
+            ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 15); ctx.stroke(); // Spine
+            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(-10 - walk, 35); ctx.stroke(); // Left Leg
+            ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(10 + walk, 35); ctx.stroke(); // Right Leg
             
+            // Arms (Swing with walk or reach up if jumping)
+            let armSwing = this.grounded ? walk : -25;
+            ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-20, armSwing); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(20, -armSwing); ctx.stroke();
+
             // Head
             ctx.fillStyle = "#ffdbac";
-            ctx.beginPath(); ctx.arc(0, -30, 12, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(0, -35, 12, 0, Math.PI*2); ctx.fill();
             
+            // Active Indicator
             if(active) {
                 ctx.fillStyle = "#f1c40f";
-                ctx.beginPath(); ctx.moveTo(-5, -55); ctx.lineTo(5, -55); ctx.lineTo(0, -45); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(-6, -65); ctx.lineTo(6, -65); ctx.lineTo(0, -55); ctx.fill();
             }
             ctx.restore();
         }
     }
 
-    const t1 = [new Human(100, 500, '#ff3e3e', 1), new Human(250, 500, '#ff3e3e', 1)];
-    const t2 = [new Human(750, 500, '#00d2ff', 2), new Human(850, 500, '#00d2ff', 2)];
+    const t1 = [new Human(150, 400, '#ff3e3e', 1), new Human(250, 400, '#ff3e3e', 1)];
+    const t2 = [new Human(750, 400, '#00d2ff', 2), new Human(850, 400, '#00d2ff', 2)];
 
     const keys = {};
     window.onkeydown = e => {
         keys[e.code] = true;
         if (e.code === 'KeyQ') t1Active = (t1Active + 1) % 2;
         if (e.code === 'ShiftRight') t2Active = (t2Active + 1) % 2;
-        if (e.code === 'KeyM') pvpMode = !pvpMode;
+        if (e.code === 'KeyM') {
+            pvpMode = !pvpMode;
+            document.getElementById('mode-display').innerText = pvpMode ? "MODE: PVP" : "MODE: PVE";
+        }
     };
     window.onkeyup = e => keys[e.code] = false;
 
-    function reset() { ball.x = 500; ball.y = 50; ball.vx = (Math.random()-0.5)*10; ball.vy = 0; }
+    function reset() { ball.x = 500; ball.y = 100; ball.vx = (Math.random()-0.5)*8; ball.vy = 0; }
 
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
+        // Stars background
+        ctx.fillStyle = "white";
+        for(let i=0; i<30; i++) ctx.fillRect((i*157)%canvas.width, (i*243)%canvas.height, 1, 1);
+
         // Draw Islands
         platforms.forEach(p => {
             ctx.fillStyle = p.color;
-            ctx.shadowBlur = 10; ctx.shadowColor = "cyan";
+            ctx.shadowBlur = 15; ctx.shadowColor = "rgba(0,255,255,0.2)";
             ctx.fillRect(p.x, p.y, p.w, p.h);
             ctx.shadowBlur = 0;
         });
 
-        // Update Teams
+        // Update Humans
         t1.forEach((p, i) => p.update(i === t1Active));
         t2.forEach((p, i) => p.update(pvpMode && i === t2Active));
 
@@ -174,32 +202,40 @@
         ball.vy += gravity;
         ball.vx *= friction;
         ball.x += ball.vx; ball.y += ball.vy;
+        ball.rot += ball.vx * 0.05;
 
         // Ball vs Platforms
         platforms.forEach(p => {
             if (ball.y + ball.r > p.y && ball.y - ball.r < p.y + p.h &&
                 ball.x > p.x && ball.x < p.x + p.w) {
-                ball.vy *= -0.8;
+                ball.vy *= -0.7;
                 ball.y = (ball.y < p.y) ? p.y - ball.r : p.y + p.h + ball.r;
             }
         });
 
         if (ball.x < 0 || ball.x > canvas.width) ball.vx *= -0.8;
 
-        // Hoops
-        ctx.fillStyle = "#ff5500";
-        ctx.fillRect(0, 250, 50, 8); ctx.fillRect(950, 250, 50, 8);
+        // Draw Hoops
+        ctx.strokeStyle = "white"; ctx.lineWidth = 6;
+        ctx.strokeRect(-5, 250, 60, 10); ctx.strokeRect(945, 250, 60, 10);
+        
+        // Scoring
         if (ball.y > 245 && ball.y < 265 && ball.vy > 0) {
-            if (ball.x < 50) { score2++; document.getElementById('s2').innerText = score2; reset(); }
-            if (ball.x > 950) { score1++; document.getElementById('s1').innerText = score1; reset(); }
+            if (ball.x < 55) { score2++; document.getElementById('s2').innerText = score2; reset(); }
+            if (ball.x > 945) { score1++; document.getElementById('s1').innerText = score1; reset(); }
         }
 
         t1.forEach((p, i) => p.draw(i === t1Active));
         t2.forEach((p, i) => p.draw(pvpMode && i === t2Active));
 
-        // Ball
+        // Draw Ball
+        ctx.save();
+        ctx.translate(ball.x, ball.y);
+        ctx.rotate(ball.rot);
         ctx.fillStyle = "#ff8800";
-        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 20; ctx.shadowColor = "#ff8800";
+        ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
 
         requestAnimationFrame(loop);
     }
