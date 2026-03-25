@@ -1,128 +1,139 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NEXUS-3D | Procedural Maze</title>
+    <title>NEXUS-3D | Split-Screen</title>
     <style>
         body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
-        #canvas { display: block; width: 100vw; height: 100vh; image-rendering: pixelated; }
-        #minimap { position: absolute; top: 15px; left: 15px; border: 1px solid #0f0; background: rgba(0,0,0,0.8); display: none; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.9); z-index: 100; text-align: center; }
-        .menu-box { border: 2px solid #0f0; padding: 40px; background: #050505; }
-        .btn { background: #0f0; color: #000; border: none; padding: 15px 30px; margin: 10px; cursor: pointer; font-weight: bold; min-width: 200px; }
-        #hud { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-left: 4px solid #0f0; display: none; }
+        #container { display: flex; width: 100vw; height: 100vh; }
+        canvas { width: 50%; height: 100%; border-right: 2px solid #0f0; image-rendering: pixelated; }
+        #minimap { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); border: 2px solid #0f0; background: rgba(0,0,0,0.8); z-index: 10; }
+        
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; z-index: 100; }
+        .menu-box { border: 2px solid #0f0; padding: 40px; text-align: center; }
+        .btn { background: #0f0; color: #000; border: none; padding: 15px 30px; margin: 10px; cursor: pointer; font-weight: bold; width: 250px; }
+        .btn:hover { background: #fff; }
+        
+        #hud { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: space-around; pointer-events: none; }
+        .stats { background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #0f0; }
     </style>
 </head>
 <body>
 
-    <canvas id="canvas"></canvas>
-    <canvas id="minimap" width="140" height="140"></canvas>
+    <div id="container">
+        <canvas id="p1Cam"></canvas>
+        <canvas id="p2Cam"></canvas>
+    </div>
+    
+    <canvas id="minimap" width="120" height="120"></canvas>
 
     <div id="main-menu" class="overlay">
         <div class="menu-box">
-            <h1>MAZE_GENERATOR_V3</h1>
-            <button class="btn" onclick="initGame('bot')">START BOT MODE</button><br>
-            <button class="btn" onclick="initGame('pvp')">START PVP TAG</button>
-            <p style="color:#444; font-size:0.8rem;">[WASD] MOVE | [ARROWS] LOOK</p>
+            <h1>NEXUS_SPLIT_SCREEN</h1>
+            <button class="btn" onclick="init('bot')">SOLO VS BOTS</button><br>
+            <button class="btn" onclick="init('pvp')">PLAYER VS PLAYER TAG</button><br>
+            <button class="btn" onclick="init('3v2')">3 BOTS VS 2 PLAYERS</button>
+            <p style="color:#555">P1: WASD | P2: ARROWS</p>
         </div>
     </div>
 
-    <div id="hud">
-        LIVES: <span id="lives">❤️❤️❤️</span> | HP: <span id="hp">100</span>%
+    <div id="hud" style="display:none">
+        <div class="stats">P1 HP: <span id="p1hp">100</span>%</div>
+        <div class="stats">P2 HP: <span id="p2hp">100</span>%</div>
     </div>
 
 <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const p1c = document.getElementById('p1Cam'), ctx1 = p1c.getContext('2d');
+    const p2c = document.getElementById('p2Cam'), ctx2 = p2c.getContext('2d');
     const mCtx = document.getElementById('minimap').getContext('2d');
 
-    canvas.width = window.innerWidth / 2;
-    canvas.height = window.innerHeight / 2;
+    const SIZE = 31; // Massive Maze
+    let world = [], active = false, mode = '';
+    const keys = {};
 
-    const SIZE = 21; // Must be odd for maze generation
-    let world = [];
-    let active = false;
+    const p1 = { x: 1.5, y: 1.5, dir: 0, hp: 100, active: true };
+    const p2 = { x: SIZE-1.5, y: SIZE-1.5, dir: Math.PI, hp: 100, active: false };
+    let bots = [];
 
-    const state = {
-        p1: { x: 1.5, y: 1.5, dir: 0, hp: 100, lives: 3 },
-        enemies: [],
-        keys: {}
-    };
+    window.onkeydown = e => keys[e.code] = true;
+    window.onkeyup = e => keys[e.code] = false;
 
-    // --- REAL MAZE GENERATION (Recursive Backtracker) ---
     function generateMaze() {
         world = Array(SIZE).fill().map(() => Array(SIZE).fill(1));
         function walk(x, y) {
             world[y][x] = 0;
-            let dirs = [[0, -2], [0, 2], [-2, 0], [2, 0]].sort(() => Math.random() - 0.5);
-            for (let [dx, dy] of dirs) {
-                let nx = x + dx, ny = y + dy;
-                if (nx > 0 && nx < SIZE && ny > 0 && ny < SIZE && world[ny][nx] === 1) {
-                    world[y + dy/2][x + dx/2] = 0;
-                    walk(nx, ny);
+            let dirs = [[0,-2],[0,2],[-2,0],[2,0]].sort(()=>Math.random()-0.5);
+            for(let [dx,dy] of dirs) {
+                let nx=x+dx, ny=y+dy;
+                if(nx>0 && nx<SIZE && ny>0 && ny<SIZE && world[ny][nx]==1) {
+                    world[y+dy/2][x+dx/2]=0; walk(nx,ny);
                 }
             }
         }
-        walk(1, 1);
+        walk(1,1);
     }
 
-    window.onkeydown = e => state.keys[e.code] = true;
-    window.onkeyup = e => state.keys[e.code] = false;
-
-    function initGame(mode) {
+    function init(m) {
+        mode = m;
         generateMaze();
-        state.enemies = mode === 'bot' ? [
-            { x: SIZE-2.5, y: SIZE-2.5, speed: 0.015 }
+        p1.hp = 100; p2.hp = 100;
+        p1.x = 1.5; p1.y = 1.5;
+        p2.x = SIZE-1.5; p2.y = SIZE-1.5;
+        
+        p2.active = (mode !== 'bot');
+        p2c.style.display = p2.active ? 'block' : 'none';
+        p1c.style.width = p2.active ? '50%' : '100%';
+
+        bots = (mode === 'bot' || mode === '3v2') ? [
+            {x: 15, y: 15, s: 0.015}, {x: 5, y: 25, s: 0.018}, {x: 25, y: 5, s: 0.012}
         ] : [];
+
         document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('hud').style.display = 'block';
-        document.getElementById('minimap').style.display = 'block';
+        document.getElementById('hud').style.display = 'flex';
         active = true;
-        loop();
+        resize(); loop();
     }
 
-    function render3D() {
-        const w = canvas.width, h = canvas.height;
-        ctx.fillStyle = "#000"; ctx.fillRect(0,0,w,h);
-        
-        // Z-Buffer for enemy visibility
-        let depthBuffer = new Array(w).fill(20);
+    function resize() {
+        p1c.width = p1c.clientWidth/2; p1c.height = p1c.clientHeight/2;
+        p2c.width = p2c.clientWidth/2; p2c.height = p2c.clientHeight/2;
+    }
 
-        // Draw Walls
+    function drawView(ctx, p, canvas) {
+        const w = canvas.width, h = canvas.height;
+        ctx.fillStyle="#000"; ctx.fillRect(0,0,w,h);
+        let zBuf = new Array(w).fill(20);
+
+        // Walls
         for(let i=0; i<w; i++) {
-            let angle = (state.p1.dir - 0.6) + (i/w) * 1.2;
-            let dist = 0, hit = false;
-            let sx = Math.cos(angle), sy = Math.sin(angle);
-            
-            while(!hit && dist < 16) {
-                dist += 0.05;
-                let tx = Math.floor(state.p1.x + sx*dist), ty = Math.floor(state.p1.y + sy*dist);
-                if(world[ty] && world[ty][tx] === 1) hit = true;
+            let a = (p.dir - 0.6) + (i/w)*1.2;
+            let d = 0, hit = false, sx = Math.cos(a), sy = Math.sin(a);
+            while(!hit && d < 16) {
+                d += 0.05;
+                let tx = Math.floor(p.x + sx*d), ty = Math.floor(p.y + sy*d);
+                if(world[ty] && world[ty][tx]==1) hit = true;
             }
-            
-            depthBuffer[i] = dist;
-            let wallH = h / (dist * Math.cos(angle - state.p1.dir));
-            ctx.fillStyle = `rgb(0,${150/dist},0)`;
-            ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
+            zBuf[i] = d;
+            let wallH = h / (d * Math.cos(a - p.dir));
+            ctx.fillStyle = `rgb(0,${150/d},0)`;
+            ctx.fillRect(i, h/2-wallH/2, 1, wallH);
         }
 
-        // --- ENEMY VISIBILITY (The Tager) ---
-        state.enemies.forEach(en => {
-            let dx = en.x - state.p1.x, dy = en.y - state.p1.y;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-            let angle = Math.atan2(dy, dx) - state.p1.dir;
-            
-            // Normalize angle
-            while (angle < -Math.PI) angle += Math.PI * 2;
-            while (angle > Math.PI) angle -= Math.PI * 2;
+        // Visible Sprites (Enemies/Other Player)
+        let sprites = [...bots];
+        if(mode === 'pvp' || mode === '3v2') sprites.push(p === p1 ? p2 : p1);
 
-            if (Math.abs(angle) < 0.6) { // If in field of view
-                let screenX = (angle + 0.6) / 1.2 * w;
-                let spriteH = h / dist;
-                
-                // Only draw if not behind a wall
-                if (dist < depthBuffer[Math.floor(screenX)]) {
-                    ctx.fillStyle = "#f00"; // Visible Red Enemy
-                    ctx.fillRect(screenX - (spriteH/4), h/2 - spriteH/2, spriteH/2, spriteH);
+        sprites.forEach(s => {
+            let dx = s.x - p.x, dy = s.y - p.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            let a = Math.atan2(dy, dx) - p.dir;
+            while(a < -Math.PI) a += Math.PI*2; while(a > Math.PI) a -= Math.PI*2;
+            
+            if(Math.abs(a) < 0.6) {
+                let sx = (a + 0.6)/1.2 * w;
+                let sh = h / dist;
+                if(dist < zBuf[Math.floor(sx)]) {
+                    ctx.fillStyle = s.hp !== undefined ? "#0af" : "#f00"; // Blue for player, Red for bot
+                    ctx.fillRect(sx - sh/4, h/2 - sh/2, sh/2, sh);
                 }
             }
         });
@@ -131,35 +142,38 @@
     function loop() {
         if(!active) return;
         
-        // Player Controls (Lower sensitivity)
-        let p = state.p1;
-        if(state.keys['KeyW']) {
-            let nx = p.x + Math.cos(p.dir)*0.035, ny = p.y + Math.sin(p.dir)*0.035;
-            if(world[Math.floor(ny)][Math.floor(nx)] === 0) { p.x = nx; p.y = ny; }
-        }
-        if(state.keys['ArrowLeft'] || state.keys['KeyA']) p.dir -= 0.03;
-        if(state.keys['ArrowRight'] || state.keys['KeyD']) p.dir += 0.03;
+        // P1 WASD
+        if(keys['KeyW']) { let nx=p1.x+Math.cos(p1.dir)*0.03, ny=p1.y+Math.sin(p1.dir)*0.03; if(!world[Math.floor(ny)][Math.floor(nx)]) {p1.x=nx; p1.y=ny;} }
+        if(keys['KeyA']) p1.dir -= 0.03; if(keys['KeyD']) p1.dir += 0.03;
 
-        // Enemy AI
-        state.enemies.forEach(en => {
-            let dx = p.x - en.x, dy = p.y - en.y;
-            let d = Math.sqrt(dx*dx + dy*dy);
-            if(d < 0.4) { p.hp -= 1; if(p.hp <= 0) location.reload(); }
-            else { en.x += (dx/d)*en.speed; en.y += (dy/d)*en.speed; }
+        // P2 ARROWS
+        if(p2.active) {
+            if(keys['ArrowUp']) { let nx=p2.x+Math.cos(p2.dir)*0.03, ny=p2.y+Math.sin(p2.dir)*0.03; if(!world[Math.floor(ny)][Math.floor(nx)]) {p2.x=nx; p2.y=ny;} }
+            if(keys['ArrowLeft']) p2.dir -= 0.03; if(keys['ArrowRight']) p2.dir += 0.03;
+        }
+
+        bots.forEach(b => {
+            let target = p1; // Target closest player
+            if(p2.active && Math.hypot(p2.x-b.x, p2.y-b.y) < Math.hypot(p1.x-b.x, p1.y-b.y)) target = p2;
+            let dx=target.x-b.x, dy=target.y-b.y, d=Math.hypot(dx,dy);
+            if(d < 0.4) { target.hp -= 0.5; if(target.hp <= 0) location.reload(); }
+            else { b.x += (dx/d)*b.s; b.y += (dy/d)*b.s; }
         });
 
-        render3D();
-        
-        // Minimap
-        mCtx.clearRect(0,0,140,140);
-        let s = 140/SIZE;
-        for(let y=0; y<SIZE; y++) for(let x=0; x<SIZE; x++) {
-            if(world[y][x]) { mCtx.fillStyle="#222"; mCtx.fillRect(x*s,y*s,s,s); }
-        }
-        mCtx.fillStyle="#0f0"; mCtx.fillRect(p.x*s-2, p.y*s-2, 4, 4);
-        mCtx.fillStyle="#f00"; state.enemies.forEach(e => mCtx.fillRect(e.x*s-2, e.y*s-2, 4, 4));
+        drawView(ctx1, p1, p1c);
+        if(p2.active) drawView(ctx2, p2, p2c);
 
-        document.getElementById('hp').innerText = Math.floor(p.hp);
+        // HUD & Minimap
+        document.getElementById('p1hp').innerText = Math.floor(p1.hp);
+        document.getElementById('p2hp').innerText = Math.floor(p2.hp);
+        
+        mCtx.clearRect(0,0,120,120);
+        let s = 120/SIZE;
+        for(let y=0; y<SIZE; y++) for(let x=0; x<SIZE; x++) if(world[y][x]) { mCtx.fillStyle="#222"; mCtx.fillRect(x*s,y*s,s,s); }
+        mCtx.fillStyle="#0f0"; mCtx.fillRect(p1.x*s-1, p1.y*s-1, 3, 3);
+        if(p2.active) { mCtx.fillStyle="#0af"; mCtx.fillRect(p2.x*s-1, p2.y*s-1, 3, 3); }
+        mCtx.fillStyle="#f00"; bots.forEach(b => mCtx.fillRect(b.x*s-1, b.y*s-1, 3, 3));
+
         requestAnimationFrame(loop);
     }
 </script>
