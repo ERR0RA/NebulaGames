@@ -2,159 +2,150 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS ULTRA | Integrated AI OS</title>
+    <title>NEXUS GEN-3 | Contextual AI</title>
     <style>
-        :root { --neon: #00ff95; --bg: #0d0d12; --panel: #16161e; --user-blue: #00d2ff; }
-        body { margin: 0; background: var(--bg); color: #e0e0e0; font-family: 'Segoe UI', Tahoma, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        :root { --neon: #00ff95; --bg: #0a0a0c; --panel: #121217; --user: #00d2ff; }
+        body { margin: 0; background: var(--bg); color: #e0e0e0; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; }
         
-        /* Glassmorphism Header */
-        header { background: rgba(22, 22, 30, 0.9); backdrop-filter: blur(10px); padding: 10px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #333; z-index: 1000; }
-        #addr-bar { flex: 1; background: #000; border: 1px solid #444; color: var(--neon); padding: 12px; border-radius: 8px; outline: none; font-family: 'Consolas', monospace; }
-        .btn { background: var(--neon); color: #000; border: none; padding: 10px 25px; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.2s; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,255,149,0.3); }
+        /* UI Layout */
+        header { background: var(--panel); padding: 10px 20px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #222; }
+        #addr-bar { flex: 1; background: #000; border: 1px solid #333; color: var(--neon); padding: 12px; border-radius: 8px; outline: none; font-family: monospace; }
+        .btn { background: var(--neon); color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 6px; }
 
-        /* Workspace Layout */
         main { display: flex; flex: 1; overflow: hidden; }
-        #web-container { flex: 3; position: relative; background: #fff; }
-        iframe { width: 100%; height: 100%; border: none; }
+        #web-view { flex: 2.5; border: none; background: white; }
         
-        /* AI Neural Sidebar */
-        #ai-side { flex: 1.2; background: var(--panel); border-left: 1px solid #333; display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
-        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth; }
+        /* Chat System */
+        #ai-sidebar { flex: 1.2; background: var(--panel); border-left: 1px solid #222; display: flex; flex-direction: column; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
         
-        /* Chat UI */
-        .msg { position: relative; padding: 15px; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; animation: fadeIn 0.3s ease; }
-        .ai { background: #1e1e2a; border-left: 4px solid var(--neon); align-self: flex-start; margin-right: 20px; }
-        .user { background: #2a2a35; border-right: 4px solid var(--user-blue); align-self: flex-end; margin-left: 20px; color: var(--user-blue); }
-        .thought-trace { font-family: monospace; font-size: 0.75rem; color: #666; margin-bottom: 8px; display: block; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* System UI Elements */
-        .status-pill { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; background: #333; margin-left: 10px; text-transform: uppercase; }
-        #typing { font-size: 0.8rem; color: var(--neon); margin-top: 10px; display: none; }
+        /* Message Bubbles */
+        .msg { padding: 14px; border-radius: 12px; line-height: 1.5; font-size: 0.9rem; max-width: 85%; animation: slideIn 0.2s ease; }
+        .ai { background: #1c1c24; border-left: 3px solid var(--neon); align-self: flex-start; }
+        .user { background: #252530; align-self: flex-end; color: var(--user); border-right: 3px solid var(--user); }
+        .thought { color: #555; font-size: 0.75rem; font-family: monospace; display: block; margin-bottom: 5px; }
+
+        /* Scrollbar */
+        #chat-window::-webkit-scrollbar { width: 5px; }
+        #chat-window::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: 900; letter-spacing: 1px; color: var(--neon);">NEXUS<span style="color:#fff">ULTRA</span></div>
-    <input type="text" id="addr-bar" placeholder="Command AI or enter URL (e.g. 'Build a counter app' or 'google.com')...">
-    <button class="btn" onclick="process()">EXECUTE</button>
+    <div style="font-weight: bold; color: var(--neon);">NEXUS<span style="color:white">G3</span></div>
+    <input type="text" id="addr-bar" placeholder="Enter URL or chat with Nexus..." autocomplete="off">
+    <button class="btn" onclick="execute()">RUN</button>
 </header>
 
 <main>
-    <div id="web-container">
-        <iframe id="viewport" src="about:blank"></iframe>
-    </div>
-    
-    <aside id="ai-side">
-        <div style="padding: 15px; border-bottom: 1px solid #333; font-size: 0.8rem; font-weight: bold; color: #888;">
-            NEURAL LINK: <span id="mode-text" style="color: var(--neon);">ACTIVE</span>
-            <span class="status-pill">Encrypted</span>
-        </div>
+    <iframe id="web-view" src="about:blank"></iframe>
+    <aside id="ai-sidebar">
         <div id="chat-window">
             <div class="msg ai">
-                <span class="thought-trace">Initializing Core... Memory loaded.</span>
-                Hello. I am the upgraded Nexus Ultra. I've integrated our previous logic into a single cohesive brain. I can assist with coding, analysis, or web navigation. How shall we begin?
+                <span class="thought">System Ready. Context Engine: Online.</span>
+                Welcome back. I am now running on the Gen-3 Context Engine. I can remember the subject of our conversation. How can I assist?
             </div>
         </div>
-        <div id="typing" style="padding: 0 20px 10px;">Nexus is calculating...</div>
     </aside>
 </main>
 
 <script>
     const chat = document.getElementById('chat-window');
-    const view = document.getElementById('viewport');
+    const view = document.getElementById('web-view');
     const input = document.getElementById('addr-bar');
-    const modeText = document.getElementById('mode-text');
-    const typing = document.getElementById('typing');
 
-    // ADVANCED MEMORY & STATE
-    let nexusState = {
-        user: null,
-        sessionCount: 0,
-        currentApp: "Standard",
+    // --- BRAIN UPGRADE: CONTEXT & MEMORY ---
+    let memory = {
+        lastSubject: null, // Tracks if we are talking about 'code', 'games', etc.
+        userName: null,
         history: []
-    };
-
-    const AI_BRAIN = {
-        coding: ["build", "code", "html", "css", "js", "function", "fix", "script"],
-        study: ["what", "how", "why", "explain", "summarize", "definition", "who"],
-        creative: ["game", "story", "basketball", "nebula", "design", "make"]
     };
 
     function addMessage(text, type, thought = null) {
         const div = document.createElement('div');
         div.className = `msg ${type}`;
-        let html = "";
-        if (thought) html += `<span class="thought-trace">[${thought}]</span>`;
-        html += `<div>${text}</div>`;
-        div.innerHTML = html;
+        div.innerHTML = (thought ? `<span class="thought">[${thought}]</span>` : "") + `<div>${text}</div>`;
         chat.appendChild(div);
+        
+        // AUTO-SCROLL FIX
         chat.scrollTop = chat.scrollHeight;
+        div.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 
-    async function process() {
+    function execute() {
         const val = input.value.trim();
         if (!val) return;
         
         addMessage(val, 'user');
         input.value = "";
-        typing.style.display = "block";
 
-        // Simulated Processing Delay
-        await new Promise(r => setTimeout(r, 800));
-        typing.style.display = "none";
-
-        // ROUTING LOGIC
         if (val.includes('.') && !val.includes(' ')) {
-            handleWeb(val);
+            handleNav(val);
         } else {
-            handleAI(val.toLowerCase());
+            processSmartAI(val.toLowerCase());
         }
     }
 
-    function handleWeb(url) {
-        let cleanUrl = url.startsWith('http') ? url : 'https://' + url;
-        addMessage(`Navigating to ${url}. I'll monitor for useful data.`, 'ai', "Bridge established via IFrame.");
-        view.src = cleanUrl;
-        
-        if (url.includes('stack') || url.includes('git')) {
-            modeText.innerText = "DEV_MODE";
-            modeText.style.color = "#00d2ff";
-        }
+    function handleNav(url) {
+        let finalUrl = url.startsWith('http') ? url : 'https://' + url;
+        addMessage(`Opening ${url}...`, 'ai', "Routing browser request.");
+        view.src = finalUrl;
     }
 
-    function handleAI(query) {
-        nexusState.sessionCount++;
+    function processSmartAI(query) {
         let response = "";
         let thought = "";
 
-        // Scoring Intent
-        const isCoding = AI_BRAIN.coding.some(word => query.includes(word));
-        const isStudy = AI_BRAIN.study.some(word => query.includes(word));
-        const isCreative = AI_BRAIN.creative.some(word => query.includes(word));
-
-        if (isCoding) {
-            thought = "Cross-referencing syntax libraries.";
-            response = "I've optimized my coding engine. If you want a specific component (like a button or a full layout), just describe the layout and I'll generate the boilerplate.";
-        } else if (isStudy) {
-            thought = "Extracting semantic meaning.";
-            response = "I can break that down. Are you looking for the high-level concept, or do you want the technical details?";
-        } else if (isCreative) {
-            thought = "Accessing Nebula-Basketball assets.";
-            response = "Ready to build. We can add a scoreboard, 2-player mode, or special abilities to our current projects. What's the first feature?";
-        } else {
-            thought = "No specific module triggered. Using General Intelligence.";
-            response = "I'm following you. I've logged that request into our session memory. Want me to search the web for more info on that?";
+        // 1. CONTEXT CHECKING (The "Smart" Part)
+        // If the user uses pronouns like "it" or "that", use the last subject
+        let activeSubject = memory.lastSubject;
+        
+        if (query.match(/code|script|html|js|css|build/)) {
+            activeSubject = "coding";
+            memory.lastSubject = "coding";
+        } else if (query.match(/game|play|fun|basketball/)) {
+            activeSubject = "gaming";
+            memory.lastSubject = "gaming";
+        } else if (query.match(/who|name|identify/)) {
+            activeSubject = "identity";
         }
 
-        addMessage(response, 'ai', thought);
+        // 2. RESPONSE ENGINE
+        switch(activeSubject) {
+            case "coding":
+                thought = "Analyzing syntax requirements.";
+                response = query.includes("example") 
+                    ? "Here is a boilerplate: &lt;button onclick='alert(\"Hi\")'&gt;Click Me&lt;/button&gt;" 
+                    : "Coding mode active. I can help you structure scripts or debug HTML. What are we building?";
+                break;
+            case "gaming":
+                thought = "Calculating physics and game states.";
+                response = "I'm ready to upgrade our Basketball game. Should we add a score counter or a jump-height modifier?";
+                break;
+            case "identity":
+                thought = "Accessing local profile.";
+                response = "I am Nexus Gen-3, your contextual browser assistant. I live entirely in this HTML file.";
+                break;
+            default:
+                // Handle "it" or "more" based on context
+                if (query.includes("more") || query.includes("tell me")) {
+                    thought = `Recalling last subject: ${memory.lastSubject}`;
+                    response = memory.lastSubject 
+                        ? `Tell you more about ${memory.lastSubject}? I'd be happy to. Where should we dive deeper?` 
+                        : "I'm not sure what we're talking about yet. Give me a topic!";
+                } else {
+                    thought = "General heuristic search.";
+                    response = "I'm processing that. Want me to search the web for a detailed answer?";
+                }
+        }
+
+        setTimeout(() => addMessage(response, 'ai', thought), 500);
     }
 
-    // Enter Key Support
-    input.addEventListener("keypress", (e) => { if(e.key === "Enter") process(); });
+    input.addEventListener("keypress", (e) => { if(e.key === "Enter") execute(); });
 </script>
 </body>
 </html>
