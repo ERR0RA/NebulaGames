@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NEXUS-3D | 5v2 Tactical</title>
+    <title>NEXUS-3D | Dark Green</title>
     <style>
         body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
         #container { display: flex; width: 100vw; height: 100vh; }
         canvas.view { width: 100%; height: 100%; image-rendering: pixelated; display: none; }
-        #p2Cam { border-left: 2px solid #333; }
+        #p2Cam { border-left: 2px solid #111; }
         
         #minimap { 
             position: absolute; top: 15px; left: 15px; 
@@ -15,7 +15,7 @@
         }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; z-index: 100; text-align: center;}
-        .menu-box { border: 2px solid #0f0; padding: 30px; background: #050505; box-shadow: 0 0 20px #0f0; }
+        .menu-box { border: 2px solid #0f0; padding: 30px; background: #050505; }
         .btn { background: #0f0; color: #000; border: none; padding: 12px 25px; margin: 8px; cursor: pointer; font-weight: bold; width: 280px; display: block; font-family: monospace; }
         .btn:hover { background: #fff; }
         
@@ -41,7 +41,7 @@
             <button class="btn" onclick="init('bot')">SOLO SURVIVAL (3 BOTS)</button>
             <button class="btn" onclick="init('pvp')">PVP TAG (P1 vs P2)</button>
             <button class="btn" onclick="init('5v2')">5 BOTS VS 2 PLAYERS</button>
-            <p style="color:#444; font-size: 0.7rem; margin-top:10px;">FIXED P2 CONTROLS | 31x31 LABYRINTH</p>
+            <p style="color:#444; font-size: 0.7rem; margin-top:10px;">WALLS: STATIC DARK GREEN | 4 MIN LIMIT</p>
         </div>
     </div>
 
@@ -114,8 +114,6 @@
         let moveX = 0, moveY = 0;
         if(keys[u]) { moveX += Math.cos(p.dir) * speed; moveY += Math.sin(p.dir) * speed; }
         if(keys[d]) { moveX -= Math.cos(p.dir) * speed; moveY -= Math.sin(p.dir) * speed; }
-        
-        // Sliding Collision Fix
         if(canMove(p.x + moveX, p.y)) p.x += moveX;
         if(canMove(p.x, p.y + moveY)) p.y += moveY;
     }
@@ -128,7 +126,6 @@
         document.getElementById('minimap').style.display = 'block';
         document.getElementById('hud').style.display = 'flex';
         document.getElementById('timer-box').style.display = 'block';
-        
         p1c.style.display = 'block';
         if(m === 'pvp' || m === '5v2') {
             p2c.style.display = 'block';
@@ -137,29 +134,18 @@
         } else {
             p1c.style.width = '100%';
         }
-
         if(m === 'bot') {
             bots = [{x: 15.5, y: 15.5, s: 0.022}, {x: 1.5, y: SIZE-1.5, s: 0.022}, {x: SIZE-1.5, y: 1.5, s: 0.022}];
         } else if(m === '5v2') {
-            bots = [
-                {x: 15.5, y: 15.5, s: 0.02}, {x: 1.5, y: SIZE-1.5, s: 0.02}, 
-                {x: SIZE-1.5, y: 1.5, s: 0.02}, {x: 15.5, y: 1.5, s: 0.02},
-                {x: 1.5, y: 15.5, s: 0.02}
-            ];
+            bots = [{x:15.5,y:15.5,s:0.02},{x:1.5,y:SIZE-1.5,s:0.02},{x:SIZE-1.5,y:1.5,s:0.02},{x:15.5,y:1.5,s:0.02},{x:1.5,y:15.5,s:0.02}];
         }
-
         let timer = setInterval(() => {
             if(!active) { clearInterval(timer); return; }
             timeLeft--;
             let min = Math.floor(timeLeft/60), sec = timeLeft%60;
             document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
-            if(timeLeft <= 0) { 
-                active = false; 
-                alert("TIME EXPIRED: YOU SURVIVED!"); 
-                location.reload(); 
-            }
+            if(timeLeft <= 0) { active = false; alert("TIME EXPIRED: YOU SURVIVED!"); location.reload(); }
         }, 1000);
-
         resize(); loop();
     }
 
@@ -176,20 +162,20 @@
         for(let i=0; i<w; i++) {
             let a = (p.dir - 0.6) + (i/w)*1.2;
             let d = 0, hit = false, sx = Math.cos(a), sy = Math.sin(a);
-            while(!hit && d < 22) {
+            while(!hit && d < 25) {
                 d += 0.1;
                 let tx = Math.floor(p.x + sx*d), ty = Math.floor(p.y + sy*d);
                 if(world[ty] && world[ty][tx]==1) hit = true;
             }
             zBuf[i] = d;
             let wallH = h / (d * Math.cos(a - p.dir));
-            ctx.fillStyle = `rgb(0,${180/d},50)`;
+            // FIXED DARK GREEN WALLS
+            ctx.fillStyle = "#004400"; 
             ctx.fillRect(i, h/2-wallH/2, 1, wallH);
         }
 
         let targets = [...bots];
         if(gameMode === 'pvp' || gameMode === '5v2') targets.push(p === p1 ? p2 : p1);
-        
         targets.forEach(t => {
             let dx = t.x - p.x, dy = t.y - p.y, dist = Math.hypot(dx, dy);
             let a = Math.atan2(dy, dx) - p.dir;
@@ -206,40 +192,29 @@
 
     function loop() {
         if(!active) return;
-        
-        // P1 WASD | P2 Arrows (With Fix)
         movePlayer(p1, 0.04, 0.05, 'KeyW', 'KeyS', 'KeyA', 'KeyD');
-        if(gameMode !== 'bot') {
-            movePlayer(p2, (gameMode==='pvp'?0.046:0.04), 0.05, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
-        }
-
+        if(gameMode !== 'bot') movePlayer(p2, (gameMode==='pvp'?0.046:0.04), 0.05, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
         bots.forEach(b => {
             let target = (gameMode === '5v2' && Math.hypot(p2.x-b.x, p2.y-b.y) < Math.hypot(p1.x-b.x, p1.y-b.y)) ? p2 : p1;
             if(Math.hypot(target.x-b.x, target.y-b.y) < 0.4) { 
-                target.hp -= 0.5; if(target.hp <= 0) { active = false; alert("MISSION FAILED"); location.reload(); }
+                target.hp -= 0.5; if(target.hp <= 0) { active = false; alert("GAME OVER"); location.reload(); }
             } else {
                 let next = getNextStep(b.x, b.y, target.x, target.y);
                 let dx = next.x-b.x, dy = next.y-b.y, dist = Math.hypot(dx,dy);
                 if(dist > 0.01) { b.x += (dx/dist)*b.s; b.y += (dy/dist)*b.s; }
             }
         });
-
-        if(gameMode === 'pvp' && Math.hypot(p1.x - p2.x, p1.y - p2.y) < 0.4) {
-            active = false; alert("TAGGED! P2 WINS!"); location.reload();
-        }
-
+        if(gameMode === 'pvp' && Math.hypot(p1.x - p2.x, p1.y - p2.y) < 0.4) { active = false; alert("TAGGED!"); location.reload(); }
         render(ctx1, p1, p1c);
         if(gameMode !== 'bot') render(ctx2, p2, p2c);
         document.getElementById('p1hp').innerText = Math.floor(p1.hp);
         if(gameMode !== 'bot') document.getElementById('p2hp').innerText = Math.floor(p2.hp);
-
         mCtx.clearRect(0,0,110,110);
         let s = 110/SIZE;
         for(let y=0; y<SIZE; y++) for(let x=0; x<SIZE; x++) if(world[y][x]) { mCtx.fillStyle="#222"; mCtx.fillRect(x*s,y*s,s,s); }
         mCtx.fillStyle="#0f0"; mCtx.fillRect(p1.x*s-1.5, p1.y*s-1.5, 3, 3);
         if(gameMode !== 'bot') { mCtx.fillStyle=(gameMode==='pvp'?"#f00":"#0f0"); mCtx.fillRect(p2.x*s-1.5, p2.y*s-1.5, 3, 3); }
         mCtx.fillStyle="#f00"; bots.forEach(b => mCtx.fillRect(b.x*s-1, b.y*s-1, 2.5, 2.5));
-
         requestAnimationFrame(loop);
     }
 </script>
