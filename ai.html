@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NEXUS AI | Smart Browser</title>
+    <style>
+        body { margin: 0; background: #0a0a0c; color: #00ff95; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Navigation Header */
+        header { background: #111; padding: 12px; display: flex; gap: 10px; align-items: center; border-bottom: 2px solid #333; }
+        #addr { flex: 1; background: #000; border: 1px solid #00ff95; color: #00ff95; padding: 10px 20px; border-radius: 25px; outline: none; font-family: monospace; }
+        .btn { background: #222; color: #00ff95; border: 1px solid #00ff95; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #00ff95; color: #000; }
+
+        /* Main Workspace */
+        main { display: flex; flex: 1; width: 100%; }
+        
+        /* The Web View (Left) */
+        #web-frame { flex: 3; border: none; background: white; }
+        
+        /* The AI Sidekick (Right) */
+        #ai-sidekick { flex: 1; background: #111; border-left: 2px solid #333; display: flex; flex-direction: column; padding: 15px; }
+        #ai-log { flex: 1; overflow-y: auto; font-size: 0.9rem; line-height: 1.5; margin-bottom: 10px; }
+        .ai-bubble { background: #1a1a1a; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #00d2ff; }
+        
+        /* Status Bar */
+        footer { background: #000; padding: 5px 15px; font-size: 0.7rem; border-top: 1px solid #333; color: #555; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="font-weight: bold; letter-spacing: 2px;">NEXUS</div>
+    <input type="text" id="addr" placeholder="Type a URL or ask a question..." onkeypress="if(event.key==='Enter') handleInput()">
+    <button class="btn" onclick="handleInput()">EXECUTE</button>
+</header>
+
+<main>
+    <iframe id="web-frame" src="about:blank"></iframe>
+    
+    <aside id="ai-sidekick">
+        <h3 style="margin-top:0; color: #00d2ff;">AI COPILOT</h3>
+        <div id="ai-log">
+            <div class="ai-bubble">System online. I am monitoring your session. Type a URL to browse, or ask me to explain a topic.</div>
+        </div>
+        <div style="font-size: 0.8rem; color: #888; text-align: center;">Press [Enter] to sync data</div>
+    </aside>
+</main>
+
+<footer>
+    ENGINE: V8-NEXUS | STATUS: ENCRYPTED | MODE: MULTI-AGENT ADAPTIVE
+</footer>
+
+<script>
+    const frame = document.getElementById('web-frame');
+    const addr = document.getElementById('addr');
+    const log = document.getElementById('ai-log');
+
+    function aiSay(text) {
+        const div = document.createElement('div');
+        div.className = 'ai-bubble';
+        div.innerText = text;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function handleInput() {
+        const val = addr.value.trim();
+        if (!val) return;
+
+        // 1. Check if it's a URL
+        if (val.includes('.') && !val.includes(' ')) {
+            let url = val.startsWith('http') ? val : 'https://' + val;
+            
+            aiSay(`Navigating to ${val}. I will analyze the page structure for you.`);
+            frame.src = url;
+            
+            // Note: Many sites (Google, YouTube, Facebook) block iFrame loading for security.
+            // This works best for documentation, personal sites, or educational wikis.
+        } 
+        // 2. Check if it's a Help Request
+        else {
+            processAIRequest(val);
+        }
+        addr.value = "";
+    }
+
+    function processAIRequest(prompt) {
+        const input = prompt.toLowerCase();
+        aiSay(`Processing: "${prompt}"...`);
+
+        setTimeout(() => {
+            if (input.includes("summarize") || input.includes("explain")) {
+                aiSay("Expert Agent: Ready to summarize. Please copy and paste the text you want me to analyze here.");
+            } else if (input.includes("code") || input.includes("fix")) {
+                aiSay("Dev Agent: Optimization mode engaged. Paste your code snippet and I will look for bugs.");
+            } else if (input.includes("game")) {
+                aiSay("Creative Agent: I can help you build games! Would you like to add 'Super Jump' or 'Speed Boost' to our B-Ball code?");
+            } else {
+                aiSay("Nexus Core: I'm not sure how to help with that yet. Should I search for documentation on this topic?");
+            }
+        }, 800);
+    }
+</script>
+
+</body>
+</html>
