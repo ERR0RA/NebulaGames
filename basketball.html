@@ -2,187 +2,163 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEBULA B-BALL: ULTRA EDITION</title>
+    <title>NEBULA B-BALL: HUMAN EVOLUTION</title>
     <style>
         :root { --p1-color: #ff3e3e; --p2-color: #00d2ff; --accent: #f1c40f; }
         body { margin: 0; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        
-        #header { display: flex; justify-content: space-around; width: 900px; align-items: center; margin-bottom: 20px; }
-        .score-box { font-size: 80px; font-weight: 900; font-family: 'Courier New', monospace; text-shadow: 0 0 20px currentColor; }
-        
-        canvas { 
-            background: radial-gradient(circle, #2c3e50 0%, #000 100%); 
-            border: 4px solid #444; 
-            border-radius: 12px; 
-            box-shadow: 0 0 50px rgba(0,255,136,0.2); 
-            cursor: none;
-        }
-
-        #ai-btn { 
-            background: transparent; border: 2px solid var(--accent); color: var(--accent); 
-            padding: 10px 30px; font-weight: bold; cursor: pointer; border-radius: 50px;
-            transition: 0.3s;
-        }
-        #ai-btn:hover { background: var(--accent); color: black; box-shadow: 0 0 20px var(--accent); }
+        #header { display: flex; justify-content: space-around; width: 900px; align-items: center; margin-bottom: 10px; }
+        .score { font-size: 60px; font-weight: 900; font-family: monospace; }
+        canvas { background: #1a1a1a; border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.5); border: 2px solid #333; }
+        #controls-hint { margin-top: 10px; color: #888; font-size: 0.9rem; }
+        .active-tag { color: var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="score-box" style="color: var(--p1-color)" id="s1">0</div>
-    <button id="ai-btn" onclick="aiEnabled = !aiEnabled; this.innerText = aiEnabled ? 'CPU: EXPERT' : 'LOCAL PVP'">LOCAL PVP</button>
-    <div class="score-box" style="color: var(--p2-color)" id="s2">0</div>
+    <div class="score" style="color: var(--p1-color)" id="s1">0</div>
+    <div style="text-align:center">
+        <button id="ai-btn" style="background:none; border:1px solid #555; color:white; padding:5px 15px; cursor:pointer;" onclick="aiEnabled = !aiEnabled">OPPONENT: EXPERT</button>
+        <div id="sw-hint">Press <b class="active-tag">Q</b> to Switch Player</div>
+    </div>
+    <div class="score" style="color: var(--p2-color)" id="s2">0</div>
 </div>
 
 <canvas id="court"></canvas>
+<div id="controls-hint">WASD to Move | Team Red vs Team Blue</div>
 
 <script>
     const canvas = document.getElementById('court');
     const ctx = canvas.getContext('2d');
-    canvas.width = 900; canvas.height = 500;
+    canvas.width = 900; canvas.height = 450;
 
-    // PHYSICS CONSTANTS
     const gravity = 0.5;
-    const friction = 0.99;
-    const wallBouncy = 0.7;
-    let score1 = 0, score2 = 0, aiEnabled = false;
+    const friction = 0.98;
+    let score1 = 0, score2 = 0, aiEnabled = true;
+    let controlledIndex = 0; // Which player on Team 1 you are
 
-    const ball = { x: 450, y: 100, vx: 0, vy: 0, r: 15, rot: 0 };
+    const ball = { x: 450, y: 150, vx: 0, vy: 0, r: 12 };
 
-    class Player {
-        constructor(x, color, left, up, right, team) {
-            this.x = x; this.y = 400; this.vx = 0; this.vy = 0;
-            this.w = 40; this.h = 80; this.color = color;
-            this.controls = { left, up, right };
-            this.team = team; this.grounded = false;
-            this.bob = 0; // For animation
+    class Human {
+        constructor(x, y, color, team, id) {
+            this.x = x; this.y = y; this.vx = 0; this.vy = 0;
+            this.w = 30; this.h = 70;
+            this.color = color; this.team = team; this.id = id;
+            this.grounded = false;
+            this.anim = 0;
         }
 
-        update(isManual) {
-            // MOVEMENT
-            if (isManual) {
-                if (keys[this.controls.left]) this.vx = -8;
-                else if (keys[this.controls.right]) this.vx = 8;
+        update(isUserControlled) {
+            if (isUserControlled) {
+                if (keys['KeyA']) this.vx = -7;
+                else if (keys['KeyD']) this.vx = 7;
                 else this.vx *= 0.8;
-                if (keys[this.controls.up] && this.grounded) { this.vy = -14; this.grounded = false; }
+                if (keys['KeyW'] && this.grounded) { this.vy = -13; this.grounded = false; }
             } else {
-                // Advanced AI Logic
-                let targetX = ball.x - (this.w / 2);
-                if (ball.x > 450) { // Only chase if ball is in half
-                    let dist = targetX - this.x;
-                    this.vx = Math.abs(dist) > 5 ? Math.sign(dist) * 6.5 : 0;
-                    if (ball.y < this.y - 50 && Math.abs(dist) < 40 && this.grounded) {
-                        this.vy = -13; this.grounded = false;
-                    }
+                // "Human-Like" AI logic
+                let targetX;
+                if (this.team === 1) { 
+                    // Support AI: Stay slightly behind or ahead of the ball to help
+                    targetX = ball.x - 60; 
                 } else {
-                    // Return to defense
-                    let dist = 700 - this.x;
-                    this.vx = Math.sign(dist) * 4;
+                    // Enemy AI: Aggressive defense
+                    targetX = ball.x + (ball.vx * 10); // Predicts where ball is going
+                }
+                
+                let dist = targetX - this.x;
+                this.vx += Math.sign(dist) * 0.8;
+                this.vx = Math.max(-6, Math.min(6, this.vx));
+
+                // Jump if ball is overhead
+                if (ball.y < this.y - 40 && Math.abs(this.x - ball.x) < 50 && this.grounded) {
+                    this.vy = -12; this.grounded = false;
                 }
             }
 
             this.vy += gravity;
-            this.x += this.vx;
-            this.y += this.vy;
+            this.x += this.vx; this.y += this.vy;
 
-            // Bounds
-            if (this.y + this.h > canvas.height - 20) { 
-                this.y = canvas.height - 20 - this.h; 
-                this.vy = 0; this.grounded = true; 
-            }
-            if (this.x < 0) this.x = 0;
-            if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
+            // Bounds & Collision
+            if (this.y + this.h > canvas.height - 20) { this.y = canvas.height - 20 - this.h; this.vy = 0; this.grounded = true; }
+            if (this.x < 0) this.x = 0; if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
 
-            // Collision with ball (Pixel-Perfect)
+            // Ball Interaction
             let cx = Math.max(this.x, Math.min(ball.x, this.x + this.w));
             let cy = Math.max(this.y, Math.min(ball.y, this.y + this.h));
             let dx = ball.x - cx, dy = ball.y - cy;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < ball.r) {
+            let d = Math.sqrt(dx*dx + dy*dy);
+            if (d < ball.r) {
                 let angle = Math.atan2(dy, dx);
-                ball.vx = Math.cos(angle) * 12 + this.vx * 0.6;
-                ball.vy = Math.sin(angle) * 12 + this.vy * 0.6;
-                // Move ball out
-                ball.x = cx + Math.cos(angle) * (ball.r + 1);
-                ball.y = cy + Math.sin(angle) * (ball.r + 1);
+                ball.vx = Math.cos(angle) * 13 + this.vx;
+                ball.vy = Math.sin(angle) * 10 + this.vy * 0.5;
+                ball.x = cx + Math.cos(angle) * (ball.r + 2);
             }
-            
-            // Animation state
-            if(Math.abs(this.vx) > 1) this.bob += 0.2;
+            if (Math.abs(this.vx) > 0.5) this.anim += 0.15;
         }
 
-        draw() {
+        draw(isActive) {
             ctx.save();
-            // Shadow
-            ctx.fillStyle = "rgba(0,0,0,0.3)";
-            ctx.beginPath();
-            ctx.ellipse(this.x + this.w/2, canvas.height - 15, 20, 5, 0, 0, Math.PI*2);
-            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = isActive ? "#fff" : this.color;
+            
+            // Draw Indicator
+            if (isActive) {
+                ctx.fillStyle = "#f1c40f";
+                ctx.beginPath(); ctx.moveTo(this.x + 10, this.y - 45); ctx.lineTo(this.x + 20, this.y - 45); ctx.lineTo(this.x + 15, this.y - 35); ctx.fill();
+            }
 
-            // Player Body
-            ctx.fillStyle = this.color;
-            ctx.shadowBlur = 15; ctx.shadowColor = this.color;
-            roundRect(ctx, this.x, this.y, this.w, this.h, 10, true);
+            // Simple "Human" Stick Skeleton
+            let walk = Math.sin(this.anim) * 15;
+            let centerX = this.x + this.w/2;
             
-            // Player Head (Animated)
-            let hBob = Math.sin(this.bob) * 3;
+            // Torso
+            ctx.beginPath();
+            ctx.moveTo(centerX, this.y + 20); ctx.lineTo(centerX, this.y + 50);
+            // Arms
+            ctx.moveTo(centerX, this.y + 25); ctx.lineTo(centerX - 15 + walk, this.y + 40);
+            ctx.moveTo(centerX, this.y + 25); ctx.lineTo(centerX + 15 - walk, this.y + 40);
+            // Legs
+            ctx.moveTo(centerX, this.y + 50); ctx.lineTo(centerX - 10 - walk, this.y + 70);
+            ctx.moveTo(centerX, this.y + 50); ctx.lineTo(centerX + 10 + walk, this.y + 70);
+            ctx.stroke();
+
+            // Head
             ctx.fillStyle = "#ffdbac";
-            roundRect(ctx, this.x + 5, this.y - 30 + hBob, 30, 30, 8, true);
-            
-            // Eyes
-            ctx.fillStyle = "black";
-            let eyeDir = this.vx > 0 ? 5 : -5;
-            ctx.fillRect(this.x + 12 + eyeDir, this.y - 20 + hBob, 4, 4);
-            ctx.fillRect(this.x + 22 + eyeDir, this.y - 20 + hBob, 4, 4);
+            ctx.beginPath(); ctx.arc(centerX, this.y + 10, 10, 0, Math.PI*2); ctx.fill();
             ctx.restore();
         }
     }
 
-    const p1 = new Player(100, '#ff3e3e', 'KeyA', 'KeyW', 'KeyD', 1);
-    const p2 = new Player(760, '#00d2ff', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 2);
+    const team1 = [new Human(100, 300, '#ff3e3e', 1, 0), new Human(200, 300, '#ff3e3e', 1, 1)];
+    const team2 = [new Human(700, 300, '#00d2ff', 2, 2)];
 
     const keys = {};
-    window.onkeydown = e => keys[e.code] = true;
+    window.onkeydown = e => {
+        keys[e.code] = true;
+        if (e.code === 'KeyQ') controlledIndex = (controlledIndex + 1) % team1.length;
+    };
     window.onkeyup = e => keys[e.code] = false;
 
-    function roundRect(ctx, x, y, width, height, radius, fill) {
-        ctx.beginPath(); ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y); ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        ctx.lineTo(x + width, y + height - radius); ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + radius, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius); ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.closePath(); if (fill) ctx.fill();
-    }
-
-    function reset() { 
-        ball.x = 450; ball.y = 150; ball.vx = 0; ball.vy = 0; 
-    }
+    function reset() { ball.x = 450; ball.y = 150; ball.vx = 0; ball.vy = 0; }
 
     function loop() {
-        p1.update(true);
-        p2.update(!aiEnabled);
+        // Update Team 1
+        team1.forEach((p, i) => p.update(i === controlledIndex));
+        // Update Team 2 (AI)
+        team2.forEach(p => p.update(false));
 
-        // Ball Logic
-        ball.vy += gravity;
-        ball.vx *= friction;
-        ball.x += ball.vx;
-        ball.y += ball.vy;
-        ball.rot += ball.vx * 0.05;
+        // Ball Physics
+        ball.vy += gravity; ball.vx *= friction;
+        ball.x += ball.vx; ball.y += ball.vy;
 
-        // Bounce Walls
-        if (ball.y + ball.r > canvas.height - 20) { ball.y = canvas.height - 20 - ball.r; ball.vy *= -0.75; }
-        if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy *= -0.8; }
-        if (ball.x - ball.r < 0 || ball.x + ball.r > canvas.width) {
-            ball.vx *= -wallBouncy;
-            ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
-        }
+        if (ball.y + ball.r > canvas.height - 20) { ball.y = canvas.height - 20 - ball.r; ball.vy *= -0.7; }
+        if (ball.x < 0 || ball.x > canvas.width) { ball.vx *= -0.8; ball.x = ball.x < 0 ? ball.r : canvas.width - ball.r; }
 
-        // Scoring
-        if (ball.vy > 0 && ball.y > 200 && ball.y < 230) {
-            if (ball.x < 60) { score2++; document.getElementById('s2').innerText = score2; reset(); }
-            if (ball.x > 840) { score1++; document.getElementById('s1').innerText = score1; reset(); }
+        // Goals
+        if (ball.vy > 0 && ball.y > 200 && ball.y < 220) {
+            if (ball.x < 50) { score2++; document.getElementById('s2').innerText = score2; reset(); }
+            if (ball.x > 850) { score1++; document.getElementById('s1').innerText = score1; reset(); }
         }
 
         draw();
@@ -192,37 +168,20 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Floor Glow
-        let floorGlow = ctx.createLinearGradient(0, 480, 0, 500);
-        floorGlow.addColorStop(0, '#111'); floorGlow.addColorStop(1, '#00ff88');
-        ctx.fillStyle = floorGlow;
-        ctx.fillRect(0, 480, canvas.width, 20);
+        // Court
+        ctx.fillStyle = "#333"; ctx.fillRect(0, 430, canvas.width, 20); // Floor
+        ctx.strokeStyle = "rgba(255,255,255,0.1)"; ctx.strokeRect(450, 0, 1, 450); // Midline
 
-        // Hoops & Nets
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = "white";
-        // Left
-        ctx.strokeRect(0, 180, 10, 80); 
-        ctx.fillStyle = "#ff5500"; ctx.fillRect(0, 210, 60, 8);
-        // Right
-        ctx.strokeRect(890, 180, 10, 80);
-        ctx.fillStyle = "#ff5500"; ctx.fillRect(840, 210, 60, 8);
+        // Hoops
+        ctx.fillStyle = "#ff5500";
+        ctx.fillRect(0, 210, 50, 5); ctx.fillRect(850, 210, 50, 5);
 
-        p1.draw(); p2.draw();
+        team1.forEach((p, i) => p.draw(i === controlledIndex));
+        team2.forEach(p => p.draw(false));
 
-        // High-Quality Ball
-        ctx.save();
-        ctx.translate(ball.x, ball.y);
-        ctx.rotate(ball.rot);
-        // Ball Shadow
-        ctx.shadowBlur = 20; ctx.shadowColor = "#e67e22";
+        // Ball
         ctx.fillStyle = "#e67e22";
-        ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, Math.PI*2); ctx.fill();
-        // Ball detail lines
-        ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(-ball.r, 0); ctx.lineTo(ball.r, 0); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, -ball.r); ctx.lineTo(0, ball.r); ctx.stroke();
-        ctx.restore();
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
     }
 
     loop();
