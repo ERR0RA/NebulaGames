@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NEON_SLAMS</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        canvas { border: 2px solid #004400; background: radial-gradient(circle, #050505 0%, #000 70%); border-radius: 50%; box-shadow: 0 0 30px #002200; }
+        #ui { margin-bottom: 20px; text-align: center; }
+        .controls { color: #555; font-size: 0.8rem; margin-top: 5px; }
+        #msg { position: absolute; font-size: 3rem; font-weight: bold; text-shadow: 0 0 20px #0f0; pointer-events: none; display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h1>NEON_SLAMS</h1>
+        <div id="score">P1: 0 | P2: 0</div>
+        <div class="controls">P1: HOLD [W] TO CHARGE | P2: HOLD [UP] TO CHARGE</div>
+    </div>
+
+    <div id="msg">WINNER!</div>
+    <canvas id="arena" width="500" height="500"></canvas>
+
+<script>
+    const canvas = document.getElementById('arena');
+    const ctx = canvas.getContext('2d');
+    const scoreUI = document.getElementById('score');
+    const msg = document.getElementById('msg');
+
+    let score = { p1: 0, p2: 0 };
+    let p1, p2, gameActive = true;
+    const friction = 0.97;
+    const arenaRadius = 240;
+    const centerX = 250;
+    const centerY = 250;
+
+    function reset() {
+        p1 = { x: 180, y: 250, vx: 0, vy: 0, radius: 20, color: '#0f0', charge: 0, charging: false };
+        p2 = { x: 320, y: 250, vx: 0, vy: 0, radius: 20, color: '#f00', charge: 0, charging: false };
+        msg.style.display = 'none';
+        gameActive = true;
+    }
+
+    window.addEventListener('keydown', e => {
+        if (e.code === 'KeyW') p1.charging = true;
+        if (e.code === 'ArrowUp') p2.charging = true;
+    });
+
+    window.addEventListener('keyup', e => {
+        if (e.code === 'KeyW') { launch(p1, p2); p1.charging = false; }
+        if (e.code === 'ArrowUp') { launch(p2, p1); p2.charging = false; }
+    });
+
+    function launch(p, target) {
+        let dx = target.x - p.x;
+        let dy = target.y - p.y;
+        let dist = Math.hypot(dx, dy);
+        let power = Math.min(p.charge, 15);
+        p.vx = (dx / dist) * power;
+        p.vy = (dy / dist) * power;
+        p.charge = 0;
+    }
+
+    function update() {
+        if (!gameActive) return;
+
+        [p1, p2].forEach(p => {
+            if (p.charging) p.charge += 0.4;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= friction;
+            p.vy *= friction;
+
+            // Arena Out Check
+            let distFromCenter = Math.hypot(p.x - centerX, p.y - centerY);
+            if (distFromCenter > arenaRadius) {
+                gameActive = false;
+                if (p === p1) score.p2++; else score.p1++;
+                showWin(p === p1 ? "PLAYER 2" : "PLAYER 1");
+            }
+        });
+
+        // Circle Collision
+        let dx = p2.x - p1.x;
+        let dy = p2.y - p1.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist < p1.radius + p2.radius) {
+            // Simple bounce physics
+            let angle = Math.atan2(dy, dx);
+            let force = 2; 
+            p1.vx -= Math.cos(angle) * force;
+            p1.vy -= Math.sin(angle) * force;
+            p2.vx += Math.cos(angle) * force;
+            p2.vy += Math.sin(angle) * force;
+        }
+    }
+
+    function showWin(txt) {
+        msg.innerText = txt + " SLAM!";
+        msg.style.display = 'block';
+        scoreUI.innerText = `P1: ${score.p1} | P2: ${score.p2}`;
+        setTimeout(reset, 2000);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, 500, 500);
+
+        // Arena Border
+        ctx.strokeStyle = '#004400';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, arenaRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        [p1, p2].forEach(p => {
+            // Charge Meter
+            if (p.charging) {
+                ctx.strokeStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius + 5, 0, (p.charge / 15) * Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Player
+            ctx.fillStyle = p.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+
+        requestAnimationFrame(() => {
+            update();
+            draw();
+        });
+    }
+
+    reset();
+    draw();
+</script>
+</body>
+</html>
