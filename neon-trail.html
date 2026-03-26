@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NEON-GRID | 2 Player Battle</title>
+    <style>
+        body { 
+            background: #000; 
+            color: #0f0; 
+            font-family: 'Courier New', monospace; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden;
+        }
+        canvas { 
+            border: 4px solid #004400; 
+            box-shadow: 0 0 20px #004400;
+            background: #050505;
+        }
+        #ui { margin-bottom: 20px; text-align: center; }
+        .controls { color: #888; font-size: 0.8rem; margin-top: 10px; }
+        #msg { position: absolute; font-size: 2rem; font-weight: bold; text-shadow: 0 0 10px #0f0; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h1>NEON_GRID_BATTLE</h1>
+        <div id="score">P1: 0 | P2: 0</div>
+        <div class="controls">P1: WASD | P2: ARROW KEYS</div>
+    </div>
+
+    <div id="msg"></div>
+    <canvas id="game" width="600" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const msg = document.getElementById('msg');
+        const scoreUI = document.getElementById('score');
+
+        const UNIT = 4; // Size of the trail
+        let score = { p1: 0, p2: 0 };
+        let grid = [];
+        let p1, p2, gameActive = true;
+
+        function reset() {
+            p1 = { x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [] };
+            p2 = { x: 500, y: 200, dx: -UNIT, dy: 0, color: '#f00', trail: [] };
+            
+            // Clear grid data (true = wall exists)
+            grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(false));
+            msg.innerText = "";
+            gameActive = true;
+        }
+
+        window.addEventListener('keydown', e => {
+            // Player 1 (WASD)
+            if (e.key === 'w' && p1.dy === 0) { p1.dx = 0; p1.dy = -UNIT; }
+            if (e.key === 's' && p1.dy === 0) { p1.dx = 0; p1.dy = UNIT; }
+            if (e.key === 'a' && p1.dx === 0) { p1.dx = -UNIT; p1.dy = 0; }
+            if (e.key === 'd' && p1.dx === 0) { p1.dx = UNIT; p1.dy = 0; }
+
+            // Player 2 (Arrows)
+            if (e.key === 'ArrowUp' && p2.dy === 0) { p2.dx = 0; p2.dy = -UNIT; }
+            if (e.key === 'ArrowDown' && p2.dy === 0) { p2.dx = 0; p2.dy = UNIT; }
+            if (e.key === 'ArrowLeft' && p2.dx === 0) { p2.dx = -UNIT; p2.dy = 0; }
+            if (e.key === 'ArrowRight' && p2.dx === 0) { p2.dx = UNIT; p2.dy = 0; }
+        });
+
+        function checkCollision(p) {
+            // Wall Collision
+            if (p.x < 0 || p.x >= canvas.width || p.y < 0 || p.y >= canvas.height) return true;
+            // Trail Collision
+            if (grid[p.x][p.y]) return true;
+            return false;
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Move
+            p1.x += p1.dx; p1.y += p1.dy;
+            p2.x += p2.dx; p2.y += p2.dy;
+
+            // Check Wins
+            let p1Dead = checkCollision(p1);
+            let p2Dead = checkCollision(p2);
+
+            if (p1Dead && p2Dead) {
+                endGame("DRAW!");
+            } else if (p1Dead) {
+                score.p2++;
+                endGame("PLAYER 2 WINS!");
+            } else if (p2Dead) {
+                score.p1++;
+                endGame("PLAYER 1 WINS!");
+            }
+
+            // Update Grid and Trails
+            if (gameActive) {
+                grid[p1.x][p1.y] = true;
+                grid[p2.x][p2.y] = true;
+                p1.trail.push({x: p1.x, y: p1.y});
+                p2.trail.push({x: p2.x, y: p2.y});
+            }
+        }
+
+        function draw() {
+            // Draw background with slight fade for motion effect
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Trails
+            p1.trail.forEach(t => {
+                ctx.fillStyle = p1.color;
+                ctx.fillRect(t.x, t.y, UNIT, UNIT);
+            });
+
+            p2.trail.forEach(t => {
+                ctx.fillStyle = p2.color;
+                ctx.fillRect(t.x, t.y, UNIT, UNIT);
+            });
+        }
+
+        function endGame(text) {
+            gameActive = false;
+            msg.innerText = text;
+            scoreUI.innerText = `P1: ${score.p1} | P2: ${score.p2}`;
+            setTimeout(reset, 2000);
+        }
+
+        function loop() {
+            update();
+            draw();
+            setTimeout(() => requestAnimationFrame(loop), 30);
+        }
+
+        reset();
+        loop();
+    </script>
+</body>
+</html>
