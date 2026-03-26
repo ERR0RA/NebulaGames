@@ -1,135 +1,134 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NEON_PONG_ULTRA</title>
+    <title>NEON_PONG GLITCHED | Hard Mode</title>
     <style>
         body { background: #000; color: #0f0; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        canvas { border: 2px solid #004400; background: #050505; box-shadow: 0 0 20px #002200; }
-        #ui { margin-bottom: 10px; font-size: 1.5rem; letter-spacing: 5px; }
-        .controls { color: #444; font-size: 0.7rem; margin-top: 10px; }
+        canvas { border: 2px solid #004400; background: #050505; box-shadow: 0 0 20px #002200; display: none; }
+        #ui { margin-bottom: 10px; font-size: 1.5rem; display: none; }
+        .menu { text-align: center; border: 2px solid #0f0; padding: 30px; background: #050505; box-shadow: 0 0 15px #004400; }
+        .btn { background: #0f0; color: #000; border: none; padding: 15px 30px; margin: 10px; cursor: pointer; font-family: monospace; font-weight: bold; width: 220px; }
+        .btn:hover { background: #fff; transform: scale(1.05); }
+        .status { color: #f00; font-size: 0.7rem; margin-top: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="ui">P1 [<span id="s1">0</span>] - [<span id="s2">0</span>] P2</div>
+    <div id="menu" class="menu">
+        <h1>NEON_PONG_ULTRA</h1>
+        <button class="btn" onclick="startGame(true)">VS OMNI_BOT</button><br>
+        <button class="btn" onclick="startGame(false)">2 PLAYERS (Local)</button>
+        <div id="mode-text" class="status">HARD_MODE: PREDICTIVE_TRACKING_ACTIVE</div>
+    </div>
+
+    <div id="ui">P1 [<span id="s1">0</span>] - [<span id="s2">0</span>] <span id="p2Name">P2</span></div>
     <canvas id="pong" width="700" height="400"></canvas>
-    <div class="controls">P1: [W/S] | P2: [UP/DOWN] | BALL SPEEDS UP EVERY HIT</div>
 
 <script>
     const canvas = document.getElementById('pong');
     const ctx = canvas.getContext('2d');
     const s1 = document.getElementById('s1');
     const s2 = document.getElementById('s2');
+    
+    let score = { p1: 0, p2: 0 }, particles = [], keys = {};
+    let isBot = false, gameActive = false, predictedY = 200;
 
-    let score = { p1: 0, p2: 0 };
-    let particles = [];
-    const keys = {};
+    let ball = { x: 350, y: 200, vx: 5, vy: 3, size: 8, speed: 7 };
+    let p1 = { x: 20, y: 160, w: 10, h: 80 };
+    let p2 = { x: 670, y: 160, w: 10, h: 80 };
 
-    let ball = { x: 350, y: 200, vx: 5, vy: 3, size: 8, speed: 5 };
-    let p1 = { x: 20, y: 150, w: 10, h: 80 };
-    let p2 = { x: 670, y: 150, w: 10, h: 80 };
+    window.onkeydown = e => keys[e.code] = true;
+    window.onkeyup = e => keys[e.code] = false;
 
-    window.addEventListener('keydown', e => keys[e.code] = true);
-    window.addEventListener('keyup', e => keys[e.code] = false);
+    function startGame(botMode) {
+        isBot = botMode;
+        gameActive = true;
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('ui').style.display = 'block';
+        canvas.style.display = 'block';
+        document.getElementById('p2Name').innerText = isBot ? "OMNI_BOT" : "P2";
+        resetBall();
+        loop();
+    }
 
-    function spawnParticles(x, y, color) {
-        for(let i=0; i<10; i++) {
-            particles.push({
-                x, y, 
-                vx: (Math.random()-0.5) * 10, 
-                vy: (Math.random()-0.5) * 10, 
-                life: 1.0, 
-                color 
-            });
+    function predictTrajectory() {
+        if (ball.vx < 0) return 200; // Reset to center when ball moves away
+        
+        let tempX = ball.x, tempY = ball.y, tempVY = ball.vy;
+        while (tempX < p2.x) {
+            tempX += ball.vx; tempY += tempVY;
+            if (tempY <= 0 || tempY >= canvas.height - ball.size) tempVY *= -1;
         }
+        return tempY;
     }
 
     function resetBall() {
         ball.x = 350; ball.y = 200;
-        ball.speed = 5;
+        ball.speed = 7;
         ball.vx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
-        ball.vy = (Math.random() - 0.5) * 6;
+        ball.vy = (Math.random() - 0.5) * 8;
+        predictedY = predictTrajectory();
     }
 
     function update() {
-        // Paddle movement
-        if (keys['KeyW'] && p1.y > 0) p1.y -= 7;
-        if (keys['KeyS'] && p1.y < canvas.height - p1.h) p1.y += 7;
-        if (keys['ArrowUp'] && p2.y > 0) p2.y -= 7;
-        if (keys['ArrowDown'] && p2.y < canvas.height - p2.h) p2.y += 7;
+        // Player 1 Controls (Universal for Solo)
+        if (keys['KeyW'] || keys['ArrowUp']) if (p1.y > 0) p1.y -= 9;
+        if (keys['KeyS'] || keys['ArrowDown']) if (p1.y < canvas.height - p1.h) p1.y += 9;
 
-        // Ball movement
-        ball.x += ball.vx;
-        ball.y += ball.vy;
+        // Omni-Bot Logic
+        if (isBot) {
+            if (ball.vx > 0) {
+                let target = predictedY - p2.h / 2;
+                // Bot "jitters" more as ball gets faster
+                let jitter = (Math.random() - 0.5) * (ball.speed * 0.5);
+                if (p2.y < target + jitter) p2.y += 8;
+                else if (p2.y > target + jitter) p2.y -= 8;
+            }
+        } else {
+            if (keys['ArrowUp'] && p2.y > 0) p2.y -= 9;
+            if (keys['ArrowDown'] && p2.y < canvas.height - p2.h) p2.y += 9;
+        }
 
-        // Wall bounce
-        if (ball.y <= 0 || ball.y >= canvas.height) {
+        ball.x += ball.vx; ball.y += ball.vy;
+
+        if (ball.y <= 0 || ball.y >= canvas.height - ball.size) {
             ball.vy *= -1;
-            spawnParticles(ball.x, ball.y, '#0f0');
+            predictedY = predictTrajectory(); // Recalculate on bounce
         }
 
-        // Collision P1
-        if (ball.x <= p1.x + p1.w && ball.y >= p1.y && ball.y <= p1.y + p1.h) {
-            ball.speed += 0.5;
-            ball.vx = ball.speed;
-            ball.vy = (ball.y - (p1.y + p1.h/2)) * 0.2;
-            spawnParticles(ball.x, ball.y, '#fff');
+        const collide = (p) => ball.x < p.x + p.w && ball.x + ball.size > p.x && ball.y < p.y + p.h && ball.y + ball.size > p.y;
+
+        if (collide(p1)) {
+            ball.speed += 0.6; ball.vx = ball.speed;
+            ball.vy = (ball.y - (p1.y + p1.h/2)) * 0.35;
+            predictedY = predictTrajectory();
+        }
+        if (collide(p2)) {
+            ball.speed += 0.6; ball.vx = -ball.speed;
+            ball.vy = (ball.y - (p2.y + p2.h/2)) * 0.35;
         }
 
-        // Collision P2
-        if (ball.x >= p2.x - ball.size && ball.y >= p2.y && ball.y <= p2.y + p2.h) {
-            ball.speed += 0.5;
-            ball.vx = -ball.speed;
-            ball.vy = (ball.y - (p2.y + p2.h/2)) * 0.2;
-            spawnParticles(ball.x, ball.y, '#fff');
-        }
-
-        // Score
         if (ball.x < 0) { score.p2++; s2.innerText = score.p2; resetBall(); }
         if (ball.x > canvas.width) { score.p1++; s1.innerText = score.p1; resetBall(); }
-
-        // Particles
-        particles.forEach((p, i) => {
-            p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-            if (p.life <= 0) particles.splice(i, 1);
-        });
     }
 
     function draw() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Tail effect
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Center line
-        ctx.setLineDash([10, 10]);
-        ctx.strokeStyle = '#002200';
-        ctx.beginPath(); ctx.moveTo(350, 0); ctx.lineTo(350, 400); ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Paddles
         ctx.fillStyle = '#0f0';
-        ctx.shadowBlur = 10; ctx.shadowColor = '#0f0';
+        ctx.shadowBlur = 15; ctx.shadowColor = '#0f0';
         ctx.fillRect(p1.x, p1.y, p1.w, p1.h);
         ctx.fillRect(p2.x, p2.y, p2.w, p2.h);
-
-        // Ball
         ctx.fillStyle = '#fff';
         ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
-
-        // Particles
-        particles.forEach(p => {
-            ctx.globalAlpha = p.life;
-            ctx.fillStyle = p.color;
-            ctx.fillRect(p.x, p.y, 2, 2);
-        });
-        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
-
-        requestAnimationFrame(() => {
-            update();
-            draw();
-        });
+        ctx.shadowBlur = 0;
     }
 
-    draw();
+    function loop() {
+        if (!gameActive) return;
+        update(); draw();
+        requestAnimationFrame(loop);
+    }
 </script>
 </body>
 </html>
