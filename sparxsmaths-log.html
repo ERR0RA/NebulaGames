@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MATH_TRACKER | OMNI-LOG</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 20px; line-height: 1.5; }
+        .container { max-width: 900px; margin: 0 auto; border: 2px solid #004400; padding: 25px; background: #050505; box-shadow: 0 0 30px #002200; }
+        
+        h1 { border-bottom: 2px solid #0f0; padding-bottom: 10px; text-align: center; letter-spacing: 3px; }
+        
+        .input-area { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        input, textarea { background: #000; border: 1px solid #004400; color: #0f0; padding: 12px; font-family: monospace; outline: none; }
+        input:focus, textarea:focus { border-color: #0f0; box-shadow: 0 0 5px #0f0; }
+        textarea { grid-column: span 3; height: 80px; resize: none; }
+        
+        .btn { background: #0f0; color: #000; border: none; padding: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn:hover { background: #fff; transform: translateY(-2px); }
+        .btn-log { grid-column: span 3; font-size: 1.1rem; }
+
+        .search-container { margin: 20px 0; display: flex; align-items: center; border-bottom: 1px solid #004400; padding-bottom: 10px; }
+        #searchBar { width: 100%; background: transparent; border: none; font-size: 1.2rem; color: #fff; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #004400; padding: 12px; text-align: left; vertical-align: top; }
+        th { background: #002200; font-size: 0.8rem; text-transform: uppercase; }
+        
+        .date-cell { color: #008800; font-size: 0.75rem; white-space: nowrap; }
+        .code-cell { color: #fff; font-weight: bold; background: #010; }
+        .ans-cell { color: #0f0; font-family: 'Consolas', monospace; }
+        
+        .empty-msg { text-align: center; padding: 20px; color: #444; }
+        .btn-clear { background: #300; color: #f44; margin-top: 30px; padding: 5px 15px; font-size: 0.7rem; border: 1px solid #f44; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>MATH_LOG // ARCHIVE</h1>
+    
+    <div class="input-area">
+        <input type="text" id="code" placeholder="BOOKWORK CODE">
+        <input type="text" id="qNum" placeholder="QUESTION #">
+        <input type="text" id="ans" placeholder="ANSWER">
+        <textarea id="method" placeholder="STEPS / EXPLANATION / HINTS..."></textarea>
+        <button class="btn btn-log" onclick="saveEntry()">ENCRYPT & STORE ENTRY</button>
+    </div>
+
+    <div class="search-container">
+        <span style="margin-right: 10px;">🔎</span>
+        <input type="text" id="searchBar" placeholder="FILTER BY CODE, DATE, OR KEYWORD..." onkeyup="filterLogs()">
+    </div>
+
+    <table id="logTable">
+        <thead>
+            <tr>
+                <th>TIMESTAMP</th>
+                <th>CODE</th>
+                <th>Q#</th>
+                <th>RESULT</th>
+                <th>METHODOLOGY</th>
+            </tr>
+        </thead>
+        <tbody id="logBody">
+            </tbody>
+    </table>
+
+    <div id="noData" class="empty-msg">NO LOGS FOUND IN LOCAL DATABASE.</div>
+
+    <button class="btn btn-clear" onclick="clearLogs()">ERASE ALL LOCAL ARCHIVES</button>
+</div>
+
+<script>
+    window.onload = displayLogs;
+
+    function saveEntry() {
+        const code = document.getElementById('code').value.trim();
+        const q = document.getElementById('qNum').value.trim();
+        const ans = document.getElementById('ans').value.trim();
+        const method = document.getElementById('method').value.trim();
+
+        if(!code || !ans) {
+            alert("⚠️ SYSTEM ERROR: CODE AND ANSWER REQUIRED.");
+            return;
+        }
+
+        // Generate Current Date and Time
+        const now = new Date();
+        const timestamp = now.toLocaleDateString() + " " + now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        const entry = { timestamp, code: code.toUpperCase(), q, ans, method };
+
+        let logs = JSON.parse(localStorage.getItem('mathLogs')) || [];
+        logs.unshift(entry); // Add to top of list
+        localStorage.setItem('mathLogs', JSON.stringify(logs));
+        
+        // Reset inputs
+        document.getElementById('code').value = '';
+        document.getElementById('qNum').value = '';
+        document.getElementById('ans').value = '';
+        document.getElementById('method').value = '';
+        
+        displayLogs();
+    }
+
+    function displayLogs() {
+        const logs = JSON.parse(localStorage.getItem('mathLogs')) || [];
+        const body = document.getElementById('logBody');
+        const empty = document.getElementById('noData');
+        
+        body.innerHTML = '';
+        
+        if (logs.length === 0) {
+            empty.style.display = 'block';
+            return;
+        }
+        
+        empty.style.display = 'none';
+
+        logs.forEach(item => {
+            renderRow(item);
+        });
+    }
+
+    function renderRow(item) {
+        const body = document.getElementById('logBody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="date-cell">${item.timestamp}</td>
+            <td class="code-cell">${item.code}</td>
+            <td>${item.q}</td>
+            <td class="ans-cell">${item.ans}</td>
+            <td style="color: #bbb; font-size: 0.85rem;">${item.method}</td>
+        `;
+        body.appendChild(row);
+    }
+
+    function filterLogs() {
+        const query = document.getElementById('searchBar').value.toLowerCase();
+        const rows = document.querySelectorAll('#logBody tr');
+
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? "" : "none";
+        });
+    }
+
+    function clearLogs() {
+        if(confirm("DANGER: This will permanently delete all logs. Proceed?")) {
+            localStorage.removeItem('mathLogs');
+            displayLogs();
+        }
+    }
+</script>
+
+</body>
+</html>
