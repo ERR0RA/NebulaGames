@@ -2,29 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D BLOCK-WORLD</title>
+    <title>NEBULA VOXEL ENGINE</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Segoe UI', sans-serif; }
         #ui {
-            position: absolute; top: 10px; left: 10px;
-            background: rgba(0,0,0,0.6); color: white; padding: 15px;
-            border-radius: 8px; pointer-events: none;
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0,0,0,0.7); color: #00ff88; padding: 20px;
+            border-radius: 10px; pointer-events: none; border: 1px solid #333;
         }
+        #hotbar {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px;
+        }
+        .slot { width: 40px; height: 40px; border: 2px solid #555; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .active { border-color: #00ff88; box-shadow: 0 0 10px #00ff88; }
         #crosshair {
             position: absolute; top: 50%; left: 50%;
-            width: 20px; height: 20px; border: 2px solid white;
-            border-radius: 50%; transform: translate(-50%, -50%);
+            width: 15px; height: 15px; border: 2px solid white;
+            border-radius: 50%; transform: translate(-50%, -50%); mix-blend-mode: difference;
         }
     </style>
 </head>
 <body>
 
 <div id="ui">
-    <b>3D MINER</b><br>
-    WASD: Move | SPACE: Jump<br>
-    CLICK: Lock Mouse & Mine | SHIFT+CLICK: Build<br>
-    <span id="status">World Auto-Saves to Browser</span>
+    <b style="font-size: 1.2rem;">NEBULA 3D</b><br>
+    <small>WASD to Move | SPACE to Jump</small><br>
+    <small>LEFT CLICK: Mine | SHIFT+CLICK: Build</small><br>
+    <small>NUM KEYS 1-5: Change Block</small>
 </div>
+
+<div id="hotbar">
+    <div id="s1" class="slot active">Dirt</div>
+    <div id="s2" class="slot">Stone</div>
+    <div id="s3" class="slot">Wood</div>
+    <div id="s4" class="slot">Leaf</div>
+    <div id="s5" class="slot">Glass</div>
+</div>
+
 <div id="crosshair"></div>
 
 <script type="importmap">
@@ -34,93 +49,100 @@
 <script type="module">
     import * as THREE from 'three';
 
-    // --- CONFIG ---
-    const TILE_SIZE = 1;
+    // --- GAME STATE ---
+    const worldData = JSON.parse(localStorage.getItem('nebula_world')) || {};
     const CHUNK_SIZE = 16;
-    const worldData = JSON.parse(localStorage.getItem('my3DWorld')) || {};
+    const RENDER_DIST = 2; // Radius of chunks to load
+    let currentBlock = 'dirt';
+    const blockTypes = ['dirt', 'stone', 'wood', 'leaf', 'glass'];
 
     // --- SCENE SETUP ---
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 10, 50);
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
-    scene.add(light);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    sunLight.position.set(10, 20, 10);
+    scene.add(sunLight);
 
-    // --- TEXTURES (Procedural) ---
-    const loader = new THREE.TextureLoader();
+    // --- TEXTURES/MATERIALS ---
     const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
-    const materials = {
-        grass: new THREE.MeshLambertMaterial({ color: 0x4daa3d }),
+    const mats = {
         dirt: new THREE.MeshLambertMaterial({ color: 0x6b4c35 }),
-        stone: new THREE.MeshLambertMaterial({ color: 0x7a7a7a })
+        stone: new THREE.MeshLambertMaterial({ color: 0x808080 }),
+        wood: new THREE.MeshLambertMaterial({ color: 0x4d2600 }),
+        leaf: new THREE.MeshLambertMaterial({ color: 0x228b22, transparent: true, opacity: 0.9 }),
+        glass: new THREE.MeshLambertMaterial({ color: 0xadd8e6, transparent: true, opacity: 0.4 })
     };
 
     const blocks = new Map();
 
-    // --- WORLD GENERATION ---
-    function getTerrainHeight(x, z) {
-        // Simple noise approximation
-        return Math.floor(Math.sin(x * 0.2) * 2 + Math.cos(z * 0.2) * 2 + 5);
+    // --- WORLD ENGINE ---
+    function getNoiseHeight(x, z) {
+        return Math.floor(Math.sin(x * 0.1) * 3 + Math.cos(z * 0.1) * 3 + 8);
     }
 
     function addBlock(x, y, z, type, save = true) {
         const key = `${x},${y},${z}`;
         if (blocks.has(key)) return;
 
-        const mesh = new THREE.Mesh(cubeGeo, materials[type]);
+        const mesh = new THREE.Mesh(cubeGeo, mats[type]);
         mesh.position.set(x, y, z);
         scene.add(mesh);
         blocks.set(key, mesh);
         
         if (save) {
             worldData[key] = type;
-            localStorage.setItem('my3DWorld', JSON.stringify(worldData));
+            localStorage.setItem('nebula_world', JSON.stringify(worldData));
         }
     }
 
-    // Initialize initial area
-    for (let x = -CHUNK_SIZE; x < CHUNK_SIZE; x++) {
-        for (let z = -CHUNK_SIZE; z < CHUNK_SIZE; z++) {
-            const h = getTerrainHeight(x, z);
-            for (let y = 0; y <= h; y++) {
-                let type = 'grass';
-                if (y < h) type = 'dirt';
-                if (y < h - 2) type = 'stone';
-                
-                // Load from save if exists, otherwise generate
-                const key = `${x},${y},${z}`;
-                if (worldData[key] === null) continue; // Block was mined
-                addBlock(x, y, z, worldData[key] || type, false);
+    function loadChunk(cx, cz) {
+        for (let x = cx * CHUNK_SIZE; x < (cx + 1) * CHUNK_SIZE; x++) {
+            for (let z = cz * CHUNK_SIZE; z < (cz + 1) * CHUNK_SIZE; z++) {
+                const h = getNoiseHeight(x, z);
+                for (let y = 0; y <= h; y++) {
+                    const key = `${x},${y},${z}`;
+                    if (worldData[key] === "null") continue; // Previously mined
+                    const type = worldData[key] || (y === h ? 'dirt' : y < h - 3 ? 'stone' : 'dirt');
+                    addBlock(x, y, z, type, false);
+                }
             }
         }
     }
 
     // --- CONTROLS ---
-    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
-    let velocity = new THREE.Vector3();
-    let direction = new THREE.Vector3();
+    let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
+    let vel = new THREE.Vector3(), dir = new THREE.Vector3();
 
     document.addEventListener('click', () => document.body.requestPointerLock());
     
     document.addEventListener('keydown', (e) => {
-        if (e.code === 'KeyW') moveForward = true;
-        if (e.code === 'KeyS') moveBackward = true;
-        if (e.code === 'KeyA') moveLeft = true;
-        if (e.code === 'KeyD') moveRight = true;
-        if (e.code === 'Space' && canJump) { velocity.y += 5; canJump = false; }
+        if (e.code === 'KeyW') moveF = true;
+        if (e.code === 'KeyS') moveB = true;
+        if (e.code === 'KeyA') moveL = true;
+        if (e.code === 'KeyD') moveR = true;
+        if (e.code === 'Space' && canJump) { vel.y += 5; canJump = false; }
+        
+        if (e.key >= 1 && e.key <= 5) {
+            document.querySelectorAll('.slot').forEach(s => s.classList.remove('active'));
+            document.getElementById('s' + e.key).classList.add('active');
+            currentBlock = blockTypes[e.key - 1];
+        }
     });
 
     document.addEventListener('keyup', (e) => {
-        if (e.code === 'KeyW') moveForward = false;
-        if (e.code === 'KeyS') moveBackward = false;
-        if (e.code === 'KeyA') moveLeft = false;
-        if (e.code === 'KeyD') moveRight = false;
+        if (e.code === 'KeyW') moveF = false;
+        if (e.code === 'KeyS') moveB = false;
+        if (e.code === 'KeyA') moveL = false;
+        if (e.code === 'KeyD') moveR = false;
     });
 
     document.addEventListener('mousemove', (e) => {
@@ -131,68 +153,75 @@
         }
     });
 
-    // Mining / Building
     const raycaster = new THREE.Raycaster();
     document.addEventListener('mousedown', (e) => {
         if (!document.pointerLockElement) return;
-
         raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
         const intersects = raycaster.intersectObjects(Array.from(blocks.values()));
 
         if (intersects.length > 0) {
             const intersect = intersects[0];
+            const p = intersect.object.position;
             if (e.shiftKey) {
-                // Build
-                const pos = intersect.object.position.clone().add(intersect.face.normal);
-                addBlock(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z), 'dirt');
+                const buildPos = p.clone().add(intersect.face.normal);
+                addBlock(Math.round(buildPos.x), Math.round(buildPos.y), Math.round(buildPos.z), currentBlock);
             } else {
-                // Mine
-                const obj = intersect.object;
-                const key = `${Math.round(obj.position.x)},${Math.round(obj.position.y)},${Math.round(obj.position.z)}`;
-                scene.remove(obj);
+                scene.remove(intersect.object);
+                const key = `${Math.round(p.x)},${Math.round(p.y)},${Math.round(p.z)}`;
                 blocks.delete(key);
-                worldData[key] = null; // Mark as deleted
-                localStorage.setItem('my3DWorld', JSON.stringify(worldData));
+                worldData[key] = "null";
+                localStorage.setItem('nebula_world', JSON.stringify(worldData));
             }
         }
     });
 
-    camera.position.y = 10;
+    // --- INITIAL SPAWN ---
+    camera.position.set(8, 15, 8); // Start above ground
     camera.rotation.order = 'YXZ';
 
-    // --- GAME LOOP ---
+    // --- MAIN LOOP ---
     let prevTime = performance.now();
     function animate() {
         requestAnimationFrame(animate);
-
         const time = performance.now();
         const delta = (time - prevTime) / 1000;
 
-        velocity.x -= velocity.x * 10.0 * delta;
-        velocity.z -= velocity.z * 10.0 * delta;
-        velocity.y -= 9.8 * delta; // Gravity
+        // Gravity & Physics
+        vel.x -= vel.x * 10.0 * delta;
+        vel.z -= vel.z * 10.0 * delta;
+        vel.y -= 9.8 * delta; 
 
-        direction.z = Number(moveForward) - Number(moveBackward);
-        direction.x = Number(moveRight) - Number(moveLeft);
-        direction.normalize();
+        dir.z = Number(moveF) - Number(moveB);
+        dir.x = Number(moveR) - Number(moveL);
+        dir.normalize();
 
-        if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
-        if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+        if (moveF || moveB) vel.z -= dir.z * 40.0 * delta;
+        if (moveL || moveR) vel.x -= dir.x * 40.0 * delta;
 
-        camera.translateX(-velocity.x * delta);
-        camera.translateZ(velocity.z * delta);
-        camera.position.y += velocity.y * delta;
+        camera.translateX(-vel.x * delta);
+        camera.translateZ(vel.z * delta);
+        camera.position.y += vel.y * delta;
 
-        if (camera.position.y < 2) {
-            velocity.y = 0;
-            camera.position.y = 2;
+        // Basic Floor Collision
+        const currentH = getNoiseHeight(camera.position.x, camera.position.z) + 2;
+        if (camera.position.y < currentH) {
+            vel.y = 0;
+            camera.position.y = currentH;
             canJump = true;
+        }
+
+        // Infinite Generation Check
+        const curCX = Math.floor(camera.position.x / CHUNK_SIZE);
+        const curCZ = Math.floor(camera.position.z / CHUNK_SIZE);
+        for(let x = -RENDER_DIST; x <= RENDER_DIST; x++) {
+            for(let z = -RENDER_DIST; z <= RENDER_DIST; z++) {
+                loadChunk(curCX + x, curCZ + z);
+            }
         }
 
         renderer.render(scene, camera);
         prevTime = time;
     }
-
     animate();
 
     window.addEventListener('resize', () => {
