@@ -27,6 +27,7 @@
             left: 20px;
             pointer-events: none;
             text-shadow: 0 0 10px #00f2ff;
+            z-index: 10;
         }
 
         #score {
@@ -63,6 +64,7 @@
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(5px);
+            z-index: 20;
         }
 
         #game-over-screen h1 {
@@ -106,7 +108,7 @@
         <p id="highScore">Best: 0</p>
     </div>
 
-    <div id="controls-hint">TAP LEFT/RIGHT OR USE ARROWS TO DRIFT</div>
+    <div id="controls-hint">TAP LEFT/RIGHT OR USE ARROWS</div>
 
     <div id="game-over-screen">
         <h1>CRASHED</h1>
@@ -117,7 +119,6 @@
     <canvas id="gameCanvas"></canvas>
 
     <script>
-        // --- Setup Canvas ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('score');
@@ -126,10 +127,9 @@
         const finalScoreEl = document.getElementById('final-score');
         const hintEl = document.getElementById('controls-hint');
 
-        let width, height;
-        let scale = window.devicePixelRatio || 1;
-
+        let width, height, scale;
         function resize() {
+            scale = window.devicePixelRatio || 1;
             width = window.innerWidth;
             height = window.innerHeight;
             canvas.width = width * scale;
@@ -139,103 +139,60 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // --- Game State & Constants ---
         let gameActive = true;
         let score = 0;
         let highScore = localStorage.getItem('cosmicDriftBest') || 0;
         highScoreEl.innerText = `Best: ${highScore}`;
         
         const SHIP_SIZE = 15;
-        const THRUST = 0.35;    // realistic force added per frame
-        const FRICTION = 0.985;  // space drag (makes turning possible)
+        const THRUST = 0.4;
+        const FRICTION = 0.98;
         const OBSTACLE_SPEED_BASE = 4;
 
-        // --- Game Objects ---
-        let ship = {
-            x: width / 2,
-            y: height - 100,
-            vx: 0, // Velocity X
-            w: SHIP_SIZE,
-            h: SHIP_SIZE * 1.5,
-            thruster: 0 // 0: none, -1: left, 1: right
-        };
-
+        let ship = { x: width / 2, y: height - 120, vx: 0, w: SHIP_SIZE, h: SHIP_SIZE * 1.5, thruster: 0 };
         let stars = [];
-        let debris = []; // Active enemies
-        let particles = []; // Visual flair
+        let debris = [];
+        let particles = [];
 
-        // --- Initialization ---
         function initStars() {
             stars = [];
-            for (let i = 0; i < 100; i++) {
-                stars.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    size: Math.random() * 2,
-                    speed: Math.random() * 0.5 + 0.1
-                });
+            for (let i = 0; i < 80; i++) {
+                stars.push({ x: Math.random() * width, y: Math.random() * height, size: Math.random() * 2, speed: Math.random() * 0.5 + 0.1 });
             }
         }
 
-        // --- Controls ---
         const handleInputStart = (isLeft) => {
             if (!gameActive) return;
             hintEl.style.display = 'none';
             ship.thruster = isLeft ? -1 : 1;
-            spawnParticles(ship.x + (isLeft ? ship.w : 0), ship.y + ship.h/2, isLeft ? 1 : -1, '#00f2ff');
         };
         const handleInputEnd = () => { ship.thruster = 0; };
 
-        // Mouse/Touch Controls
         window.addEventListener('mousedown', (e) => handleInputStart(e.clientX < width / 2));
         window.addEventListener('mouseup', handleInputEnd);
-        window.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevents scrolling
-            handleInputStart(e.touches[0].clientX < width / 2);
-        });
+        window.addEventListener('touchstart', (e) => { e.preventDefault(); handleInputStart(e.touches[0].clientX < width / 2); }, {passive: false});
         window.addEventListener('touchend', handleInputEnd);
-
-        // Keyboard Controls
         window.addEventListener('keydown', (e) => {
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') handleInputStart(true);
             if (e.code === 'ArrowRight' || e.code === 'KeyD') handleInputStart(false);
             if (e.code === 'Space' && !gameActive) resetGame();
         });
-        window.addEventListener('keyup', (e) => {
-            if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'ArrowRight' || e.code === 'KeyD') handleInputEnd();
-        });
+        window.addEventListener('keyup', handleInputEnd);
 
-
-        // --- Core Functions ---
         function spawnDebris() {
-            const size = Math.random() * 40 + 20;
-            debris.push({
-                x: Math.random() * (width - size),
-                y: -size,
-                w: size,
-                h: size * (Math.random() * 0.5 + 0.7),
-                speed: OBSTACLE_SPEED_BASE + (score / 15),
-                rot: Math.random() * Math.PI * 2,
-                rotSpd: (Math.random() - 0.5) * 0.1
-            });
+            const size = Math.random() * 40 + 25;
+            debris.push({ x: Math.random() * (width - size), y: -size, w: size, h: size, speed: OBSTACLE_SPEED_BASE + (score / 20), rot: Math.random() * Math.PI, rotSpd: (Math.random() - 0.5) * 0.05 });
         }
 
-        function spawnParticles(x, y, vxDir, color) {
-            for(let i=0; i<5; i++) {
-                particles.push({
-                    x: x, y: y,
-                    vx: vxDir * (Math.random() * 3 + 1),
-                    vy: (Math.random() - 0.5) * 2,
-                    life: Math.random() * 20 + 10,
-                    color: color
-                });
+        function spawnParticles(x, y, color, count = 5) {
+            for(let i=0; i < count; i++) {
+                particles.push({ x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: 30, color });
             }
         }
 
         function resetGame() {
             score = 0; scoreEl.innerText = score;
-            gameActive = true;
-            debris = []; particles = [];
+            gameActive = true; debris = []; particles = [];
             ship.x = width / 2; ship.vx = 0;
             gameOverScreen.style.display = 'none';
             initStars();
@@ -246,119 +203,68 @@
             gameActive = false;
             finalScoreEl.innerText = `SCORE: ${score}`;
             gameOverScreen.style.display = 'flex';
-            
-            // Explosion
-            spawnParticles(ship.x, ship.y, 1, '#ff0055');
-            spawnParticles(ship.x, ship.y, -1, '#ff0055');
-
+            spawnParticles(ship.x, ship.y, '#ff0055', 20);
             if (score > highScore) {
                 highScore = score;
                 highScoreEl.innerText = `Best: ${highScore}`;
-                highScoreEl.style.color = '#00f2ff';
                 localStorage.setItem('cosmicDriftBest', highScore);
             }
         }
 
-        // --- The Main Game Loop (The Heart) ---
         let frame = 0;
         function loop() {
             if (!gameActive) return;
             frame++;
 
-            // 1. Logic: Ship Physics (REALISTIC INERTIA)
-            if (ship.thruster === -1) ship.vx -= THRUST; // Apply Left Force
-            if (ship.thruster === 1) ship.vx += THRUST;  // Apply Right Force
-            
-            ship.vx *= FRICTION; // Constant space 'drag'
-            ship.x += ship.vx;   // Move based on velocity
+            if (ship.thruster === -1) ship.vx -= THRUST;
+            if (ship.thruster === 1) ship.vx += THRUST;
+            ship.vx *= FRICTION;
+            ship.x += ship.vx;
 
-            // Visual thruster particles
-            if(ship.thruster !== 0 && frame % 2 === 0) {
-                 spawnParticles(ship.x + (ship.thruster===-1 ? ship.w : 0), ship.y + ship.h/2, ship.thruster===-1 ? 1 : -1, '#00f2ff44');
-            }
+            if (ship.x > width) ship.x = 0;
+            if (ship.x < 0) ship.x = width;
 
-            // Screen edge handling (Drift around the world)
-            if (ship.x > width) ship.x = -ship.w;
-            if (ship.x < -ship.w) ship.x = width;
+            if (frame % Math.max(10, 50 - Math.floor(score/4)) === 0) spawnDebris();
 
-            // 2. Logic: Spawn Debris
-            if (frame % Math.max(15, 60 - Math.floor(score/5)) === 0) spawnDebris();
-
-            // 3. Drawing: Setup
-            ctx.fillStyle = '#020205'; // Deep black space
+            ctx.fillStyle = '#020205';
             ctx.fillRect(0, 0, width, height);
 
-            // 4. Drawing & Logic: Stars (Parallax Background)
-            ctx.fillStyle = '#fff';
-            stars.forEach(star => {
-                star.y += star.speed;
-                if (star.y > height) star.y = 0;
-                ctx.globalAlpha = star.size / 2; // faint stars
-                ctx.fillRect(star.x, star.y, star.size, star.size);
+            stars.forEach(s => {
+                s.y += s.speed;
+                if (s.y > height) s.y = 0;
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.size/2})`;
+                ctx.fillRect(s.x, s.y, s.size, s.size);
             });
-            ctx.globalAlpha = 1;
 
-            // 5. Drawing & Logic: Particles (The Juice)
             particles.forEach((p, i) => {
                 p.x += p.vx; p.y += p.vy; p.life--;
-                ctx.fillStyle = p.color;
                 ctx.globalAlpha = p.life / 30;
+                ctx.fillStyle = p.color;
                 ctx.fillRect(p.x, p.y, 2, 2);
                 if(p.life <= 0) particles.splice(i, 1);
             });
             ctx.globalAlpha = 1;
 
-            // 6. Drawing: Ship (The Player)
             ctx.save();
-            ctx.translate(ship.x + ship.w / 2, ship.y + ship.h / 2);
-            // Visual tilt based on velocity
-            ctx.rotate(ship.vx * 0.02); 
-            
-            // Neon Glow effect
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#00f2ff';
+            ctx.translate(ship.x, ship.y);
+            ctx.rotate(ship.vx * 0.03);
+            ctx.shadowBlur = 15; ctx.shadowColor = '#00f2ff';
             ctx.fillStyle = '#fff';
-            
-            // Draw Triangle Ship
             ctx.beginPath();
-            ctx.moveTo(0, -ship.h / 2); // Nose
-            ctx.lineTo(ship.w / 2, ship.h / 2); // Right back
-            ctx.lineTo(-ship.w / 2, ship.h / 2); // Left back
-            ctx.closePath();
-            ctx.fill();
+            ctx.moveTo(0, -ship.h/2); ctx.lineTo(ship.w/2, ship.h/2); ctx.lineTo(-ship.w/2, ship.h/2);
+            ctx.closePath(); ctx.fill();
             ctx.restore();
-            ctx.shadowBlur = 0; // Turn off glow for performance
 
-            // 7. Drawing & Logic: Debris (The Enemies)
             debris.forEach((d, i) => {
-                d.y += d.speed;
-                d.rot += d.rotSpd;
-
-                // Collision Detection (Math-based realism)
-                // If ship center is inside the debris box
-                if (ship.x + ship.w/2 > d.x && ship.x + ship.w/2 < d.x + d.w &&
-                    ship.y + ship.h/2 > d.y && ship.y + ship.h/2 < d.y + d.h) {
+                d.y += d.speed; d.rot += d.rotSpd;
+                if (ship.x + 5 > d.x && ship.x - 5 < d.x + d.w && ship.y + 5 > d.y && ship.y - 5 < d.y + d.h) {
                     gameOver();
                 }
-
-                // Score & Cleanup
-                if (d.y > height) {
-                    debris.splice(i, 1);
-                    score++;
-                    scoreEl.innerText = score;
-                    // Satisfying score visual feedback
-                    scoreEl.style.textShadow = '0 0 20px #00f2ff, 0 0 10px #fff';
-                    setTimeout(()=>scoreEl.style.textShadow = '0 0 10px #00f2ff', 100);
-                }
-
-                // Draw rotated debris (more realistic falling rocks)
+                if (d.y > height) { debris.splice(i, 1); score++; scoreEl.innerText = score; }
                 ctx.save();
                 ctx.translate(d.x + d.w/2, d.y + d.h/2);
                 ctx.rotate(d.rot);
-                ctx.fillStyle = '#2a2a3a';
                 ctx.strokeStyle = '#6a6a8a';
-                ctx.lineWidth = 1;
-                ctx.fillRect(-d.w/2, -d.h/2, d.w, d.h);
                 ctx.strokeRect(-d.w/2, -d.h/2, d.w, d.h);
                 ctx.restore();
             });
@@ -366,10 +272,8 @@
             requestAnimationFrame(loop);
         }
 
-        // --- Start ---
         initStars();
         loop();
-
     </script>
 </body>
 </html>
