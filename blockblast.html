@@ -2,178 +2,204 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLOCKBAS 2D</title>
+    <title>3D BLOCK-WORLD</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Courier New', Courier, monospace; }
-        canvas { display: block; image-rendering: pixelated; }
-        #ui { 
-            position: absolute; top: 10px; left: 10px; 
-            background: rgba(0,0,0,0.5); color: white; padding: 10px; border-radius: 5px;
-            pointer-events: none;
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; }
+        #ui {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(0,0,0,0.6); color: white; padding: 15px;
+            border-radius: 8px; pointer-events: none;
+        }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 20px; height: 20px; border: 2px solid white;
+            border-radius: 50%; transform: translate(-50%, -50%);
         }
     </style>
 </head>
 <body>
 
 <div id="ui">
-    BLOCKS MINED: <span id="count">0</span><br>
-    <small>LEFT CLICK: MINE | SHIFT+CLICK: BUILD</small>
+    <b>3D MINER</b><br>
+    WASD: Move | SPACE: Jump<br>
+    CLICK: Lock Mouse & Mine | SHIFT+CLICK: Build<br>
+    <span id="status">World Auto-Saves to Browser</span>
 </div>
-<canvas id="gameCanvas"></canvas>
+<div id="crosshair"></div>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const countEl = document.getElementById('count');
+<script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
 
-    // Game Constants
-    const TILE_SIZE = 32;
-    const WORLD_W = 100; // 100 blocks wide
-    const WORLD_H = 40;  // 40 blocks deep
-    
-    // Player Stats
-    let player = {
-        x: 50 * TILE_SIZE,
-        y: 10 * TILE_SIZE,
-        vx: 0,
-        vy: 0,
-        w: 24,
-        h: 48,
-        grounded: false
+<script type="module">
+    import * as THREE from 'three';
+
+    // --- CONFIG ---
+    const TILE_SIZE = 1;
+    const CHUNK_SIZE = 16;
+    const worldData = JSON.parse(localStorage.getItem('my3DWorld')) || {};
+
+    // --- SCENE SETUP ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 10, 50);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+    scene.add(light);
+
+    // --- TEXTURES (Procedural) ---
+    const loader = new THREE.TextureLoader();
+    const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
+    const materials = {
+        grass: new THREE.MeshLambertMaterial({ color: 0x4daa3d }),
+        dirt: new THREE.MeshLambertMaterial({ color: 0x6b4c35 }),
+        stone: new THREE.MeshLambertMaterial({ color: 0x7a7a7a })
     };
 
-    const keys = {};
-    let world = [];
-    let minedCount = 0;
+    const blocks = new Map();
 
-    // Initialize World
-    function initWorld() {
-        for (let x = 0; x < WORLD_W; x++) {
-            world[x] = [];
-            let surface = 15 + Math.sin(x * 0.2) * 3; // Rolling hills
-            for (let y = 0; y < WORLD_H; y++) {
-                if (y > surface + 5) world[x][y] = 'stone';
-                else if (y > surface) world[x][y] = 'dirt';
-                else if (y > surface - 1) world[x][y] = 'grass';
-                else world[x][y] = null;
+    // --- WORLD GENERATION ---
+    function getTerrainHeight(x, z) {
+        // Simple noise approximation
+        return Math.floor(Math.sin(x * 0.2) * 2 + Math.cos(z * 0.2) * 2 + 5);
+    }
+
+    function addBlock(x, y, z, type, save = true) {
+        const key = `${x},${y},${z}`;
+        if (blocks.has(key)) return;
+
+        const mesh = new THREE.Mesh(cubeGeo, materials[type]);
+        mesh.position.set(x, y, z);
+        scene.add(mesh);
+        blocks.set(key, mesh);
+        
+        if (save) {
+            worldData[key] = type;
+            localStorage.setItem('my3DWorld', JSON.stringify(worldData));
+        }
+    }
+
+    // Initialize initial area
+    for (let x = -CHUNK_SIZE; x < CHUNK_SIZE; x++) {
+        for (let z = -CHUNK_SIZE; z < CHUNK_SIZE; z++) {
+            const h = getTerrainHeight(x, z);
+            for (let y = 0; y <= h; y++) {
+                let type = 'grass';
+                if (y < h) type = 'dirt';
+                if (y < h - 2) type = 'stone';
+                
+                // Load from save if exists, otherwise generate
+                const key = `${x},${y},${z}`;
+                if (worldData[key] === null) continue; // Block was mined
+                addBlock(x, y, z, worldData[key] || type, false);
             }
         }
     }
 
-    // Controls
-    window.addEventListener('keydown', e => keys[e.code] = true);
-    window.addEventListener('keyup', e => keys[e.code] = false);
+    // --- CONTROLS ---
+    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
+    let velocity = new THREE.Vector3();
+    let direction = new THREE.Vector3();
 
-    canvas.addEventListener('mousedown', e => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left + (player.x - canvas.width/2);
-        const my = e.clientY - rect.top + (player.y - canvas.height/2);
-        
-        const gx = Math.floor(mx / TILE_SIZE);
-        const gy = Math.floor(my / TILE_SIZE);
+    document.addEventListener('click', () => document.body.requestPointerLock());
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyW') moveForward = true;
+        if (e.code === 'KeyS') moveBackward = true;
+        if (e.code === 'KeyA') moveLeft = true;
+        if (e.code === 'KeyD') moveRight = true;
+        if (e.code === 'Space' && canJump) { velocity.y += 5; canJump = false; }
+    });
 
-        if (gx >= 0 && gx < WORLD_W && gy >= 0 && gy < WORLD_H) {
-            if (e.shiftKey || e.button === 2) {
-                if (!world[gx][gy]) world[gx][gy] = 'dirt'; // Build
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyW') moveForward = false;
+        if (e.code === 'KeyS') moveBackward = false;
+        if (e.code === 'KeyA') moveLeft = false;
+        if (e.code === 'KeyD') moveRight = false;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (document.pointerLockElement) {
+            camera.rotation.y -= e.movementX * 0.002;
+            camera.rotation.x -= e.movementY * 0.002;
+            camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+        }
+    });
+
+    // Mining / Building
+    const raycaster = new THREE.Raycaster();
+    document.addEventListener('mousedown', (e) => {
+        if (!document.pointerLockElement) return;
+
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        const intersects = raycaster.intersectObjects(Array.from(blocks.values()));
+
+        if (intersects.length > 0) {
+            const intersect = intersects[0];
+            if (e.shiftKey) {
+                // Build
+                const pos = intersect.object.position.clone().add(intersect.face.normal);
+                addBlock(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z), 'dirt');
             } else {
-                if (world[gx][gy]) {
-                    world[gx][gy] = null; // Mine
-                    minedCount++;
-                    countEl.innerText = minedCount;
-                }
+                // Mine
+                const obj = intersect.object;
+                const key = `${Math.round(obj.position.x)},${Math.round(obj.position.y)},${Math.round(obj.position.z)}`;
+                scene.remove(obj);
+                blocks.delete(key);
+                worldData[key] = null; // Mark as deleted
+                localStorage.setItem('my3DWorld', JSON.stringify(worldData));
             }
         }
     });
 
-    // Disable context menu for right-click building
-    window.addEventListener('contextmenu', e => e.preventDefault());
+    camera.position.y = 10;
+    camera.rotation.order = 'YXZ';
 
-    function update() {
-        // Horizontal Movement
-        if (keys['KeyA']) player.vx = -4;
-        else if (keys['KeyD']) player.vx = 4;
-        else player.vx *= 0.8;
+    // --- GAME LOOP ---
+    let prevTime = performance.now();
+    function animate() {
+        requestAnimationFrame(animate);
 
-        // Gravity & Jump
-        player.vy += 0.5;
-        if (keys['Space'] && player.grounded) {
-            player.vy = -10;
-            player.grounded = false;
+        const time = performance.now();
+        const delta = (time - prevTime) / 1000;
+
+        velocity.x -= velocity.x * 10.0 * delta;
+        velocity.z -= velocity.z * 10.0 * delta;
+        velocity.y -= 9.8 * delta; // Gravity
+
+        direction.z = Number(moveForward) - Number(moveBackward);
+        direction.x = Number(moveRight) - Number(moveLeft);
+        direction.normalize();
+
+        if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+        if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+
+        camera.translateX(-velocity.x * delta);
+        camera.translateZ(velocity.z * delta);
+        camera.position.y += velocity.y * delta;
+
+        if (camera.position.y < 2) {
+            velocity.y = 0;
+            camera.position.y = 2;
+            canJump = true;
         }
 
-        // Apply Velocity
-        player.x += player.vx;
-        checkCollision(true); // Check X
-        player.y += player.vy;
-        checkCollision(false); // Check Y
-
-        draw();
-        requestAnimationFrame(update);
+        renderer.render(scene, camera);
+        prevTime = time;
     }
 
-    function checkCollision(isX) {
-        const left = Math.floor(player.x / TILE_SIZE);
-        const right = Math.floor((player.x + player.w) / TILE_SIZE);
-        const top = Math.floor(player.y / TILE_SIZE);
-        const bottom = Math.floor((player.y + player.h) / TILE_SIZE);
+    animate();
 
-        for (let x = left; x <= right; x++) {
-            for (let y = top; y <= bottom; y++) {
-                if (world[x] && world[x][y]) {
-                    if (isX) {
-                        if (player.vx > 0) player.x = x * TILE_SIZE - player.w;
-                        else if (player.vx < 0) player.x = (x + 1) * TILE_SIZE;
-                        player.vx = 0;
-                    } else {
-                        if (player.vy > 0) {
-                            player.y = y * TILE_SIZE - player.h;
-                            player.grounded = true;
-                        } else if (player.vy < 0) {
-                            player.y = (y + 1) * TILE_SIZE;
-                        }
-                        player.vy = 0;
-                    }
-                }
-            }
-        }
-        if (!isX && player.vy > 0) player.grounded = false;
-    }
-
-    function draw() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        ctx.save();
-        // Camera Follow
-        ctx.translate(-player.x + canvas.width / 2, -player.y + canvas.height / 2);
-
-        // Draw World
-        for (let x = 0; x < WORLD_W; x++) {
-            for (let y = 0; y < WORLD_H; y++) {
-                if (!world[x][y]) continue;
-                
-                if (world[x][y] === 'grass') ctx.fillStyle = '#4daa3d';
-                else if (world[x][y] === 'dirt') ctx.fillStyle = '#6b4c35';
-                else if (world[x][y] === 'stone') ctx.fillStyle = '#7a7a7a';
-
-                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-                ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            }
-        }
-
-        // Draw Player
-        ctx.fillStyle = '#ffdbac';
-        ctx.fillRect(player.x, player.y, player.w, player.h);
-        ctx.fillStyle = '#304ffe'; // Shirt
-        ctx.fillRect(player.x, player.y + 15, player.w, player.h - 15);
-
-        ctx.restore();
-    }
-
-    initWorld();
-    update();
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 </script>
 </body>
 </html>
