@@ -44,18 +44,6 @@
 
         .subtitle { color: var(--primary); opacity: 0.6; margin-top: 10px; font-size: 0.8rem; letter-spacing: 5px; text-transform: uppercase; }
 
-        /* --- Search Bar --- */
-        .search-container {
-            width: 90%; max-width: 1100px; margin-bottom: 20px;
-        }
-        #moduleSearch {
-            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
-            padding: 12px 20px; border-radius: 8px; color: #fff; font-family: 'Orbitron';
-            outline: none; transition: 0.3s; box-sizing: border-box;
-        }
-        #moduleSearch:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
-
-        /* --- Dashboard Panel --- */
         .status-panel {
             width: 90%; max-width: 1100px;
             background: rgba(0, 255, 136, 0.03);
@@ -73,6 +61,14 @@
         .offline { color: var(--error); }
         .traffic-accent { color: var(--info); }
 
+        .search-container { width: 90%; max-width: 1100px; margin-bottom: 20px; }
+        #moduleSearch {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+            padding: 12px 20px; border-radius: 8px; color: #fff; font-family: 'Orbitron';
+            outline: none; transition: 0.3s; box-sizing: border-box;
+        }
+        #moduleSearch:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+
         h5 {
             font-family: 'Orbitron', sans-serif; color: #fff;
             text-transform: uppercase; letter-spacing: 3px;
@@ -80,7 +76,6 @@
             font-size: 0.95rem; border-left: 4px solid var(--primary); padding-left: 15px;
         }
 
-        /* --- Grid & Links --- */
         .link-container {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 15px; width: 90%; max-width: 1100px; margin-bottom: 50px;
@@ -104,7 +99,6 @@
 
         .game-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem; color: #fff; text-align: center; z-index: 2; padding: 0 10px; }
 
-        /* --- Badges --- */
         .badge { position: absolute; top: 0; right: 0; font-size: 0.55rem; padding: 4px 10px; font-weight: 900; text-transform: uppercase; border-bottom-left-radius: 8px; z-index: 3; }
         .best { background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary); }
         .upd { background: var(--updating); color: #000; }
@@ -183,13 +177,13 @@
             { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
             { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
             { name: "Sparx Reader", url: "reader.html", tag: "" },
-            { name: "Neon Hex", url: "Neon-Hex.html", tag: "" },
+            { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
         ];
 
-        // --- Live Refresh Logic ---
         async function updateLiveStats() {
             const startTime = performance.now();
             try {
+                // Head requests might fail locally, but we wrap in try/catch
                 await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
                 const endTime = performance.now();
                 const ping = Math.round(endTime - startTime);
@@ -200,14 +194,13 @@
                 else if (ping < 250) pingEl.style.color = "var(--updating)";
                 else pingEl.style.color = "var(--error)";
             } catch (err) {
-                document.getElementById('ping-value').innerText = "TIMEOUT";
+                document.getElementById('ping-value').innerText = "LOCAL";
             }
 
             const trafficStates = ["Minimal", "Low", "Steady", "Moderate", "Nominal", "Peak"];
             document.getElementById('traffic-value').innerText = trafficStates[Math.floor(Math.random() * trafficStates.length)];
         }
 
-        // --- Build Arcade Modules ---
         async function buildArcade() {
             const stableBox = document.getElementById('stable-container');
             const errorBox = document.getElementById('error-container');
@@ -217,9 +210,9 @@
             stableBox.innerHTML = '';
             errorBox.innerHTML = '';
 
-            // Using Promise.all for faster diagnostic checks
             const statusChecks = await Promise.all(games.map(async (game) => {
                 try {
+                    // NOTE: If running locally without a server, this will always return 'isDown: true'
                     const resp = await fetch(game.url, { method: 'HEAD' });
                     return { ...game, isDown: !resp.ok };
                 } catch (e) {
@@ -236,7 +229,7 @@
                         </div>`;
                     errorCount++;
                 } else {
-                    const tagHTML = game.tag ? `<span class="badge ${game.tag}">${game.tag === 'upd' ? 'Updating' : 'Best'}</span>` : '';
+                    const tagHTML = game.tag ? `<span class="badge ${game.tag}">${game.tag === 'upd' ? 'Updating' : (game.tag === 'best' ? 'Best' : '')}</span>` : '';
                     stableBox.innerHTML += `
                         <a href="${game.url}" class="game-link" target="_blank" rel="noopener noreferrer" data-name="${game.name.toLowerCase()}">
                             ${tagHTML}
@@ -253,18 +246,16 @@
             globalStatus.className = `status-value ${errorCount > 0 ? 'offline' : 'online'}`;
         }
 
-        // --- Search Filter ---
         function filterGames() {
             const input = document.getElementById('moduleSearch').value.toLowerCase();
             const links = document.querySelectorAll('.game-link');
-            
             links.forEach(link => {
                 const name = link.getAttribute('data-name');
                 link.style.display = name.includes(input) ? "flex" : "none";
             });
         }
 
-        // --- Init ---
+        // Init
         buildArcade();
         updateLiveStats();
         setInterval(updateLiveStats, 3000);
