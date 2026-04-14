@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>BLOCK BREAKER ULTRA</title>
+    <title>BLOCK BREAKER ULTRA | Nebula Arcade</title>
     <style>
         :root { --neon: #00f2ff; --pink: #ff007f; --gold: #f1c40f; }
         body {
@@ -19,6 +19,7 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
             align-items: center; justify-content: center; text-align: center;
+            z-index: 10;
         }
         .btn { border: 2px solid var(--neon); color: var(--neon); padding: 12px 24px; background: none; cursor: pointer; font: inherit; margin-top: 15px; transition: 0.3s; }
         .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 20px var(--neon); }
@@ -35,7 +36,7 @@
         <canvas id="game"></canvas>
         <div id="overlay">
             <h1 id="title">BLOCK BREAKER</h1>
-            <p id="sub">Click to Launch Ball</p>
+            <p id="sub">Precision Physics Engine Active</p>
             <button class="btn" onclick="initGame()">START ENGINE</button>
         </div>
     </div>
@@ -47,10 +48,10 @@
         canvas.width = 480; canvas.height = 600;
 
         let score = 0, lives = 3, active = false, ballAttached = true;
-        let bricks = [], particles = [], powerups = [];
+        let bricks = [], particles = [];
 
         const paddle = { x: 200, y: 560, w: 80, h: 12, color: '#00f2ff' };
-        const ball = { x: 0, y: 0, r: 6, vx: 0, vy: 0, speed: 5 };
+        const ball = { x: 0, y: 0, r: 6, vx: 0, vy: 0, speed: 6 };
 
         function initBricks() {
             bricks = [];
@@ -62,7 +63,7 @@
                         x: offsetLeft + c * (w + padding), 
                         y: 50 + r * (h + padding), 
                         w: w, h: h, 
-                        hp: Math.floor(3 - r/2), // Top rows are tougher
+                        hp: Math.floor(3 - r/2),
                         color: r < 2 ? '#ff007f' : r < 4 ? '#00f2ff' : '#f1c40f'
                     });
                 }
@@ -90,15 +91,21 @@
                 ball.y += ball.vy;
 
                 // Wall bounce
-                if(ball.x + ball.r > canvas.width || ball.x - ball.r < 0) ball.vx *= -1;
-                if(ball.y - ball.r < 0) ball.vy *= -1;
+                if(ball.x + ball.r > canvas.width || ball.x - ball.r < 0) {
+                    ball.vx *= -1;
+                    ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+                }
+                if(ball.y - ball.r < 0) {
+                    ball.vy *= -1;
+                    ball.y = ball.r;
+                }
 
                 // Paddle bounce
                 if(ball.y + ball.r > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
                     let hitPos = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
                     ball.vx = hitPos * 5;
                     ball.vy = -Math.abs(ball.vy);
-                    ball.y = paddle.y - ball.r;
+                    ball.y = paddle.y - ball.r; // Reset to top of paddle to prevent sticking
                 }
 
                 // Death
@@ -108,21 +115,42 @@
                     if(lives <= 0) gameOver();
                     else resetBall();
                 }
+
+                // Advanced Brick Collision (Fixes "Sticking")
+                for (let i = 0; i < bricks.length; i++) {
+                    let b = bricks[i];
+                    if (b.hp <= 0) continue;
+
+                    // Calculate the closest point on the brick to the ball center
+                    let closestX = Math.max(b.x, Math.min(ball.x, b.x + b.w));
+                    let closestY = Math.max(b.y, Math.min(ball.y, b.y + b.h));
+
+                    let distanceX = ball.x - closestX;
+                    let distanceY = ball.y - closestY;
+                    let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+
+                    if (distanceSquared < (ball.r * ball.r)) {
+                        // Collision detected! Determine which side was hit
+                        let overlapX = ball.r - Math.abs(distanceX);
+                        let overlapY = ball.r - Math.abs(distanceY);
+
+                        if (overlapX < overlapY) {
+                            ball.vx *= -1;
+                            ball.x += (distanceX > 0) ? overlapX : -overlapX; // Snap out horizontally
+                        } else {
+                            ball.vy *= -1;
+                            ball.y += (distanceY > 0) ? overlapY : -overlapY; // Snap out vertically
+                        }
+
+                        b.hp--;
+                        score += 20;
+                        scoreEl.innerText = score;
+                        spawnParticles(closestX, closestY, b.color);
+                        break; // Only hit one brick per frame
+                    }
+                }
             }
 
-            // Brick collision
-            bricks.forEach((b, i) => {
-                if(b.hp > 0 && ball.x > b.x && ball.x < b.x + b.w && ball.y > b.y && ball.y < b.y + b.h) {
-                    ball.vy *= -1;
-                    b.hp--;
-                    score += 20;
-                    scoreEl.innerText = score;
-                    spawnParticles(ball.x, ball.y, b.color);
-                    if(Math.random() > 0.9) spawnPowerup(b.x, b.y);
-                }
-            });
-
-            // Particles
             particles.forEach((p, i) => {
                 p.x += p.vx; p.y += p.vy; p.life -= 0.02;
                 if(p.life <= 0) particles.splice(i, 1);
@@ -132,7 +160,6 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Bricks
             bricks.forEach(b => {
                 if(b.hp <= 0) return;
                 ctx.fillStyle = b.color;
@@ -144,17 +171,14 @@
             });
             ctx.globalAlpha = 1;
 
-            // Draw Paddle
             ctx.fillStyle = paddle.color;
             ctx.shadowBlur = 15; ctx.shadowColor = paddle.color;
             ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
             ctx.shadowBlur = 0;
 
-            // Draw Ball
             ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, 7); ctx.fill();
+            ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); ctx.fill();
 
-            // Draw Particles
             particles.forEach(p => {
                 ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
                 ctx.fillRect(p.x, p.y, 3, 3);
@@ -165,12 +189,16 @@
             requestAnimationFrame(draw);
         }
 
-        function resetBall() { ballAttached = true; }
+        function resetBall() { 
+            ballAttached = true; 
+            ball.vx = 0; 
+            ball.vy = 0; 
+        }
 
         function gameOver() {
             active = false;
             document.getElementById('title').innerText = "SYSTEM FAILURE";
-            document.getElementById('sub').innerText = "Score: " + score;
+            document.getElementById('sub').innerText = "Final Data: " + score;
             document.getElementById('overlay').style.display = 'flex';
         }
 
@@ -193,7 +221,7 @@
         canvas.addEventListener('click', () => {
             if(ballAttached && active) {
                 ballAttached = false;
-                ball.vx = (Math.random() - 0.5) * 4;
+                ball.vx = (Math.random() - 0.5) * 6;
                 ball.vy = -ball.speed;
             }
         });
