@@ -42,7 +42,6 @@
 
         .subtitle { color: var(--primary); opacity: 0.6; margin-top: 10px; font-size: 0.8rem; letter-spacing: 4px; text-transform: uppercase; }
 
-        /* --- Status Panel --- */
         .status-panel {
             width: 90%; max-width: 1100px;
             background: rgba(0, 255, 136, 0.03);
@@ -57,7 +56,6 @@
         .online { color: var(--primary); }
         .offline { color: var(--error); }
 
-        /* --- Grid --- */
         h5 {
             font-family: 'Orbitron', sans-serif; color: #fff;
             text-transform: uppercase; letter-spacing: 2px;
@@ -85,13 +83,11 @@
 
         .game-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.85rem; color: #fff; text-align: center; padding: 0 10px; }
 
-        /* --- Badges --- */
         .badge { position: absolute; top: 0; right: 0; font-size: 0.5rem; padding: 3px 8px; font-weight: 900; text-transform: uppercase; border-bottom-left-radius: 6px; }
         .best { background: var(--primary); color: #000; }
         .upd { background: var(--updating); color: #000; }
         .down { background: var(--error); color: #fff; }
 
-        /* --- Down State --- */
         .game-link.is-down { opacity: 0.5; cursor: not-allowed; border-color: var(--error) !important; }
         .game-link.is-down .game-title { color: var(--error); }
 
@@ -107,92 +103,98 @@
 
     <div class="status-panel">
         <div class="status-item">
-            <span class="status-label">Global Status</span>
-            <span id="global-status" class="status-value online">● CHECKING...</span>
+            <span class="status-label">Archive Status</span>
+            <span id="global-status" class="status-value online">● ANALYZING...</span>
         </div>
         <div class="status-item">
-            <span class="status-label">Active Modules</span>
-            <span id="active-count" class="status-value">-- Stable</span>
+            <span class="status-label">Stable Modules</span>
+            <span id="active-count" class="status-value">--</span>
         </div>
         <div class="status-item">
-            <span class="status-label">Offline / Errors</span>
-            <span id="error-count" class="status-value offline">-- Down</span>
+            <span class="status-label">System Errors</span>
+            <span id="error-count" class="status-value offline">--</span>
         </div>
     </div>
 
-    <h5>🕹️ Stable Links</h5>
-    <div id="stable-container" class="link-container">
-        </div>
+    <h5>🕹️ Active Links</h5>
+    <div id="stable-container" class="link-container"></div>
 
-    <h5>⚠️ Core Errors / Maintenance</h5>
-    <div id="error-container" class="link-container">
-        </div>
+    <h5>⚠️ Signal Interrupted</h5>
+    <div id="error-container" class="link-container"></div>
 
     <script>
-        // ADD NEW GAMES HERE
-        // Format: { name: "Name", url: "file.html", tag: "best" or "upd" or "" }
         const games = [
             { name: "Blockcraft", url: "blockcraft.html", tag: "upd" },
             { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
-            { name: "Block Breaker", url: "blockbreaker.html", tag: "best" },
             { name: "Neon Snake", url: "snake.html", tag: "best" },
             { name: "Master Armory", url: "masterarmory.html", tag: "best" },
             { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
+            { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
+            { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
+            { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
+            { name: "Neon Slams", url: "Neon-Slams.html", tag: "" },
+            { name: "Neon Trail", url: "neon-trail.html", tag: "" },
+            { name: "Block Blast", url: "blockblast.html", tag: "" },
+            { name: "Neon Run (AI)", url: "ai.html", tag: "" },
             { name: "Basketball", url: "basketball.html", tag: "" },
             { name: "Football", url: "football.html", tag: "" },
-            { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" }, // Will go to error if file missing
+            { name: "Cricket", url: "cricket.html", tag: "" },
+            { name: "Crossy Roads", url: "crossyroads.html", tag: "" },
+            { name: "Drift", url: "drift.html", tag: "" },
+            { name: "Eggshell (EGGVP)", url: "eggshell.html", tag: "upd" },
+            { name: "Overdrive", url: "overdrive.html", tag: "" },
+            { name: "Pacman", url: "pacman.html", tag: "" },
             { name: "Space Adventure", url: "spaceadventure.html", tag: "" },
+            { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
+            { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
             { name: "Sparx Solver", url: "sparxmaths.html", tag: "" },
             { name: "Sparx Reader", url: "reader.html", tag: "" }
         ];
 
-        async function checkGames() {
+        async function runDiagnostic() {
             const stableBox = document.getElementById('stable-container');
             const errorBox = document.getElementById('error-container');
             let stableCount = 0;
             let errorCount = 0;
 
             for (const game of games) {
-                const card = document.createElement('a');
-                card.href = game.url;
-                card.className = 'game-link';
-                
                 let isDown = false;
-
                 try {
-                    // This "Pings" the file to see if it exists
-                    const response = await fetch(game.url, { method: 'HEAD' });
-                    if (!response.ok) isDown = true;
+                    const resp = await fetch(game.url, { method: 'HEAD' });
+                    if (!resp.ok) isDown = true;
                 } catch (e) {
                     isDown = true;
                 }
 
                 if (isDown) {
-                    card.classList.add('is-down');
-                    card.href = "#";
-                    card.innerHTML = `<span class="badge down">Error</span><span class="game-title">${game.name}</span>`;
-                    errorBox.appendChild(card);
+                    errorBox.innerHTML += `
+                        <a href="#" class="game-link is-down">
+                            <span class="badge down">Error</span>
+                            <span class="game-title">${game.name}</span>
+                        </a>`;
                     errorCount++;
                 } else {
                     const tagHTML = game.tag ? `<span class="badge ${game.tag}">${game.tag === 'upd' ? 'Updating' : 'Best'}</span>` : '';
-                    card.innerHTML = `${tagHTML}<span class="game-title">${game.name}</span>`;
-                    stableBox.appendChild(card);
+                    stableBox.innerHTML += `
+                        <a href="${game.url}" class="game-link">
+                            ${tagHTML}
+                            <span class="game-title">${game.name}</span>
+                        </a>`;
                     stableCount++;
                 }
             }
 
-            // Update Status Panel
-            document.getElementById('active-count').innerText = `${stableCount} Stable`;
-            document.getElementById('error-count').innerText = `${errorCount} Down`;
-            document.getElementById('global-status').innerText = errorCount > 0 ? "● SYSTEM ISSUES" : "● OPERATIONAL";
+            document.getElementById('active-count').innerText = `${stableCount} Modules`;
+            document.getElementById('error-count').innerText = `${errorCount} Faulty`;
+            document.getElementById('global-status').innerText = errorCount > 0 ? "● ISSUES DETECTED" : "● OPERATIONAL";
             document.getElementById('global-status').className = `status-value ${errorCount > 0 ? 'offline' : 'online'}`;
         }
 
-        checkGames();
+        runDiagnostic();
     </script>
 
     <footer>
-        DC × AK × AI // AUTO-DIAGNOSTIC ENABLED
+        DC × AK × AI // GRID VERSION 3.2.1
     </footer>
 </body>
 </html>
