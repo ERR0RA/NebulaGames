@@ -14,6 +14,7 @@
             --card-border: rgba(255, 255, 255, 0.1);
             --text: #ffffff;
             --updating: #ffcc00;
+            --error: #ff3333;
         }
 
         body {
@@ -30,7 +31,7 @@
 
         header {
             text-align: center;
-            padding: 60px 20px;
+            padding: 60px 20px 40px;
         }
 
         h1 {
@@ -55,16 +56,53 @@
             text-transform: uppercase;
         }
 
+        /* --- Status Section --- */
+        .status-panel {
+            width: 90%;
+            max-width: 1100px;
+            background: rgba(0, 255, 136, 0.03);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .status-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .online { color: var(--primary); }
+        .offline { color: var(--error); text-shadow: 0 0 10px rgba(255, 51, 51, 0.3); }
+
+        /* --- Games Grid --- */
         h5 {
             font-family: 'Orbitron', sans-serif;
             color: #fff;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin: 50px 0 20px 0;
+            margin: 20px 0;
             width: 90%;
             max-width: 1100px;
             font-size: 0.9rem;
-            opacity: 0.8;
             border-left: 3px solid var(--primary);
             padding-left: 15px;
         }
@@ -75,77 +113,51 @@
             gap: 15px;
             width: 90%;
             max-width: 1100px;
+            margin-bottom: 40px;
         }
 
         .game-link {
             position: relative;
             background: var(--card-bg);
             text-decoration: none;
-            height: 80px; /* Compact height */
+            height: 85px;
             border-radius: 8px;
             border: 1px solid var(--card-border);
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
 
         .game-link:hover {
-            background: rgba(0, 255, 136, 0.1);
+            background: rgba(0, 255, 136, 0.08);
             border-color: var(--primary);
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
 
         .game-title {
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: #fff;
-            text-align: center;
             letter-spacing: 1px;
-            transition: 0.3s;
         }
 
-        .game-link:hover .game-title {
-            color: var(--primary);
-            text-shadow: 0 0 10px var(--primary-glow);
-        }
-
-        /* --- Refined Badges --- */
+        /* --- Badges --- */
         .badge {
             position: absolute;
-            top: 0;
-            right: 0;
-            font-size: 0.55rem;
+            top: 0; right: 0;
+            font-size: 0.5rem;
             padding: 3px 8px;
             font-weight: 900;
             text-transform: uppercase;
             border-bottom-left-radius: 6px;
         }
-
         .best { background: var(--primary); color: #000; }
         .upd { background: var(--updating); color: #000; }
+        .down { background: var(--error); color: #fff; }
 
-        .content-section {
-            max-width: 800px; width: 90%;
-            margin: 60px 0 20px 0; padding: 25px;
-            background: rgba(255,255,255,0.02);
-            border-radius: 12px; border: 1px solid var(--card-border);
-            font-size: 0.85rem;
-            line-height: 1.6;
-            color: #888;
-        }
-
-        footer { 
-            padding: 40px; 
-            text-align: center; 
-            color: #444; 
-            font-size: 0.75rem; 
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 2px;
-        }
+        footer { padding: 60px; text-align: center; color: #444; font-size: 0.75rem; font-family: 'Orbitron'; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -155,98 +167,79 @@
         <div class="subtitle">System Operator: DC</div>
     </header>
 
-    <h5>🕹️ Library Index</h5>
+    <div class="status-panel">
+        <div class="status-item">
+            <span class="status-label">Global Status</span>
+            <span class="status-value online">● OPERATIONAL</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Active Modules</span>
+            <span class="status-value">24 Stable</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Offline / Errors</span>
+            <span class="status-value offline">2 Games Down</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">System Load</span>
+            <span class="status-value online">Minimal</span>
+        </div>
+    </div>
+
+    <h5>🕹️ Stable Links</h5>
     <div class="link-container">
-        <a href="blockcraft.html" target="_blank" class="game-link">
+        <a href="blockcraft.html" class="game-link">
             <span class="badge upd">Updating</span>
             <span class="game-title">Blockcraft</span>
         </a>
-
-        <a href="overdrive.html" target="_blank" class="game-link">
-            <span class="badge upd">Updating</span>
-            <span class="game-title">Overdrive</span>
-        </a>
-
-        <a href="drift.html" target="_blank" class="game-link">
-            <span class="badge upd">Updating</span>
-            <span class="game-title">Drift Game</span>
-        </a>
-
-        <a href="eggshell.html" target="_blank" class="game-link">
-            <span class="badge upd">Updating</span>
-            <span class="game-title">EGGVP</span>
-        </a>
-
-        <a href="minesweeper.html" target="_blank" class="game-link">
+        <a href="minesweeper.html" class="game-link">
             <span class="badge best">Best</span>
             <span class="game-title">Minesweeper</span>
         </a>
-
-        <a href="snake.html" target="_blank" class="game-link">
+        <a href="snake.html" class="game-link">
             <span class="badge best">Best</span>
             <span class="game-title">Neon Snake</span>
         </a>
-
-        <a href="masterarmory.html" target="_blank" class="game-link">
+        <a href="masterarmory.html" class="game-link">
             <span class="badge best">Best</span>
             <span class="game-title">Master Armory</span>
         </a>
-
-        <a href="Neon-Pong.html" target="_blank" class="game-link">
+        <a href="Neon-Pong.html" class="game-link">
             <span class="badge best">Best</span>
             <span class="game-title">Neon Pong</span>
         </a>
-
-        <a href="Neon-Slash.html" target="_blank" class="game-link">
-            <span class="badge best">Best</span>
-            <span class="game-title">Neon Slash</span>
-        </a>
-
-        <a href="turbohorizon.html" target="_blank" class="game-link">
-            <span class="game-title">Turbo Horizon</span>
-        </a>
-
-        <a href="spaceadventure.html" target="_blank" class="game-link">
-            <span class="game-title">Space Adventure</span>
-        </a>
-
-        <a href="pacman.html" target="_blank" class="game-link">
-            <span class="game-title">Pac-Man</span>
-        </a>
-
-        <a href="basketball.html" target="_blank" class="game-link">
+        <a href="basketball.html" class="game-link">
             <span class="game-title">Basketball</span>
         </a>
-
-        <a href="football.html" target="_blank" class="game-link">
+        <a href="football.html" class="game-link">
             <span class="game-title">Football</span>
         </a>
+    </div>
 
-        <a href="ai.html" target="_blank" class="game-link">
-            <span class="game-title">Neon Run</span>
+    <h5>⚠️ Core Errors / Maintenance</h5>
+    <div class="link-container">
+        <a href="#" class="game-link" style="opacity: 0.6; cursor: not-allowed; border-color: var(--error);">
+            <span class="badge down">Error</span>
+            <span class="game-title" style="color: var(--error);">Turbo Horizon</span>
         </a>
-
-        <a href="Neon-Golf.html" target="_blank" class="game-link">
-            <span class="game-title">Neon Golf</span>
+        <a href="#" class="game-link" style="opacity: 0.6; cursor: not-allowed; border-color: var(--error);">
+            <span class="badge down">Offline</span>
+            <span class="game-title" style="color: var(--error);">Space Adventure</span>
         </a>
     </div>
 
     <h5>🛠️ Neural Tools</h5>
     <div class="link-container">
-        <a href="sparxmaths.html" target="_blank" class="game-link">
+        <a href="sparxmaths.html" class="game-link">
             <span class="game-title">Sparx Solver</span>
         </a>
-        <a href="reader.html" target="_blank" class="game-link">
+        <a href="reader.html" class="game-link">
             <span class="game-title">Sparx Reader</span>
         </a>
     </div>
 
-    <div class="content-section">
-        <strong>ARCHIVE STATUS:</strong> All modules operational. Visual layout optimized for terminal efficiency.
-    </div>
-
     <footer>
-        DC × AK × AI // 2026
+        DC × AK × AI // GRID VERSION 3.0.1
     </footer>
 
 </body>
