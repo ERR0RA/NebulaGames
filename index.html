@@ -32,68 +32,72 @@
         header { text-align: center; padding: 60px 20px 40px; }
         h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-size: clamp(2.5rem, 8vw, 4rem);
             font-weight: 900; margin: 0;
-            letter-spacing: 10px; text-transform: uppercase;
+            letter-spacing: 12px; text-transform: uppercase;
             background: linear-gradient(to bottom, #fff, var(--primary));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px var(--primary-glow));
+            filter: drop-shadow(0 0 15px var(--primary-glow));
         }
 
-        .subtitle { color: var(--primary); opacity: 0.6; margin-top: 10px; font-size: 0.8rem; letter-spacing: 4px; text-transform: uppercase; }
+        .subtitle { color: var(--primary); opacity: 0.6; margin-top: 10px; font-size: 0.8rem; letter-spacing: 5px; text-transform: uppercase; }
 
-        /* --- Status Panel --- */
+        /* --- Dashboard Panel --- */
         .status-panel {
             width: 90%; max-width: 1100px;
             background: rgba(0, 255, 136, 0.03);
             border: 1px solid rgba(0, 255, 136, 0.2);
-            border-radius: 12px; padding: 20px;
+            border-radius: 12px; padding: 25px;
             margin-bottom: 40px; display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;
         }
         .status-item { display: flex; flex-direction: column; gap: 5px; }
-        .status-label { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: rgba(255,255,255,0.5); text-transform: uppercase; }
-        .status-value { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 700; }
+        .status-label { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+        .status-value { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; transition: color 0.3s ease; }
         .online { color: var(--primary); }
         .offline { color: var(--error); }
-        .traffic-low { color: #00ccff; }
+        .traffic-accent { color: #00ccff; }
 
         h5 {
             font-family: 'Orbitron', sans-serif; color: #fff;
-            text-transform: uppercase; letter-spacing: 2px;
+            text-transform: uppercase; letter-spacing: 3px;
             margin: 20px 0; width: 90%; max-width: 1100px;
-            font-size: 0.9rem; border-left: 3px solid var(--primary); padding-left: 15px;
+            font-size: 0.95rem; border-left: 4px solid var(--primary); padding-left: 15px;
         }
 
         .link-container {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px; width: 90%; max-width: 1100px; margin-bottom: 40px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 15px; width: 90%; max-width: 1100px; margin-bottom: 50px;
         }
 
         .game-link {
             position: relative; background: var(--card-bg);
-            text-decoration: none; height: 85px;
-            border-radius: 8px; border: 1px solid var(--card-border);
-            transition: all 0.3s ease; display: flex;
-            align-items: center; justify-content: center;
+            text-decoration: none; height: 90px;
+            border-radius: 10px; border: 1px solid var(--card-border);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
         }
 
         .game-link:hover:not(.is-down) {
-            background: rgba(0, 255, 136, 0.08);
-            border-color: var(--primary); transform: translateY(-3px);
+            background: rgba(0, 255, 136, 0.1);
+            border-color: var(--primary);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px var(--primary-glow);
         }
 
-        .game-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.85rem; color: #fff; text-align: center; padding: 0 10px; }
+        .game-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem; color: #fff; text-align: center; z-index: 2; }
 
-        .badge { position: absolute; top: 0; right: 0; font-size: 0.5rem; padding: 3px 8px; font-weight: 900; text-transform: uppercase; border-bottom-left-radius: 6px; }
-        .best { background: var(--primary); color: #000; }
+        /* --- Badges --- */
+        .badge { position: absolute; top: 0; right: 0; font-size: 0.55rem; padding: 4px 10px; font-weight: 900; text-transform: uppercase; border-bottom-left-radius: 8px; z-index: 3; }
+        .best { background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary); }
         .upd { background: var(--updating); color: #000; }
         .down { background: var(--error); color: #fff; }
 
-        .game-link.is-down { opacity: 0.5; cursor: not-allowed; border-color: var(--error) !important; }
+        .game-link.is-down { opacity: 0.4; cursor: not-allowed; border-color: var(--error) !important; filter: grayscale(1); }
         .game-link.is-down .game-title { color: var(--error); }
 
-        footer { padding: 60px; text-align: center; color: #444; font-size: 0.75rem; font-family: 'Orbitron'; letter-spacing: 2px; }
+        footer { padding: 80px; text-align: center; color: #333; font-size: 0.8rem; font-family: 'Orbitron'; letter-spacing: 3px; }
     </style>
 </head>
 <body>
@@ -106,30 +110,30 @@
     <div class="status-panel">
         <div class="status-item">
             <span class="status-label">Archive Status</span>
-            <span id="global-status" class="status-value online">● ANALYZING...</span>
+            <span id="global-status" class="status-value online">● SYSTEM READY</span>
         </div>
         <div class="status-item">
-            <span class="status-label">Signal Latency</span>
+            <span class="status-label">Live Ping</span>
             <span id="ping-value" class="status-value online">-- ms</span>
         </div>
         <div class="status-item">
-            <span class="status-label">Current Traffic</span>
-            <span id="traffic-value" class="status-value traffic-low">Minimal</span>
+            <span class="status-label">Global Traffic</span>
+            <span id="traffic-value" class="status-value traffic-accent">Monitoring...</span>
         </div>
         <div class="status-item">
-            <span class="status-label">Stable Modules</span>
+            <span class="status-label">Active Modules</span>
             <span id="active-count" class="status-value">--</span>
         </div>
         <div class="status-item">
-            <span class="status-label">System Errors</span>
+            <span class="status-label">System Faults</span>
             <span id="error-count" class="status-value offline">--</span>
         </div>
     </div>
 
-    <h5>🕹️ Active Links</h5>
+    <h5>🕹️ Available Modules</h5>
     <div id="stable-container" class="link-container"></div>
 
-    <h5>⚠️ Signal Interrupted</h5>
+    <h5>⚠️ Signal Loss (Offline)</h5>
     <div id="error-container" class="link-container"></div>
 
     <script>
@@ -161,19 +165,37 @@
             { name: "Sparx Reader", url: "reader.html", tag: "" }
         ];
 
-        async function runDiagnostic() {
+        // LIVE MONITORING FUNCTIONS
+        async function updateLiveStats() {
+            // Ping Logic
+            const start = performance.now();
+            try {
+                await fetch('index.html', { method: 'HEAD', cache: 'no-store' });
+                const end = performance.now();
+                const pingMs = Math.round(end - start);
+                const pingEl = document.getElementById('ping-value');
+                pingEl.innerText = `${pingMs} ms`;
+                
+                // Alert if ping is high
+                if(pingMs > 150) pingEl.style.color = "var(--updating)";
+                else if(pingMs > 400) pingEl.style.color = "var(--error)";
+                else pingEl.style.color = "var(--primary)";
+            } catch (e) {
+                document.getElementById('ping-value').innerText = "TIMEOUT";
+            }
+
+            // Traffic Logic
+            const trafficStates = ["Minimal", "Low", "Steady", "Moderate", "Nominal"];
+            document.getElementById('traffic-value').innerText = trafficStates[Math.floor(Math.random() * trafficStates.length)];
+        }
+
+        // INITIAL LOAD & DIAGNOSTIC
+        async function buildArcade() {
             const stableBox = document.getElementById('stable-container');
             const errorBox = document.getElementById('error-container');
             let stableCount = 0;
             let errorCount = 0;
 
-            // --- Traffic Simulation Logic ---
-            const trafficLevels = ["Minimal", "Low", "Steady", "Nominal"];
-            document.getElementById('traffic-value').innerText = trafficLevels[Math.floor(Math.random() * trafficLevels.length)];
-
-            // --- Real Ping Logic ---
-            const startPing = performance.now();
-            
             for (const game of games) {
                 let isDown = false;
                 try {
@@ -186,7 +208,7 @@
                 if (isDown) {
                     errorBox.innerHTML += `
                         <a href="#" class="game-link is-down">
-                            <span class="badge down">Error</span>
+                            <span class="badge down">Fault</span>
                             <span class="game-title">${game.name}</span>
                         </a>`;
                     errorCount++;
@@ -201,21 +223,20 @@
                 }
             }
 
-            const endPing = performance.now();
-            const pingMs = Math.round(endPing - startPing) / 10; // Averaged for UI feel
-            
-            document.getElementById('ping-value').innerText = `${Math.round(pingMs)} ms`;
             document.getElementById('active-count').innerText = `${stableCount} Modules`;
-            document.getElementById('error-count').innerText = `${errorCount} Faulty`;
+            document.getElementById('error-count').innerText = `${errorCount} Issues`;
             document.getElementById('global-status').innerText = errorCount > 0 ? "● ISSUES DETECTED" : "● OPERATIONAL";
             document.getElementById('global-status').className = `status-value ${errorCount > 0 ? 'offline' : 'online'}`;
         }
 
-        runDiagnostic();
+        // START SYSTEM
+        buildArcade();
+        updateLiveStats();
+        setInterval(updateLiveStats, 3000);
     </script>
 
     <footer>
-        DC × AK × AI // GRID VERSION 3.2.2
+        DESIGNED BY DC × NEBULA SYSTEMS // 2026.4
     </footer>
 </body>
 </html>
