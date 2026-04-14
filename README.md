@@ -1,3 +1,4 @@
-<img width="953" height="484" alt="image" src="https://github.com/user-attachments/assets/0539c242-dc41-46f0-b751-52f0ca413d3a" />
+<img width="955" height="462" alt="image" src="https://github.com/user-attachments/assets/4cef17fc-1aff-4dbf-8dc2-5d42072ed1ea" />
+
 <P>DC</P>
-<P>The future of Nebula games has arrived, updated browser games and a new edited main menu.</P>
+<P>The future of Nebula games has arrived, updated browser games and a new edited main menu. that tells you when games are inopperational.</P>
