@@ -31,7 +31,7 @@
             overflow-x: hidden;
         }
 
-        header { text-align: center; padding: 60px 20px 40px; }
+        header { text-align: center; padding: 60px 20px 30px; }
         h1 {
             font-family: 'Orbitron', sans-serif;
             font-size: clamp(2.5rem, 8vw, 4rem);
@@ -44,6 +44,17 @@
 
         .subtitle { color: var(--primary); opacity: 0.6; margin-top: 10px; font-size: 0.8rem; letter-spacing: 5px; text-transform: uppercase; }
 
+        /* --- Search Bar --- */
+        .search-container {
+            width: 90%; max-width: 1100px; margin-bottom: 20px;
+        }
+        #moduleSearch {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+            padding: 12px 20px; border-radius: 8px; color: #fff; font-family: 'Orbitron';
+            outline: none; transition: 0.3s; box-sizing: border-box;
+        }
+        #moduleSearch:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+
         /* --- Dashboard Panel --- */
         .status-panel {
             width: 90%; max-width: 1100px;
@@ -52,7 +63,7 @@
             border-radius: 12px; padding: 25px;
             margin-bottom: 40px; display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px); box-sizing: border-box;
         }
         .status-item { display: flex; flex-direction: column; gap: 5px; }
         .status-label { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
@@ -91,7 +102,7 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px var(--primary-glow);
         }
 
-        .game-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem; color: #fff; text-align: center; z-index: 2; }
+        .game-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem; color: #fff; text-align: center; z-index: 2; padding: 0 10px; }
 
         /* --- Badges --- */
         .badge { position: absolute; top: 0; right: 0; font-size: 0.55rem; padding: 4px 10px; font-weight: 900; text-transform: uppercase; border-bottom-left-radius: 8px; z-index: 3; }
@@ -102,7 +113,7 @@
         .game-link.is-down { opacity: 0.3; cursor: not-allowed; border-color: var(--error) !important; filter: grayscale(1); }
         .game-link.is-down .game-title { color: var(--error); }
 
-        footer { padding: 80px; text-align: center; color: #333; font-size: 0.8rem; font-family: 'Orbitron'; letter-spacing: 3px; }
+        footer { padding: 60px; text-align: center; color: #333; font-size: 0.8rem; font-family: 'Orbitron'; letter-spacing: 3px; }
     </style>
 </head>
 <body>
@@ -135,6 +146,10 @@
         </div>
     </div>
 
+    <div class="search-container">
+        <input type="text" id="moduleSearch" placeholder="SEARCH SYSTEM MODULES..." onkeyup="filterGames()">
+    </div>
+
     <h5>🕹️ Available Modules</h5>
     <div id="stable-container" class="link-container"></div>
 
@@ -143,6 +158,7 @@
 
     <script>
         const games = [
+            { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "best" },
             { name: "Blockcraft", url: "blockcraft.html", tag: "upd" },
             { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
             { name: "Neon Snake", url: "snake.html", tag: "best" },
@@ -168,30 +184,25 @@
             { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
             { name: "Sparx Solver", url: "sparxmaths.html", tag: "" },
             { name: "Sparx Reader", url: "reader.html", tag: "" }
-            { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "" }
         ];
 
         // --- Live Refresh Logic ---
         async function updateLiveStats() {
             const startTime = performance.now();
             try {
-                // Fetch the current page header to test latency
                 await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
                 const endTime = performance.now();
                 const ping = Math.round(endTime - startTime);
-                
                 const pingEl = document.getElementById('ping-value');
                 pingEl.innerText = `${ping} ms`;
                 
-                // Dynamic Color Coding for Ping
                 if (ping < 100) pingEl.style.color = "var(--primary)";
                 else if (ping < 250) pingEl.style.color = "var(--updating)";
                 else pingEl.style.color = "var(--error)";
             } catch (err) {
-                document.getElementById('ping-value').innerText = "ERR";
+                document.getElementById('ping-value').innerText = "TIMEOUT";
             }
 
-            // Simulated Traffic Jitter
             const trafficStates = ["Minimal", "Low", "Steady", "Moderate", "Nominal", "Peak"];
             document.getElementById('traffic-value').innerText = trafficStates[Math.floor(Math.random() * trafficStates.length)];
         }
@@ -203,22 +214,23 @@
             let stableCount = 0;
             let errorCount = 0;
 
-            // Clear containers for a fresh build
             stableBox.innerHTML = '';
             errorBox.innerHTML = '';
 
-            for (const game of games) {
-                let isDown = false;
+            // Using Promise.all for faster diagnostic checks
+            const statusChecks = await Promise.all(games.map(async (game) => {
                 try {
                     const resp = await fetch(game.url, { method: 'HEAD' });
-                    if (!resp.ok) isDown = true;
+                    return { ...game, isDown: !resp.ok };
                 } catch (e) {
-                    isDown = true;
+                    return { ...game, isDown: true };
                 }
+            }));
 
-                if (isDown) {
+            statusChecks.forEach(game => {
+                if (game.isDown) {
                     errorBox.innerHTML += `
-                        <div class="game-link is-down">
+                        <div class="game-link is-down" data-name="${game.name.toLowerCase()}">
                             <span class="badge down">Fault</span>
                             <span class="game-title">${game.name}</span>
                         </div>`;
@@ -226,20 +238,30 @@
                 } else {
                     const tagHTML = game.tag ? `<span class="badge ${game.tag}">${game.tag === 'upd' ? 'Updating' : 'Best'}</span>` : '';
                     stableBox.innerHTML += `
-                        <a href="${game.url}" class="game-link" target="_blank" rel="noopener noreferrer">
+                        <a href="${game.url}" class="game-link" target="_blank" rel="noopener noreferrer" data-name="${game.name.toLowerCase()}">
                             ${tagHTML}
                             <span class="game-title">${game.name}</span>
                         </a>`;
                     stableCount++;
                 }
-            }
+            });
 
-            // Update Header Stats
             document.getElementById('active-count').innerText = `${stableCount} Modules`;
             document.getElementById('error-count').innerText = `${errorCount} Issues`;
             const globalStatus = document.getElementById('global-status');
             globalStatus.innerText = errorCount > 0 ? "● ISSUES DETECTED" : "● OPERATIONAL";
             globalStatus.className = `status-value ${errorCount > 0 ? 'offline' : 'online'}`;
+        }
+
+        // --- Search Filter ---
+        function filterGames() {
+            const input = document.getElementById('moduleSearch').value.toLowerCase();
+            const links = document.querySelectorAll('.game-link');
+            
+            links.forEach(link => {
+                const name = link.getAttribute('data-name');
+                link.style.display = name.includes(input) ? "flex" : "none";
+            });
         }
 
         // --- Init ---
@@ -249,7 +271,7 @@
     </script>
 
     <footer>
-        DC × AK × NEBULA ARCADE // GRID V3.3.0
+        DC × AK × NEBULA SYSTEMS // GRID V3.4.0
     </footer>
 </body>
 </html>
