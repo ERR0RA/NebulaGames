@@ -7,7 +7,9 @@
         canvas { border: 2px solid #004400; background: radial-gradient(circle, #050505 0%, #000 70%); border-radius: 50%; box-shadow: 0 0 30px #002200; }
         #ui { margin-bottom: 20px; text-align: center; }
         .controls { color: #555; font-size: 0.8rem; margin-top: 5px; }
-        #msg { position: absolute; font-size: 3rem; font-weight: bold; text-shadow: 0 0 20px #0f0; pointer-events: none; display: none; }
+        #msg { position: absolute; font-size: 3rem; font-weight: bold; text-shadow: 0 0 20px #0f0; pointer-events: none; display: none; z-index: 10; }
+        .bot-toggle { margin-top: 10px; color: #f00; font-size: 0.9rem; cursor: pointer; }
+        input[type="checkbox"] { cursor: pointer; accent-color: #f00; }
     </style>
 </head>
 <body>
@@ -15,7 +17,10 @@
     <div id="ui">
         <h1>NEON_SLAMS</h1>
         <div id="score">P1: 0 | P2: 0</div>
-        <div class="controls">P1: HOLD [W] TO CHARGE | P2: HOLD [UP] TO CHARGE</div>
+        <div class="controls">P1: [W] | P2: [UP]</div>
+        <div class="bot-toggle">
+            <input type="checkbox" id="botActive"> ENABLE P2_BOT
+        </div>
     </div>
 
     <div id="msg">WINNER!</div>
@@ -26,6 +31,7 @@
     const ctx = canvas.getContext('2d');
     const scoreUI = document.getElementById('score');
     const msg = document.getElementById('msg');
+    const botCheckbox = document.getElementById('botActive');
 
     let score = { p1: 0, p2: 0 };
     let p1, p2, gameActive = true;
@@ -34,21 +40,25 @@
     const centerX = 250;
     const centerY = 250;
 
+    // Bot specific variables
+    let botTargetCharge = 10;
+
     function reset() {
         p1 = { x: 180, y: 250, vx: 0, vy: 0, radius: 20, color: '#0f0', charge: 0, charging: false };
         p2 = { x: 320, y: 250, vx: 0, vy: 0, radius: 20, color: '#f00', charge: 0, charging: false };
         msg.style.display = 'none';
         gameActive = true;
+        botTargetCharge = 5 + Math.random() * 10;
     }
 
     window.addEventListener('keydown', e => {
         if (e.code === 'KeyW') p1.charging = true;
-        if (e.code === 'ArrowUp') p2.charging = true;
+        if (e.code === 'ArrowUp' && !botCheckbox.checked) p2.charging = true;
     });
 
     window.addEventListener('keyup', e => {
         if (e.code === 'KeyW') { launch(p1, p2); p1.charging = false; }
-        if (e.code === 'ArrowUp') { launch(p2, p1); p2.charging = false; }
+        if (e.code === 'ArrowUp' && !botCheckbox.checked) { launch(p2, p1); p2.charging = false; }
     });
 
     function launch(p, target) {
@@ -63,6 +73,21 @@
 
     function update() {
         if (!gameActive) return;
+
+        // Bot Logic
+        if (botCheckbox.checked) {
+            // Bot starts charging if not moving fast and P1 is in the arena
+            if (Math.hypot(p2.vx, p2.vy) < 0.5) {
+                p2.charging = true;
+            }
+            
+            // Bot launches once it hits its random target charge
+            if (p2.charge >= botTargetCharge) {
+                launch(p2, p1);
+                p2.charging = false;
+                botTargetCharge = 5 + Math.random() * 10; // Reset next target power
+            }
+        }
 
         [p1, p2].forEach(p => {
             if (p.charging) p.charge += 0.4;
@@ -85,9 +110,8 @@
         let dy = p2.y - p1.y;
         let dist = Math.hypot(dx, dy);
         if (dist < p1.radius + p2.radius) {
-            // Simple bounce physics
             let angle = Math.atan2(dy, dx);
-            let force = 2; 
+            let force = 2.5; 
             p1.vx -= Math.cos(angle) * force;
             p1.vy -= Math.sin(angle) * force;
             p2.vx += Math.cos(angle) * force;
@@ -116,8 +140,9 @@
             // Charge Meter
             if (p.charging) {
                 ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius + 5, 0, (p.charge / 15) * Math.PI * 2);
+                ctx.arc(p.x, p.y, p.radius + 5, 0, Math.min((p.charge / 15), 1) * Math.PI * 2);
                 ctx.stroke();
             }
 
