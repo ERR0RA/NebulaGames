@@ -4,25 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nebula Games | Official Arcade</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #00ff88;
-            --primary-glow: rgba(0, 255, 136, 0.4);
+            --primary-glow: rgba(0, 255, 136, 0.3);
             --bg: #050505;
-            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-bg: rgba(255, 255, 255, 0.04);
             --card-border: rgba(255, 255, 255, 0.1);
             --text: #ffffff;
-            --hot: #ff0055;
             --updating: #ffcc00;
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 255, 136, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(255, 0, 85, 0.05) 0%, transparent 20%);
+            background-image: radial-gradient(circle at 50% -20%, #11221a 0%, #050505 80%);
             color: var(--text);
             margin: 0;
             display: flex;
@@ -33,121 +30,132 @@
 
         header {
             text-align: center;
-            padding: 80px 20px;
-            width: 100%;
+            padding: 60px 20px;
         }
 
         h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 900;
             margin: 0;
-            background: linear-gradient(to bottom, #fff 30%, var(--primary));
+            letter-spacing: 10px;
+            text-transform: uppercase;
+            background: linear-gradient(to bottom, #fff, var(--primary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: 8px;
-            filter: drop-shadow(0 0 15px var(--primary-glow));
+            filter: drop-shadow(0 0 10px var(--primary-glow));
         }
 
         .subtitle {
-            color: rgba(255,255,255,0.4);
-            margin-top: 15px;
-            letter-spacing: 3px;
+            color: var(--primary);
+            opacity: 0.6;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            letter-spacing: 4px;
             text-transform: uppercase;
-            font-size: 0.9rem;
         }
 
         h5 {
             font-family: 'Orbitron', sans-serif;
-            color: var(--primary);
+            color: #fff;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            margin: 60px 0 25px 0;
+            letter-spacing: 2px;
+            margin: 50px 0 20px 0;
             width: 90%;
-            max-width: 1200px;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        h5::after {
-            content: "";
-            height: 1px;
-            flex-grow: 1;
-            background: linear-gradient(to right, var(--primary), transparent);
-            opacity: 0.2;
+            max-width: 1100px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            border-left: 3px solid var(--primary);
+            padding-left: 15px;
         }
 
         .link-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
             width: 90%;
-            max-width: 1200px;
+            max-width: 1100px;
         }
 
         .game-link {
             position: relative;
             background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            color: white;
             text-decoration: none;
-            padding: 40px 25px;
-            border-radius: 16px;
+            height: 80px; /* Compact height */
+            border-radius: 8px;
             border: 1px solid var(--card-border);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
             display: flex;
-            align-items: flex-end;
-            min-height: 100px;
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
         }
 
         .game-link:hover {
-            transform: translateY(-8px);
+            background: rgba(0, 255, 136, 0.1);
             border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.06);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
 
         .game-title {
+            font-family: 'Orbitron', sans-serif;
             font-weight: 700;
-            font-size: 1.25rem;
-            z-index: 2;
+            font-size: 0.95rem;
+            color: #fff;
+            text-align: center;
+            letter-spacing: 1px;
+            transition: 0.3s;
         }
 
+        .game-link:hover .game-title {
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        /* --- Refined Badges --- */
         .badge {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 0.65rem;
-            padding: 5px 12px;
-            border-radius: 30px;
+            top: 0;
+            right: 0;
+            font-size: 0.55rem;
+            padding: 3px 8px;
             font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            border-bottom-left-radius: 6px;
         }
 
-        .best { background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary-glow); }
+        .best { background: var(--primary); color: #000; }
         .upd { background: var(--updating); color: #000; }
 
         .content-section {
             max-width: 800px; width: 90%;
-            margin: 40px 0; padding: 30px;
+            margin: 60px 0 20px 0; padding: 25px;
             background: rgba(255,255,255,0.02);
-            border-radius: 20px; border: 1px solid var(--card-border);
+            border-radius: 12px; border: 1px solid var(--card-border);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #888;
         }
 
-        footer { padding: 60px; text-align: center; color: #444; font-size: 0.8rem; letter-spacing: 1px; }
+        footer { 
+            padding: 40px; 
+            text-align: center; 
+            color: #444; 
+            font-size: 0.75rem; 
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
 
     <header>
         <h1>Nebula Games</h1>
-        <div class="subtitle">Unified Arcade Library</div>
+        <div class="subtitle">System Operator: DC</div>
     </header>
 
-    <h5>🕹️ All Games</h5>
+    <h5>🕹️ Library Index</h5>
     <div class="link-container">
         <a href="blockcraft.html" target="_blank" class="game-link">
             <span class="badge upd">Updating</span>
@@ -171,7 +179,7 @@
 
         <a href="minesweeper.html" target="_blank" class="game-link">
             <span class="badge best">Best</span>
-            <span class="game-title">Mine Sweeper</span>
+            <span class="game-title">Minesweeper</span>
         </a>
 
         <a href="snake.html" target="_blank" class="game-link">
@@ -202,48 +210,20 @@
             <span class="game-title">Space Adventure</span>
         </a>
 
-        <a href="tictactoe.html" target="_blank" class="game-link">
-            <span class="game-title">Tic Tac Toe</span>
-        </a>
-
         <a href="pacman.html" target="_blank" class="game-link">
-            <span class="game-title">Pac-Man Replica</span>
-        </a>
-
-        <a href="cricket.html" target="_blank" class="game-link">
-            <span class="game-title">Cricket</span>
-        </a>
-
-        <a href="blockbreaker.html" target="_blank" class="game-link">
-            <span class="game-title">Block Breaker</span>
-        </a>
-
-        <a href="blockblast.html" target="_blank" class="game-link">
-            <span class="game-title">Block Mine</span>
-        </a>
-
-        <a href="crossyroads.html" target="_blank" class="game-link">
-            <span class="game-title">Cross the Roads</span>
+            <span class="game-title">Pac-Man</span>
         </a>
 
         <a href="basketball.html" target="_blank" class="game-link">
-            <span class="game-title">2D Basketball</span>
+            <span class="game-title">Basketball</span>
         </a>
 
         <a href="football.html" target="_blank" class="game-link">
-            <span class="game-title">2D Football</span>
+            <span class="game-title">Football</span>
         </a>
 
         <a href="ai.html" target="_blank" class="game-link">
             <span class="game-title">Neon Run</span>
-        </a>
-
-        <a href="neon-trail.html" target="_blank" class="game-link">
-            <span class="game-title">Neon Trail</span>
-        </a>
-
-        <a href="Neon-Slams.html" target="_blank" class="game-link">
-            <span class="game-title">Neon Slamz</span>
         </a>
 
         <a href="Neon-Golf.html" target="_blank" class="game-link">
@@ -262,15 +242,11 @@
     </div>
 
     <div class="content-section">
-        <div style="color:var(--primary); font-weight:700; margin-bottom:10px;">NEBULA GRID: STATUS STABLE</div>
-        <p style="color:#888; margin:0; font-size:0.9rem;">
-            Unified interface complete. All arcade modules have been integrated into the primary library for seamless access.
-        </p>
+        <strong>ARCHIVE STATUS:</strong> All modules operational. Visual layout optimized for terminal efficiency.
     </div>
 
     <footer>
-        DEVCLEAN & AK // NEBULA ARCADE CO.<br>
-        HOSTED ON GITHUB PAGES &copy; 2026
+        DC × AK × AI // 2026
     </footer>
 
 </body>
