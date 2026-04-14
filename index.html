@@ -15,6 +15,7 @@
             --text: #ffffff;
             --updating: #ffcc00;
             --error: #ff3333;
+            --info: #00ccff;
         }
 
         body {
@@ -27,6 +28,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         header { text-align: center; padding: 60px 20px 40px; }
@@ -50,13 +52,15 @@
             border-radius: 12px; padding: 25px;
             margin-bottom: 40px; display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;
+            backdrop-filter: blur(10px);
         }
         .status-item { display: flex; flex-direction: column; gap: 5px; }
         .status-label { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
-        .status-value { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; transition: color 0.3s ease; }
+        .status-value { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; transition: all 0.3s ease; text-shadow: 0 0 8px currentColor; }
+        
         .online { color: var(--primary); }
         .offline { color: var(--error); }
-        .traffic-accent { color: #00ccff; }
+        .traffic-accent { color: var(--info); }
 
         h5 {
             font-family: 'Orbitron', sans-serif; color: #fff;
@@ -65,6 +69,7 @@
             font-size: 0.95rem; border-left: 4px solid var(--primary); padding-left: 15px;
         }
 
+        /* --- Grid & Links --- */
         .link-container {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 15px; width: 90%; max-width: 1100px; margin-bottom: 50px;
@@ -94,7 +99,7 @@
         .upd { background: var(--updating); color: #000; }
         .down { background: var(--error); color: #fff; }
 
-        .game-link.is-down { opacity: 0.4; cursor: not-allowed; border-color: var(--error) !important; filter: grayscale(1); }
+        .game-link.is-down { opacity: 0.3; cursor: not-allowed; border-color: var(--error) !important; filter: grayscale(1); }
         .game-link.is-down .game-title { color: var(--error); }
 
         footer { padding: 80px; text-align: center; color: #333; font-size: 0.8rem; font-family: 'Orbitron'; letter-spacing: 3px; }
@@ -118,7 +123,7 @@
         </div>
         <div class="status-item">
             <span class="status-label">Global Traffic</span>
-            <span id="traffic-value" class="status-value traffic-accent">Monitoring...</span>
+            <span id="traffic-value" class="status-value traffic-accent">Initializing...</span>
         </div>
         <div class="status-item">
             <span class="status-label">Active Modules</span>
@@ -165,36 +170,41 @@
             { name: "Sparx Reader", url: "reader.html", tag: "" }
         ];
 
-        // LIVE MONITORING FUNCTIONS
+        // --- Live Refresh Logic ---
         async function updateLiveStats() {
-            // Ping Logic
-            const start = performance.now();
+            const startTime = performance.now();
             try {
-                await fetch('index.html', { method: 'HEAD', cache: 'no-store' });
-                const end = performance.now();
-                const pingMs = Math.round(end - start);
-                const pingEl = document.getElementById('ping-value');
-                pingEl.innerText = `${pingMs} ms`;
+                // Fetch the current page header to test latency
+                await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+                const endTime = performance.now();
+                const ping = Math.round(endTime - startTime);
                 
-                // Alert if ping is high
-                if(pingMs > 150) pingEl.style.color = "var(--updating)";
-                else if(pingMs > 400) pingEl.style.color = "var(--error)";
-                else pingEl.style.color = "var(--primary)";
-            } catch (e) {
-                document.getElementById('ping-value').innerText = "TIMEOUT";
+                const pingEl = document.getElementById('ping-value');
+                pingEl.innerText = `${ping} ms`;
+                
+                // Dynamic Color Coding for Ping
+                if (ping < 100) pingEl.style.color = "var(--primary)";
+                else if (ping < 250) pingEl.style.color = "var(--updating)";
+                else pingEl.style.color = "var(--error)";
+            } catch (err) {
+                document.getElementById('ping-value').innerText = "ERR";
             }
 
-            // Traffic Logic
-            const trafficStates = ["Minimal", "Low", "Steady", "Moderate", "Nominal"];
+            // Simulated Traffic Jitter
+            const trafficStates = ["Minimal", "Low", "Steady", "Moderate", "Nominal", "Peak"];
             document.getElementById('traffic-value').innerText = trafficStates[Math.floor(Math.random() * trafficStates.length)];
         }
 
-        // INITIAL LOAD & DIAGNOSTIC
+        // --- Build Arcade Modules ---
         async function buildArcade() {
             const stableBox = document.getElementById('stable-container');
             const errorBox = document.getElementById('error-container');
             let stableCount = 0;
             let errorCount = 0;
+
+            // Clear containers for a fresh build
+            stableBox.innerHTML = '';
+            errorBox.innerHTML = '';
 
             for (const game of games) {
                 let isDown = false;
@@ -207,15 +217,15 @@
 
                 if (isDown) {
                     errorBox.innerHTML += `
-                        <a href="#" class="game-link is-down">
+                        <div class="game-link is-down">
                             <span class="badge down">Fault</span>
                             <span class="game-title">${game.name}</span>
-                        </a>`;
+                        </div>`;
                     errorCount++;
                 } else {
                     const tagHTML = game.tag ? `<span class="badge ${game.tag}">${game.tag === 'upd' ? 'Updating' : 'Best'}</span>` : '';
                     stableBox.innerHTML += `
-                        <a href="${game.url}" class="game-link">
+                        <a href="${game.url}" class="game-link" target="_blank" rel="noopener noreferrer">
                             ${tagHTML}
                             <span class="game-title">${game.name}</span>
                         </a>`;
@@ -223,20 +233,22 @@
                 }
             }
 
+            // Update Header Stats
             document.getElementById('active-count').innerText = `${stableCount} Modules`;
             document.getElementById('error-count').innerText = `${errorCount} Issues`;
-            document.getElementById('global-status').innerText = errorCount > 0 ? "● ISSUES DETECTED" : "● OPERATIONAL";
-            document.getElementById('global-status').className = `status-value ${errorCount > 0 ? 'offline' : 'online'}`;
+            const globalStatus = document.getElementById('global-status');
+            globalStatus.innerText = errorCount > 0 ? "● ISSUES DETECTED" : "● OPERATIONAL";
+            globalStatus.className = `status-value ${errorCount > 0 ? 'offline' : 'online'}`;
         }
 
-        // START SYSTEM
+        // --- Init ---
         buildArcade();
         updateLiveStats();
         setInterval(updateLiveStats, 3000);
     </script>
 
     <footer>
-        DESIGNED BY DC × NEBULA SYSTEMS // 2026.4
+        DC × AK × NEBULA ARCADE // GRID V3.3.0
     </footer>
 </body>
 </html>
