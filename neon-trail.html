@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEON-GRID | 2 Player Battle</title>
+    <title>NEON-GRID | Bot Battle</title>
     <style>
         body { 
             background: #000; 
@@ -24,6 +24,13 @@
         #ui { margin-bottom: 20px; text-align: center; }
         .controls { color: #888; font-size: 0.8rem; margin-top: 10px; }
         #msg { position: absolute; font-size: 2rem; font-weight: bold; text-shadow: 0 0 10px #0f0; pointer-events: none; }
+        button {
+            background: #000; color: #0f0; border: 1px solid #0f0;
+            padding: 5px 15px; cursor: pointer; font-family: 'Courier New';
+            margin-top: 5px;
+        }
+        button:hover { background: #0f0; color: #000; }
+        .active-bot { color: #f00; border-color: #f00; }
     </style>
 </head>
 <body>
@@ -31,7 +38,8 @@
     <div id="ui">
         <h1>NEON_GRID_BATTLE</h1>
         <div id="score">P1: 0 | P2: 0</div>
-        <div class="controls">P1: WASD | P2: ARROW KEYS</div>
+        <button id="botToggle">BOT: OFF</button>
+        <div class="controls" id="ctrl-text">P1: WASD | P2: ARROWS</div>
     </div>
 
     <div id="msg"></div>
@@ -42,54 +50,89 @@
         const ctx = canvas.getContext('2d');
         const msg = document.getElementById('msg');
         const scoreUI = document.getElementById('score');
+        const botBtn = document.getElementById('botToggle');
 
-        const UNIT = 4; // Size of the trail
+        const UNIT = 4;
         let score = { p1: 0, p2: 0 };
         let grid = [];
         let p1, p2, gameActive = true;
+        let botEnabled = false;
+
+        botBtn.onclick = () => {
+            botEnabled = !botEnabled;
+            botBtn.innerText = botEnabled ? "BOT: ACTIVE" : "BOT: OFF";
+            botBtn.classList.toggle('active-bot');
+            document.getElementById('ctrl-text').innerText = botEnabled ? "P1: WASD | P2: AI CONTROL" : "P1: WASD | P2: ARROWS";
+            reset();
+        };
 
         function reset() {
             p1 = { x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [] };
             p2 = { x: 500, y: 200, dx: -UNIT, dy: 0, color: '#f00', trail: [] };
             
-            // Clear grid data (true = wall exists)
             grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(false));
             msg.innerText = "";
             gameActive = true;
         }
 
         window.addEventListener('keydown', e => {
-            // Player 1 (WASD)
+            // Player 1
             if (e.key === 'w' && p1.dy === 0) { p1.dx = 0; p1.dy = -UNIT; }
             if (e.key === 's' && p1.dy === 0) { p1.dx = 0; p1.dy = UNIT; }
             if (e.key === 'a' && p1.dx === 0) { p1.dx = -UNIT; p1.dy = 0; }
             if (e.key === 'd' && p1.dx === 0) { p1.dx = UNIT; p1.dy = 0; }
 
-            // Player 2 (Arrows)
-            if (e.key === 'ArrowUp' && p2.dy === 0) { p2.dx = 0; p2.dy = -UNIT; }
-            if (e.key === 'ArrowDown' && p2.dy === 0) { p2.dx = 0; p2.dy = UNIT; }
-            if (e.key === 'ArrowLeft' && p2.dx === 0) { p2.dx = -UNIT; p2.dy = 0; }
-            if (e.key === 'ArrowRight' && p2.dx === 0) { p2.dx = UNIT; p2.dy = 0; }
+            // Player 2 (Only if bot is off)
+            if (!botEnabled) {
+                if (e.key === 'ArrowUp' && p2.dy === 0) { p2.dx = 0; p2.dy = -UNIT; }
+                if (e.key === 'ArrowDown' && p2.dy === 0) { p2.dx = 0; p2.dy = UNIT; }
+                if (e.key === 'ArrowLeft' && p2.dx === 0) { p2.dx = -UNIT; p2.dy = 0; }
+                if (e.key === 'ArrowRight' && p2.dx === 0) { p2.dx = UNIT; p2.dy = 0; }
+            }
         });
 
-        function checkCollision(p) {
-            // Wall Collision
-            if (p.x < 0 || p.x >= canvas.width || p.y < 0 || p.y >= canvas.height) return true;
-            // Trail Collision
-            if (grid[p.x][p.y]) return true;
-            return false;
+        function isHazard(x, y) {
+            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
+            return grid[x][y];
+        }
+
+        function runBot() {
+            // 1. Check if about to hit something
+            const nextX = p2.x + p2.dx;
+            const nextY = p2.y + p2.dy;
+
+            if (isHazard(nextX, nextY)) {
+                // 2. Look for an alternative direction
+                const possibleMoves = [
+                    {dx: UNIT, dy: 0}, {dx: -UNIT, dy: 0},
+                    {dx: 0, dy: UNIT}, {dx: 0, dy: -UNIT}
+                ];
+
+                // Remove the opposite direction (can't pull a 180)
+                const safeMoves = possibleMoves.filter(m => {
+                    const isOpposite = (m.dx === -p2.dx && m.dy === -p2.dy);
+                    return !isOpposite && !isHazard(p2.x + m.dx, p2.y + m.dy);
+                });
+
+                if (safeMoves.length > 0) {
+                    // Pick the best move (randomly if multiple safe spots)
+                    const move = safeMoves[Math.floor(Math.random() * safeMoves.length)];
+                    p2.dx = move.dx;
+                    p2.dy = move.dy;
+                }
+            }
         }
 
         function update() {
             if (!gameActive) return;
 
-            // Move
+            if (botEnabled) runBot();
+
             p1.x += p1.dx; p1.y += p1.dy;
             p2.x += p2.dx; p2.y += p2.dy;
 
-            // Check Wins
-            let p1Dead = checkCollision(p1);
-            let p2Dead = checkCollision(p2);
+            let p1Dead = isHazard(p1.x, p1.y);
+            let p2Dead = isHazard(p2.x, p2.y);
 
             if (p1Dead && p2Dead) {
                 endGame("DRAW!");
@@ -101,7 +144,6 @@
                 endGame("PLAYER 1 WINS!");
             }
 
-            // Update Grid and Trails
             if (gameActive) {
                 grid[p1.x][p1.y] = true;
                 grid[p2.x][p2.y] = true;
@@ -111,11 +153,9 @@
         }
 
         function draw() {
-            // Draw background with slight fade for motion effect
-            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Trails
             p1.trail.forEach(t => {
                 ctx.fillStyle = p1.color;
                 ctx.fillRect(t.x, t.y, UNIT, UNIT);
@@ -137,7 +177,7 @@
         function loop() {
             update();
             draw();
-            setTimeout(() => requestAnimationFrame(loop), 30);
+            setTimeout(() => requestAnimationFrame(loop), 35);
         }
 
         reset();
