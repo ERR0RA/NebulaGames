@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEON_HEX // V2_STABLE</title>
+    <title>NEON_HEX // V3_FINAL</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -90,20 +90,19 @@
     let score = 0;
     let health = 100;
     let playerAngle = 0;
-    let rotationSpeed = 0.09;
+    const rotationSpeed = 0.1; 
     let walls = [];
     let frame = 0;
     let wallSpeed = 5;
-    let spawnRate = 75;
+    let spawnRate = 80;
 
     class Wall {
         constructor() {
-            this.dist = Math.max(w, h) * 0.8;
-            this.gapSize = 1.1; // Radians of the gap
-            // The angle property here is the center of the wall segment, 
-            // but we'll use the center of the GAP for collision logic.
+            this.dist = Math.max(w, h) * 0.7;
+            this.gapSize = 1.25; // Slightly larger for better feel
             this.gapCenter = Math.random() * Math.PI * 2;
             this.color = Math.random() > 0.5 ? '#ff00ff' : '#00ffff';
+            this.hitProcessed = false;
         }
 
         draw() {
@@ -111,8 +110,9 @@
             ctx.shadowColor = this.color;
             ctx.strokeStyle = this.color;
             ctx.lineWidth = 15;
+            ctx.lineCap = "round"; // Rounded ends look more "neon"
             ctx.beginPath();
-            // We draw from (Center + gap/2) to (Center - gap/2) to leave the hole
+            // Important: drawing counter-clockwise to correctly leave the gap
             ctx.arc(w/2, h/2, this.dist, this.gapCenter + (this.gapSize/2), this.gapCenter - (this.gapSize/2));
             ctx.stroke();
         }
@@ -134,35 +134,29 @@
     window.addEventListener('keydown', e => keys[e.code] = true);
     window.addEventListener('keyup', e => keys[e.code] = false);
 
-    function drawGrid() {
-        ctx.strokeStyle = 'rgba(0, 255, 255, 0.08)';
-        ctx.lineWidth = 1;
-        const spacing = 120;
-        const offX = (frame * 1) % spacing;
-        const offY = (frame * 1) % spacing;
-        for(let x = offX; x < w; x += spacing) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
-        for(let y = offY; y < h; y += spacing) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
-    }
-
     function animate() {
         if (!gameActive) return;
 
         frame++;
         ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = 'rgba(2, 2, 5, 0.3)';
+        ctx.fillStyle = 'rgba(2, 2, 5, 0.4)';
         ctx.fillRect(0, 0, w, h);
 
-        drawGrid();
+        // Motion Grid
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        for(let x = (frame % 100); x < w; x += 100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+        for(let y = (frame % 100); y < h; y += 100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
 
         ctx.globalCompositeOperation = 'screen';
 
         if (keys['ArrowLeft'] || keys['KeyA']) playerAngle -= rotationSpeed;
         if (keys['ArrowRight'] || keys['KeyD']) playerAngle += rotationSpeed;
 
-        // Draw Player
-        const radius = 80;
-        const px = w/2 + Math.cos(playerAngle) * radius;
-        const py = h/2 + Math.sin(playerAngle) * radius;
+        // Player Orbit Radius
+        const orbitRadius = 80;
+        const px = w/2 + Math.cos(playerAngle) * orbitRadius;
+        const py = h/2 + Math.sin(playerAngle) * orbitRadius;
         
         ctx.shadowBlur = 40;
         ctx.shadowColor = '#fff';
@@ -173,38 +167,38 @@
 
         if (frame % Math.floor(spawnRate) === 0) walls.push(new Wall());
 
-        wallSpeed = 5 + (score / 2000);
-        spawnRate = Math.max(30, 75 - (score / 400));
+        wallSpeed = 5 + (score / 2500);
+        spawnRate = Math.max(35, 80 - (score / 500));
 
         for (let i = walls.length - 1; i >= 0; i--) {
             let wall = walls[i];
             wall.update();
             wall.draw();
 
-            // Collision Check
-            // We check if the wall is at the player's orbit distance
-            if (wall.dist < 95 && wall.dist > 65) {
-                // Normalize player angle to 0-2PI
-                let pA = ((playerAngle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
-                let gC = ((wall.gapCenter % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+            // Refined Collision logic
+            if (!wall.hitProcessed && wall.dist < (orbitRadius + 15) && wall.dist > (orbitRadius - 15)) {
                 
-                // Calculate shortest angular distance between player and gap center
-                let diff = Math.abs(pA - gC);
-                if (diff > Math.PI) diff = (Math.PI * 2) - diff;
+                // Normalize player angle to 0 - 2PI
+                let normPlayer = ((playerAngle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+                let normGap = ((wall.gapCenter % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+                
+                // Angular distance calculation
+                let angleDiff = Math.abs(normPlayer - normGap);
+                if (angleDiff > Math.PI) angleDiff = (Math.PI * 2) - angleDiff;
 
-                // If distance to center of gap is GREATER than half the gap size, HIT
-                if (diff > (wall.gapSize / 2) - 0.1) { 
+                // Check if player is OUTSIDE the gap
+                if (angleDiff > (wall.gapSize / 2)) { 
                     health -= 25;
-                    walls.splice(i, 1);
+                    wall.hitProcessed = true; // Prevents double-damage from same wall
                     ctx.globalCompositeOperation = 'source-over';
-                    ctx.fillStyle = 'white';
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                     ctx.fillRect(0, 0, w, h);
                 }
             }
 
-            if (wall.dist < 0) {
+            if (wall.dist < 10) {
+                if (!wall.hitProcessed) score += 100;
                 walls.splice(i, 1);
-                score += 100;
             }
         }
 
