@@ -3,109 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHELL SHOCKERS: ULTIMATE STABLE</title>
+    <title>Nebula | Eggshell Ultra-Graphics</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        :root { --primary: #00ff88; --glow: rgba(0, 255, 136, 0.5); }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        /* High-End HUD Overlay */
+        #ui-layer {
+            position: absolute; inset: 0; pointer-events: none;
+            border: 20px solid transparent;
+            background: linear-gradient(to bottom, rgba(0,255,136,0.05) 0%, transparent 15%, transparent 85%, rgba(0,255,136,0.05) 100%);
+            z-index: 5;
+        }
+
         #crosshair { 
-            position: absolute; top: 50%; left: 50%; width: 15px; height: 15px; 
-            border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); 
-            pointer-events: none; z-index: 10;
+            position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; 
+            border: 1px solid var(--primary); border-radius: 50%; transform: translate(-50%, -50%); 
+            box-shadow: 0 0 15px var(--glow); z-index: 10;
         }
-        #hud { 
-            position: absolute; bottom: 20px; left: 20px; color: white; 
-            text-shadow: 2px 2px #000; pointer-events: none;
-        }
-        #hp-bg { width: 200px; height: 15px; background: rgba(0,0,0,0.5); border: 2px solid #fff; }
-        #hp-bar { width: 100%; height: 100%; background: #ff4444; transition: width 0.1s; }
+        #crosshair::after { content: ''; position: absolute; top: 50%; left: 50%; width: 2px; height: 2px; background: white; transform: translate(-50%, -50%); }
+
+        #hud { position: absolute; bottom: 50px; left: 50px; color: white; z-index: 10; }
+        .bar-container { width: 300px; height: 4px; background: rgba(255,255,255,0.1); margin-top: 10px; position: relative; }
+        #hp-bar { width: 100%; height: 100%; background: var(--primary); box-shadow: 0 0 20px var(--primary); transition: width 0.4s; }
+
         #overlay { 
-            position: absolute; inset: 0; background: rgba(0,0,0,0.6); 
+            position: absolute; inset: 0; background: #000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            color: white; cursor: pointer; z-index: 20;
+            color: white; cursor: pointer; z-index: 100;
         }
+        .start-btn {
+            padding: 20px 60px; background: none; border: 1px solid var(--primary);
+            color: var(--primary); font-weight: 800; letter-spacing: 5px; cursor: pointer;
+            transition: 0.3s;
+        }
+        .start-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 50px var(--primary); }
     </style>
 </head>
 <body>
 
+<div id="ui-layer"></div>
 <div id="crosshair"></div>
+
 <div id="overlay" onclick="requestLock()">
-    <h1>ARENA READY</h1>
-    <p>CLICK TO START</p>
-    <p style="font-size: 0.8em;">WASD to Move | Mouse to Aim | Click to Shoot</p>
+    <h1 style="font-size: 4rem; margin-bottom: 0;">NEBULA</h1>
+    <p style="opacity: 0.4; letter-spacing: 10px; margin-bottom: 40px;">GRAPHICS_ENGINE_V3</p>
+    <button class="start-btn">INITIALIZE</button>
 </div>
 
 <div id="hud">
-    <div id="hp-bg"><div id="hp-bar"></div></div>
-    <h2 id="score-text">EGGS CRACKED: 0</h2>
+    <div style="font-size: 0.7rem; letter-spacing: 3px;">SYSTEM_INTEGRITY</div>
+    <div class="bar-container"><div id="hp-bar"></div></div>
 </div>
 
-<script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
 
 <script type="module">
     import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-    let scene, camera, renderer, clock;
-    let player = new THREE.Object3D();
-    let pitchObject = new THREE.Object3D(); // Vertical look
-    let yawObject = new THREE.Object3D();   // Horizontal look
-
+    let scene, camera, renderer, composer, clock;
+    let player = new THREE.Object3D(), pitchObject = new THREE.Object3D(), yawObject = new THREE.Object3D();
+    let weapon, muzzleFlash;
+    
     let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
     let velocity = new THREE.Vector3(), canJump = false;
-    let enemies = [], bullets = [], score = 0, health = 100;
-
-    const SENSITIVITY = 0.002;
+    let enemies = [], bullets = [], particles = [], health = 100;
 
     init();
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0x87CEEB, 10, 100);
+        scene.background = new THREE.Color(0x010204);
+        scene.fog = new THREE.FogExp2(0x010204, 0.05);
 
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         clock = new THREE.Clock();
 
-        // Setup Rotation Hierarchy (Prevents the "Sky Look" bug)
         pitchObject.add(camera);
         yawObject.add(pitchObject);
         player.add(yawObject);
-        player.position.y = 2;
+        player.position.set(0, 2, 0);
         scene.add(player);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true });
+        // --- RENDERER & POST-PROCESSING ---
+        renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.5;
         document.body.appendChild(renderer.domElement);
 
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 2));
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
 
-        // Floor
-        const floor = new THREE.Mesh(
-            new THREE.PlaneGeometry(200, 200),
-            new THREE.MeshStandardMaterial({ color: 0x55aa55 })
-        );
+        // --- ADVANCED LIGHTING ---
+        const mainLight = new THREE.PointLight(0x00ff88, 10, 50);
+        mainLight.position.set(0, 10, 0);
+        scene.add(mainLight);
+
+        // --- THE FLOOR (Cyber-PBR) ---
+        const floorGeo = new THREE.PlaneGeometry(200, 200);
+        const floorMat = new THREE.MeshStandardMaterial({ 
+            color: 0x050505, 
+            roughness: 0.1, 
+            metalness: 0.9 
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        // Simple Arena Obstacles
-        const boxGeo = new THREE.BoxGeometry(4, 4, 4);
-        const boxMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
-        for(let i=0; i<10; i++) {
-            const b = new THREE.Mesh(boxGeo, boxMat);
-            b.position.set(Math.random()*60-30, 2, Math.random()*60-30);
-            scene.add(b);
-        }
+        const grid = new THREE.GridHelper(200, 100, 0x00ff88, 0x001100);
+        grid.position.y = 0.01;
+        scene.add(grid);
 
-        // Listeners
+        // --- WEAPON & MUZZLE FLASH ---
+        const gunGroup = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.7), new THREE.MeshStandardMaterial({color:0x000, metalness:1}));
+        muzzleFlash = new THREE.PointLight(0x00ff88, 0, 5);
+        muzzleFlash.position.set(0, 0, -0.5);
+        gunGroup.add(body, muzzleFlash);
+        gunGroup.position.set(0.3, -0.25, -0.5);
+        camera.add(gunGroup);
+        weapon = gunGroup;
+
+        // Input Setup
         window.requestLock = () => {
             document.body.requestPointerLock();
             document.getElementById('overlay').style.display = 'none';
         };
 
         document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement === document.body) {
-                yawObject.rotation.y -= e.movementX * SENSITIVITY;
-                pitchObject.rotation.x -= e.movementY * SENSITIVITY;
-                // Strict Clamp: 90 degrees up or down max
+            if (document.pointerLockElement) {
+                yawObject.rotation.y -= e.movementX * 0.0015;
+                pitchObject.rotation.x -= e.movementY * 0.0015;
                 pitchObject.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitchObject.rotation.x));
             }
         });
@@ -115,43 +157,56 @@
             if (e.code === 'KeyS') moveBackward = v;
             if (e.code === 'KeyA') moveLeft = v;
             if (e.code === 'KeyD') moveRight = v;
-            if (e.code === 'Space' && v && canJump) { velocity.y = 10; canJump = false; }
+            if (e.code === 'Space' && v && canJump) { velocity.y = 12; canJump = false; }
         };
         document.addEventListener('keydown', onKey(true));
         document.addEventListener('keyup', onKey(false));
         document.addEventListener('mousedown', () => { if(document.pointerLockElement) shoot(); });
 
-        for(let i=0; i<5; i++) spawnEnemy();
+        for(let i=0; i<12; i++) spawnEnemy();
         animate();
     }
 
     function spawnEnemy() {
-        const eggGeo = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
-        const egg = new THREE.Mesh(eggGeo, new THREE.MeshStandardMaterial({ color: 0xffffff }));
-        egg.position.set(Math.random()*80-40, 1, Math.random()*80-40);
-        scene.add(egg);
-        enemies.push(egg);
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(0.6, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x00ff88, emissiveIntensity: 0.5 })
+        );
+        mesh.position.set(Math.random()*100-50, 0.6, Math.random()*100-50);
+        scene.add(mesh);
+        enemies.push(mesh);
     }
 
     function shoot() {
-        const b = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0xffff00}));
-        const vector = new THREE.Vector3(0, 0, -1);
-        vector.applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
+        muzzleFlash.intensity = 20;
+        weapon.position.z += 0.15; // Kickback
+
+        const b = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 0.8),
+            new THREE.MeshBasicMaterial({ color: 0x00ff88 })
+        );
+        b.rotation.x = Math.PI / 2;
         
-        b.position.copy(player.position);
-        b.userData = { dir: vector.multiplyScalar(2) };
+        const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
+        b.quaternion.copy(camera.getWorldQuaternion(new THREE.Quaternion()));
+        b.position.copy(player.position).add(dir.clone().multiplyScalar(1.2));
+        b.userData = { dir: dir.multiplyScalar(2.5) };
         scene.add(b);
         bullets.push(b);
     }
 
     function animate() {
         requestAnimationFrame(animate);
-        const delta = Math.min(clock.getDelta(), 0.1); // Cap delta to prevent teleporting
+        const delta = clock.getDelta();
 
-        // Movement Logic
-        velocity.x -= velocity.x * 10.0 * delta;
-        velocity.z -= velocity.z * 10.0 * delta;
-        velocity.y -= 30.0 * delta; // Gravity
+        // Smooth muzzle flash decay
+        muzzleFlash.intensity *= 0.1;
+        weapon.position.z += (-0.5 - weapon.position.z) * 0.2;
+
+        // Realistic Movement Physics
+        velocity.x -= velocity.x * 8.0 * delta;
+        velocity.z -= velocity.z * 8.0 * delta;
+        velocity.y -= 30.0 * delta;
 
         const moveDir = new THREE.Vector3();
         if (moveForward) moveDir.z -= 1;
@@ -160,49 +215,35 @@
         if (moveRight) moveDir.x += 1;
         moveDir.normalize();
 
-        if (moveForward || moveBackward) velocity.z = moveDir.z * 150 * delta;
-        if (moveLeft || moveRight) velocity.x = moveDir.x * 150 * delta;
+        if (moveForward || moveBackward) velocity.z = moveDir.z * 180 * delta;
+        if (moveLeft || moveRight) velocity.x = moveDir.x * 180 * delta;
 
         player.translateX(velocity.x * delta);
         player.translateZ(velocity.z * delta);
         player.position.y += velocity.y * delta;
 
-        if (player.position.y < 2) {
-            velocity.y = 0;
-            player.position.y = 2;
-            canJump = true;
-        }
+        if (player.position.y < 2) { velocity.y = 0; player.position.y = 2; canJump = true; }
 
-        // Enemy AI
-        enemies.forEach((en) => {
-            const dist = en.position.distanceTo(player.position);
-            if(dist < 30) {
-                en.lookAt(player.position.x, 1, player.position.z);
-                en.translateZ(4 * delta);
-            }
-            if(dist < 1.5) {
-                health -= 10 * delta;
-                document.getElementById('hp-bar').style.width = health + '%';
-                if(health <= 0) location.reload();
-            }
-        });
-
-        // Bullets
+        // Bullet Logic with "Tracer" effect
         bullets.forEach((b, i) => {
             b.position.add(b.userData.dir);
             enemies.forEach((en, ei) => {
                 if(b.position.distanceTo(en.position) < 1) {
                     scene.remove(en); scene.remove(b);
                     enemies.splice(ei, 1); bullets.splice(i, 1);
-                    score++;
-                    document.getElementById('score-text').innerText = `EGGS CRACKED: ${score}`;
                     spawnEnemy();
                 }
             });
             if(b.position.length() > 200) { scene.remove(b); bullets.splice(i, 1); }
         });
 
-        renderer.render(scene, camera);
+        // Dynamic Enemy Movement
+        enemies.forEach(en => {
+            en.lookAt(player.position);
+            en.translateZ(4 * delta);
+        });
+
+        composer.render();
     }
 </script>
 </body>
