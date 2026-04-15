@@ -14,11 +14,12 @@
             --card-border: rgba(0, 255, 136, 0.2);
             --text: #ffffff;
             --updating: #ffcc00;
+            --best: #00ff88;
         }
 
-        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.3); --card-border: rgba(255, 0, 255, 0.2); }
-        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.3); --card-border: rgba(0, 217, 255, 0.2); }
-        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.3); --card-border: rgba(255, 170, 0, 0.2); }
+        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.3); --card-border: rgba(255, 0, 255, 0.2); --best: #ff00ff; }
+        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.3); --card-border: rgba(0, 217, 255, 0.2); --best: #00d9ff; }
+        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.3); --card-border: rgba(255, 170, 0, 0.2); --best: #ffaa00; }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -32,8 +33,8 @@
             overflow-x: hidden;
         }
 
-        /* --- MATRIX CANVAS --- */
-        #canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.2; }
+        /* --- MATRIX BACKGROUND --- */
+        #canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.15; }
 
         header { text-align: center; padding: 60px 20px 30px; }
         
@@ -43,7 +44,7 @@
             font-weight: 900; margin: 0;
             letter-spacing: 15px;
             color: #fff;
-            text-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow);
+            text-shadow: 0 0 20px var(--primary-glow);
             text-transform: uppercase;
         }
 
@@ -60,75 +61,66 @@
 
         .status-item { border-left: 2px solid var(--primary); padding-left: 15px; }
         .status-label { font-family: 'Orbitron'; font-size: 0.6rem; color: var(--primary); opacity: 0.6; text-transform: uppercase; letter-spacing: 2px; }
-        .status-value { font-family: 'Fira Code'; font-size: 1rem; color: #fff; }
+        .status-value { font-family: 'Fira Code'; font-size: 0.9rem; color: #fff; }
 
-        /* --- SEARCH BAR --- */
-        .search-container { width: 95%; max-width: 1100px; margin-bottom: 30px; position: relative; }
+        /* --- SEARCH --- */
+        .search-container { width: 95%; max-width: 1100px; margin-bottom: 35px; }
         #moduleSearch {
             width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border);
             padding: 18px 25px; color: #fff; font-family: 'Orbitron'; outline: none;
-            clip-path: polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%);
+            clip-path: polygon(0 0, 97% 0, 100% 50%, 97% 100%, 0 100%);
             transition: 0.3s;
         }
-        #moduleSearch:focus { background: rgba(255, 255, 255, 0.1); border-color: var(--primary); }
+        #moduleSearch:focus { border-color: var(--primary); background: rgba(255,255,255,0.08); }
 
-        /* --- FUTURISTIC BUTTONS --- */
+        /* --- GAME GRID --- */
         .link-container {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 25px; width: 95%; max-width: 1100px; margin-bottom: 80px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px; width: 95%; max-width: 1100px; margin-bottom: 80px;
         }
 
         .game-link {
             position: relative;
             background: rgba(255, 255, 255, 0.03);
             text-decoration: none;
-            height: 110px;
+            height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            /* Cut Corners Logic */
-            clip-path: polygon(15% 0, 100% 0, 100% 75%, 85% 100%, 0 100%, 0 25%);
+            transition: all 0.3s ease;
+            clip-path: polygon(12% 0, 100% 0, 100% 70%, 88% 100%, 0 100%, 0 30%);
             border: 1px solid var(--card-border);
-        }
-
-        .game-link::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(45deg, transparent, var(--primary-glow), transparent);
-            transition: 0.5s;
-            opacity: 0;
+            cursor: pointer;
         }
 
         .game-link:hover {
-            transform: translateY(-5px) scale(1.03);
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.1);
             border-color: var(--primary);
-            box-shadow: 0 10px 30px -10px var(--primary-glow);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px -10px var(--primary-glow);
         }
-
-        .game-link:hover::before { opacity: 1; left: 100%; }
 
         .game-title { 
             font-family: 'Orbitron'; font-weight: 700; font-size: 0.8rem; 
-            color: #fff; letter-spacing: 2px; text-transform: uppercase;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            color: #fff; letter-spacing: 1px; text-transform: uppercase;
+            padding: 0 20px; text-align: center;
         }
 
         .badge {
-            position: absolute; top: 10px; right: 10px; font-size: 0.5rem;
-            padding: 2px 8px; background: var(--primary); color: #000;
-            font-weight: 900; font-family: 'Orbitron';
-            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            position: absolute; top: 0; left: 0; font-size: 0.5rem;
+            padding: 4px 12px; font-weight: 900; font-family: 'Orbitron';
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
         }
+        .badge-best { background: var(--best); color: #000; }
+        .badge-upd { background: var(--updating); color: #000; }
 
         .theme-btn { 
-            width: 20px; height: 20px; cursor: pointer; border: 1px solid #fff;
+            width: 18px; height: 18px; cursor: pointer; border: 1px solid #fff;
             clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
             transition: 0.3s;
         }
-        .theme-btn:hover { transform: scale(1.2) rotate(90deg); }
+
+        footer { padding: 40px; opacity: 0.4; font-family: 'Fira Code'; font-size: 0.7rem; color: var(--primary); }
 
     </style>
 </head>
@@ -138,7 +130,7 @@
 
     <header>
         <h1>Nebula</h1>
-        <div style="font-family:'Orbitron'; font-size: 0.6rem; letter-spacing: 8px; margin-top: 10px; opacity: 0.5;">DEEP SPACE GAMING NODE</div>
+        <div style="font-family:'Orbitron'; font-size: 0.6rem; letter-spacing: 6px; opacity: 0.6;">NEURAL MODULE INTERFACE</div>
     </header>
 
     <div class="status-panel">
@@ -147,45 +139,69 @@
             <span id="system-clock" class="status-value">00:00:00</span>
         </div>
         <div class="status-item">
+            <span class="status-label">Active Nodes</span>
+            <span id="node-count" class="status-value">--</span>
+        </div>
+        <div class="status-item">
             <span class="status-label">Interface</span>
-            <div style="display:flex; gap: 10px; margin-top:5px;">
+            <div style="display:flex; gap: 8px; margin-top:5px;">
                 <div class="theme-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
                 <div class="theme-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
                 <div class="theme-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
+                <div class="theme-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
             </div>
-        </div>
-        <div class="status-item">
-            <span class="status-label">Traffic</span>
-            <span id="ping" class="status-value">14ms</span>
         </div>
     </div>
 
     <div class="search-container">
-        <input type="text" id="moduleSearch" placeholder="SEARCH GRID..." onkeyup="filterGames()">
+        <input type="text" id="moduleSearch" placeholder="> FILTER SYSTEM ARCHIVES..." onkeyup="filterGames()">
     </div>
 
     <div id="stable-container" class="link-container"></div>
+
+    <footer>[ SECURE CONNECTION ESTABLISHED ]</footer>
 
     <script>
         const games = [
             { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "best" },
             { name: "Blockcraft", url: "blockcraft.html", tag: "upd" },
-            { name: "Minesweeper", url: "minesweeper.html", tag: "" },
+            { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
             { name: "Neon Snake", url: "snake.html", tag: "best" },
-            { name: "Master Armory", url: "masterarmory.html", tag: "" },
-            { name: "Neon Pong", url: "Neon-Pong.html", tag: "" },
+            { name: "Master Armory", url: "masterarmory.html", tag: "best" },
+            { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
             { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
-            { name: "Block Breaker", url: "blockbreaker.html", tag: "" }
+            { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
+            { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
+            { name: "Neon Slamz", url: "Neon-Slams.html", tag: "" },
+            { name: "Neon Trail", url: "neon-trail.html", tag: "" },
+            { name: "Block Blast", url: "blockblast.html", tag: "" },
+            { name: "Neon Run", url: "ai.html", tag: "" },
+            { name: "Basketball", url: "basketball.html", tag: "" },
+            { name: "Football", url: "football.html", tag: "" },
+            { name: "Cricket", url: "cricket.html", tag: "" },
+            { name: "Crossy Roads", url: "crossyroads.html", tag: "" },
+            { name: "Drift", url: "drift.html", tag: "" },
+            { name: "Eggshell (EGGVP)", url: "eggshell.html", tag: "upd" },
+            { name: "Overdrive", url: "overdrive.html", tag: "" },
+            { name: "Pacman", url: "pacman.html", tag: "" },
+            { name: "Space Adventure", url: "spaceadventure.html", tag: "" },
+            { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
+            { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
+            { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
         ];
 
         function buildArcade() {
             const container = document.getElementById('stable-container');
-            container.innerHTML = games.map(game => `
+            container.innerHTML = games.map(game => {
+                let badgeClass = game.tag === 'best' ? 'badge-best' : 'badge-upd';
+                return `
                 <a href="${game.url}" class="game-link" data-name="${game.name.toLowerCase()}">
-                    ${game.tag ? `<span class="badge">${game.tag}</span>` : ''}
+                    ${game.tag ? `<span class="badge ${badgeClass}">${game.tag.toUpperCase()}</span>` : ''}
                     <span class="game-title">${game.name}</span>
                 </a>
-            `).join('');
+                `;
+            }).join('');
+            document.getElementById('node-count').innerText = games.length + " MODULES";
         }
 
         function setTheme(theme) {
@@ -193,12 +209,19 @@
             if(theme === 'default') document.documentElement.removeAttribute('data-theme');
         }
 
+        function filterGames() {
+            const val = document.getElementById('moduleSearch').value.toLowerCase();
+            document.querySelectorAll('.game-link').forEach(el => {
+                el.style.display = el.dataset.name.includes(val) ? 'flex' : 'none';
+            });
+        }
+
+        // Clock
         setInterval(() => {
             document.getElementById('system-clock').innerText = new Date().toLocaleTimeString();
-            document.getElementById('ping').innerText = Math.floor(Math.random() * 20 + 10) + 'ms';
         }, 1000);
 
-        // Matrix Logic
+        // Matrix Background
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let width = canvas.width = window.innerWidth;
@@ -212,7 +235,7 @@
             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
             ctx.font = "15px monospace";
             drops.forEach((y, i) => {
-                const char = String.fromCharCode(Math.random() * 128);
+                const char = String.fromCharCode(0x30A0 + Math.random() * 96);
                 ctx.fillText(char, i * 20, y * 20);
                 if (y * 20 > height && Math.random() > 0.975) drops[i] = 0;
                 drops[i]++;
@@ -220,12 +243,10 @@
         }
         setInterval(draw, 50);
 
-        function filterGames() {
-            const val = document.getElementById('moduleSearch').value.toLowerCase();
-            document.querySelectorAll('.game-link').forEach(el => {
-                el.style.display = el.dataset.name.includes(val) ? 'flex' : 'none';
-            });
-        }
+        window.onresize = () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        };
 
         buildArcade();
     </script>
