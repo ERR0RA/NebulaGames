@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nebula Games | Core Terminal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #00ff88;
@@ -13,14 +13,11 @@
             --card-bg: rgba(255, 255, 255, 0.03);
             --card-border: rgba(255, 255, 255, 0.08);
             --text: #ffffff;
-            --updating: #ffcc00;
             --error: #ff3366;
-            --info: #00d9ff;
         }
 
         [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.4); }
         [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.4); }
-        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.4); }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -34,224 +31,190 @@
             overflow-x: hidden;
         }
 
-        /* Matrix Background */
-        #canvas {
+        /* --- CRITICAL ERROR OVERLAY --- */
+        #error-overlay {
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: -1;
-            opacity: 0.15;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 50, 0.2);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* Scanline CRT Effect */
-        body::before {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 9999;
-            background-size: 100% 4px, 3px 100%;
-            pointer-events: none;
+        .error-box {
+            background: #ff0033;
+            color: #fff;
+            padding: 30px;
+            border: 4px solid #fff;
+            font-family: 'Orbitron';
+            text-align: center;
+            box-shadow: 0 0 50px rgba(255, 0, 50, 0.8);
+            max-width: 400px;
+            animation: pulse-red 0.5s infinite alternate;
         }
 
-        header { text-align: center; padding: 60px 20px 30px; }
-        
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2rem, 8vw, 4rem);
-            font-weight: 900; margin: 0;
-            letter-spacing: 12px;
-            background: linear-gradient(to bottom, #fff 30%, var(--primary));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 15px var(--primary-glow));
-            transition: 0.5s;
+        @keyframes pulse-red {
+            from { transform: scale(1); }
+            to { transform: scale(1.02); }
         }
 
-        .subtitle { color: var(--primary); opacity: 0.8; margin-top: 10px; font-size: 0.75rem; letter-spacing: 5px; text-transform: uppercase; font-family: 'Orbitron'; }
+        /* --- UI ELEMENTS --- */
+        #canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.15; }
+
+        header { text-align: center; padding: 50px 20px; }
+        h1 { font-family: 'Orbitron'; font-size: 3rem; letter-spacing: 10px; color: var(--primary); text-shadow: 0 0 15px var(--primary-glow); }
 
         .status-panel {
-            width: 90%; max-width: 1100px;
-            background: rgba(10, 10, 10, 0.7);
-            border: 1px solid var(--card-border);
-            border-radius: 12px; padding: 25px;
-            margin-bottom: 30px; display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;
-            backdrop-filter: blur(10px); box-sizing: border-box;
+            width: 90%; max-width: 1000px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; background: rgba(255,255,255,0.05);
+            padding: 20px; border: 1px solid var(--card-border); margin-bottom: 20px;
         }
 
-        .status-item { display: flex; flex-direction: column; gap: 5px; border-left: 1px solid var(--card-border); padding-left: 15px; }
-        .status-label { font-family: 'Orbitron'; font-size: 0.55rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 2px; }
-        .status-value { font-family: 'Orbitron'; font-size: 1rem; font-weight: 700; text-shadow: 0 0 8px currentColor; }
-        
-        .theme-grid { display: flex; gap: 8px; margin-top: 5px; }
-        .theme-btn { width: 18px; height: 18px; border-radius: 3px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
-
-        .search-container { width: 90%; max-width: 1100px; margin-bottom: 25px; }
-        #moduleSearch {
-            width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border);
-            padding: 15px 20px; border-radius: 8px; color: #fff; font-family: 'Orbitron';
-            outline: none; transition: 0.3s; box-sizing: border-box;
-        }
-        #moduleSearch:focus { border-color: var(--primary); box-shadow: 0 0 20px var(--primary-glow); }
+        .status-item { border-left: 3px solid var(--primary); padding-left: 15px; }
+        .label { font-size: 0.6rem; text-transform: uppercase; opacity: 0.5; font-family: 'Orbitron'; }
+        .value { font-family: 'Fira Code'; font-size: 1rem; display: block; }
 
         .link-container {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 15px; width: 90%; max-width: 1100px; margin-bottom: 50px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px; width: 90%; max-width: 1000px;
         }
 
         .game-link {
-            position: relative; background: var(--card-bg);
-            text-decoration: none; height: 90px;
-            border-radius: 10px; border: 1px solid var(--card-border);
-            transition: 0.3s; display: flex; align-items: center; justify-content: center;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 30px;
+            text-decoration: none;
+            color: #fff;
+            text-align: center;
+            font-family: 'Orbitron';
+            transition: 0.3s;
+            position: relative;
+            cursor: pointer;
         }
 
-        .game-link:hover:not(.is-down) {
-            border-color: var(--primary);
-            transform: scale(1.02);
-            box-shadow: 0 0 15px var(--primary-glow);
+        .game-link:hover { border-color: var(--primary); background: rgba(0, 255, 136, 0.05); }
+
+        /* Console log at bottom */
+        #console {
+            width: 90%; max-width: 1000px;
+            background: #000; height: 100px;
+            margin-top: 30px; padding: 10px;
+            font-family: 'Fira Code'; font-size: 0.7rem;
+            color: #00ff88; overflow-y: auto;
+            border: 1px solid var(--card-border);
         }
-
-        .game-title { font-family: 'Orbitron'; font-weight: 700; font-size: 0.85rem; color: #fff; }
-        .badge { position: absolute; top: 0; right: 0; font-size: 0.55rem; padding: 4px 10px; font-weight: 900; border-bottom-left-radius: 8px; font-family: 'Orbitron'; }
-        .best { background: var(--primary); color: #000; }
-        .upd { background: var(--updating); color: #000; }
-
-        footer { padding: 50px; text-align: center; color: rgba(255,255,255,0.2); font-size: 0.65rem; font-family: 'Orbitron'; letter-spacing: 3px; }
     </style>
 </head>
 <body>
 
-    <canvas id="canvas"></canvas>
-
-    <header>
-        <h1 id="main-title">Nebula Games</h1>
-        <div class="subtitle">Grid Operator: DC</div>
-    </header>
-
-    <div class="status-panel">
-        <div class="status-item" style="border:none">
-            <span class="status-label">System Clock</span>
-            <span id="system-clock" class="status-value online">00:00:00</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">Visual Theme</span>
-            <div class="theme-grid">
-                <div class="theme-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
-                <div class="theme-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
-                <div class="theme-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
-                <div class="theme-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
-            </div>
-        </div>
-        <div class="status-item">
-            <span class="status-label">Grid Load</span>
-            <span id="traffic-value" class="status-value" style="color:var(--info)">STABLE</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">Modules Live</span>
-            <span id="active-count" class="status-value online">--</span>
+    <div id="error-overlay">
+        <div class="error-box">
+            <h2>LINK_VAL_FAILURE</h2>
+            <p id="error-details">ERROR: Target module is unreachable or corrupted.</p>
+            <button onclick="closeError()" style="padding: 10px 20px; cursor: pointer; font-family: 'Orbitron';">RETRY CONNECTION</button>
         </div>
     </div>
 
-    <div class="search-container">
-        <input type="text" id="moduleSearch" placeholder="ACCESS MODULE DATABASE..." onkeyup="filterGames()">
+    <canvas id="canvas"></canvas>
+
+    <header>
+        <h1>NEBULA OS</h1>
+        <div style="font-family:'Orbitron'; font-size: 0.7rem; letter-spacing: 4px; opacity: 0.6;">MODULE COMMAND CENTER</div>
+    </header>
+
+    <div class="status-panel">
+        <div class="status-item">
+            <span class="label">Net Latency</span>
+            <span id="ping" class="value">--ms</span>
+        </div>
+        <div class="status-item" id="node-status">
+            <span class="label">Node Integrity</span>
+            <span class="value" style="color:var(--primary)">STABLE</span>
+        </div>
     </div>
 
     <div id="stable-container" class="link-container"></div>
 
+    <div id="console">> Initializing system log...</div>
+
     <script>
+        // List of games. "broken: true" will trigger the system error.
         const games = [
-            { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "best" },
-            { name: "Blockcraft", url: "blockcraft.html", tag: "upd" },
-            { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
-            { name: "Neon Snake", url: "snake.html", tag: "best" },
-            { name: "Master Armory", url: "masterarmory.html", tag: "best" },
-            { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
-            { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
-            { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
-            { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
-            { name: "Neon Slamz", url: "Neon-Slams.html", tag: "" },
-            { name: "Neon Trail", url: "neon-trail.html", tag: "" },
-            { name: "Block Blast", url: "blockblast.html", tag: "" },
-            { name: "Neon Run", url: "ai.html", tag: "" },
-            { name: "Basketball", url: "basketball.html", tag: "" },
-            { name: "Football", url: "football.html", tag: "" },
-            { name: "Cricket", url: "cricket.html", tag: "" },
-            { name: "Crossy Roads", url: "crossyroads.html", tag: "" },
-            { name: "Drift", url: "drift.html", tag: "" },
-            { name: "Eggshell (EGGVP)", url: "eggshell.html", tag: "upd" },
-            { name: "Overdrive", url: "overdrive.html", tag: "" },
-            { name: "Pacman", url: "pacman.html", tag: "" },
-            { name: "Space Adventure", url: "spaceadventure.html", tag: "" },
-            { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
-            { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
-            { name: "Sparx Reader", url: "reader.html", tag: "" },
-            { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
+            { name: "Cyber Strike", url: "strike.html", broken: false },
+            { name: "Neural Link", url: "neural.html", broken: true },
+            { name: "Void Runner", url: "void.html", broken: false },
+            { name: "Data Siphon", url: "siphon.html", broken: true }
         ];
 
-        // Theme & Matrix Logic
-        let matrixColor = '#00ff88';
-        function setTheme(theme) {
-            const root = document.documentElement;
-            if(theme === 'default') {
-                root.removeAttribute('data-theme');
-                matrixColor = '#00ff88';
+        function buildArcade() {
+            const container = document.getElementById('stable-container');
+            container.innerHTML = games.map(game => `
+                <div class="game-link" onclick="handleLinkClick('${game.name}', ${game.broken})">
+                    ${game.name}
+                </div>
+            `).join('');
+        }
+
+        function handleLinkClick(name, isBroken) {
+            addToConsole(`Requesting access to module: ${name}...`);
+            
+            if(isBroken) {
+                setTimeout(() => {
+                    document.getElementById('error-details').innerText = `CRITICAL: Module [${name}] returned 404_NOT_FOUND. Visual uplink severed.`;
+                    document.getElementById('error-overlay').style.display = 'flex';
+                    document.getElementById('node-status').children[1].innerText = "UNSTABLE";
+                    document.getElementById('node-status').children[1].style.color = "#ff3366";
+                    addToConsole(`ERROR: Handshake failed for ${name}.`, true);
+                }, 500);
             } else {
-                root.setAttribute('data-theme', theme);
-                matrixColor = theme === 'cyber' ? '#ff00ff' : theme === 'ocean' ? '#00d9ff' : '#ffaa00';
+                addToConsole(`Access Granted. Redirecting to ${name}...`);
+                // window.location.href = url; // Real redirect would go here
             }
         }
 
-        // Clock logic
+        function closeError() {
+            document.getElementById('error-overlay').style.display = 'none';
+            document.getElementById('node-status').children[1].innerText = "STABLE";
+            document.getElementById('node-status').children[1].style.color = "#00ff88";
+            addToConsole("System rebooted. Buffer cleared.");
+        }
+
+        function addToConsole(msg, isError = false) {
+            const con = document.getElementById('console');
+            const time = new Date().toLocaleTimeString();
+            con.innerHTML += `<div style="color:${isError ? '#ff3366' : '#00ff88'}">[${time}] ${msg}</div>`;
+            con.scrollTop = con.scrollHeight;
+        }
+
+        // Simulating Ping
         setInterval(() => {
-            const now = new Date();
-            document.getElementById('system-clock').innerText = now.toTimeString().split(' ')[0];
-        }, 1000);
+            const p = Math.floor(Math.random() * 40) + 10;
+            document.getElementById('ping').innerText = `${p}ms`;
+        }, 2000);
 
         // Matrix Effect
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()*&^%";
-        const fontSize = 10;
-        const columns = canvas.width / fontSize;
-        const drops = Array(Math.floor(columns)).fill(1);
+        const letters = "010101NEBULA";
+        const drops = Array(Math.floor(canvas.width / 10)).fill(1);
 
         function drawMatrix() {
             ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = matrixColor;
-            ctx.font = fontSize + "px Orbitron";
-            for (let i = 0; i < drops.length; i++) {
-                const text = letters.charAt(Math.floor(Math.random() * letters.length));
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            ctx.fillStyle = "#00ff88";
+            drops.forEach((y, i) => {
+                const text = letters[Math.floor(Math.random() * letters.length)];
+                ctx.fillText(text, i * 10, y * 10);
+                if (y * 10 > canvas.height && Math.random() > 0.975) drops[i] = 0;
                 drops[i]++;
-            }
-        }
-        setInterval(drawMatrix, 33);
-
-        // Build Arcade
-        function buildArcade() {
-            const container = document.getElementById('stable-container');
-            container.innerHTML = games.map(game => `
-                <a href="${game.url}" class="game-link" data-name="${game.name.toLowerCase()}">
-                    ${game.tag ? `<span class="badge ${game.tag}">${game.tag.toUpperCase()}</span>` : ''}
-                    <span class="game-title">${game.name}</span>
-                </a>
-            `).join('');
-            document.getElementById('active-count').innerText = games.length;
-        }
-
-        function filterGames() {
-            const input = document.getElementById('moduleSearch').value.toLowerCase();
-            document.querySelectorAll('.game-link').forEach(link => {
-                link.style.display = link.dataset.name.includes(input) ? "flex" : "none";
             });
         }
+        setInterval(drawMatrix, 50);
 
         buildArcade();
     </script>
