@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
+            /* Default Theme: Emerald */
             --primary: #00ff88;
             --primary-glow: rgba(0, 255, 136, 0.4);
             --bg: #030303;
@@ -16,6 +17,20 @@
             --updating: #ffcc00;
             --error: #ff3366;
             --info: #00d9ff;
+        }
+
+        /* Theme Overrides */
+        [data-theme="cyber"] {
+            --primary: #ff00ff;
+            --primary-glow: rgba(255, 0, 255, 0.4);
+        }
+        [data-theme="ocean"] {
+            --primary: #00d9ff;
+            --primary-glow: rgba(0, 217, 255, 0.4);
+        }
+        [data-theme="amber"] {
+            --primary: #ffaa00;
+            --primary-glow: rgba(255, 170, 0, 0.4);
         }
 
         body {
@@ -29,9 +44,9 @@
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
+            transition: background 0.5s ease;
         }
 
-        /* Scanline Effect */
         body::before {
             content: " ";
             display: block;
@@ -55,6 +70,7 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 20px var(--primary-glow));
             animation: titlePulse 4s infinite alternate;
+            transition: 0.5s;
         }
 
         @keyframes titlePulse {
@@ -62,9 +78,8 @@
             to { filter: drop-shadow(0 0 30px var(--primary-glow)); }
         }
 
-        .subtitle { color: var(--primary); opacity: 0.8; margin-top: 15px; font-size: 0.85rem; letter-spacing: 6px; text-transform: uppercase; font-family: 'Orbitron'; }
+        .subtitle { color: var(--primary); opacity: 0.8; margin-top: 15px; font-size: 0.85rem; letter-spacing: 6px; text-transform: uppercase; font-family: 'Orbitron'; transition: 0.5s; }
 
-        /* Report Link Style */
         .report-link {
             display: inline-block;
             margin-top: 25px;
@@ -94,15 +109,22 @@
             border: 1px solid var(--card-border);
             border-radius: 16px; padding: 30px;
             margin-bottom: 40px; display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;
             backdrop-filter: blur(20px); box-sizing: border-box;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
 
         .status-item { display: flex; flex-direction: column; gap: 8px; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 15px; }
         .status-label { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 2px; }
-        .status-value { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; text-shadow: 0 0 10px currentColor; }
+        .status-value { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; text-shadow: 0 0 10px currentColor; transition: 0.5s; }
         
+        /* Theme Toggles */
+        .theme-grid { display: flex; gap: 10px; margin-top: 5px; }
+        .theme-btn { 
+            width: 20px; height: 20px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: 0.3s;
+        }
+        .theme-btn:hover { transform: scale(1.2); border-color: #fff; }
+
         .online { color: var(--primary); }
         .offline { color: var(--error); }
         .traffic-accent { color: var(--info); }
@@ -117,7 +139,7 @@
         #moduleSearch:focus { 
             border-color: var(--primary); 
             background: rgba(255,255,255,0.07);
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.15); 
+            box-shadow: 0 0 30px rgba(var(--primary), 0.15); 
         }
 
         h5 {
@@ -125,6 +147,7 @@
             text-transform: uppercase; letter-spacing: 4px;
             margin: 30px 0 20px; width: 90%; max-width: 1100px;
             font-size: 1rem; border-left: 3px solid var(--primary); padding-left: 15px;
+            transition: 0.5s;
         }
 
         .link-container {
@@ -141,20 +164,12 @@
             overflow: hidden;
         }
 
-        .game-link::before {
-            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-            transition: 0.5s;
-        }
-
         .game-link:hover:not(.is-down) {
             background: rgba(255, 255, 255, 0.07);
             border-color: var(--primary);
             transform: translateY(-8px);
             box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 15px var(--primary-glow);
         }
-
-        .game-link:hover::before { left: 100%; }
 
         .game-title { 
             font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.95rem; 
@@ -169,22 +184,13 @@
             padding: 5px 12px; font-weight: 900; text-transform: uppercase; 
             border-bottom-left-radius: 10px; z-index: 3; font-family: 'Orbitron';
         }
-        .best { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+        .best { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); transition: 0.5s; }
         .upd { background: var(--updating); color: #000; }
         .down { background: var(--error); color: #fff; }
-
-        .game-link.is-down { opacity: 0.4; cursor: not-allowed; border-color: var(--error) !important; }
-        .game-link.is-down .game-title { color: var(--error); }
 
         footer { 
             padding: 100px; text-align: center; color: rgba(255,255,255,0.2); 
             font-size: 0.75rem; font-family: 'Orbitron'; letter-spacing: 5px; 
-        }
-
-        @media (max-width: 600px) {
-            .status-panel { grid-template-columns: 1fr 1fr; }
-            h1 { letter-spacing: 6px; }
-            header { padding: 60px 20px 40px; }
         }
     </style>
 </head>
@@ -202,8 +208,13 @@
             <span id="global-status" class="status-value online">● SYSTEM READY</span>
         </div>
         <div class="status-item">
-            <span class="status-label">Latency</span>
-            <span id="ping-value" class="status-value online">-- ms</span>
+            <span class="status-label">Visual Interface</span>
+            <div class="theme-grid">
+                <div class="theme-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
+                <div class="theme-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
+                <div class="theme-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
+                <div class="theme-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+            </div>
         </div>
         <div class="status-item">
             <span class="status-label">Global Traffic</span>
@@ -222,8 +233,10 @@
     <h5>🕹️ Available Modules</h5>
     <div id="stable-container" class="link-container"></div>
 
-    <h5>⚠️ Signal Loss (Offline)</h5>
-    <div id="error-container" class="link-container"></div>
+    <div id="error-section" style="display:none">
+        <h5>⚠️ Signal Loss (Offline)</h5>
+        <div id="error-container" class="link-container"></div>
+    </div>
 
     <script>
         const games = [
@@ -255,24 +268,18 @@
             { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
         ];
 
-        async function updateLiveStats() {
-            const startTime = performance.now();
-            try {
-                const resp = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
-                const endTime = performance.now();
-                const ping = Math.round(endTime - startTime);
-                document.getElementById('ping-value').innerText = `${ping} ms`;
-            } catch (err) {
-                document.getElementById('ping-value').innerText = "STABLE";
+        function setTheme(theme) {
+            if(theme === 'default') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
             }
-
-            const trafficStates = ["MINIMAL", "NOMINAL", "STABLE", "MODERATE", "PEAK"];
-            document.getElementById('traffic-value').innerText = trafficStates[Math.floor(Math.random() * trafficStates.length)];
         }
 
         async function buildArcade() {
             const stableBox = document.getElementById('stable-container');
             const errorBox = document.getElementById('error-container');
+            const errorSection = document.getElementById('error-section');
             let stableCount = 0;
             let errorCount = 0;
 
@@ -311,9 +318,7 @@
             });
 
             document.getElementById('active-count').innerText = `${stableCount}`;
-            const globalStatus = document.getElementById('global-status');
-            globalStatus.innerText = errorCount > 0 ? "● ISSUES DETECTED" : "● OPERATIONAL";
-            globalStatus.className = `status-value ${errorCount > 0 ? 'offline' : 'online'}`;
+            if(errorCount > 0) errorSection.style.display = 'block';
         }
 
         function filterGames() {
@@ -326,12 +331,14 @@
         }
 
         buildArcade();
-        updateLiveStats();
-        setInterval(updateLiveStats, 5000);
+        setInterval(() => {
+            const trafficStates = ["MINIMAL", "NOMINAL", "STABLE", "MODERATE", "PEAK"];
+            document.getElementById('traffic-value').innerText = trafficStates[Math.floor(Math.random() * trafficStates.length)];
+        }, 5000);
     </script>
 
     <footer>
-        DC × AK × NEBULA SYSTEMS // GRID V3.5.0-STABLE
+        DC × AK × NEBULA SYSTEMS // GRID V3.6.0-CUSTOM
     </footer>
 </body>
 </html>
