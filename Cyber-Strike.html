@@ -3,406 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEON_CYBER_STRIKE // GRID_WARS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <title>Nebula | Glass Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;800&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --neon-blue: #00f2ff;
-            --neon-pink: #ff007b;
-            --neon-purple: #bc13fe;
-            --bg-dark: #050508;
+            --primary: #00ff88;
+            --primary-glow: rgba(0, 255, 136, 0.4);
+            --bg: #050608;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text: #ffffff;
         }
 
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background: var(--bg-dark);
-            color: #fff; font-family: 'Orbitron', sans-serif;
-            overflow: hidden; display: flex; align-items: center; justify-content: center;
+        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.4); }
+        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.4); }
+        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.4); }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(0, 255, 136, 0.07) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(0, 217, 255, 0.07) 0%, transparent 40%);
         }
 
-        /* CRT Scanline Overlay */
-        #crt-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%;
-            pointer-events: none; z-index: 10;
+        .orb {
+            position: fixed;
+            width: 50vw; height: 50vw;
+            border-radius: 50%;
+            background: var(--primary);
+            filter: blur(140px);
+            opacity: 0.12;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .orb-1 { top: -20%; left: -10%; }
+        .orb-2 { bottom: -20%; right: -10%; background: #00d9ff; }
+
+        header { padding: 80px 20px 40px; text-align: center; }
+        
+        h1 {
+            font-size: clamp(2.5rem, 10vw, 5rem);
+            font-weight: 800; margin: 0;
+            letter-spacing: -2px;
+            color: #ffffff;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
-        #game-container {
-            position: relative; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, #1a1a2e 0%, #050508 100%);
-            box-shadow: inset 0 0 100px rgba(0, 242, 255, 0.1);
+        /* --- SEARCH --- */
+        .search-wrap { width: 90%; max-width: 600px; margin-bottom: 50px; }
+        #moduleSearch {
+            width: 100%; 
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border);
+            padding: 20px 30px;
+            border-radius: 100px;
+            color: #fff;
+            font-size: 1.1rem;
+            outline: none;
+            backdrop-filter: blur(20px);
+            transition: 0.3s;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        #moduleSearch:focus { border-color: var(--primary); box-shadow: 0 0 30px var(--primary-glow); }
+
+        /* --- GRID --- */
+        .link-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px; width: 90%; max-width: 1200px;
+            padding-bottom: 120px;
         }
 
-        canvas { display: block; }
-
-        /* UI Elements */
-        #hud {
-            position: absolute; top: 20px; left: 20px;
-            pointer-events: none; user-select: none;
+        .game-link {
+            position: relative;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.03);
+            height: 140px; /* Slightly taller for score */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(15px);
+            transition: all 0.3s ease;
+            overflow: hidden;
         }
 
-        .stat-box { margin-bottom: 10px; }
-        .label { font-size: 0.7rem; color: var(--neon-blue); letter-spacing: 2px; text-transform: uppercase; }
-        .value { font-size: 1.5rem; font-weight: 900; text-shadow: 0 0 10px var(--neon-blue); }
-
-        #energy-container {
-            width: 200px; height: 10px; background: rgba(255,255,255,0.1);
-            border: 1px solid var(--neon-purple); margin-top: 5px; position: relative;
-        }
-        #energy-bar { 
-            width: 0%; height: 100%; background: var(--neon-purple); 
-            box-shadow: 0 0 15px var(--neon-purple); transition: width 0.2s;
+        .game-link:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
 
-        #menu {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; z-index: 20; background: rgba(0,0,0,0.8);
-            padding: 40px; border: 2px solid var(--neon-blue); border-radius: 20px;
-            box-shadow: 0 0 30px var(--neon-blue);
+        .game-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #ffffff;
+            text-align: center;
+            padding: 0 15px;
         }
 
-        h1 { font-size: 3rem; margin: 0; color: #fff; text-shadow: 0 0 20px var(--neon-blue); }
-        .btn {
-            margin-top: 30px; padding: 15px 40px; background: transparent;
-            border: 2px solid var(--neon-pink); color: var(--neon-pink);
-            font-family: 'Orbitron'; font-weight: 900; cursor: pointer;
-            transition: 0.3s; text-transform: uppercase; letter-spacing: 3px;
+        .high-score-tag {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-top: 8px;
+            font-family: 'Fira Code', monospace;
+            color: var(--primary);
         }
-        .btn:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 30px var(--neon-pink); }
 
-        #game-over { display: none; }
+        .badge {
+            position: absolute;
+            top: 12px; right: 12px;
+            font-size: 0.6rem; font-weight: 800;
+            padding: 4px 10px; border-radius: 50px;
+            background: var(--primary); color: #000;
+            text-transform: uppercase;
+        }
+
+        /* --- ACCOUNT INTERFACE --- */
+        .top-right-nav { position: absolute; top: 30px; right: 30px; display: flex; gap: 10px; }
+        .acc-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+        .acc-btn:hover { background: var(--primary); color: #000; }
+        
+        .logout-btn { display: none; background: rgba(255,0,0,0.2); color: #ff4444; border: 1px solid rgba(255,0,0,0.3); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(12px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 32px;
+            width: 90%; max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            margin: 8px 0;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            color: #fff;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .login-btn {
+            width: 100%; padding: 15px; margin-top: 20px;
+            background: var(--primary);
+            border: none; border-radius: 15px;
+            font-weight: 800; cursor: pointer;
+        }
+
+        .bottom-controls {
+            position: fixed; bottom: 30px; 
+            display: flex; align-items: center; gap: 20px;
+            z-index: 1000;
+        }
+
+        .theme-panel, .support-btn {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+        }
+
+        .theme-panel { padding: 12px 24px; display: flex; gap: 15px; }
+        .support-btn { padding: 12px 28px; color: #fff; text-decoration: none; font-size: 0.8rem; font-weight: 700; transition: 0.3s; }
+        .t-btn { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.3); }
     </style>
 </head>
 <body>
 
-    <div id="crt-overlay"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
 
-    <div id="game-container">
-        <div id="hud">
-            <div class="stat-box">
-                <div class="label">Integrity</div>
-                <div id="hp-value" class="value" style="color: var(--neon-pink);">100%</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">System Score</div>
-                <div id="score-value" class="value">000000</div>
-            </div>
-            <div class="stat-box">
-                <div class="label">Nova Energy (SPACE)</div>
-                <div id="energy-container"><div id="energy-bar"></div></div>
-            </div>
-        </div>
-
-        <div id="menu">
-            <h1>NEON_STRIKE</h1>
-            <p style="color: #666; font-size: 0.8rem; margin-top: 10px;">WASD TO MOVE // MOUSE TO SHOOT</p>
-            <button class="btn" onclick="startGame()">Initialize Stream</button>
-        </div>
-
-        <div id="game-over" id="menu" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-             <h1 style="color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink);">SYSTEM_FAILURE</h1>
-             <p id="final-score" style="font-size: 1.5rem;"></p>
-             <button class="btn" onclick="location.reload()">Reboot System</button>
-        </div>
-
-        <canvas id="gameCanvas"></canvas>
+    <div class="top-right-nav">
+        <button id="userBtn" class="acc-btn" onclick="toggleModal()">JOIN NEBULA</button>
+        <button id="logoutBtn" class="acc-btn logout-btn" onclick="logout()">LOGOUT</button>
     </div>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score-value');
-    const hpEl = document.getElementById('hp-value');
-    const energyBar = document.getElementById('energy-bar');
-    const menu = document.getElementById('menu');
-    const gameOverMenu = document.getElementById('game-over');
+    <header>
+        <h1>Nebula</h1>
+        <p style="opacity: 0.6; font-size: 0.8rem; letter-spacing: 4px; text-transform: uppercase;">Cloud Gaming</p>
+    </header>
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    <div class="search-wrap">
+        <input type="text" id="moduleSearch" placeholder="Search Games..." onkeyup="filterGames()">
+    </div>
 
-    let player, enemies, bullets, particles, enemyBullets;
-    let score = 0;
-    let gameActive = false;
-    let keys = {};
-    let frame = 0;
+    <div id="stable-container" class="link-container"></div>
 
-    class Player {
-        constructor() {
-            this.x = canvas.width / 2;
-            this.y = canvas.height / 2;
-            this.radius = 15;
-            this.color = '#00f2ff';
-            this.hp = 100;
-            this.speed = 5;
-            this.energy = 0;
-            this.angle = 0;
+    <div id="loginModal" class="modal-overlay">
+        <div class="login-card">
+            <button style="position:absolute; top:20px; right:20px; background:none; border:none; color:#fff; cursor:pointer;" onclick="toggleModal()">&times;</button>
+            <h2>Join Nebula</h2>
+            <p style="opacity:0.6; font-size:0.9rem;">Enter a username to save scores locally.</p>
+            <div class="input-group">
+                <input type="text" id="usernameInput" placeholder="Username">
+            </div>
+            <button class="login-btn" onclick="saveUser()">START GAMING</button>
+        </div>
+    </div>
+
+    <div class="bottom-controls">
+        <div class="theme-panel">
+            <div class="t-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
+            <div class="t-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
+            <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
+            <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+        </div>
+        <a href="https://forms.office.com/..." target="_blank" class="support-btn">SUPPORT</a>
+    </div>
+
+    <script>
+        const games = [
+            { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "best" },
+            { name: "Blockcraft", url: "blockcraft.html", tag: "upd" },
+            { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
+            { name: "Neon Snake", url: "snake.html", tag: "best" },
+            { name: "Master Armory", url: "masterarmory.html", tag: "best" },
+            { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
+            { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
+            { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
+            { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
+            { name: "Neon Slamz", url: "Neon-Slams.html", tag: "" },
+            { name: "Neon Trail", url: "neon-trail.html", tag: "" },
+            { name: "Block Blast", url: "blockblast.html", tag: "" },
+            { name: "Neon Run", url: "ai.html", tag: "" },
+            { name: "Basketball", url: "basketball.html", tag: "" },
+            { name: "Football", url: "football.html", tag: "" },
+            { name: "Cricket", url: "cricket.html", tag: "" },
+            { name: "Crossy Roads", url: "crossyroads.html", tag: "" },
+            { name: "Drift", url: "drift.html", tag: "" },
+            { name: "Eggshell (EGGVP)", url: "eggshell.html", tag: "upd" },
+            { name: "Overdrive", url: "overdrive.html", tag: "" },
+            { name: "Pacman", url: "pacman.html", tag: "" },
+            { name: "Space Adventure", url: "spaceadventure.html", tag: "" },
+            { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
+            { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
+            { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
+        ];
+
+        function toggleModal() {
+            const modal = document.getElementById('loginModal');
+            modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
         }
 
-        draw() {
-            ctx.save();
-            ctx.translate(this.x, this.y);
-            ctx.rotate(this.angle);
-            
-            // Neon Glow
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = this.color;
-            ctx.strokeStyle = this.color;
-            ctx.lineWidth = 3;
-            
-            // Triangle Ship
-            ctx.beginPath();
-            ctx.moveTo(20, 0);
-            ctx.lineTo(-15, -15);
-            ctx.lineTo(-15, 15);
-            ctx.closePath();
-            ctx.stroke();
-            
-            ctx.restore();
-        }
-
-        update() {
-            if (keys['KeyW'] || keys['ArrowUp']) this.y -= this.speed;
-            if (keys['KeyS'] || keys['ArrowDown']) this.y += this.speed;
-            if (keys['KeyA'] || keys['ArrowLeft']) this.x -= this.speed;
-            if (keys['KeyD'] || keys['ArrowRight']) this.x += this.speed;
-
-            // Boundaries
-            this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-            this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-
-            if (this.energy < 100) this.energy += 0.05;
-            energyBar.style.width = this.energy + '%';
-        }
-    }
-
-    class Bullet {
-        constructor(x, y, targetX, targetY, color, speed = 10) {
-            this.x = x;
-            this.y = y;
-            const angle = Math.atan2(targetY - y, targetX - x);
-            this.vx = Math.cos(angle) * speed;
-            this.vy = Math.sin(angle) * speed;
-            this.radius = 3;
-            this.color = color;
-        }
-        draw() {
-            ctx.fillStyle = this.color;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = this.color;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-        }
-    }
-
-    class Enemy {
-        constructor(x, y, type) {
-            this.x = x;
-            this.y = y;
-            this.type = type; // 1: Stalker, 2: Shooter
-            this.hp = type === 2 ? 2 : 1;
-            this.radius = type === 2 ? 20 : 15;
-            this.color = type === 2 ? '#bc13fe' : '#ff007b';
-            this.speed = type === 2 ? 1.5 : 3;
-        }
-        draw() {
-            ctx.strokeStyle = this.color;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = this.color;
-            ctx.lineWidth = 2;
-            ctx.strokeRect(this.x - this.radius, this.y - this.radius, this.radius*2, this.radius*2);
-            if(this.type === 2) {
-                ctx.strokeRect(this.x - 10, this.y - 10, 20, 20);
+        function saveUser() {
+            const user = document.getElementById('usernameInput').value;
+            if(user) {
+                localStorage.setItem('nebula_user', user);
+                checkUser();
+                toggleModal();
+                buildArcade(); // Refresh to show scores
             }
         }
-        update() {
-            const angle = Math.atan2(player.y - this.y, player.x - this.x);
-            this.x += Math.cos(angle) * this.speed;
-            this.y += Math.sin(angle) * this.speed;
 
-            // Shooter logic
-            if(this.type === 2 && frame % 100 === 0) {
-                enemyBullets.push(new Bullet(this.x, this.y, player.x, player.y, '#bc13fe', 5));
+        function logout() {
+            localStorage.removeItem('nebula_user');
+            location.reload();
+        }
+
+        function checkUser() {
+            const savedUser = localStorage.getItem('nebula_user');
+            const userBtn = document.getElementById('userBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            if(savedUser) {
+                userBtn.innerText = savedUser.toUpperCase();
+                userBtn.onclick = null;
+                logoutBtn.style.display = "block";
             }
         }
-    }
 
-    class Particle {
-        constructor(x, y, color) {
-            this.x = x; this.y = y;
-            this.color = color;
-            this.vx = (Math.random() - 0.5) * 10;
-            this.vy = (Math.random() - 0.5) * 10;
-            this.alpha = 1;
-            this.decay = Math.random() * 0.02 + 0.01;
+        function buildArcade() {
+            const container = document.getElementById('stable-container');
+            const savedScores = JSON.parse(localStorage.getItem('nebula_scores')) || {};
+
+            container.innerHTML = games.map(game => {
+                const best = savedScores[game.name] ? `BEST: ${savedScores[game.name]}` : 'NO SCORE';
+                return `
+                    <a href="${game.url}" target="_blank" class="game-link" data-name="${game.name.toLowerCase()}">
+                        ${game.tag ? `<span class="badge">${game.tag}</span>` : ''}
+                        <span class="game-title">${game.name}</span>
+                        <span class="high-score-tag">${best}</span>
+                    </a>
+                `;
+            }).join('');
         }
-        draw() {
-            ctx.globalAlpha = this.alpha;
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, 3, 3);
-            ctx.globalAlpha = 1;
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            if(theme === 'default') document.documentElement.removeAttribute('data-theme');
         }
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            this.alpha -= this.decay;
-        }
-    }
 
-    function spawnEnemy() {
-        if(!gameActive) return;
-        let x, y;
-        if (Math.random() < 0.5) {
-            x = Math.random() < 0.5 ? 0 - 50 : canvas.width + 50;
-            y = Math.random() * canvas.height;
-        } else {
-            x = Math.random() * canvas.width;
-            y = Math.random() < 0.5 ? 0 - 50 : canvas.height + 50;
-        }
-        const type = Math.random() > 0.8 ? 2 : 1;
-        enemies.push(new Enemy(x, y, type));
-        setTimeout(spawnEnemy, Math.max(500, 2000 - score/10));
-    }
-
-    function createExplosion(x, y, color) {
-        for(let i=0; i<15; i++) particles.push(new Particle(x, y, color));
-    }
-
-    function handleInput() {
-        window.addEventListener('keydown', e => keys[e.code] = true);
-        window.addEventListener('keyup', e => keys[e.code] = false);
-        window.addEventListener('mousemove', e => {
-            player.angle = Math.atan2(e.clientY - player.y, e.clientX - player.x);
-        });
-        window.addEventListener('mousedown', () => {
-            if(!gameActive) return;
-            bullets.push(new Bullet(player.x, player.y, player.x + Math.cos(player.angle)*100, player.y + Math.sin(player.angle)*100, '#00f2ff'));
-        });
-        window.addEventListener('keydown', e => {
-            if(e.code === 'Space' && player.energy >= 100) {
-                player.energy = 0;
-                createExplosion(player.x, player.y, '#bc13fe');
-                enemies.forEach((enemy, index) => {
-                    const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-                    if(dist < 300) {
-                        createExplosion(enemy.x, enemy.y, enemy.color);
-                        enemies.splice(index, 1);
-                        score += 500;
-                    }
-                });
-            }
-        });
-    }
-
-    function drawGrid() {
-        ctx.strokeStyle = 'rgba(0, 242, 255, 0.05)';
-        ctx.lineWidth = 1;
-        const spacing = 50;
-        for(let x=0; x<canvas.width; x+=spacing) {
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-        }
-        for(let y=0; y<canvas.height; y+=spacing) {
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-        }
-    }
-
-    function animate() {
-        if(!gameActive) return;
-        frame++;
-        ctx.fillStyle = 'rgba(5, 5, 8, 0.2)'; // Trail effect
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        drawGrid();
-        player.update();
-        player.draw();
-
-        // Update Bullets
-        bullets.forEach((b, i) => {
-            b.update(); b.draw();
-            if(b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) bullets.splice(i, 1);
-        });
-
-        enemyBullets.forEach((eb, i) => {
-            eb.update(); eb.draw();
-            const dist = Math.hypot(player.x - eb.x, player.y - eb.y);
-            if(dist < player.radius) {
-                player.hp -= 10;
-                enemyBullets.splice(i, 1);
-                createExplosion(player.x, player.y, '#ff007b');
-            }
-        });
-
-        // Update Enemies
-        enemies.forEach((e, ei) => {
-            e.update(); e.draw();
-            
-            // Collision with player
-            const distToPlayer = Math.hypot(player.x - e.x, player.y - e.y);
-            if(distToPlayer < player.radius + e.radius) {
-                player.hp -= 0.5;
-                hpEl.style.textShadow = '0 0 20px #ff007b';
-            }
-
-            // Collision with bullets
-            bullets.forEach((b, bi) => {
-                const dist = Math.hypot(e.x - b.x, e.y - b.y);
-                if(dist < e.radius + b.radius) {
-                    e.hp--;
-                    bullets.splice(bi, 1);
-                    if(e.hp <= 0) {
-                        createExplosion(e.x, e.y, e.color);
-                        enemies.splice(ei, 1);
-                        score += 100;
-                    }
-                }
+        function filterGames() {
+            const val = document.getElementById('moduleSearch').value.toLowerCase();
+            document.querySelectorAll('.game-link').forEach(el => {
+                el.style.display = el.dataset.name.includes(val) ? 'flex' : 'none';
             });
-        });
+        }
 
-        // Update Particles
-        particles.forEach((p, i) => {
-            p.update(); p.draw();
-            if(p.alpha <= 0) particles.splice(i, 1);
-        });
-
-        scoreEl.innerText = score.toString().padStart(6, '0');
-        hpEl.innerText = Math.max(0, Math.floor(player.hp)) + '%';
-
-        if(player.hp <= 0) endGame();
-
-        requestAnimationFrame(animate);
-    }
-
-    function startGame() {
-        menu.style.display = 'none';
-        gameActive = true;
-        player = new Player();
-        enemies = [];
-        bullets = [];
-        enemyBullets = [];
-        particles = [];
-        score = 0;
-        handleInput();
-        spawnEnemy();
-        animate();
-    }
-
-    function endGame() {
-        gameActive = false;
-        gameOverMenu.style.display = 'block';
-        document.getElementById('final-score').innerText = "FINAL SCORE: " + score;
-    }
-
-    window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    });
-
-</script>
+        buildArcade();
+        checkUser();
+    </script>
 </body>
 </html>
