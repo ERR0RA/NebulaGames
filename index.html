@@ -8,16 +8,16 @@
     <style>
         :root {
             --primary: #00ff88;
-            --primary-glow: rgba(0, 255, 136, 0.3);
-            --bg: #05070a;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: rgba(0, 255, 136, 0.4);
+            --bg: #050608; /* Deep black-blue for contrast */
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.12);
             --text: #ffffff;
         }
 
-        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.3); }
-        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.3); }
-        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.3); }
+        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.4); }
+        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.4); }
+        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.4); }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -29,34 +29,26 @@
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
-            /* Animated Mesh Gradient */
-            background: radial-gradient(at 0% 0%, rgba(0, 255, 136, 0.05) 0px, transparent 50%),
-                        radial-gradient(at 100% 0%, rgba(0, 217, 255, 0.05) 0px, transparent 50%),
-                        radial-gradient(at 100% 100%, rgba(255, 0, 255, 0.05) 0px, transparent 50%),
-                        radial-gradient(at 0% 100%, rgba(255, 170, 0, 0.05) 0px, transparent 50%);
-            background-attachment: fixed;
+            /* Static dark gradient to ensure readability */
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(0, 255, 136, 0.07) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(0, 217, 255, 0.07) 0%, transparent 40%);
         }
 
-        /* Animated Background Orbs */
+        /* --- VIBRANT ORBS --- */
         .orb {
             position: fixed;
-            width: 40vw;
-            height: 40vw;
+            width: 50vw;
+            height: 50vw;
             border-radius: 50%;
             background: var(--primary);
-            filter: blur(120px);
-            opacity: 0.1;
+            filter: blur(140px);
+            opacity: 0.12;
             z-index: -1;
-            animation: float 20s infinite alternate;
+            pointer-events: none;
         }
-
-        .orb-1 { top: -10%; left: -10%; animation-delay: 0s; }
-        .orb-2 { bottom: -10%; right: -10%; background: #00d9ff; animation-delay: -5s; }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(100px, 50px) scale(1.1); }
-        }
+        .orb-1 { top: -20%; left: -10%; }
+        .orb-2 { bottom: -20%; right: -10%; background: #00d9ff; }
 
         header { padding: 80px 20px 40px; text-align: center; }
         
@@ -64,126 +56,112 @@
             font-size: clamp(2.5rem, 10vw, 5rem);
             font-weight: 800; margin: 0;
             letter-spacing: -2px;
-            background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.4) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            color: #ffffff;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
-        .search-wrap { width: 90%; max-width: 600px; margin-bottom: 50px; position: relative; }
+        .search-wrap { width: 90%; max-width: 600px; margin-bottom: 50px; }
         #moduleSearch {
             width: 100%; 
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.5); /* Darker input */
             border: 1px solid var(--glass-border);
             padding: 20px 30px;
             border-radius: 100px;
             color: #fff;
             font-size: 1.1rem;
             outline: none;
-            backdrop-filter: blur(30px);
-            transition: 0.4s cubic-bezier(0.2, 0, 0, 1);
+            backdrop-filter: blur(20px);
+            transition: 0.3s;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
         #moduleSearch:focus {
             border-color: var(--primary);
-            background: rgba(255,255,255,0.08);
-            box-shadow: 0 0 40px var(--primary-glow);
+            box-shadow: 0 0 30px var(--primary-glow);
         }
 
+        /* --- RECTANGLE CARDS (NO CLIPPED CORNERS) --- */
         .link-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 25px; width: 90%; max-width: 1200px;
-            margin-bottom: 120px;
+            gap: 20px; width: 90%; max-width: 1200px;
+            padding-bottom: 120px;
         }
 
         .game-link {
             position: relative;
             text-decoration: none;
-            background: var(--glass);
+            background: rgba(255, 255, 255, 0.03);
             height: 120px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-radius: 28px;
+            border-radius: 24px;
             border: 1px solid var(--glass-border);
             backdrop-filter: blur(15px);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
             overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
 
         .game-link:hover {
-            transform: translateY(-10px) scale(1.03);
-            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.08);
             border-color: var(--primary);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 25px var(--primary-glow);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
 
         .game-title {
-            font-weight: 500;
-            font-size: 1rem;
-            color: rgba(255,255,255,0.95);
-            letter-spacing: 0.5px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #ffffff;
+            text-align: center;
+            padding: 0 15px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9); /* Critical for readability */
         }
 
         .badge {
             position: absolute;
-            top: 14px; right: 14px;
+            top: 12px; right: 12px;
             font-size: 0.6rem;
             font-weight: 800;
-            padding: 4px 12px;
+            padding: 4px 10px;
             border-radius: 50px;
             background: var(--primary);
             color: #000;
             text-transform: uppercase;
-            box-shadow: 0 4px 10px var(--primary-glow);
         }
 
-        /* --- BOTTOM CONTROL BAR --- */
+        /* --- NAVIGATION --- */
         .bottom-controls {
             position: fixed; bottom: 30px; 
             display: flex; align-items: center; gap: 20px;
             z-index: 1000;
         }
 
-        .theme-panel {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(25px);
-            padding: 12px 24px;
-            border-radius: 100px;
+        .theme-panel, .support-btn {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
-            display: flex; gap: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 100px;
         }
 
+        .theme-panel { padding: 12px 24px; display: flex; gap: 15px; }
+        
         .support-btn {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(25px);
             padding: 12px 28px;
-            border-radius: 100px;
-            border: 1px solid var(--glass-border);
             color: #fff;
             text-decoration: none;
             font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 1px;
             transition: 0.3s;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .support-btn:hover {
             background: var(--primary);
             color: #000;
-            border-color: var(--primary);
-            box-shadow: 0 0 25px var(--primary-glow);
         }
 
-        .t-btn { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.3); transition: 0.2s; }
-        .t-btn:hover { transform: scale(1.2); border-color: #fff; }
-
+        .t-btn { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.3); }
     </style>
 </head>
 <body>
@@ -193,7 +171,7 @@
 
     <header>
         <h1>Nebula</h1>
-        <p style="opacity: 0.5; font-size: 0.75rem; letter-spacing: 5px; text-transform: uppercase; font-weight: 600;">System Online</p>
+        <p style="opacity: 0.6; font-size: 0.8rem; letter-spacing: 4px; text-transform: uppercase;">Cloud Gaming</p>
     </header>
 
     <div class="search-wrap">
@@ -209,9 +187,7 @@
             <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
             <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
         </div>
-        
-        <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" 
-           target="_blank" class="support-btn">SUPPORT</a>
+        <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" target="_blank" class="support-btn">SUPPORT</a>
     </div>
 
     <script>
@@ -246,7 +222,7 @@
         function buildArcade() {
             const container = document.getElementById('stable-container');
             container.innerHTML = games.map(game => `
-                <a href="${game.url}" target="_blank" rel="noopener noreferrer" class="game-link" data-name="${game.name.toLowerCase()}">
+                <a href="${game.url}" target="_blank" class="game-link" data-name="${game.name.toLowerCase()}">
                     ${game.tag ? `<span class="badge">${game.tag}</span>` : ''}
                     <span class="game-title">${game.name}</span>
                 </a>
@@ -255,14 +231,7 @@
 
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
-            const orbs = document.querySelectorAll('.orb');
-            if(theme === 'default') {
-                document.documentElement.removeAttribute('data-theme');
-                orbs[0].style.background = '#00ff88';
-            } else {
-                const colors = { cyber: '#ff00ff', ocean: '#00d9ff', amber: '#ffaa00' };
-                orbs[0].style.background = colors[theme];
-            }
+            if(theme === 'default') document.documentElement.removeAttribute('data-theme');
         }
 
         function filterGames() {
