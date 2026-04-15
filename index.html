@@ -21,7 +21,6 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg);
-            /* Animated gradient background */
             background: radial-gradient(circle at 50% 0%, #0a1a14 0%, #030303 70%);
             color: var(--text);
             margin: 0;
@@ -45,7 +44,7 @@
             pointer-events: none;
         }
 
-        header { text-align: center; padding: 80px 20px 40px; }
+        header { text-align: center; padding: 100px 20px 60px; }
         
         h1 {
             font-family: 'Orbitron', sans-serif;
@@ -64,27 +63,6 @@
         }
 
         .subtitle { color: var(--primary); opacity: 0.8; margin-top: 15px; font-size: 0.85rem; letter-spacing: 6px; text-transform: uppercase; font-family: 'Orbitron'; }
-
-        /* Support Button */
-        .donate-link {
-            display: inline-block;
-            margin-top: 25px;
-            padding: 10px 30px;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            text-decoration: none;
-            font-family: 'Orbitron';
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            border-radius: 4px;
-            transition: 0.3s;
-            background: rgba(0, 255, 136, 0.05);
-        }
-        .donate-link:hover {
-            background: var(--primary);
-            color: #000;
-            box-shadow: 0 0 20px var(--primary);
-        }
 
         .status-panel {
             width: 90%; max-width: 1100px;
@@ -175,13 +153,14 @@
         .game-link.is-down .game-title { color: var(--error); }
 
         footer { 
-            padding: 80px; text-align: center; color: rgba(255,255,255,0.2); 
+            padding: 100px; text-align: center; color: rgba(255,255,255,0.2); 
             font-size: 0.75rem; font-family: 'Orbitron'; letter-spacing: 5px; 
         }
 
         @media (max-width: 600px) {
             .status-panel { grid-template-columns: 1fr 1fr; }
             h1 { letter-spacing: 6px; }
+            header { padding: 60px 20px 40px; }
         }
     </style>
 </head>
@@ -190,7 +169,6 @@
     <header>
         <h1>Nebula Games</h1>
         <div class="subtitle">System Operator: DC</div>
-        <a href="YOUR_GOFUNDME_LINK_HERE" class="donate-link" target="_blank">⚡ SUPPORT SYSTEM</a>
     </header>
 
     <div class="status-panel">
@@ -255,7 +233,6 @@
         async function updateLiveStats() {
             const startTime = performance.now();
             try {
-                // If running locally, fetch might fail. We use a fallback.
                 const resp = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
                 const endTime = performance.now();
                 const ping = Math.round(endTime - startTime);
@@ -277,7 +254,6 @@
             stableBox.innerHTML = '';
             errorBox.innerHTML = '';
 
-            // Enhanced logic: Don't mark everything offline if testing locally
             const isLocal = window.location.protocol === 'file:';
 
             const statusChecks = await Promise.all(games.map(async (game) => {
@@ -330,7 +306,7 @@
     </script>
 
     <footer>
-        DC × AK × NEBULA SYSTEMS // GRID V3.5.0-PRO
+        DC × AK × NEBULA SYSTEMS // GRID V3.5.0-CORE
     </footer>
 </body>
 </html>
