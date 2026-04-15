@@ -9,7 +9,7 @@
         :root {
             --primary: #00ff88;
             --primary-glow: rgba(0, 255, 136, 0.4);
-            --bg: #050608; /* Deep black-blue for contrast */
+            --bg: #050608;
             --glass: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.12);
             --text: #ffffff;
@@ -29,17 +29,14 @@
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
-            /* Static dark gradient to ensure readability */
             background-image: 
                 radial-gradient(circle at 0% 0%, rgba(0, 255, 136, 0.07) 0%, transparent 40%),
                 radial-gradient(circle at 100% 100%, rgba(0, 217, 255, 0.07) 0%, transparent 40%);
         }
 
-        /* --- VIBRANT ORBS --- */
         .orb {
             position: fixed;
-            width: 50vw;
-            height: 50vw;
+            width: 50vw; height: 50vw;
             border-radius: 50%;
             background: var(--primary);
             filter: blur(140px);
@@ -60,10 +57,11 @@
             text-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
+        /* --- SEARCH --- */
         .search-wrap { width: 90%; max-width: 600px; margin-bottom: 50px; }
         #moduleSearch {
             width: 100%; 
-            background: rgba(0, 0, 0, 0.5); /* Darker input */
+            background: rgba(0, 0, 0, 0.5);
             border: 1px solid var(--glass-border);
             padding: 20px 30px;
             border-radius: 100px;
@@ -75,12 +73,9 @@
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
-        #moduleSearch:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 30px var(--primary-glow);
-        }
+        #moduleSearch:focus { border-color: var(--primary); box-shadow: 0 0 30px var(--primary-glow); }
 
-        /* --- RECTANGLE CARDS (NO CLIPPED CORNERS) --- */
+        /* --- GRID --- */
         .link-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -116,19 +111,82 @@
             color: #ffffff;
             text-align: center;
             padding: 0 15px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.9); /* Critical for readability */
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9);
         }
 
         .badge {
             position: absolute;
             top: 12px; right: 12px;
-            font-size: 0.6rem;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 50px;
-            background: var(--primary);
-            color: #000;
+            font-size: 0.6rem; font-weight: 800;
+            padding: 4px 10px; border-radius: 50px;
+            background: var(--primary); color: #000;
             text-transform: uppercase;
+        }
+
+        /* --- ACCOUNT INTERFACE --- */
+        .top-right-nav { position: absolute; top: 30px; right: 30px; }
+        .acc-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+        .acc-btn:hover { background: var(--primary); color: #000; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(12px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 32px;
+            width: 90%; max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+
+        .login-card h2 { margin-top: 0; font-size: 2rem; }
+        .login-card p { opacity: 0.6; font-size: 0.9rem; margin-bottom: 30px; }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            margin: 8px 0;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            color: #fff;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .login-btn {
+            width: 100%; padding: 15px; margin-top: 20px;
+            background: var(--primary);
+            border: none; border-radius: 15px;
+            font-weight: 800; cursor: pointer;
+            transition: 0.3s;
+        }
+        .login-btn:hover { transform: scale(1.02); box-shadow: 0 0 15px var(--primary-glow); }
+
+        .close-modal {
+            position: absolute; top: 20px; right: 20px;
+            background: none; border: none; color: #fff;
+            font-size: 1.5rem; cursor: pointer;
         }
 
         /* --- NAVIGATION --- */
@@ -146,21 +204,8 @@
         }
 
         .theme-panel { padding: 12px 24px; display: flex; gap: 15px; }
-        
-        .support-btn {
-            padding: 12px 28px;
-            color: #fff;
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 700;
-            transition: 0.3s;
-        }
-
-        .support-btn:hover {
-            background: var(--primary);
-            color: #000;
-        }
-
+        .support-btn { padding: 12px 28px; color: #fff; text-decoration: none; font-size: 0.8rem; font-weight: 700; transition: 0.3s; }
+        .support-btn:hover { background: var(--primary); color: #000; }
         .t-btn { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.3); }
     </style>
 </head>
@@ -168,6 +213,10 @@
 
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
+
+    <div class="top-right-nav">
+        <button id="userBtn" class="acc-btn" onclick="toggleModal()">JOIN NEBULA</button>
+    </div>
 
     <header>
         <h1>Nebula</h1>
@@ -179,6 +228,18 @@
     </div>
 
     <div id="stable-container" class="link-container"></div>
+
+    <div id="loginModal" class="modal-overlay">
+        <div class="login-card">
+            <button class="close-modal" onclick="toggleModal()">&times;</button>
+            <h2>Join Nebula</h2>
+            <p>Enter a username to save your scores on this device.</p>
+            <div class="input-group">
+                <input type="text" id="usernameInput" placeholder="Username">
+            </div>
+            <button class="login-btn" onclick="saveUser()">START GAMING</button>
+        </div>
+    </div>
 
     <div class="bottom-controls">
         <div class="theme-panel">
@@ -219,6 +280,31 @@
             { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
         ];
 
+        // --- ACCOUNT LOGIC ---
+        function toggleModal() {
+            const modal = document.getElementById('loginModal');
+            modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function saveUser() {
+            const user = document.getElementById('usernameInput').value;
+            if(user) {
+                localStorage.setItem('nebula_user', user);
+                checkUser();
+                toggleModal();
+            } else {
+                alert("Please enter a username!");
+            }
+        }
+
+        function checkUser() {
+            const savedUser = localStorage.getItem('nebula_user');
+            if(savedUser) {
+                document.getElementById('userBtn').innerText = savedUser.toUpperCase();
+            }
+        }
+
+        // --- CORE FUNCTIONS ---
         function buildArcade() {
             const container = document.getElementById('stable-container');
             container.innerHTML = games.map(game => `
@@ -241,7 +327,9 @@
             });
         }
 
+        // Initialize
         buildArcade();
+        checkUser();
     </script>
 </body>
 </html>
