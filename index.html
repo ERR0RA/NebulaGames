@@ -3,25 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nebula Games | Official Arcade</title>
+    <title>Nebula Games | Core Terminal</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #00ff88;
-            --primary-glow: rgba(0, 255, 136, 0.3);
-            --bg: #050505;
-            --card-bg: rgba(255, 255, 255, 0.04);
-            --card-border: rgba(255, 255, 255, 0.1);
+            --primary-glow: rgba(0, 255, 136, 0.4);
+            --bg: #030303;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
             --text: #ffffff;
             --updating: #ffcc00;
-            --error: #ff3333;
-            --info: #00ccff;
+            --error: #ff3366;
+            --info: #00d9ff;
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg);
-            background-image: radial-gradient(circle at 50% -20%, #11221a 0%, #050505 80%);
+            /* Animated gradient background */
+            background: radial-gradient(circle at 50% 0%, #0a1a14 0%, #030303 70%);
             color: var(--text);
             margin: 0;
             display: flex;
@@ -31,83 +32,157 @@
             overflow-x: hidden;
         }
 
-        header { text-align: center; padding: 60px 20px 30px; }
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: clamp(2.5rem, 8vw, 4rem);
-            font-weight: 900; margin: 0;
-            letter-spacing: 12px; text-transform: uppercase;
-            background: linear-gradient(to bottom, #fff, var(--primary));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 15px var(--primary-glow));
+        /* Scanline Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 9999;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
         }
 
-        .subtitle { color: var(--primary); opacity: 0.6; margin-top: 10px; font-size: 0.8rem; letter-spacing: 5px; text-transform: uppercase; }
+        header { text-align: center; padding: 80px 20px 40px; }
+        
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 900; margin: 0;
+            letter-spacing: 15px; text-transform: uppercase;
+            background: linear-gradient(to bottom, #fff 30%, var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px var(--primary-glow));
+            animation: titlePulse 4s infinite alternate;
+        }
+
+        @keyframes titlePulse {
+            from { filter: drop-shadow(0 0 10px var(--primary-glow)); }
+            to { filter: drop-shadow(0 0 30px var(--primary-glow)); }
+        }
+
+        .subtitle { color: var(--primary); opacity: 0.8; margin-top: 15px; font-size: 0.85rem; letter-spacing: 6px; text-transform: uppercase; font-family: 'Orbitron'; }
+
+        /* Support Button */
+        .donate-link {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 10px 30px;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            text-decoration: none;
+            font-family: 'Orbitron';
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            border-radius: 4px;
+            transition: 0.3s;
+            background: rgba(0, 255, 136, 0.05);
+        }
+        .donate-link:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 20px var(--primary);
+        }
 
         .status-panel {
             width: 90%; max-width: 1100px;
-            background: rgba(0, 255, 136, 0.03);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            border-radius: 12px; padding: 25px;
+            background: rgba(10, 10, 10, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: 16px; padding: 30px;
             margin-bottom: 40px; display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;
-            backdrop-filter: blur(10px); box-sizing: border-box;
+            backdrop-filter: blur(20px); box-sizing: border-box;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
-        .status-item { display: flex; flex-direction: column; gap: 5px; }
-        .status-label { font-family: 'Orbitron', sans-serif; font-size: 0.65rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
-        .status-value { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; transition: all 0.3s ease; text-shadow: 0 0 8px currentColor; }
+
+        .status-item { display: flex; flex-direction: column; gap: 8px; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 15px; }
+        .status-label { font-family: 'Orbitron', sans-serif; font-size: 0.6rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 2px; }
+        .status-value { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; text-shadow: 0 0 10px currentColor; }
         
         .online { color: var(--primary); }
         .offline { color: var(--error); }
         .traffic-accent { color: var(--info); }
 
-        .search-container { width: 90%; max-width: 1100px; margin-bottom: 20px; }
+        .search-container { width: 90%; max-width: 1100px; margin-bottom: 30px; position: relative; }
         #moduleSearch {
-            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
-            padding: 12px 20px; border-radius: 8px; color: #fff; font-family: 'Orbitron';
-            outline: none; transition: 0.3s; box-sizing: border-box;
+            width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--card-border);
+            padding: 18px 25px; border-radius: 12px; color: #fff; font-family: 'Orbitron';
+            font-size: 0.9rem; outline: none; transition: 0.4s; box-sizing: border-box;
+            letter-spacing: 1px;
         }
-        #moduleSearch:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+        #moduleSearch:focus { 
+            border-color: var(--primary); 
+            background: rgba(255,255,255,0.07);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.15); 
+        }
 
         h5 {
-            font-family: 'Orbitron', sans-serif; color: #fff;
-            text-transform: uppercase; letter-spacing: 3px;
-            margin: 20px 0; width: 90%; max-width: 1100px;
-            font-size: 0.95rem; border-left: 4px solid var(--primary); padding-left: 15px;
+            font-family: 'Orbitron', sans-serif; color: rgba(255,255,255,0.9);
+            text-transform: uppercase; letter-spacing: 4px;
+            margin: 30px 0 20px; width: 90%; max-width: 1100px;
+            font-size: 1rem; border-left: 3px solid var(--primary); padding-left: 15px;
         }
 
         .link-container {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 15px; width: 90%; max-width: 1100px; margin-bottom: 50px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px; width: 90%; max-width: 1100px; margin-bottom: 60px;
         }
 
         .game-link {
             position: relative; background: var(--card-bg);
-            text-decoration: none; height: 90px;
-            border-radius: 10px; border: 1px solid var(--card-border);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none; height: 110px;
+            border-radius: 14px; border: 1px solid var(--card-border);
+            transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1);
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
         }
 
-        .game-link:hover:not(.is-down) {
-            background: rgba(0, 255, 136, 0.1);
-            border-color: var(--primary);
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px var(--primary-glow);
+        .game-link::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            transition: 0.5s;
         }
 
-        .game-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.9rem; color: #fff; text-align: center; z-index: 2; padding: 0 10px; }
+        .game-link:hover:not(.is-down) {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: var(--primary);
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 15px var(--primary-glow);
+        }
 
-        .badge { position: absolute; top: 0; right: 0; font-size: 0.55rem; padding: 4px 10px; font-weight: 900; text-transform: uppercase; border-bottom-left-radius: 8px; z-index: 3; }
-        .best { background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary); }
+        .game-link:hover::before { left: 100%; }
+
+        .game-title { 
+            font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.95rem; 
+            color: #fff; text-align: center; z-index: 2; padding: 0 15px;
+            letter-spacing: 1px; transition: 0.3s;
+        }
+
+        .game-link:hover .game-title { color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); }
+
+        .badge { 
+            position: absolute; top: 0; right: 0; font-size: 0.6rem; 
+            padding: 5px 12px; font-weight: 900; text-transform: uppercase; 
+            border-bottom-left-radius: 10px; z-index: 3; font-family: 'Orbitron';
+        }
+        .best { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
         .upd { background: var(--updating); color: #000; }
         .down { background: var(--error); color: #fff; }
 
-        .game-link.is-down { opacity: 0.3; cursor: not-allowed; border-color: var(--error) !important; filter: grayscale(1); }
+        .game-link.is-down { opacity: 0.4; cursor: not-allowed; border-color: var(--error) !important; }
         .game-link.is-down .game-title { color: var(--error); }
 
-        footer { padding: 60px; text-align: center; color: #333; font-size: 0.8rem; font-family: 'Orbitron'; letter-spacing: 3px; }
+        footer { 
+            padding: 80px; text-align: center; color: rgba(255,255,255,0.2); 
+            font-size: 0.75rem; font-family: 'Orbitron'; letter-spacing: 5px; 
+        }
+
+        @media (max-width: 600px) {
+            .status-panel { grid-template-columns: 1fr 1fr; }
+            h1 { letter-spacing: 6px; }
+        }
     </style>
 </head>
 <body>
@@ -115,28 +190,25 @@
     <header>
         <h1>Nebula Games</h1>
         <div class="subtitle">System Operator: DC</div>
+        <a href="YOUR_GOFUNDME_LINK_HERE" class="donate-link" target="_blank">⚡ SUPPORT SYSTEM</a>
     </header>
 
     <div class="status-panel">
-        <div class="status-item">
+        <div class="status-item" style="border:none">
             <span class="status-label">Archive Status</span>
             <span id="global-status" class="status-value online">● SYSTEM READY</span>
         </div>
         <div class="status-item">
-            <span class="status-label">Live Ping</span>
+            <span class="status-label">Latency</span>
             <span id="ping-value" class="status-value online">-- ms</span>
         </div>
         <div class="status-item">
             <span class="status-label">Global Traffic</span>
-            <span id="traffic-value" class="status-value traffic-accent">Initializing...</span>
+            <span id="traffic-value" class="status-value traffic-accent">ANALYZING...</span>
         </div>
         <div class="status-item">
-            <span class="status-label">Active Modules</span>
+            <span class="status-label">Live Modules</span>
             <span id="active-count" class="status-value">--</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">System Faults</span>
-            <span id="error-count" class="status-value offline">--</span>
         </div>
     </div>
 
@@ -183,21 +255,16 @@
         async function updateLiveStats() {
             const startTime = performance.now();
             try {
-                // Head requests might fail locally, but we wrap in try/catch
-                await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+                // If running locally, fetch might fail. We use a fallback.
+                const resp = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
                 const endTime = performance.now();
                 const ping = Math.round(endTime - startTime);
-                const pingEl = document.getElementById('ping-value');
-                pingEl.innerText = `${ping} ms`;
-                
-                if (ping < 100) pingEl.style.color = "var(--primary)";
-                else if (ping < 250) pingEl.style.color = "var(--updating)";
-                else pingEl.style.color = "var(--error)";
+                document.getElementById('ping-value').innerText = `${ping} ms`;
             } catch (err) {
-                document.getElementById('ping-value').innerText = "LOCAL";
+                document.getElementById('ping-value').innerText = "STABLE";
             }
 
-            const trafficStates = ["Minimal", "Low", "Steady", "Moderate", "Nominal", "Peak"];
+            const trafficStates = ["MINIMAL", "NOMINAL", "STABLE", "MODERATE", "PEAK"];
             document.getElementById('traffic-value').innerText = trafficStates[Math.floor(Math.random() * trafficStates.length)];
         }
 
@@ -210,9 +277,12 @@
             stableBox.innerHTML = '';
             errorBox.innerHTML = '';
 
+            // Enhanced logic: Don't mark everything offline if testing locally
+            const isLocal = window.location.protocol === 'file:';
+
             const statusChecks = await Promise.all(games.map(async (game) => {
+                if(isLocal) return { ...game, isDown: false };
                 try {
-                    // NOTE: If running locally without a server, this will always return 'isDown: true'
                     const resp = await fetch(game.url, { method: 'HEAD' });
                     return { ...game, isDown: !resp.ok };
                 } catch (e) {
@@ -224,7 +294,7 @@
                 if (game.isDown) {
                     errorBox.innerHTML += `
                         <div class="game-link is-down" data-name="${game.name.toLowerCase()}">
-                            <span class="badge down">Fault</span>
+                            <span class="badge down">FAULT</span>
                             <span class="game-title">${game.name}</span>
                         </div>`;
                     errorCount++;
@@ -239,8 +309,7 @@
                 }
             });
 
-            document.getElementById('active-count').innerText = `${stableCount} Modules`;
-            document.getElementById('error-count').innerText = `${errorCount} Issues`;
+            document.getElementById('active-count').innerText = `${stableCount}`;
             const globalStatus = document.getElementById('global-status');
             globalStatus.innerText = errorCount > 0 ? "● ISSUES DETECTED" : "● OPERATIONAL";
             globalStatus.className = `status-value ${errorCount > 0 ? 'offline' : 'online'}`;
@@ -255,14 +324,13 @@
             });
         }
 
-        // Init
         buildArcade();
         updateLiveStats();
-        setInterval(updateLiveStats, 3000);
+        setInterval(updateLiveStats, 5000);
     </script>
 
     <footer>
-        DC × AK × NEBULA SYSTEMS // GRID V3.4.0
+        DC × AK × NEBULA SYSTEMS // GRID V3.5.0-PRO
     </footer>
 </body>
 </html>
