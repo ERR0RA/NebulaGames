@@ -31,7 +31,6 @@
             overflow-x: hidden;
         }
 
-        /* Ambient Background Glows */
         .bg-glow {
             position: fixed;
             width: 50vw; height: 50vw;
@@ -54,7 +53,6 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* --- MODERN SEARCH --- */
         .search-wrap { width: 90%; max-width: 600px; margin-bottom: 50px; position: relative; }
         #moduleSearch {
             width: 100%; 
@@ -73,16 +71,13 @@
             border-color: var(--primary);
             background: rgba(255,255,255,0.06);
             box-shadow: 0 0 30px var(--primary-glow);
-            width: 110%;
-            margin-left: -5%;
         }
 
-        /* --- ROUNDED GLASS GRID --- */
         .link-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 20px; width: 90%; max-width: 1200px;
-            margin-bottom: 100px;
+            margin-bottom: 120px;
         }
 
         .game-link {
@@ -115,7 +110,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Badge Styling */
         .badge {
             position: absolute;
             top: 12px; right: 12px;
@@ -128,14 +122,40 @@
             text-transform: uppercase;
         }
 
-        .theme-panel {
+        /* --- BOTTOM CONTROL BAR --- */
+        .bottom-controls {
             position: fixed; bottom: 30px; 
+            display: flex; align-items: center; gap: 20px;
+            z-index: 1000;
+        }
+
+        .theme-panel {
             background: var(--glass);
             backdrop-filter: blur(20px);
             padding: 10px 20px;
             border-radius: 100px;
             border: 1px solid var(--glass-border);
             display: flex; gap: 15px;
+        }
+
+        .support-btn {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            padding: 10px 25px;
+            border-radius: 100px;
+            border: 1px solid var(--glass-border);
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            transition: 0.3s;
+        }
+
+        .support-btn:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 20px var(--primary-glow);
         }
 
         .t-btn { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); }
@@ -157,11 +177,16 @@
 
     <div id="stable-container" class="link-container"></div>
 
-    <div class="theme-panel">
-        <div class="t-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
-        <div class="t-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
-        <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
-        <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+    <div class="bottom-controls">
+        <div class="theme-panel">
+            <div class="t-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
+            <div class="t-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
+            <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
+            <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+        </div>
+        
+        <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" 
+           target="_blank" class="support-btn">SUPPORT TICKET</a>
     </div>
 
     <script>
