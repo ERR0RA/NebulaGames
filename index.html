@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nebula | Glass-Blade Interface</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+    <title>Nebula Games | Core Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&family=Fira+Code:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #00ff88;
             --primary-glow: rgba(0, 255, 136, 0.4);
-            --bg: #050505;
-            --blade-bg: rgba(255, 255, 255, 0.03);
+            --bg: #030303;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
             --text: #ffffff;
+            --updating: #ffcc00;
+            --error: #ff3366;
+            --info: #00d9ff;
         }
 
         [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.4); }
@@ -19,7 +23,7 @@
         [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.4); }
 
         body {
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
@@ -28,145 +32,224 @@
             align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
+            cursor: crosshair;
         }
 
-        #canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.1; }
-
-        header { padding: 60px 0 20px; text-align: center; }
-        h1 { font-size: 3.5rem; letter-spacing: 20px; margin: 0; color: #fff; text-shadow: 0 0 15px var(--primary-glow); }
-
-        .status-row {
-            display: flex; gap: 40px; margin-bottom: 40px; 
-            font-size: 0.7rem; color: var(--primary); letter-spacing: 2px;
+        /* --- BOOT SEQUENCE OVERLAY --- */
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px;
+            font-family: 'Fira+Code', monospace;
+            color: var(--primary);
+            font-size: 0.8rem;
+            overflow: hidden;
+            transition: opacity 1s ease;
         }
 
-        .search-wrap { width: 90%; max-width: 800px; margin-bottom: 50px; }
+        /* --- MATRIX CANVAS --- */
+        #canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        /* --- CRT SCANLINES --- */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 9998;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+
+        header { text-align: center; padding: 60px 20px 30px; perspective: 1000px; }
+        
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: 900; margin: 0;
+            letter-spacing: 12px;
+            background: linear-gradient(to bottom, #fff 30%, var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px var(--primary-glow));
+            animation: glitch 5s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            1% { transform: translate(-2px, 2px); }
+            2% { transform: translate(2px, -2px); }
+            3% { transform: translate(0); }
+        }
+
+        .subtitle { color: var(--primary); opacity: 0.8; margin-top: 10px; font-size: 0.75rem; letter-spacing: 5px; text-transform: uppercase; font-family: 'Orbitron'; }
+
+        .status-panel {
+            width: 95%; max-width: 1100px;
+            background: rgba(10, 10, 10, 0.85);
+            border: 1px solid var(--card-border);
+            border-radius: 4px; padding: 25px;
+            margin-bottom: 30px; display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;
+            backdrop-filter: blur(15px); box-sizing: border-box;
+            box-shadow: inset 0 0 20px rgba(0,255,136, 0.05);
+        }
+
+        .status-item { display: flex; flex-direction: column; gap: 5px; border-left: 2px solid var(--primary); padding-left: 15px; }
+        .status-label { font-family: 'Orbitron'; font-size: 0.55rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 2px; }
+        .status-value { font-family: 'Fira Code', monospace; font-size: 0.9rem; font-weight: 500; text-shadow: 0 0 8px currentColor; }
+        
+        .theme-grid { display: flex; gap: 8px; margin-top: 5px; }
+        .theme-btn { width: 18px; height: 18px; border: 1px solid #fff; cursor: pointer; transition: 0.3s; }
+        .theme-btn:hover { transform: scale(1.3); box-shadow: 0 0 10px #fff; }
+
+        .search-container { width: 95%; max-width: 1100px; margin-bottom: 25px; }
         #moduleSearch {
-            width: 100%; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 15px; color: #fff; font-family: 'Fira Code'; font-size: 1.2rem; outline: none;
-            transition: 0.3s; text-align: center;
+            width: 100%; background: #000; border: 1px solid var(--card-border);
+            padding: 15px 20px; border-radius: 0; color: var(--primary); font-family: 'Fira Code';
+            outline: none; transition: 0.3s; box-sizing: border-box;
+            border-bottom: 2px solid var(--primary);
         }
-        #moduleSearch:focus { border-bottom-color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); }
 
-        /* --- THE GLASS BLADE DESIGN --- */
         .link-container {
-            width: 90%; max-width: 900px;
-            display: flex; flex-direction: column; gap: 10px;
-            margin-bottom: 100px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px; width: 95%; max-width: 1100px; margin-bottom: 50px;
+            perspective: 1000px;
         }
 
         .game-link {
-            position: relative;
-            text-decoration: none;
-            background: var(--blade-bg);
-            height: 60px;
-            display: flex;
-            align-items: center;
-            padding: 0 30px;
-            transition: 0.2s ease-in-out;
-            border-left: 4px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(5px);
+            position: relative; background: var(--card-bg);
+            text-decoration: none; height: 100px;
+            border: 1px solid var(--card-border);
+            transition: transform 0.1s ease, box-shadow 0.3s ease; 
+            display: flex; align-items: center; justify-content: center;
             overflow: hidden;
-        }
-
-        /* The Neon Power bar on the left */
-        .game-link::before {
-            content: "";
-            position: absolute;
-            left: -4px; top: 0; bottom: 0; width: 4px;
-            background: var(--primary);
-            box-shadow: 0 0 20px var(--primary);
-            transform: scaleY(0);
-            transition: 0.3s;
+            transform-style: preserve-3d;
         }
 
         .game-link:hover {
-            background: rgba(255, 255, 255, 0.07);
-            transform: translateX(10px);
-            border-left-color: transparent;
+            border-color: var(--primary);
+            box-shadow: 0 0 25px var(--primary-glow);
+            z-index: 10;
         }
 
-        .game-link:hover::before { transform: scaleY(1); }
-
-        .game-title {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 1rem;
-            letter-spacing: 3px;
-            transition: 0.3s;
+        .game-title { 
+            font-family: 'Orbitron'; font-weight: 700; font-size: 0.85rem; 
+            color: #fff; transform: translateZ(20px);
         }
 
-        .game-link:hover .game-title {
-            color: #fff;
-            text-shadow: 0 0 10px #fff;
-        }
-
-        .tag {
-            margin-left: auto;
-            font-size: 0.6rem;
-            padding: 2px 10px;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            opacity: 0.5;
-        }
-
-        .theme-switcher {
-            position: fixed; bottom: 30px; left: 30px;
-            display: flex; gap: 15px; background: rgba(0,0,0,0.5);
-            padding: 15px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .t-btn { width: 15px; height: 15px; border-radius: 50%; cursor: pointer; border: 1px solid #fff; }
+        .badge { position: absolute; top: 0; left: 0; font-size: 0.5rem; padding: 4px 10px; font-weight: 900; background: var(--primary); color: #000; font-family: 'Orbitron'; }
+        
+        footer { padding: 50px; text-align: center; color: var(--primary); opacity: 0.3; font-size: 0.6rem; font-family: 'Fira Code'; }
 
     </style>
 </head>
 <body>
 
+    <div id="boot-screen">
+        <div id="boot-logs"></div>
+    </div>
+
     <canvas id="canvas"></canvas>
 
     <header>
-        <h1>NEBULA</h1>
-        <div class="status-row">
-            <span>CORE_OS: STABLE</span>
-            <span id="clock">00:00:00</span>
-            <span>PING: <span id="ping">12</span>MS</span>
-        </div>
+        <h1 id="main-title">Nebula Games</h1>
+        <div class="subtitle">Neural Link Status: <span style="color:var(--primary)">ACTIVE</span></div>
     </header>
 
-    <div class="search-wrap">
-        <input type="text" id="moduleSearch" placeholder="[ ENTER_QUERY ]" onkeyup="filterGames()">
+    <div class="status-panel">
+        <div class="status-item" style="border:none">
+            <span class="status-label">Local Time</span>
+            <span id="system-clock" class="status-value">00:00:00</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Interface Skins</span>
+            <div class="theme-grid">
+                <div class="theme-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
+                <div class="theme-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
+                <div class="theme-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
+                <div class="theme-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+            </div>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Packet Flow</span>
+            <span id="packet-flow" class="status-value" style="color:var(--info)">0.00 kb/s</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Sub-Systems</span>
+            <span id="active-count" class="status-value">-- READY</span>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="moduleSearch" placeholder="> QUERY SYSTEM MODULES..." onkeyup="filterGames()">
     </div>
 
     <div id="stable-container" class="link-container"></div>
 
-    <div class="theme-switcher">
-        <div class="t-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
-        <div class="t-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
-        <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
-        <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
-    </div>
-
     <script>
+        // --- BOOT LOGIC ---
+        const logData = [
+            "Initializing Nebula BIOS v3.6.0...",
+            "Loading Neural Core...",
+            "Verifying Grid Certificates...",
+            "Establishing Secure Tunnel...",
+            "Decrypting Game Modules...",
+            "Syncing with Operator DC...",
+            "SYSTEM READY."
+        ];
+        
+        const bootLogs = document.getElementById('boot-logs');
+        let logIndex = 0;
+
+        function runBoot() {
+            if(logIndex < logData.length) {
+                const p = document.createElement('p');
+                p.textContent = `> ${logData[logIndex]}`;
+                bootLogs.appendChild(p);
+                logIndex++;
+                setTimeout(runBoot, Math.random() * 400);
+            } else {
+                setTimeout(() => {
+                    document.getElementById('boot-screen').style.opacity = '0';
+                    setTimeout(() => document.getElementById('boot-screen').style.display = 'none', 1000);
+                }, 500);
+            }
+        }
+        runBoot();
+
+        // --- GAME DATABASE ---
         const games = [
-            { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "BEST" },
-            { name: "Blockcraft", url: "blockcraft.html", tag: "UPD" },
-            { name: "Minesweeper", url: "minesweeper.html", tag: "BEST" },
-            { name: "Neon Snake", url: "snake.html", tag: "BEST" },
-            { name: "Master Armory", url: "masterarmory.html", tag: "BEST" },
-            { name: "Neon Pong", url: "Neon-Pong.html", tag: "BEST" },
+            { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "best" },
+            { name: "Blockcraft", url: "blockcraft.html", tag: "upd" },
+            { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
+            { name: "Neon Snake", url: "snake.html", tag: "best" },
+            { name: "Master Armory", url: "masterarmory.html", tag: "best" },
+            { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
             { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
             { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
             { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
             { name: "Neon Slamz", url: "Neon-Slams.html", tag: "" },
             { name: "Neon Trail", url: "neon-trail.html", tag: "" },
             { name: "Block Blast", url: "blockblast.html", tag: "" },
-            { name: "Neon Run", url: "ai.html", tag: "" },
             { name: "Basketball", url: "basketball.html", tag: "" },
             { name: "Football", url: "football.html", tag: "" },
             { name: "Cricket", url: "cricket.html", tag: "" },
             { name: "Crossy Roads", url: "crossyroads.html", tag: "" },
             { name: "Drift", url: "drift.html", tag: "" },
-            { name: "Eggshell (EGGVP)", url: "eggshell.html", tag: "UPD" },
-            { name: "Overdrive", url: "overdrive.html", tag: "" },
+            { name: "Eggshell (EGGVP)", url: "eggshell.html", tag: "upd" },
             { name: "Pacman", url: "pacman.html", tag: "" },
             { name: "Space Adventure", url: "spaceadventure.html", tag: "" },
             { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
@@ -174,53 +257,98 @@
             { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
         ];
 
-        function buildArcade() {
-            const container = document.getElementById('stable-container');
-            container.innerHTML = games.map(game => `
-                <a href="${game.url}" class="game-link" data-name="${game.name.toLowerCase()}">
-                    <span class="game-title">${game.name}</span>
-                    ${game.tag ? `<span class="tag">${game.tag}</span>` : ''}
-                </a>
-            `).join('');
-        }
-
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            if(theme === 'default') document.documentElement.removeAttribute('data-theme');
-        }
-
-        function filterGames() {
-            const val = document.getElementById('moduleSearch').value.toLowerCase();
-            document.querySelectorAll('.game-link').forEach(el => {
-                el.style.display = el.dataset.name.includes(val) ? 'flex' : 'none';
-            });
-        }
-
-        setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
-            document.getElementById('ping').innerText = Math.floor(Math.random() * 10 + 10);
-        }, 1000);
-
-        // Minimalist Matrix
+        // --- MATRIX CORE ---
+        let matrixColor = '#00ff88';
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
-        const drops = Array(Math.floor(width/20)).fill(1);
+        const fontSize = 12;
+        const columns = width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
 
-        function draw() {
-            ctx.fillStyle = "rgba(5, 5, 5, 0.15)";
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
             ctx.fillRect(0, 0, width, height);
-            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
-            ctx.font = "12px monospace";
-            drops.forEach((y, i) => {
-                const char = Math.random() > 0.5 ? "0" : "1";
-                ctx.fillText(char, i * 20, y * 20);
-                if (y * 20 > height && Math.random() > 0.98) drops[i] = 0;
+            ctx.fillStyle = matrixColor;
+            ctx.font = fontSize + "px 'Fira Code'";
+            for (let i = 0; i < drops.length; i++) {
+                const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
                 drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 40);
+
+        // --- THEME SELECTOR ---
+        function setTheme(theme) {
+            const root = document.documentElement;
+            if(theme === 'default') {
+                root.removeAttribute('data-theme');
+                matrixColor = '#00ff88';
+            } else {
+                root.setAttribute('data-theme', theme);
+                matrixColor = theme === 'cyber' ? '#ff00ff' : theme === 'ocean' ? '#00d9ff' : '#ffaa00';
+            }
+        }
+
+        // --- 3D TILT EFFECT ---
+        function handleTilt(e) {
+            const link = e.currentTarget;
+            const rect = link.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = (y - centerY) / 5;
+            const rotateY = (centerX - x) / 5;
+
+            link.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+        }
+
+        function resetTilt(e) {
+            e.currentTarget.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+        }
+
+        // --- INITIALIZE INTERFACE ---
+        function buildArcade() {
+            const container = document.getElementById('stable-container');
+            container.innerHTML = games.map(game => `
+                <a href="${game.url}" class="game-link" data-name="${game.name.toLowerCase()}">
+                    ${game.tag ? `<span class="badge">${game.tag.toUpperCase()}</span>` : ''}
+                    <span class="game-title">${game.name}</span>
+                </a>
+            `).join('');
+            
+            document.querySelectorAll('.game-link').forEach(link => {
+                link.addEventListener('mousemove', handleTilt);
+                link.addEventListener('mouseleave', resetTilt);
+            });
+            
+            document.getElementById('active-count').innerText = `${games.length} READY`;
+        }
+
+        // --- SYSTEM CLOCK & TRAFFIC ---
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('system-clock').innerText = now.toTimeString().split(' ')[0];
+            
+            const flow = (Math.random() * 50).toFixed(2);
+            document.getElementById('packet-flow').innerText = `${flow} kb/s`;
+        }, 1000);
+
+        function filterGames() {
+            const input = document.getElementById('moduleSearch').value.toLowerCase();
+            document.querySelectorAll('.game-link').forEach(link => {
+                link.style.display = link.dataset.name.includes(input) ? "flex" : "none";
             });
         }
-        setInterval(draw, 60);
+
+        window.onresize = () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        };
 
         buildArcade();
     </script>
