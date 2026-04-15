@@ -8,147 +8,114 @@
     <style>
         :root {
             --primary: #00ff88;
-            --primary-glow: rgba(0, 255, 136, 0.25);
-            --bg: #020305;
+            --primary-glow: rgba(0, 255, 136, 0.3);
+            --bg: #050608;
             --glass: rgba(255, 255, 255, 0.03);
-            --glass-hover: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.08);
             --text-main: #ffffff;
-            --text-dim: #8e9196;
-            --easing: cubic-bezier(0.2, 0, 0, 1);
+            --text-dim: #94a3b8;
+            --easing: cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.25); }
-        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.25); }
-        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.25); }
+        /* Themes */
+        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.3); }
+        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.3); }
+        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.3); }
+        [data-theme="crimson"] { --primary: #ff4d4d; --primary-glow: rgba(255, 77, 77, 0.3); }
+        [data-theme="amethyst"] { --primary: #a855f7; --primary-glow: rgba(168, 85, 247, 0.3); }
 
-        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg);
             color: var(--text-main);
             min-height: 100vh;
-            overflow-x: hidden;
             background-image: 
-                radial-gradient(at 0% 0%, rgba(0, 255, 136, 0.05) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(0, 217, 255, 0.05) 0px, transparent 50%);
+                radial-gradient(circle at 0% 0%, var(--primary-glow) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(0,0,0,1) 0%, transparent 40%);
+            background-attachment: fixed;
         }
 
-        /* --- NAVIGATION --- */
         nav {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 25px 50px; position: sticky; top: 0; z-index: 1000;
-            background: rgba(2, 3, 5, 0.7); backdrop-filter: blur(20px);
+            padding: 20px 5%; position: sticky; top: 0; z-index: 1000;
+            background: rgba(5, 6, 8, 0.8); backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--glass-border);
         }
 
-        .brand { display: flex; align-items: center; gap: 15px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
         .brand-logo { 
-            width: 35px; height: 35px; background: var(--primary); 
-            border-radius: 8px; box-shadow: 0 0 20px var(--primary-glow);
-            transform: rotate(-15deg);
+            width: 30px; height: 30px; background: var(--primary); 
+            border-radius: 6px; box-shadow: 0 0 20px var(--primary);
+            transform: rotate(-15deg); transition: 0.5s var(--easing);
         }
-        .brand h1 { font-size: 1.4rem; letter-spacing: 2px; font-weight: 800; }
+        .brand:hover .brand-logo { transform: rotate(0deg) scale(1.1); }
+        .brand h1 { font-size: 1.2rem; letter-spacing: 4px; font-weight: 800; color: #fff; }
 
-        .user-pill {
-            display: flex; align-items: center; gap: 12px;
-            background: var(--glass); padding: 6px 18px;
-            border-radius: 100px; border: 1px solid var(--glass-border);
-            cursor: pointer; transition: 0.3s;
-        }
-        .user-pill:hover { background: var(--glass-hover); border-color: var(--primary); }
-
-        /* --- HERO & SEARCH --- */
-        header { padding: 80px 50px 40px; text-align: left; max-width: 1400px; margin: 0 auto; }
-        header h2 { font-size: 3rem; font-weight: 800; margin-bottom: 10px; }
+        header { padding: 60px 5%; max-width: 1400px; margin: 0 auto; }
+        header h2 { font-size: 3.5rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; }
         header p { color: var(--text-dim); font-size: 1.1rem; }
 
-        .search-container {
-            position: relative; margin-top: 40px; max-width: 500px;
-        }
+        .search-container { position: relative; margin-top: 30px; max-width: 600px; }
         #moduleSearch {
-            width: 100%; padding: 20px 60px;
+            width: 100%; padding: 18px 25px;
             background: var(--glass); border: 1px solid var(--glass-border);
-            border-radius: 16px; color: #fff; font-size: 1rem;
-            outline: none; transition: 0.4s var(--easing);
+            border-radius: 12px; color: #fff; font-size: 1rem;
+            transition: 0.3s;
         }
-        #moduleSearch:focus { 
-            border-color: var(--primary); background: rgba(255,255,255,0.06);
-            box-shadow: 0 0 0 4px var(--primary-glow);
-        }
+        #moduleSearch:focus { border-color: var(--primary); outline: none; background: rgba(255,255,255,0.07); }
 
-        /* --- GAME GRID --- */
         .link-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 30px; padding: 40px 50px 150px;
-            max-width: 1400px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px; padding: 20px 5% 120px; max-width: 1400px; margin: 0 auto;
         }
 
         .game-card {
             position: relative; text-decoration: none;
-            background: var(--glass); border-radius: 24px;
+            background: var(--glass); border-radius: 20px;
             border: 1px solid var(--glass-border);
-            aspect-ratio: 16 / 10; overflow: hidden;
-            display: flex; flex-direction: column; justify-content: flex-end;
-            padding: 25px; transition: 0.5s var(--easing);
+            padding: 24px; display: flex; flex-direction: column; justify-content: flex-end;
+            min-height: 180px; transition: 0.4s var(--easing);
+            overflow: hidden;
         }
 
-        /* The Realistic "Thumbnail" Background */
-        .game-card::after {
+        .game-card::before {
             content: ''; position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(2,3,5,0.9) 0%, transparent 60%);
-            z-index: 1;
+            background: linear-gradient(45deg, var(--primary), transparent);
+            opacity: 0; transition: 0.4s; z-index: 0;
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
         
-        /* Realistic Blur Reflection */
-        .game-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            border-color: var(--primary);
-            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
-        }
+        .game-card:hover::before { opacity: 0.05; }
 
         .game-info { position: relative; z-index: 2; }
-        .game-title { font-weight: 800; font-size: 1.4rem; color: #fff; display: block; }
-        .game-meta { 
-            display: flex; justify-content: space-between; align-items: center;
-            margin-top: 10px; opacity: 0.6; font-size: 0.8rem; 
-        }
-
+        .game-title { font-weight: 800; font-size: 1.3rem; color: #fff; display: block; margin-bottom: 8px; }
+        .game-meta { display: flex; justify-content: space-between; align-items: center; }
+        .category { font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; color: var(--text-dim); }
         .score-pill {
-            background: rgba(0,0,0,0.4); padding: 4px 12px;
-            border-radius: 8px; font-family: 'Fira Code', monospace;
-            color: var(--primary); border: 1px solid var(--primary-glow);
+            background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 6px;
+            font-family: 'Fira Code', monospace; color: var(--primary);
+            font-size: 0.75rem; border: 1px solid var(--primary-glow);
         }
 
-        /* --- MODAL --- */
-        .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-            display: none; justify-content: center; align-items: center;
-            z-index: 2000; backdrop-filter: blur(20px);
-        }
-        .modal-card {
-            background: #0a0c10; padding: 40px; border-radius: 32px;
-            width: 90%; max-width: 420px; text-align: center;
-            border: 1px solid var(--glass-border);
-        }
-
-        /* --- THEME CONTROLS --- */
+        /* Footer Dock */
         .dock {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(20px);
-            padding: 12px 25px; border-radius: 100px;
-            border: 1px solid var(--glass-border); display: flex; gap: 20px;
-            z-index: 1000;
+            background: rgba(15, 17, 23, 0.8); backdrop-filter: blur(20px);
+            padding: 12px 20px; border-radius: 100px;
+            border: 1px solid var(--glass-border); display: flex; gap: 15px; z-index: 1000;
         }
         .theme-node {
-            width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
-            border: 3px solid transparent; transition: 0.3s;
+            width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.1); transition: 0.3s;
         }
-        .theme-node:hover { transform: scale(1.2); }
-        .theme-node.active { border-color: #fff; }
-
+        .theme-node:hover { transform: scale(1.3); border-color: #fff; }
     </style>
 </head>
 <body>
@@ -158,48 +125,41 @@
             <div class="brand-logo"></div>
             <h1>NEBULA</h1>
         </div>
-        <div class="user-pill" id="userAccount" onclick="toggleModal()">
-            <span id="userName">GUEST_USER</span>
-        </div>
     </nav>
 
     <header>
-        <h2 id="greeting">Welcome Back</h2>
-        <p>Ready to continue your session?</p>
+        <h2 id="greeting">System Online</h2>
+        <p>Accessing localized game modules...</p>
         <div class="search-container">
-            <input type="text" id="moduleSearch" placeholder="Filter library..." onkeyup="filterGames()">
+            <input type="text" id="moduleSearch" placeholder="Search library..." onkeyup="filterGames()">
         </div>
     </header>
 
-    <div id="gameGrid" class="link-container">
-        </div>
+    <div id="gameGrid" class="link-container"></div>
 
     <div class="dock">
-        <div class="theme-node" style="background:#00ff88" onclick="setTheme('default', this)"></div>
-        <div class="theme-node" style="background:#ff00ff" onclick="setTheme('cyber', this)"></div>
-        <div class="theme-node" style="background:#00d9ff" onclick="setTheme('ocean', this)"></div>
-        <div class="theme-node" style="background:#ffaa00" onclick="setTheme('amber', this)"></div>
-    </div>
-
-    <div id="loginModal" class="modal">
-        <div class="modal-card">
-            <h2>System Login</h2>
-            <p style="color:var(--text-dim); margin-top:10px">Enter a callsign to save local metadata.</p>
-            <input type="text" id="usernameInput" placeholder="Enter Username..." style="width:100%; padding:15px; margin:25px 0; border-radius:12px; border:1px solid #333; background:#000; color:#fff;">
-            <button onclick="saveUser()" style="width:100%; padding:15px; border-radius:12px; border:none; background:var(--primary); font-weight:800; cursor:pointer;">INITIALIZE</button>
-            <p style="margin-top:20px; font-size:0.8rem; cursor:pointer" onclick="logout()">LOGOUT / RESET</p>
-        </div>
+        <div class="theme-node" style="background:#00ff88" onclick="setTheme('default')"></div>
+        <div class="theme-node" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
+        <div class="theme-node" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
+        <div class="theme-node" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+        <div class="theme-node" style="background:#ff4d4d" onclick="setTheme('crimson')"></div>
+        <div class="theme-node" style="background:#a855f7" onclick="setTheme('amethyst')"></div>
     </div>
 
     <script>
         const games = [
+            { name: "Eggshell", cat: "Shooter", url: "eggshell.html" },
             { name: "Cyber Strike", cat: "Action", url: "Cyber-Strike.html" },
-            { name: "Neon Snake", cat: "Arcade", url: "snake.html" },
-            { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" },
+            { name: "Neon Slash", cat: "Action", url: "Neon-Slash.html" },
+            { name: "Neon Slams", cat: "Sports", url: "Neon-Slams.html" },
+            { name: "Neon Hex", cat: "Strategy", url: "Neon-Hex.html" },
+            { name: "Neon Pong", cat: "Arcade", url: "Neon-Pong.html" },
+            { name: "Neon Golf", cat: "Sports", url: "Neon-Golf.html" },
+            { name: "Overdrive", cat: "Racing", url: "overdrive.html" },
             { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" },
             { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" },
-            { name: "Neon Pong", cat: "Sport", url: "Neon-Pong.html" },
-            { name: "Neon Hex", cat: "Strategy", url: "Neon-Hex.html" }
+            { name: "Snake", cat: "Arcade", url: "snake.html" },
+            { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" }
         ];
 
         function buildGrid() {
@@ -209,12 +169,12 @@
             grid.innerHTML = games.map(game => {
                 const best = scores[game.name] || 0;
                 return `
-                    <a href="${game.url}" class="game-card" data-name="${game.name.toLowerCase()}">
+                    <a href="${game.url}" target="_blank" class="game-card" data-name="${game.name.toLowerCase()}">
                         <div class="game-info">
                             <span class="game-title">${game.name}</span>
                             <div class="game-meta">
-                                <span>${game.cat.toUpperCase()}</span>
-                                <div class="score-pill">HIGH: ${best}</div>
+                                <span class="category">${game.cat.toUpperCase()}</span>
+                                <div class="score-pill">PTS: ${best}</div>
                             </div>
                         </div>
                     </a>
@@ -222,38 +182,10 @@
             }).join('');
         }
 
-        function setTheme(t, el) {
+        function setTheme(t) {
             document.documentElement.setAttribute('data-theme', t);
-            document.querySelectorAll('.theme-node').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
             if(t === 'default') document.documentElement.removeAttribute('data-theme');
-        }
-
-        function toggleModal() {
-            const m = document.getElementById('loginModal');
-            m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
-        }
-
-        function saveUser() {
-            const name = document.getElementById('usernameInput').value;
-            if(name) {
-                localStorage.setItem('nebula_user', name);
-                location.reload();
-            }
-        }
-
-        function logout() {
-            localStorage.clear();
-            location.reload();
-        }
-
-        function init() {
-            const user = localStorage.getItem('nebula_user');
-            if(user) {
-                document.getElementById('userName').innerText = user.toUpperCase();
-                document.getElementById('greeting').innerText = `Welcome Back, ${user}`;
-            }
-            buildGrid();
+            localStorage.setItem('nebula_theme', t);
         }
 
         function filterGames() {
@@ -263,7 +195,10 @@
             });
         }
 
-        init();
+        // Initialize
+        const savedTheme = localStorage.getItem('nebula_theme');
+        if(savedTheme) setTheme(savedTheme);
+        buildGrid();
     </script>
 </body>
 </html>
