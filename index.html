@@ -18,7 +18,6 @@
             --easing: cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Dynamic Theme System */
         [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.2); }
         [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.2); }
         [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.2); }
@@ -36,7 +35,6 @@
             background-image: radial-gradient(circle at 50% -20%, var(--primary-glow), transparent 50%);
         }
 
-        /* --- NAVIGATION --- */
         nav {
             display: flex; justify-content: space-between; align-items: center;
             padding: 20px 5%; position: sticky; top: 0; z-index: 1000;
@@ -58,82 +56,51 @@
         }
         .logout-btn:hover { color: var(--primary); }
 
-        /* --- HERO --- */
         header { padding: 80px 5% 40px; max-width: 1400px; margin: 0 auto; }
         header h2 { font-size: 3.5rem; font-weight: 800; letter-spacing: -2px; line-height: 1; }
         header p { color: var(--text-dim); margin-top: 10px; font-size: 1.1rem; }
 
-        .search-box {
-            margin-top: 40px; position: relative; max-width: 500px;
-        }
+        .search-box { margin-top: 40px; position: relative; max-width: 500px; }
         #gameSearch {
             width: 100%; padding: 18px 25px; border-radius: 14px;
             background: var(--surface); border: 1px solid var(--border);
             color: #fff; font-size: 1rem; transition: 0.3s;
         }
-        #gameSearch:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 20px rgba(0,0,0,0.4); }
+        #gameSearch:focus { outline: none; border-color: var(--primary); }
 
-        /* --- GRID --- */
         .grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px; padding: 20px 5% 150px; max-width: 1400px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px; padding: 20px 5% 150px; max-width: 1400px; margin: 0 auto;
         }
 
         .card {
             background: var(--surface); border: 1px solid var(--border);
-            border-radius: 24px; padding: 30px; text-decoration: none;
+            border-radius: 20px; padding: 25px; text-decoration: none;
             display: flex; flex-direction: column; justify-content: flex-end;
-            min-height: 200px; transition: 0.4s var(--easing);
+            min-height: 160px; transition: 0.4s var(--easing);
             position: relative; overflow: hidden;
         }
-        .card:hover {
-            transform: translateY(-10px); border-color: var(--primary);
-            background: var(--surface-hover);
-        }
-        .card::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-        }
+        .card:hover { transform: translateY(-8px); border-color: var(--primary); background: var(--surface-hover); }
+        .card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); }
 
         .card-content { position: relative; z-index: 2; }
-        .card-title { font-size: 1.4rem; font-weight: 800; display: block; margin-bottom: 5px; }
+        .card-title { font-size: 1.2rem; font-weight: 800; display: block; margin-bottom: 5px; }
         .card-tags { display: flex; justify-content: space-between; align-items: center; }
-        .tag { font-size: 0.7rem; color: var(--text-dim); font-weight: 800; letter-spacing: 1px; }
-        .score { 
-            font-family: 'Fira Code', monospace; color: var(--primary); 
-            font-size: 0.8rem; background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 6px;
-        }
+        .tag { font-size: 0.65rem; color: var(--text-dim); font-weight: 800; letter-spacing: 1px; }
+        .score { font-family: 'Fira Code', monospace; color: var(--primary); font-size: 0.75rem; }
 
-        /* --- AUTH SYSTEM --- */
-        .modal {
-            position: fixed; inset: 0; background: #000; z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .auth-box {
-            width: 90%; max-width: 400px; padding: 40px;
-            background: #0a0b0d; border: 1px solid var(--border); border-radius: 32px;
-            text-align: center;
-        }
-        input.auth-field {
-            width: 100%; padding: 15px; margin-top: 15px; border-radius: 12px;
-            border: 1px solid #222; background: #000; color: #fff; outline: none;
-        }
-        .auth-btn {
-            width: 100%; padding: 15px; margin-top: 25px; border-radius: 12px;
-            border: none; background: var(--primary); color: #000;
-            font-weight: 800; cursor: pointer; transition: 0.3s;
-        }
-        .auth-btn:hover { filter: brightness(1.2); transform: scale(1.02); }
+        .modal { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .auth-box { width: 90%; max-width: 400px; padding: 40px; background: #0a0b0d; border: 1px solid var(--border); border-radius: 32px; text-align: center; }
+        input.auth-field { width: 100%; padding: 15px; margin-top: 15px; border-radius: 12px; border: 1px solid #222; background: #000; color: #fff; outline: none; }
+        .auth-btn { width: 100%; padding: 15px; margin-top: 25px; border-radius: 12px; border: none; background: var(--primary); color: #000; font-weight: 800; cursor: pointer; transition: 0.3s; }
 
-        /* --- THEME DOCK --- */
         .dock {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             background: rgba(10, 11, 13, 0.8); backdrop-filter: blur(20px);
             padding: 12px 25px; border-radius: 100px; border: 1px solid var(--border);
             display: flex; gap: 15px; z-index: 1000;
         }
-        .node { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.3s; }
-        .node:hover { transform: scale(1.3); }
+        .node { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
         .node.active { border-color: #fff; }
     </style>
 </head>
@@ -141,22 +108,16 @@
 
     <div id="authOverlay" class="modal">
         <div class="auth-box">
-            <h2 id="authTitle" style="font-size: 2rem; margin-bottom: 10px;">NEBULA OS</h2>
-            <p id="authSub" style="color: var(--text-dim); margin-bottom: 20px;">Initialize your neural session.</p>
-            
-            <input type="text" id="userInput" class="auth-field" placeholder="Callsign (Username)">
-            <input type="password" id="passInput" class="auth-field" placeholder="Access Code (Password)">
-            
+            <h2 id="authTitle">NEBULA OS</h2>
+            <input type="text" id="userInput" class="auth-field" placeholder="Username">
+            <input type="password" id="passInput" class="auth-field" placeholder="Password">
             <button class="auth-btn" onclick="processAuth()" id="mainAuthBtn">INITIALIZE</button>
             <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-dim); cursor: pointer;" onclick="toggleMode()" id="toggleTxt">New User? Create Account</p>
         </div>
     </div>
 
     <nav>
-        <div class="brand">
-            <div class="logo-sq"></div>
-            <h1>NEBULA</h1>
-        </div>
+        <div class="brand"><div class="logo-sq"></div><h1>NEBULA</h1></div>
         <div class="user-controls">
             <span id="navUser" style="font-weight: 800; font-size: 0.8rem;">GUEST</span>
             <span class="logout-btn" onclick="doLogout()">[ Terminate ]</span>
@@ -165,9 +126,8 @@
 
     <header>
         <h2 id="welcomeTxt">Welcome</h2>
-        <p>Select a module to begin the simulation.</p>
         <div class="search-box">
-            <input type="text" id="gameSearch" placeholder="Filter library..." onkeyup="doSearch()">
+            <input type="text" id="gameSearch" placeholder="Filter modules..." onkeyup="doSearch()">
         </div>
     </header>
 
@@ -184,15 +144,34 @@
 
     <script>
         let isLogin = true;
+        // Full catalog populated from repository screenshot
         const gameList = [
             { name: "Eggshell", cat: "Shooter", url: "eggshell.html" },
-            { name: "Cyber Strike", cat: "Action", url: "Cyber-Strike.html" },
-            { name: "Neon Slash", cat: "Action", url: "Neon-Slash.html" },
-            { name: "Overdrive", cat: "Racing", url: "overdrive.html" },
-            { name: "Neon Hex", cat: "Strategy", url: "Neon-Hex.html" },
+            { name: "Cyber-Strike", cat: "Action", url: "Cyber-Strike.html" },
+            { name: "Neon-Golf", cat: "Sports", url: "Neon-Golf.html" },
+            { name: "Neon-Hex", cat: "Strategy", url: "Neon-Hex.html" },
+            { name: "Neon-Pong", cat: "Arcade", url: "Neon-Pong.html" },
+            { name: "Neon-Slams", cat: "Sports", url: "Neon-Slams.html" },
+            { name: "Neon-Slash", cat: "Action", url: "Neon-Slash.html" },
+            { name: "AI Chat", cat: "System", url: "ai.html" },
+            { name: "Basketball", cat: "Sports", url: "basketball.html" },
+            { name: "Blockblast", cat: "Puzzle", url: "blockblast.html" },
+            { name: "Blockbreaker", cat: "Arcade", url: "blockbreaker.html" },
             { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" },
+            { name: "Cricket", cat: "Sports", url: "cricket.html" },
+            { name: "Crossy Roads", cat: "Arcade", url: "crossyroads.html" },
+            { name: "Drift", cat: "Racing", url: "drift.html" },
+            { name: "Football", cat: "Sports", url: "football.html" },
+            { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" },
             { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" },
-            { name: "Snake", cat: "Arcade", url: "snake.html" }
+            { name: "Neon Trail", cat: "Adventure", url: "neon-trail.html" },
+            { name: "Overdrive", cat: "Racing", url: "overdrive.html" },
+            { name: "Pacman", cat: "Arcade", url: "pacman.html" },
+            { name: "Snake", cat: "Arcade", url: "snake.html" },
+            { name: "Space Adventure", cat: "Sci-Fi", url: "spaceadventure.html" },
+            { name: "Sparks Maths", cat: "Edu", url: "sparksmaths.html" },
+            { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" },
+            { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
         ];
 
         function toggleMode() {
@@ -206,14 +185,10 @@
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
             if(!u || !p) return;
-
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
-
             if(isLogin) {
-                if(db[u] && db[u].pw === p) {
-                    localStorage.setItem('neb_active', u);
-                    location.reload();
-                } else { alert("ACCESS DENIED"); }
+                if(db[u] && db[u].pw === p) { localStorage.setItem('neb_active', u); location.reload(); }
+                else { alert("ACCESS DENIED"); }
             } else {
                 if(db[u]) return alert("CALLSIGN TAKEN");
                 db[u] = { pw: p, scores: {} };
@@ -223,22 +198,16 @@
             }
         }
 
-        function doLogout() {
-            localStorage.removeItem('neb_active');
-            location.reload();
-        }
+        function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
 
         function renderUI() {
             const user = localStorage.getItem('neb_active');
             if(!user) return;
-
             document.getElementById('authOverlay').style.display = 'none';
             document.getElementById('navUser').innerText = user.toUpperCase();
             document.getElementById('welcomeTxt').innerText = `Welcome, ${user}`;
-
             const db = JSON.parse(localStorage.getItem('neb_db'));
             const scores = db[user].scores || {};
-
             const grid = document.getElementById('gameGrid');
             grid.innerHTML = gameList.map(g => {
                 const s = scores[g.name] || 0;
@@ -251,8 +220,7 @@
                                 <span class="score">TOP: ${s}</span>
                             </div>
                         </div>
-                    </a>
-                `;
+                    </a>`;
             }).join('');
         }
 
@@ -270,7 +238,6 @@
             });
         }
 
-        // Run
         if(localStorage.getItem('neb_active')) renderUI();
     </script>
 </body>
