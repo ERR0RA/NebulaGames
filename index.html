@@ -3,293 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nebula | Ultra Cloud Interface</title>
+    <title>Nebula | The Future of Play</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;800&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #00ff88;
-            --primary-glow: rgba(0, 255, 136, 0.3);
-            --bg: #030406;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary-glow: rgba(0, 255, 136, 0.25);
+            --bg: #020305;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-hover: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.07);
             --text-main: #ffffff;
-            --text-dim: rgba(255, 255, 255, 0.5);
-            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --text-dim: #8e9196;
+            --easing: cubic-bezier(0.2, 0, 0, 1);
         }
 
-        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.3); }
-        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.3); }
-        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.3); }
+        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.25); }
+        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.25); }
+        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.25); }
 
-        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; margin: 0; padding: 0; }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg);
             color: var(--text-main);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 255, 136, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 217, 255, 0.05) 0px, transparent 50%);
         }
 
-        /* Animated Background Elements */
-        .bg-wrapper {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; overflow: hidden;
-            background: radial-gradient(circle at 50% 50%, #0a0c10 0%, #030406 100%);
-        }
-
-        .orb {
-            position: absolute;
-            width: 600px; height: 600px;
-            border-radius: 50%;
-            background: var(--primary);
-            filter: blur(120px);
-            opacity: 0.15;
-            animation: float 20s infinite alternate ease-in-out;
-            transition: background 0.8s ease;
-        }
-        .orb-1 { top: -100px; left: -100px; }
-        .orb-2 { bottom: -100px; right: -100px; animation-delay: -5s; opacity: 0.1; }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(100px, 50px) scale(1.1); }
-        }
-
-        /* Navigation */
+        /* --- NAVIGATION --- */
         nav {
-            width: 100%; padding: 30px 5%;
             display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 100;
-            backdrop-filter: blur(10px);
+            padding: 25px 50px; position: sticky; top: 0; z-index: 1000;
+            background: rgba(2, 3, 5, 0.7); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
         }
 
-        .logo-area h1 {
-            font-size: 1.8rem; font-weight: 800; margin: 0;
-            letter-spacing: -1px; background: linear-gradient(to right, #fff, var(--primary));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        .brand { display: flex; align-items: center; gap: 15px; }
+        .brand-logo { 
+            width: 35px; height: 35px; background: var(--primary); 
+            border-radius: 8px; box-shadow: 0 0 20px var(--primary-glow);
+            transform: rotate(-15deg);
         }
+        .brand h1 { font-size: 1.4rem; letter-spacing: 2px; font-weight: 800; }
 
-        /* Search Bar Improvements */
+        .user-pill {
+            display: flex; align-items: center; gap: 12px;
+            background: var(--glass); padding: 6px 18px;
+            border-radius: 100px; border: 1px solid var(--glass-border);
+            cursor: pointer; transition: 0.3s;
+        }
+        .user-pill:hover { background: var(--glass-hover); border-color: var(--primary); }
+
+        /* --- HERO & SEARCH --- */
+        header { padding: 80px 50px 40px; text-align: left; max-width: 1400px; margin: 0 auto; }
+        header h2 { font-size: 3rem; font-weight: 800; margin-bottom: 10px; }
+        header p { color: var(--text-dim); font-size: 1.1rem; }
+
         .search-container {
-            width: 90%; max-width: 500px; margin: 40px 0 60px;
-            position: relative;
+            position: relative; margin-top: 40px; max-width: 500px;
         }
-
         #moduleSearch {
-            width: 100%; padding: 22px 35px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            border-radius: 100px;
-            color: #fff; font-size: 1rem;
-            outline: none; backdrop-filter: blur(20px);
-            transition: var(--transition);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%; padding: 20px 60px;
+            background: var(--glass); border: 1px solid var(--glass-border);
+            border-radius: 16px; color: #fff; font-size: 1rem;
+            outline: none; transition: 0.4s var(--easing);
+        }
+        #moduleSearch:focus { 
+            border-color: var(--primary); background: rgba(255,255,255,0.06);
+            box-shadow: 0 0 0 4px var(--primary-glow);
         }
 
-        #moduleSearch:focus {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: var(--primary);
-            box-shadow: 0 0 40px var(--primary-glow);
-            transform: scale(1.02);
-        }
-
-        /* Professional Grid */
+        /* --- GAME GRID --- */
         .link-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px; width: 90%; max-width: 1200px;
-            padding-bottom: 100px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px; padding: 40px 50px 150px;
+            max-width: 1400px; margin: 0 auto;
         }
 
-        .game-link {
+        .game-card {
             position: relative; text-decoration: none;
-            background: var(--card-bg);
-            height: 160px; border-radius: 28px;
+            background: var(--glass); border-radius: 24px;
             border: 1px solid var(--glass-border);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            overflow: hidden; transition: var(--transition);
+            aspect-ratio: 16 / 10; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            padding: 25px; transition: 0.5s var(--easing);
         }
 
-        .game-link::before {
-            content: ''; position: absolute; top: 0; left: -100%;
-            width: 50%; height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
-            transition: 0.5s;
+        /* The Realistic "Thumbnail" Background */
+        .game-card::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(2,3,5,0.9) 0%, transparent 60%);
+            z-index: 1;
         }
-
-        .game-link:hover {
-            transform: translateY(-12px) scale(1.02);
-            background: rgba(255, 255, 255, 0.06);
+        
+        /* Realistic Blur Reflection */
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
             border-color: var(--primary);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px var(--primary-glow);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
         }
 
-        .game-link:hover::before { left: 150%; }
-
-        .game-title {
-            font-weight: 700; font-size: 1.2rem; color: #fff;
-            margin-bottom: 8px; transition: var(--transition);
+        .game-info { position: relative; z-index: 2; }
+        .game-title { font-weight: 800; font-size: 1.4rem; color: #fff; display: block; }
+        .game-meta { 
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 10px; opacity: 0.6; font-size: 0.8rem; 
         }
 
-        .high-score-tag {
-            font-family: 'Fira Code', monospace;
-            font-size: 0.75rem; color: var(--primary);
-            opacity: 0.8; letter-spacing: 1px;
+        .score-pill {
+            background: rgba(0,0,0,0.4); padding: 4px 12px;
+            border-radius: 8px; font-family: 'Fira Code', monospace;
+            color: var(--primary); border: 1px solid var(--primary-glow);
         }
 
-        .badge {
-            position: absolute; top: 15px; right: 15px;
-            font-size: 0.65rem; font-weight: 800;
-            padding: 5px 12px; border-radius: 50px;
-            background: var(--primary); color: #000;
-            box-shadow: 0 4px 10px var(--primary-glow);
-        }
-
-        /* Account Buttons */
-        .acc-group { display: flex; gap: 12px; }
-        .btn-base {
-            padding: 12px 24px; border-radius: 100px; border: 1px solid var(--glass-border);
-            font-weight: 600; cursor: pointer; transition: var(--transition);
-            backdrop-filter: blur(10px); font-size: 0.85rem;
-        }
-        
-        .btn-join { background: var(--primary); color: #000; border: none; }
-        .btn-join:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--primary-glow); }
-        
-        .btn-logout { background: rgba(255, 50, 50, 0.1); color: #ff5555; display: none; }
-        .btn-logout:hover { background: #ff5555; color: #fff; }
-
-        /* Bottom Controls */
-        .controls-bar {
-            position: fixed; bottom: 30px;
-            display: flex; gap: 15px; align-items: center;
-            background: rgba(0,0,0,0.5); padding: 10px;
-            border-radius: 100px; border: 1px solid var(--glass-border);
-            backdrop-filter: blur(20px);
-        }
-
-        .theme-dot {
-            width: 24px; height: 24px; border-radius: 50%;
-            cursor: pointer; border: 2px solid transparent;
-            transition: 0.3s;
-        }
-        .theme-dot:hover { transform: scale(1.2); border-color: #fff; }
-
-        /* Modal Overhaul */
+        /* --- MODAL --- */
         .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
             display: none; justify-content: center; align-items: center;
-            z-index: 1000; backdrop-filter: blur(15px);
+            z-index: 2000; backdrop-filter: blur(20px);
         }
-
         .modal-card {
             background: #0a0c10; padding: 40px; border-radius: 32px;
-            width: 90%; max-width: 400px; border: 1px solid var(--glass-border);
-            text-align: center; animation: modalIn 0.4s ease-out;
+            width: 90%; max-width: 420px; text-align: center;
+            border: 1px solid var(--glass-border);
         }
 
-        @keyframes modalIn {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+        /* --- THEME CONTROLS --- */
+        .dock {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(20px);
+            padding: 12px 25px; border-radius: 100px;
+            border: 1px solid var(--glass-border); display: flex; gap: 20px;
+            z-index: 1000;
         }
+        .theme-node {
+            width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+            border: 3px solid transparent; transition: 0.3s;
+        }
+        .theme-node:hover { transform: scale(1.2); }
+        .theme-node.active { border-color: #fff; }
 
-        input[type="text"] {
-            width: 100%; padding: 15px 20px; margin: 20px 0;
-            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-            border-radius: 15px; color: #fff; outline: none;
-        }
     </style>
 </head>
 <body>
 
-    <div class="bg-wrapper">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-    </div>
-
     <nav>
-        <div class="logo-area">
+        <div class="brand">
+            <div class="brand-logo"></div>
             <h1>NEBULA</h1>
         </div>
-        <div class="acc-group">
-            <button id="userBtn" class="btn-base btn-join" onclick="toggleModal()">JOIN NETWORK</button>
-            <button id="logoutBtn" class="btn-base btn-logout" onclick="logout()">EXIT</button>
+        <div class="user-pill" id="userAccount" onclick="toggleModal()">
+            <span id="userName">GUEST_USER</span>
         </div>
     </nav>
 
-    <div class="search-container">
-        <input type="text" id="moduleSearch" placeholder="Search the library..." onkeyup="filterGames()">
-    </div>
+    <header>
+        <h2 id="greeting">Welcome Back</h2>
+        <p>Ready to continue your session?</p>
+        <div class="search-container">
+            <input type="text" id="moduleSearch" placeholder="Filter library..." onkeyup="filterGames()">
+        </div>
+    </header>
 
     <div id="gameGrid" class="link-container">
         </div>
 
-    <div id="loginModal" class="modal">
-        <div class="modal-card">
-            <h2 style="margin-top:0">Initialize Profile</h2>
-            <p style="color: var(--text-dim)">Your scores will be synced to this browser's local cache.</p>
-            <input type="text" id="usernameInput" placeholder="Enter Pilot Name...">
-            <button class="btn-base btn-join" style="width:100%" onclick="saveUser()">SYNC DATA</button>
-            <p style="margin-top: 20px; font-size: 0.8rem; cursor: pointer; opacity: 0.5" onclick="toggleModal()">Cancel</p>
-        </div>
+    <div class="dock">
+        <div class="theme-node" style="background:#00ff88" onclick="setTheme('default', this)"></div>
+        <div class="theme-node" style="background:#ff00ff" onclick="setTheme('cyber', this)"></div>
+        <div class="theme-node" style="background:#00d9ff" onclick="setTheme('ocean', this)"></div>
+        <div class="theme-node" style="background:#ffaa00" onclick="setTheme('amber', this)"></div>
     </div>
 
-    <div class="controls-bar">
-        <div class="theme-dot" style="background:#00ff88" onclick="setTheme('default')"></div>
-        <div class="theme-dot" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
-        <div class="theme-dot" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
-        <div class="theme-dot" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+    <div id="loginModal" class="modal">
+        <div class="modal-card">
+            <h2>System Login</h2>
+            <p style="color:var(--text-dim); margin-top:10px">Enter a callsign to save local metadata.</p>
+            <input type="text" id="usernameInput" placeholder="Enter Username..." style="width:100%; padding:15px; margin:25px 0; border-radius:12px; border:1px solid #333; background:#000; color:#fff;">
+            <button onclick="saveUser()" style="width:100%; padding:15px; border-radius:12px; border:none; background:var(--primary); font-weight:800; cursor:pointer;">INITIALIZE</button>
+            <p style="margin-top:20px; font-size:0.8rem; cursor:pointer" onclick="logout()">LOGOUT / RESET</p>
+        </div>
     </div>
 
     <script>
         const games = [
-            { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "best" },
-            { name: "Blockcraft", url: "blockcraft.html", tag: "upd" },
-            { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
-            { name: "Neon Snake", url: "snake.html", tag: "best" },
-            { name: "Master Armory", url: "masterarmory.html", tag: "best" },
-            { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
-            { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
-            { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
-            { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
-            { name: "Neon Slamz", url: "Neon-Slams.html", tag: "" },
-            { name: "Neon Trail", url: "neon-trail.html", tag: "" },
-            { name: "Block Blast", url: "blockblast.html", tag: "" },
-            { name: "Neon Run", url: "ai.html", tag: "" },
-            { name: "Basketball", url: "basketball.html", tag: "" },
-            { name: "Football", url: "football.html", tag: "" },
-            { name: "Cricket", url: "cricket.html", tag: "" },
-            { name: "Crossy Roads", url: "crossyroads.html", tag: "" },
-            { name: "Drift", url: "drift.html", tag: "" },
-            { name: "Eggshell (EGGVP)", url: "eggshell.html", tag: "upd" },
-            { name: "Overdrive", url: "overdrive.html", tag: "" },
-            { name: "Pacman", url: "pacman.html", tag: "" },
-            { name: "Space Adventure", url: "spaceadventure.html", tag: "" },
-            { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
-            { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
-            { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
+            { name: "Cyber Strike", cat: "Action", url: "Cyber-Strike.html" },
+            { name: "Neon Snake", cat: "Arcade", url: "snake.html" },
+            { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" },
+            { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" },
+            { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" },
+            { name: "Neon Pong", cat: "Sport", url: "Neon-Pong.html" },
+            { name: "Neon Hex", cat: "Strategy", url: "Neon-Hex.html" }
         ];
 
-        function buildArcade() {
+        function buildGrid() {
             const grid = document.getElementById('gameGrid');
             const scores = JSON.parse(localStorage.getItem('nebula_scores')) || {};
             
             grid.innerHTML = games.map(game => {
-                const highScore = scores[game.name] || '0';
+                const best = scores[game.name] || 0;
                 return `
-                    <a href="${game.url}" class="game-link" data-name="${game.name.toLowerCase()}">
-                        ${game.tag ? `<span class="badge">${game.tag}</span>` : ''}
-                        <span class="game-title">${game.name}</span>
-                        <span class="high-score-tag">MAX_SCORE: ${highScore}</span>
+                    <a href="${game.url}" class="game-card" data-name="${game.name.toLowerCase()}">
+                        <div class="game-info">
+                            <span class="game-title">${game.name}</span>
+                            <div class="game-meta">
+                                <span>${game.cat.toUpperCase()}</span>
+                                <div class="score-pill">HIGH: ${best}</div>
+                            </div>
+                        </div>
                     </a>
                 `;
             }).join('');
+        }
+
+        function setTheme(t, el) {
+            document.documentElement.setAttribute('data-theme', t);
+            document.querySelectorAll('.theme-node').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+            if(t === 'default') document.documentElement.removeAttribute('data-theme');
         }
 
         function toggleModal() {
@@ -298,47 +235,35 @@
         }
 
         function saveUser() {
-            const val = document.getElementById('usernameInput').value.trim();
-            if(val) {
-                localStorage.setItem('nebula_user', val);
+            const name = document.getElementById('usernameInput').value;
+            if(name) {
+                localStorage.setItem('nebula_user', name);
                 location.reload();
             }
         }
 
-        function checkUser() {
-            const user = localStorage.getItem('nebula_user');
-            if(user) {
-                document.getElementById('userBtn').innerText = user.toUpperCase();
-                document.getElementById('userBtn').style.background = "rgba(255,255,255,0.05)";
-                document.getElementById('userBtn').style.color = "#fff";
-                document.getElementById('logoutBtn').style.display = "block";
-            }
-        }
-
         function logout() {
-            localStorage.removeItem('nebula_user');
+            localStorage.clear();
             location.reload();
         }
 
-        function setTheme(t) {
-            document.documentElement.setAttribute('data-theme', t);
-            if(t === 'default') document.documentElement.removeAttribute('data-theme');
+        function init() {
+            const user = localStorage.getItem('nebula_user');
+            if(user) {
+                document.getElementById('userName').innerText = user.toUpperCase();
+                document.getElementById('greeting').innerText = `Welcome Back, ${user}`;
+            }
+            buildGrid();
         }
 
         function filterGames() {
-            const query = document.getElementById('moduleSearch').value.toLowerCase();
-            document.querySelectorAll('.game-link').forEach(card => {
-                const isMatch = card.dataset.name.includes(query);
-                card.style.display = isMatch ? 'flex' : 'none';
-                if(isMatch) {
-                    card.style.animation = 'modalIn 0.3s ease-out';
-                }
+            const q = document.getElementById('moduleSearch').value.toLowerCase();
+            document.querySelectorAll('.game-card').forEach(card => {
+                card.style.display = card.dataset.name.includes(q) ? 'flex' : 'none';
             });
         }
 
-        // Init
-        buildArcade();
-        checkUser();
+        init();
     </script>
 </body>
 </html>
