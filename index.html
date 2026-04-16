@@ -8,14 +8,13 @@
     <style>
         :root {
             --primary: #00ff88;
-            --bg: #030406;
-            --surface: rgba(255, 255, 255, 0.02);
-            --border: rgba(255, 255, 255, 0.07);
+            --bg: #050608;
+            --surface: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
             --text: #ffffff;
-            --text-dim: #64748b;
+            --text-dim: #94a3b8;
             --danger: #ff4444;
             --warning: #ffaa00;
-            --info: #00d9ff;
         }
 
         /* Theme Variants */
@@ -25,69 +24,135 @@
         body.theme-green { --primary: #00ff88; }
         body.theme-orange { --primary: #ff8800; }
         body.theme-pink { --primary: #ff00bb; }
-        body.theme-grey { --primary: #94a3b8; }
+        body.theme-grey { --primary: #cbd5e1; }
 
         * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; background-image: radial-gradient(circle at 50% -20%, var(--primary), transparent 70%); transition: background-image 0.5s ease; }
 
-        nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; background: rgba(3, 4, 6, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
-        .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; padding: 10px 15px; text-decoration: none; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text); 
+            min-height: 100vh; 
+            overflow-x: hidden;
+            transition: 0.5s ease;
+        }
+
+        /* NEW ANIMATED BACKGROUND */
+        .bg-mesh {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 50% -20%, var(--primary), transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(0,0,0,0.5), transparent 40%),
+                radial-gradient(circle at 100% 100%, var(--primary), transparent 30%);
+            opacity: 0.15;
+            filter: blur(80px);
+            z-index: -1;
+            animation: pulse 10s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.1; }
+            100% { transform: scale(1.1); opacity: 0.2; }
+        }
+
+        nav { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 5%; background: rgba(5, 6, 8, 0.8); 
+            backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); 
+            position: sticky; top: 0; z-index: 1000; 
+        }
+
+        .nav-link { 
+            font-size: 0.7rem; color: var(--text-dim); cursor: pointer; 
+            text-transform: uppercase; letter-spacing: 2px; font-weight: 800; 
+            padding: 10px 15px; text-decoration: none; transition: 0.3s;
+        }
+        .nav-link:hover { color: var(--primary); }
         
-        .theme-selector { display: flex; gap: 8px; align-items: center; background: var(--surface); padding: 5px 15px; border-radius: 20px; border: 1px solid var(--border); }
-        .dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: transform 0.2s; }
-        .dot:hover { transform: scale(1.3); }
+        .theme-selector { 
+            display: flex; gap: 8px; align-items: center; 
+            background: rgba(255,255,255,0.05); padding: 8px 15px; 
+            border-radius: 30px; border: 1px solid var(--border); 
+        }
+        .dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.3); transition: 0.2s; }
+        .dot:hover { transform: scale(1.4); }
 
-        /* --- SEARCH --- */
-        .search-container { padding: 40px 5% 0; text-align: center; }
-        #moduleSearch { width: 100%; max-width: 600px; padding: 18px 25px; border-radius: 15px; background: var(--surface); border: 1px solid var(--border); color: #fff; font-size: 1rem; text-align: center; transition: 0.3s; }
-        #moduleSearch:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 20px rgba(0,255,136,0.1); }
+        .search-container { padding: 60px 5% 20px; text-align: center; }
+        #moduleSearch { 
+            width: 100%; max-width: 600px; padding: 20px 30px; 
+            border-radius: 20px; background: rgba(255,255,255,0.03); 
+            border: 1px solid var(--border); color: #fff; font-size: 1.1rem; 
+            text-align: center; transition: 0.3s;
+        }
+        #moduleSearch:focus { 
+            outline: none; border-color: var(--primary); 
+            background: rgba(255,255,255,0.06);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5), 0 0 10px var(--primary); 
+        }
 
-        /* --- DEV PANEL --- */
-        #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 550px; height: 100vh; background: #07080a; border-right: 1px solid var(--border); z-index: 4000; transition: 0.5s; padding: 40px; overflow-y: auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding: 40px 5% 100px; }
+        .card { 
+            background: var(--surface); border: 1px solid var(--border); 
+            border-radius: 20px; padding: 30px; text-decoration: none; 
+            height: 140px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            text-align: center; color: white; position: relative; overflow: hidden;
+        }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.03));
+            pointer-events: none;
+        }
+        .card:hover { 
+            border-color: var(--primary); background: rgba(255,255,255,0.07); 
+            transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+        .card span { font-size: 0.9rem; font-weight: 800; letter-spacing: 1px; }
+
+        #devPanel { 
+            position: fixed; top: 0; left: -100%; width: 100%; max-width: 500px; 
+            height: 100vh; background: #0a0c10; border-right: 1px solid var(--border); 
+            z-index: 4000; transition: 0.6s cubic-bezier(0.19, 1, 0.22, 1); padding: 40px; overflow-y: auto; 
+        }
         #devPanel.active { left: 0; box-shadow: 50px 0 100px #000; }
-        .dev-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 15px; margin-bottom: 15px; }
-        .dev-input { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 10px; border-radius: 5px; font-size: 0.8rem; margin-bottom: 10px; }
-        
-        /* --- GRID --- */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; padding: 40px 5%; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; padding: 20px; text-decoration: none; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; text-align: center; color: white; }
-        .card:hover { border-color: var(--primary); background: rgba(255,255,255,0.05); transform: translateY(-3px); }
-        .card span { font-size: 0.85rem; font-weight: 800; }
 
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .auth-box { width: 90%; max-width: 400px; padding: 40px; background: #0a0b0d; border-radius: 30px; text-align: center; border: 1px solid var(--border); }
-        .auth-field { width: 100%; padding: 15px; margin-top: 12px; border-radius: 10px; border: 1px solid #222; background: #000; color: #fff; text-align: center; }
+        .auth-box { 
+            width: 90%; max-width: 400px; padding: 50px; background: #0d1117; 
+            border-radius: 40px; text-align: center; border: 1px solid var(--border); 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .auth-field { 
+            width: 100%; padding: 18px; margin-top: 15px; border-radius: 15px; 
+            border: 1px solid #222; background: #050608; color: #fff; text-align: center; 
+        }
     </style>
 </head>
 <body class="theme-green">
 
+    <div class="bg-mesh"></div>
+
     <div id="devPanel">
-        <h2 style="color: var(--primary); font-weight: 800; margin-bottom: 20px;">SYSTEM OVERSEER</h2>
-        <div class="dev-card">
-            <p style="font-size: 0.6rem; font-weight: 800; color: var(--text-dim); margin-bottom: 10px;">ACTIVE FILTERS</p>
-            <div id="filterList" style="font-family: 'Fira Code'; font-size: 0.7rem; color: var(--danger); margin-bottom: 15px;"></div>
-            <input type="text" id="manualInput" class="dev-input" placeholder="IP or Device ID">
-            <input type="text" id="manualReason" class="dev-input" placeholder="Ban Message">
-            <button class="nav-link" style="width:100%; background:var(--danger); color:white; border-radius:5px;" onclick="manualAction('ip')">Apply Ban</button>
-        </div>
+        <h2 style="color: var(--primary); font-weight: 800; margin-bottom: 25px;">OS TERMINAL</h2>
         <div id="devUserList"></div>
-        <button class="nav-link" onclick="toggleDev()" style="width:100%; border:1px solid var(--border); margin-top:20px; border-radius:8px;">Exit Terminal</button>
+        <button class="nav-link" onclick="toggleDev()" style="width:100%; border:1px solid var(--border); margin-top:20px; border-radius:12px;">Close Terminal</button>
     </div>
 
     <div id="authOverlay" class="modal">
         <div class="auth-box">
-            <h1 style="letter-spacing: 5px; color: var(--primary);">NEBULA</h1>
-            <input type="text" id="userInput" class="auth-field" placeholder="CALLSIGN">
-            <input type="password" id="passInput" class="auth-field" placeholder="ACCESS KEY">
-            <button style="width:100%; padding:15px; margin-top:20px; border-radius:10px; border:none; background:var(--primary); font-weight:800; cursor:pointer;" onclick="processAuth()">INITIALIZE</button>
-            <p style="margin-top: 20px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleAuthMode()" id="toggleTxt">NEW USER? REGISTER</p>
+            <h1 style="letter-spacing: 10px; color: var(--primary); margin-bottom: 20px;">NEBULA</h1>
+            <input type="text" id="userInput" class="auth-field" placeholder="OPERATIVE ID">
+            <input type="password" id="passInput" class="auth-field" placeholder="SECURITY KEY">
+            <button style="width:100%; padding:18px; margin-top:30px; border-radius:15px; border:none; background:var(--primary); font-weight: 800; cursor:pointer;" onclick="processAuth()">LOGIN</button>
+            <p style="margin-top: 25px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleAuthMode()" id="toggleTxt">SIGN UP FOR ACCESS</p>
         </div>
     </div>
 
     <nav>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:15px; height:15px; background:var(--primary); border-radius:3px;"></div>
-            <h1 style="font-size:0.9rem; letter-spacing:3px;">NEBULA</h1>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:18px; height:18px; background:var(--primary); border-radius:4px; box-shadow: 0 0 10px var(--primary);"></div>
+            <h1 style="font-size:1rem; letter-spacing:4px; font-weight: 800;">NEBULA</h1>
         </div>
 
         <div class="theme-selector">
@@ -100,15 +165,15 @@
             <div class="dot" style="background:#94a3b8" onclick="changeTheme('grey')"></div>
         </div>
 
-        <div>
-            <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color: var(--warning);">[ CMD ]</span>
-            <span id="navUser" style="margin-left:15px; font-weight:800; color:var(--primary); font-size: 0.8rem;">GUEST</span>
+        <div style="display: flex; align-items: center;">
+            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" target="_blank" class="nav-link" style="color: var(--primary); border: 1px solid var(--primary); border-radius: 8px; margin-right: 10px;">Support</a>
+            <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color: var(--warning);">[ADMIN]</span>
             <span class="nav-link" onclick="doLogout()">Logout</span>
         </div>
     </nav>
 
     <div class="search-container">
-        <input type="text" id="moduleSearch" placeholder="Search for modules..." onkeyup="filterModules()">
+        <input type="text" id="moduleSearch" placeholder="Search modules..." onkeyup="filterModules()">
     </div>
 
     <div id="gameGrid" class="grid"></div>
@@ -136,7 +201,6 @@
             { name: "Sparks Logs", url: "sparxsmaths-log.html" }, { name: "Tic Tac Toe", url: "tictactoe.html" }
         ];
 
-        // --- THEME CONTROL ---
         function changeTheme(color) {
             document.body.className = `theme-${color}`;
             localStorage.setItem('neb_theme', color);
@@ -144,9 +208,8 @@
 
         function filterModules() {
             const query = document.getElementById('moduleSearch').value.toLowerCase();
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                const name = card.querySelector('span').innerText.toLowerCase();
+            document.querySelectorAll('.card').forEach(card => {
+                const name = card.innerText.toLowerCase();
                 card.style.display = name.includes(query) ? 'flex' : 'none';
             });
         }
@@ -154,16 +217,7 @@
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
-            const ipB = JSON.parse(localStorage.getItem('neb_ipbans')) || {};
-            const dvB = JSON.parse(localStorage.getItem('neb_devbans')) || {};
-            const acB = JSON.parse(localStorage.getItem('neb_bans')) || {};
-
-            if (u.toUpperCase() !== 'ADMIN') {
-                if (validateBan(ipB[MOCK_IP])) return;
-                if (validateBan(dvB[DEVICE_ID])) return;
-                if (validateBan(acB[u.toLowerCase()])) return;
-            }
-
+            
             if(u.toUpperCase() === 'ADMIN' && p === atob(_0xADMIN)) {
                 localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return;
             }
@@ -171,41 +225,31 @@
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
             if(isLoginMode) {
                 if(db[u] && db[u].pw === p) {
-                    db[u].lastIP = MOCK_IP; db[u].lastDev = DEVICE_ID;
-                    localStorage.setItem('neb_db', JSON.stringify(db));
                     localStorage.setItem('neb_active', u); location.reload();
                 } else alert("ACCESS DENIED");
             } else {
-                if(db[u]) return alert("EXISTS");
-                db[u] = { pw: p, lastIP: MOCK_IP, lastDev: DEVICE_ID };
+                if(db[u]) return alert("ID TAKEN");
+                db[u] = { pw: p };
                 localStorage.setItem('neb_db', JSON.stringify(db));
                 localStorage.setItem('neb_active', u); location.reload();
             }
         }
 
-        function validateBan(obj) {
-            if (!obj) return false;
-            alert(`RESTRICTED\nReason: ${obj.reason || "Policy Violation"}`);
-            return true;
-        }
-
-        function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshDevList(); }
+        function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); }
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
-        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('toggleTxt').innerText = isLoginMode ? "NEW USER? REGISTER" : "BACK TO LOGIN"; }
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('toggleTxt').innerText = isLoginMode ? "SIGN UP FOR ACCESS" : "BACK TO LOGIN"; }
 
         function renderUI() {
             const u = localStorage.getItem('neb_active'); if(!u) return;
             document.getElementById('authOverlay').style.display = 'none';
-            document.getElementById('navUser').innerText = u.toUpperCase();
             if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
             
-            // Apply saved theme
             const savedTheme = localStorage.getItem('neb_theme') || 'green';
             changeTheme(savedTheme);
 
             document.getElementById('gameGrid').innerHTML = gameList.map(g => `
                 <a href="${g.url}" class="card">
-                    <span>${g.name}</span>
+                    <span>${g.name.toUpperCase()}</span>
                 </a>`).join('');
         }
 
