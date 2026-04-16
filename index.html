@@ -51,14 +51,21 @@
 <body>
 
     <div id="devPanel">
-        <h2 style="color: var(--primary); margin-bottom: 5px;">COMMAND TERMINAL</h2>
-        <div id="ipBanSection" style="margin-bottom: 20px; padding: 15px; background: rgba(255,0,0,0.05); border-radius: 15px; border: 1px solid rgba(255,0,0,0.1);">
-            <p style="font-size: 0.65rem; font-weight: 800; color: var(--danger);">NETWORK FILTERS</p>
-            <div id="ipList" style="font-family: 'Fira Code'; font-size: 0.7rem; margin: 10px 0;"></div>
-            <button class="dev-btn" style="background: var(--danger); width: 100%;" onclick="ipBan()">BAN CURRENT STATION (IP)</button>
+        <h2 style="color: var(--primary); margin-bottom: 5px;">NETWORK SECURITY</h2>
+        
+        <div style="margin-bottom: 25px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 20px; border: 1px solid var(--border);">
+            <p style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); margin-bottom: 10px;">ACTIVE IP FILTERS</p>
+            <div id="ipList" style="font-family: 'Fira Code'; font-size: 0.75rem; color: var(--danger); margin-bottom: 15px;"></div>
+            
+            <input type="text" id="manualIP" class="dev-input" placeholder="Manual IP Address (e.g. 192.168.1.1)">
+            <div class="dev-btn-group">
+                <button class="dev-btn" style="background: var(--danger);" onclick="ipBanManual()">BAN TARGET IP</button>
+                <button class="dev-btn" style="background: var(--warning);" onclick="ipBanCurrent()">BAN CURRENT STATION</button>
+            </div>
         </div>
+
         <div id="devUserList"></div>
-        <button class="nav-link" onclick="toggleDev()" style="margin-top: 20px; width: 100%; border: 1px solid var(--border);">CLOSE</button>
+        <button class="nav-link" onclick="toggleDev()" style="margin-top: 20px; width: 100%; border: 1px solid var(--border);">EXIT TERMINAL</button>
     </div>
 
     <div id="authOverlay" class="modal">
@@ -90,11 +97,10 @@
 
     <script>
         const _0x5a21 = "MTIzNDU2Nzgh";
-        const DUMMY_IP = "127.0.0.1";
+        const CURRENT_STATION_IP = "127.0.0.1"; // Mock IP for local simulation
         let isLogin = true;
         let activeGame = null;
 
-        // Cyber-Strike has been removed from this list
         const gameList = [
             { name: "Eggshell", cat: "Shooter", url: "eggshell.html" }, 
             { name: "Neon-Golf", cat: "Sports", url: "Neon-Golf.html" }, 
@@ -123,9 +129,39 @@
             { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
         ];
 
-        // --- ANTI-TAMPER DETECTION ---
+        // --- IP LOGIC ---
+        function ipBanCurrent() {
+            const user = localStorage.getItem('neb_active');
+            if (user === 'ADMIN') {
+                return alert("SECURITY OVERRIDE: Admin station cannot be IP banned.");
+            }
+            applyIPBan(CURRENT_STATION_IP);
+        }
+
+        function ipBanManual() {
+            const target = document.getElementById('manualIP').value.trim();
+            if(!target) return alert("Enter a valid IP");
+            applyIPBan(target);
+            document.getElementById('manualIP').value = '';
+        }
+
+        function applyIPBan(ip) {
+            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            if(!i.includes(ip)) i.push(ip);
+            localStorage.setItem('neb_ipbans', JSON.stringify(i));
+            refreshDevList();
+        }
+
+        function unIPBan(ip) {
+            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            i = i.filter(x => x !== ip);
+            localStorage.setItem('neb_ipbans', JSON.stringify(i));
+            refreshDevList();
+        }
+
+        // --- ANTI-TAMPER ---
         document.addEventListener('keydown', (e) => {
-            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) || (e.ctrlKey && e.key === "U")) {
+            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C"))) {
                 e.preventDefault();
                 autoBanForTamper();
             }
@@ -134,22 +170,19 @@
         function autoBanForTamper() {
             const user = localStorage.getItem('neb_active');
             if (!user || user === 'ADMIN') return;
-            
             let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
-            const expiry = Date.now() + (1 * 24 * 60 * 60 * 1000); 
-            b[user.toLowerCase()] = { message: "SYSTEM TAMPERING DETECTED (CONSOLE)", expiry: expiry };
+            const expiry = Date.now() + (24 * 60 * 60 * 1000); 
+            b[user.toLowerCase()] = { message: "SYSTEM TAMPERING", expiry: expiry };
             localStorage.setItem('neb_bans', JSON.stringify(b));
             doLogout();
-            alert("SYSTEM LOCK: 24h Ban applied for attempting to access dev console.");
         }
 
-        // --- PLAY TIME TRACKING ---
+        // --- CORE SYSTEM ---
         function startTracking(gameName) {
             activeGame = gameName;
             setInterval(() => {
-                if (activeGame) {
-                    const user = localStorage.getItem('neb_active');
-                    if (!user) return;
+                const user = localStorage.getItem('neb_active');
+                if (activeGame && user) {
                     let db = JSON.parse(localStorage.getItem('neb_db')) || {};
                     if (!db[user].playtime) db[user].playtime = {};
                     db[user].playtime[activeGame] = (db[user].playtime[activeGame] || 0) + 1;
@@ -168,16 +201,14 @@
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
 
-            if(ipBans.includes(DUMMY_IP)) return alert("IP BLACKLISTED");
+            if(ipBans.includes(CURRENT_STATION_IP) && u.toUpperCase() !== 'ADMIN') return alert("NETWORK BLACKLISTED");
 
             if(bans[u.toLowerCase()]) {
                 const b = bans[u.toLowerCase()];
                 if(b.expiry && Date.now() > b.expiry) {
                     delete bans[u.toLowerCase()];
                     localStorage.setItem('neb_bans', JSON.stringify(bans));
-                } else {
-                    return alert(`BANNED: ${b.message}`);
-                }
+                } else return alert(`BANNED: ${b.message}`);
             }
 
             if(u.toUpperCase() === 'ADMIN' && p === atob(_0x5a21)) {
@@ -201,7 +232,11 @@
             const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             
-            document.getElementById('ipList').innerHTML = ipBans.map(ip => `<div><span>${ip}</span> <span onclick="unIPBan('${ip}')" style="color:var(--primary); cursor:pointer;">[X]</span></div>`).join('') || 'NONE';
+            document.getElementById('ipList').innerHTML = ipBans.map(ip => `
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span>${ip}</span>
+                    <span onclick="unIPBan('${ip}')" style="color:var(--primary); cursor:pointer;">[ LIFT FILTER ]</span>
+                </div>`).join('') || 'NO ACTIVE FILTERS';
 
             document.getElementById('devUserList').innerHTML = Object.keys(db).map(u => {
                 const isB = !!bans[u.toLowerCase()];
@@ -209,45 +244,20 @@
                     <div class="dev-user-card">
                         <div style="font-weight:800;">${u.toUpperCase()}</div>
                         <input type="text" id="msg-${u}" class="dev-input" placeholder="Reason..." value="${isB ? bans[u.toLowerCase()].message : ''}">
-                        <div class="ban-timer-grid">
-                            <button class="timer-btn" onclick="setTimer('${u}', 1)">1D</button>
-                            <button class="timer-btn" onclick="setTimer('${u}', 3)">3D</button>
-                            <button class="timer-btn" onclick="setTimer('${u}', 7)">1W</button>
-                            <button class="timer-btn" onclick="setTimer('${u}', 0)">PERM</button>
-                        </div>
                         <div class="dev-btn-group">
-                            <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="handleBan('${u}')">${isB ? 'Unban' : 'Confirm Ban'}</button>
+                            <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="handleBan('${u}')">${isB ? 'Unban' : 'Ban'}</button>
                             <button class="dev-btn" style="background:var(--info)" onclick="viewAudit('${u}')">Audit</button>
                         </div>
                     </div>`;
             }).join('');
         }
 
-        let selectedDays = {};
-        function setTimer(u, days) { selectedDays[u] = days; }
-
         function handleBan(u) {
             let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
-            if(b[u.toLowerCase()]) { delete b[u.toLowerCase()]; } 
-            else {
-                const days = selectedDays[u] || 0;
-                const expiry = days > 0 ? Date.now() + (days * 24 * 60 * 60 * 1000) : null;
-                b[u.toLowerCase()] = { message: document.getElementById(`msg-${u}`).value || "Violation", expiry: expiry };
-            }
+            if(b[u.toLowerCase()]) delete b[u.toLowerCase()];
+            else b[u.toLowerCase()] = { message: document.getElementById(`msg-${u}`).value || "Violation", expiry: null };
             localStorage.setItem('neb_bans', JSON.stringify(b));
             refreshDevList();
-        }
-
-        function unIPBan(ip) {
-            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            i = i.filter(x => x !== ip);
-            localStorage.setItem('neb_ipbans', JSON.stringify(i)); refreshDevList();
-        }
-
-        function ipBan() {
-            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            if(!i.includes(DUMMY_IP)) i.push(DUMMY_IP);
-            localStorage.setItem('neb_ipbans', JSON.stringify(i)); refreshDevList();
         }
 
         function viewAudit(u) {
