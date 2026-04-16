@@ -44,7 +44,7 @@
         .dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.3); }
 
         /* --- ADMIN PANEL --- */
-        #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 800px; height: 100vh; background: #0a0c10; border-right: 1px solid var(--border); z-index: 4000; transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); padding: 30px; overflow-y: auto; box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
+        #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 850px; height: 100vh; background: #0a0c10; border-right: 1px solid var(--border); z-index: 4000; transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); padding: 30px; overflow-y: auto; box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
         #devPanel.active { left: 0; }
         .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
         .admin-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 10px; }
@@ -54,6 +54,7 @@
         .ban-actions { display: flex; gap: 5px; margin-top: 5px; }
         .ban-btn { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: #fff; font-size: 0.6rem; font-weight: 800; cursor: pointer; }
         .ban-btn.danger { border-color: var(--danger); color: var(--danger); }
+        .ban-btn.success { border-color: var(--primary); color: var(--primary); }
         .ban-btn:hover { background: rgba(255,255,255,0.1); }
 
         .duration-select { background: #000; color: #fff; border: 1px solid var(--border); font-size: 0.7rem; padding: 2px; border-radius: 4px; }
@@ -76,10 +77,10 @@
 
     <div id="devPanel">
         <h2 style="color: var(--primary); font-weight: 800; margin-bottom: 5px;">NEBULA COMMAND CENTER</h2>
-        <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 30px;">User Monitoring & Security Protocol</p>
+        <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 30px;">Admin Override: Active</p>
         
         <div class="admin-card">
-            <h3 style="font-size: 0.8rem; letter-spacing: 2px;">ACTIVE USER DATABASE</h3>
+            <h3 style="font-size: 0.8rem; letter-spacing: 2px;">REGISTERED OPERATIVES</h3>
             <table class="admin-table" id="userTable">
                 <thead>
                     <tr>
@@ -87,7 +88,7 @@
                         <th>LAST LOGIN</th>
                         <th>IP ADDR</th>
                         <th>DEVICE ID</th>
-                        <th>SECURITY ACTIONS</th>
+                        <th>ACTIONS (SELECT DURATION FIRST)</th>
                     </tr>
                 </thead>
                 <tbody id="userRows"></tbody>
@@ -95,7 +96,7 @@
         </div>
 
         <div class="admin-card">
-            <h3 style="font-size: 0.8rem; letter-spacing: 2px; color: var(--danger);">SYSTEM BLACKLIST</h3>
+            <h3 style="font-size: 0.8rem; letter-spacing: 2px; color: var(--danger);">SYSTEM BLACKLIST & REVERTS</h3>
             <div id="blacklistLog" style="font-family: 'Fira Code', monospace; font-size: 0.65rem; margin-top: 15px;"></div>
         </div>
 
@@ -138,7 +139,8 @@
     <div id="gameGrid" class="grid"></div>
 
     <script>
-        const _0xADMIN = "MTIzNDU2Nzgh"; // 12345678!
+        const _0xADMIN_USER = "ADMIN";
+        const _0xADMIN_PASS = "12345678!"; 
         const DEVICE_ID = btoa(navigator.userAgent).substring(5, 15);
         const MOCK_IP = (Math.floor(Math.random() * 255) + 1) + ".168.1." + Math.floor(Math.random() * 255);
         let isLoginMode = true;
@@ -159,25 +161,30 @@
             { name: "Sparks Logs", url: "sparxsmaths-log.html" }, { name: "Tic Tac Toe", url: "tictactoe.html" }
         ];
 
-        // --- CORE AUTH ---
+        // --- AUTH LOGIC WITH ADMIN BYPASS ---
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
             const bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
 
-            // Check if Admin
-            if(u.toUpperCase() === 'ADMIN' && p === atob(_0xADMIN)) {
+            // 1. ADMIN BYPASS: If callsign is ADMIN, skip all ban checks
+            if(u.toUpperCase() === _0xADMIN_USER && p === _0xADMIN_PASS) {
                 localStorage.setItem('neb_active', 'ADMIN');
                 location.reload();
                 return;
             }
 
-            // Security Checks (Skip for Admin)
-            if (bans[u.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID]) {
-                const b = bans[u.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID];
-                if (!b.expiry || Date.now() < b.expiry) {
-                    alert(`ACCESS DENIED\nRESTRICTION UNTIL: ${b.expiry ? new Date(b.expiry).toLocaleString() : 'PERMANENT'}`);
+            // 2. BAN VALIDATION: Only for non-admin users
+            const activeBan = bans[u.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID];
+            if (activeBan) {
+                if (!activeBan.expiry || Date.now() < activeBan.expiry) {
+                    const timeMsg = activeBan.expiry ? `UNTIL: ${new Date(activeBan.expiry).toLocaleString()}` : 'PERMANENT';
+                    alert(`ACCESS DENIED\n${activeBan.type} RESTRICTION ACTIVE\n${timeMsg}`);
                     return;
+                } else {
+                    // Auto-clear expired ban
+                    delete bans[u.toLowerCase()];
+                    localStorage.setItem('neb_blacklist', JSON.stringify(bans));
                 }
             }
 
@@ -200,7 +207,7 @@
             }
         }
 
-        // --- ADMIN ACTIONS ---
+        // --- ADMIN CONTROLS ---
         function applyBan(target, type) {
             const duration = document.getElementById(`dur-${target}`).value;
             let blacklist = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
@@ -213,27 +220,30 @@
             blacklist[target] = { type: type, expiry: expiry, date: new Date().toLocaleString() };
             localStorage.setItem('neb_blacklist', JSON.stringify(blacklist));
             refreshAdminUI();
-            alert(`Locked ${type}: ${target}`);
+            alert(`Applied ${type} Ban to: ${target}`);
         }
 
+        // REVERT FUNCTION: Restores access by removing from blacklist
         function revertBan(target) {
             let blacklist = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            delete blacklist[target];
-            localStorage.setItem('neb_blacklist', JSON.stringify(blacklist));
-            refreshAdminUI();
+            if (blacklist[target]) {
+                delete blacklist[target];
+                localStorage.setItem('neb_blacklist', JSON.stringify(blacklist));
+                refreshAdminUI();
+                alert(`Access Reverted for: ${target}`);
+            }
         }
 
         function refreshAdminUI() {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
             const blacklist = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
             
-            // Render Users
             document.getElementById('userRows').innerHTML = Object.keys(db).map(u => `
                 <tr>
-                    <td style="color:var(--primary)">${u}</td>
+                    <td style="color:var(--primary); font-weight:800">${u}</td>
                     <td>${db[u].lastSeen || 'N/A'}</td>
                     <td>${db[u].lastIP || 'N/A'}</td>
-                    <td style="font-family:monospace">${db[u].lastDev || 'N/A'}</td>
+                    <td style="font-family:monospace; font-size:0.6rem">${db[u].lastDev || 'N/A'}</td>
                     <td>
                         <select class="duration-select" id="dur-${u}">
                             <option value="86400">1 Day</option>
@@ -243,24 +253,26 @@
                             <option value="0">Permanent</option>
                         </select>
                         <div class="ban-actions">
-                            <button class="ban-btn danger" onclick="applyBan('${u.toLowerCase()}', 'Account')">ACC</button>
-                            <button class="ban-btn danger" onclick="applyBan('${db[u].lastIP}', 'IP')">IP</button>
-                            <button class="ban-btn danger" onclick="applyBan('${db[u].lastDev}', 'Device')">DEV</button>
+                            <button class="ban-btn danger" onclick="applyBan('${u.toLowerCase()}', 'Account')">BAN ACC</button>
+                            <button class="ban-btn danger" onclick="applyBan('${db[u].lastIP}', 'IP')">BAN IP</button>
+                            <button class="ban-btn danger" onclick="applyBan('${db[u].lastDev}', 'Device')">BAN DEV</button>
                         </div>
                     </td>
                 </tr>
             `).join('');
 
-            // Render Blacklist
             document.getElementById('blacklistLog').innerHTML = Object.keys(blacklist).map(key => `
-                <div style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;">
-                    <span>[${blacklist[key].type}] ${key} <br> <small style="color:var(--text-dim)">Exp: ${blacklist[key].expiry ? new Date(blacklist[key].expiry).toLocaleString() : 'PERM'}</small></span>
-                    <button class="ban-btn" onclick="revertBan('${key}')" style="color:var(--primary); border-color:var(--primary)">REVERT</button>
+                <div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+                    <span>
+                        <b style="color:var(--danger)">[${blacklist[key].type.toUpperCase()}]</b> ${key}<br>
+                        <small style="color:var(--text-dim)">Expires: ${blacklist[key].expiry ? new Date(blacklist[key].expiry).toLocaleString() : 'NEVER'}</small>
+                    </span>
+                    <button class="ban-btn success" onclick="revertBan('${key}')">REVERT ACCESS</button>
                 </div>
-            `).join('') || 'No active restrictions.';
+            `).join('') || '<p style="color:var(--text-dim); padding:10px;">Security clear. No active bans.</p>';
         }
 
-        // --- UI UTILS ---
+        // --- INTERFACE UTILS ---
         function changeTheme(color) { document.body.className = `theme-${color}`; localStorage.setItem('neb_theme', color); }
         function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); if(document.getElementById('devPanel').classList.contains('active')) refreshAdminUI(); }
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
