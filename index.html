@@ -22,8 +22,6 @@
         body.theme-blue { --primary: #00d9ff; }
         body.theme-yellow { --primary: #ffcc00; }
         body.theme-green { --primary: #00ff88; }
-        body.theme-orange { --primary: #ff8800; }
-        body.theme-pink { --primary: #ff00bb; }
         body.theme-purple { --primary: #a855f7; }
         body.theme-teal { --primary: #14b8a6; }
         body.theme-white { --primary: #ffffff; }
@@ -39,32 +37,27 @@
         }
 
         nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; background: rgba(5, 6, 8, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
-        .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; padding: 10px 15px; text-decoration: none; }
+        .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; padding: 10px 15px; }
         
-        .theme-selector { display: flex; gap: 6px; align-items: center; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 30px; border: 1px solid var(--border); flex-wrap: wrap; max-width: 280px; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.3); transition: 0.2s; }
-
-        #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 850px; height: 100vh; background: #0a0c10; border-right: 1px solid var(--border); z-index: 4000; transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); padding: 30px; overflow-y: auto; }
-        #devPanel.active { left: 0; box-shadow: 20px 0 50px #000; }
+        #devPanel { position: fixed; top: 0; right: -100%; width: 100%; max-width: 850px; height: 100vh; background: #0a0c10; border-left: 1px solid var(--border); z-index: 4000; transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); padding: 30px; overflow-y: auto; }
+        #devPanel.active { right: 0; box-shadow: -20px 0 50px #000; }
         .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        
         .admin-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
         .admin-table th { text-align: left; color: var(--text-dim); padding: 10px; border-bottom: 1px solid var(--border); }
         .admin-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         
-        .ban-btn { padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: #fff; font-size: 0.6rem; font-weight: 800; cursor: pointer; margin: 2px; transition: 0.2s; }
+        .ban-btn { padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: #fff; font-size: 0.6rem; font-weight: 800; cursor: pointer; margin: 2px; }
         .ban-btn.danger { border-color: var(--danger); color: var(--danger); }
         .ban-btn.success { border-color: var(--primary); color: var(--primary); }
-
-        .search-container { padding: 60px 5% 20px; text-align: center; }
-        #moduleSearch { width: 100%; max-width: 600px; padding: 20px; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: #fff; text-align: center; font-size: 1rem; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding: 40px 5%; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 30px; text-decoration: none; color: white; text-align: center; font-weight: 800; transition: 0.3s; }
-        .card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .ban-btn:hover { background: rgba(255,255,255,0.05); }
 
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .auth-box { width: 90%; max-width: 400px; padding: 50px; background: #0d1117; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
         .auth-field { width: 100%; padding: 18px; margin-top: 15px; border-radius: 15px; border: 1px solid #222; background: #050608; color: #fff; text-align: center; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding: 40px 5%; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 30px; text-decoration: none; color: white; text-align: center; font-weight: 800; }
     </style>
 </head>
 <body class="theme-green">
@@ -72,87 +65,57 @@
     <div class="bg-mesh"></div>
 
     <div id="devPanel">
-        <h2 style="color: var(--primary); margin-bottom: 5px;">COMMAND TERMINAL</h2>
+        <h2 style="color: var(--primary); margin-bottom: 15px;">NEBULA ROOT TERMINAL</h2>
         <div class="admin-card">
-            <h3>CONNECTED USERS</h3>
+            <h3>ACTIVE USERS</h3>
             <table class="admin-table">
-                <thead><tr><th>USER</th><th>IP</th><th>DEVICE ID</th><th>BAN OPS</th></tr></thead>
+                <thead><tr><th>USER</th><th>IP ADDR</th><th>DEVICE ID</th><th>CONTROLS</th></tr></thead>
                 <tbody id="userRows"></tbody>
             </table>
         </div>
         <div class="admin-card">
-            <h3 style="color:var(--danger)">SECURITY BLACKLIST (REVERT)</h3>
+            <h3 style="color:var(--danger)">RESTRICTION LOG</h3>
             <div id="blacklistLog" style="margin-top: 15px;"></div>
         </div>
-        <button class="nav-link" onclick="toggleDev()" style="width:100%; border:1px solid var(--border); border-radius:8px;">EXIT</button>
+        <button class="ban-btn" onclick="toggleDev()" style="width:100%; padding:15px;">CLOSE TERMINAL</button>
     </div>
 
     <div id="authOverlay" class="modal">
         <div class="auth-box">
-            <h1 style="letter-spacing: 10px; color: var(--primary); margin-bottom: 20px;">NEBULA</h1>
+            <h1 style="letter-spacing: 10px; color: var(--primary);">NEBULA</h1>
             <input type="text" id="userInput" class="auth-field" placeholder="ID">
             <input type="password" id="passInput" class="auth-field" placeholder="KEY">
-            <button style="width:100%; padding:18px; margin-top:30px; border-radius:15px; background:var(--primary); font-weight: 800; border:none;" onclick="processAuth()">LOG IN</button>
-            <p style="margin-top: 25px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleAuthMode()" id="toggleTxt">REGISTER</p>
+            <button style="width:100%; padding:18px; margin-top:20px; border-radius:15px; background:var(--primary); font-weight:800;" onclick="processAuth()">ENTER</button>
+            <p onclick="toggleAuthMode()" id="toggleTxt" style="font-size:0.7rem; margin-top:20px; cursor:pointer;">REGISTER</p>
         </div>
     </div>
 
     <nav>
-        <h1 style="font-size:1rem; letter-spacing:4px;">NEBULA</h1>
-        <div class="theme-selector">
-            <div class="dot" style="background:#ff4444" onclick="changeTheme('red')"></div>
-            <div class="dot" style="background:#00d9ff" onclick="changeTheme('blue')"></div>
-            <div class="dot" style="background:#00ff88" onclick="changeTheme('green')"></div>
-            <div class="dot" style="background:#a855f7" onclick="changeTheme('purple')"></div>
-            <div class="dot" style="background:#bef264" onclick="changeTheme('lime')"></div>
-        </div>
+        <h1>NEBULA</h1>
         <div>
             <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color:var(--warning)">[ADMIN]</span>
             <span class="nav-link" onclick="doLogout()">Logout</span>
         </div>
     </nav>
 
-    <div class="search-container"><input type="text" id="moduleSearch" placeholder="Search..." onkeyup="filterModules()"></div>
     <div id="gameGrid" class="grid"></div>
 
     <script>
         const _0xADMIN_USER = "ADMIN", _0xADMIN_PASS = "12345678!";
-        const DEVICE_ID = btoa(navigator.userAgent).substring(10, 25);
-        const MOCK_IP = "172.20.1." + Math.floor(Math.random()*254);
+        const DEVICE_ID = btoa(navigator.userAgent).substring(15, 30);
+        const MOCK_IP = "10.0.0." + Math.floor(Math.random()*255);
         let isLoginMode = true;
 
-        const gameList = [
-            { name: "Neon-Golf", url: "Neon-Golf.html" }, { name: "Neon-Hex", url: "Neon-Hex.html" },
-            { name: "Neon-Pong", url: "Neon-Pong.html" }, { name: "Neon-Slams", url: "Neon-Slams.html" },
-            { name: "Neon-Slash", url: "Neon-Slash.html" }, { name: "AI Run", url: "ai.html" },
-            { name: "Basketball", url: "basketball.html" }, { name: "Blockblast", url: "blockblast.html" },
-            { name: "Blockbreaker", url: "blockbreaker.html" }, { name: "Blockcraft", url: "blockcraft.html" },
-            { name: "Cricket", url: "cricket.html" }, { name: "Crossy Roads", url: "crossyroads.html" },
-            { name: "Drift", url: "drift.html" }, { name: "Eggshell", url: "eggshell.html" },
-            { name: "Football", url: "football.html" }, { name: "Master Armory", url: "masterarmory.html" },
-            { name: "Minesweeper", url: "minesweeper.html" }, { name: "Neon Trail", url: "neon-trail.html" },
-            { name: "Overdrive", url: "overdrive.html" }, { name: "Pacman", url: "pacman.html" },
-            { name: "Reader", url: "reader.html" }, { name: "Snake", url: "snake.html" },
-            { name: "Space Adventure", url: "spaceadventure.html" }, { name: "Sparks Maths", url: "sparksmaths.html" },
-            { name: "Sparks Logs", url: "sparxsmaths-log.html" }, { name: "Tic Tac Toe", url: "tictactoe.html" }
-        ];
-
-        // --- THE KICK LOGIC ---
-        function securityPulse() {
-            const activeUser = localStorage.getItem('neb_active');
-            if (!activeUser || activeUser === 'ADMIN') return;
-
+        // Force Kick Logic
+        setInterval(() => {
+            const active = localStorage.getItem('neb_active');
+            if (!active || active === 'ADMIN') return;
             const bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            // If current user, IP, or Device ID is found in blacklist, force logout
-            if (bans[activeUser.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID]) {
-                const b = bans[activeUser.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID];
-                if (!b.expiry || Date.now() < b.expiry) {
-                    localStorage.removeItem('neb_active');
-                    location.reload();
-                }
+            if (bans[active.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID]) {
+                localStorage.removeItem('neb_active');
+                location.reload();
             }
-        }
-        setInterval(securityPulse, 2000); // Check every 2 seconds
+        }, 2000);
 
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
@@ -164,10 +127,7 @@
             }
 
             if (bans[u.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID]) {
-                const b = bans[u.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID];
-                if (!b.expiry || Date.now() < b.expiry) {
-                    alert("ACCESS DENIED: RED-FLAGGED ID/IP/HWID"); return;
-                }
+                alert("ACCESS DENIED: RED FLAG DETECTED"); return;
             }
 
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
@@ -176,9 +136,8 @@
                     db[u].lastIP = MOCK_IP; db[u].lastDev = DEVICE_ID;
                     localStorage.setItem('neb_db', JSON.stringify(db));
                     localStorage.setItem('neb_active', u); location.reload();
-                } else alert("INVALID KEY");
+                } else alert("WRONG KEY");
             } else {
-                if(db[u]) return alert("ID TAKEN");
                 db[u] = { pw: p, lastIP: MOCK_IP, lastDev: DEVICE_ID };
                 localStorage.setItem('neb_db', JSON.stringify(db));
                 localStorage.setItem('neb_active', u); location.reload();
@@ -186,64 +145,58 @@
         }
 
         function applyBan(target, type) {
-            const dur = document.getElementById(`dur-${target}`).value;
-            let blacklist = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            let expiry = dur === "0" ? null : Date.now() + (parseInt(dur) * 1000);
+            const val = document.getElementById(`dur-${target}`).value;
+            let bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
+            let expiry = val === "0" ? null : Date.now() + (parseInt(val) * 1000);
             
-            // Store target exactly as provided to ensure Revert works
-            blacklist[target.toString()] = { type, expiry, raw: target };
-            localStorage.setItem('neb_blacklist', JSON.stringify(blacklist));
+            // Critical Fix: Stringify keys precisely
+            bans[String(target).toLowerCase()] = { type, expiry };
+            localStorage.setItem('neb_blacklist', JSON.stringify(bans));
             refreshAdminUI();
         }
 
         function revertBan(key) {
-            let blacklist = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            if (blacklist[key]) {
-                delete blacklist[key];
-                localStorage.setItem('neb_blacklist', JSON.stringify(blacklist));
-                refreshAdminUI();
-            }
+            let bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
+            delete bans[String(key).toLowerCase()];
+            localStorage.setItem('neb_blacklist', JSON.stringify(bans));
+            refreshAdminUI();
         }
 
         function refreshAdminUI() {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const blacklist = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
+            const bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
             
             document.getElementById('userRows').innerHTML = Object.keys(db).map(u => `
                 <tr>
-                    <td style="color:var(--primary)">${u}</td><td>${db[u].lastIP}</td><td style="font-size:0.5rem">${db[u].lastDev}</td>
+                    <td>${u}</td><td>${db[u].lastIP}</td><td>${db[u].lastDev}</td>
                     <td>
-                        <select id="dur-${u}" style="background:#000;color:#fff;font-size:0.6rem"><option value="86400">1D</option><option value="0">PERM</option></select>
-                        <button class="ban-btn danger" onclick="applyBan('${u.toLowerCase()}','ACC')">ACC</button>
+                        <select id="dur-${u}" style="background:#000;color:#fff;font-size:0.6rem">
+                            <option value="86400">1D</option><option value="604800">1W</option><option value="0">PERM</option>
+                        </select>
+                        <button class="ban-btn danger" onclick="applyBan('${u}','ACC')">ACC</button>
                         <button class="ban-btn danger" onclick="applyBan('${db[u].lastIP}','IP')">IP</button>
                         <button class="ban-btn danger" onclick="applyBan('${db[u].lastDev}','DEV')">DEV</button>
                     </td>
                 </tr>`).join('');
 
-            document.getElementById('blacklistLog').innerHTML = Object.keys(blacklist).map(k => `
-                <div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #222;background:rgba(255,0,0,0.05)">
-                    <span><b>[${blacklist[k].type}]</b> ${k}</span>
+            document.getElementById('blacklistLog').innerHTML = Object.keys(bans).map(k => `
+                <div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #222;">
+                    <span>[${bans[k].type}] ${k}</span>
                     <button class="ban-btn success" onclick="revertBan('${k}')">REVERT</button>
-                </div>`).join('') || 'No bans active.';
+                </div>`).join('') || 'Blacklist empty.';
         }
 
-        function changeTheme(color) { document.body.className = `theme-${color}`; localStorage.setItem('neb_theme', color); }
         function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshAdminUI(); }
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
         function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('toggleTxt').innerText = isLoginMode ? "REGISTER" : "LOGIN"; }
-        function filterModules() {
-            const q = document.getElementById('moduleSearch').value.toLowerCase();
-            document.querySelectorAll('.card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q) ? 'flex' : 'none');
-        }
 
         function renderUI() {
             const u = localStorage.getItem('neb_active'); if(!u) return;
             document.getElementById('authOverlay').style.display = 'none';
             if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
-            changeTheme(localStorage.getItem('neb_theme') || 'green');
-            document.getElementById('gameGrid').innerHTML = gameList.map(g => `<a href="${g.url}" target="_blank" class="card"><span>${g.name.toUpperCase()}</span></a>`).join('');
+            document.getElementById('gameGrid').innerHTML = '<p style="padding:40px;">System operational. Admin detected.</p>';
         }
-        if(localStorage.getItem('neb_active')) renderUI();
+        renderUI();
     </script>
 </body>
 </html>
