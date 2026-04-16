@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEBULA | Unified Gaming OS</title>
+    <title>NEBULA | Gaming OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;800&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -11,7 +11,6 @@
             --primary-glow: rgba(0, 255, 136, 0.2);
             --bg: #030406;
             --surface: rgba(255, 255, 255, 0.02);
-            --surface-hover: rgba(255, 255, 255, 0.06);
             --border: rgba(255, 255, 255, 0.07);
             --text: #ffffff;
             --text-dim: #64748b;
@@ -21,219 +20,265 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; background-image: radial-gradient(circle at 50% -20%, var(--primary-glow), transparent 70%); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; background-image: radial-gradient(circle at 50% -20%, var(--primary-glow), transparent 70%); overflow-x: hidden; }
 
+        /* --- NAVIGATION --- */
         nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; position: sticky; top: 0; z-index: 1000; background: rgba(3, 4, 6, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
         .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-decoration: none; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; transition: 0.3s; padding: 10px 15px; border-radius: 8px; }
         .nav-link:hover { color: var(--primary); background: var(--surface); }
 
-        #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 550px; height: 100vh; background: #07080a; border-right: 1px solid var(--border); z-index: 4000; transition: 0.6s cubic-bezier(0.2, 0, 0, 1); padding: 40px; overflow-y: auto; }
-        #devPanel.active { left: 0; box-shadow: 50px 0 100px rgba(0,0,0,0.8); }
-        .dev-user-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 20px; margin-bottom: 15px; }
-        .dev-input { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 10px; border-radius: 8px; font-size: 0.75rem; margin: 10px 0; }
-        .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .dev-btn { padding: 10px; border-radius: 8px; border: none; font-size: 0.6rem; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
+        /* --- DEV PANEL --- */
+        #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 500px; height: 100vh; background: #07080a; border-right: 1px solid var(--border); z-index: 4000; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); padding: 40px; overflow-y: auto; }
+        #devPanel.active { left: 0; box-shadow: 50px 0 100px rgba(0,0,0,0.9); }
+        .dev-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 15px; margin-bottom: 15px; }
+        .dev-input { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 12px; border-radius: 8px; font-size: 0.8rem; margin: 10px 0; font-family: 'Fira Code'; }
+        .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .dev-btn { padding: 12px; border-radius: 8px; border: none; font-size: 0.65rem; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; transition: 0.2s; }
+        .dev-btn:hover { filter: brightness(1.2); }
 
+        /* --- MAIN UI --- */
         header { padding: 60px 5% 20px; text-align: center; }
-        header h2 { font-size: 3.5rem; font-weight: 800; letter-spacing: -3px; margin-bottom: 20px; }
-        #gameSearch { width: 100%; max-width: 500px; padding: 20px; border-radius: 15px; background: var(--surface); border: 1px solid var(--border); color: #fff; text-align: center; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px 5% 150px; max-width: 1400px; margin: 0 auto; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 25px; padding: 35px; text-decoration: none; min-height: 180px; display: flex; flex-direction: column; justify-content: flex-end; transition: 0.4s; }
+        header h2 { font-size: 3rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 20px; }
+        #gameSearch { width: 100%; max-width: 500px; padding: 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: #fff; text-align: center; font-size: 1rem; }
 
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px 5% 100px; max-width: 1400px; margin: 0 auto; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 30px; text-decoration: none; min-height: 160px; display: flex; flex-direction: column; justify-content: flex-end; transition: 0.3s; position: relative; overflow: hidden; }
+        .card:hover { border-color: var(--primary); transform: translateY(-5px); background: var(--surface-hover); }
+
+        /* --- AUTH --- */
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .auth-box { width: 90%; max-width: 400px; padding: 50px; background: #0a0b0d; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
-        .auth-field { width: 100%; padding: 18px; margin-top: 10px; border-radius: 12px; border: 1px solid #222; background: #000; color: #fff; text-align: center; }
-        .auth-btn { width: 100%; padding: 18px; margin-top: 25px; border-radius: 12px; border: none; background: var(--primary); font-weight: 800; cursor: pointer; }
+        .auth-box { width: 90%; max-width: 400px; padding: 40px; background: #0a0b0d; border-radius: 30px; text-align: center; border: 1px solid var(--border); }
+        .auth-field { width: 100%; padding: 15px; margin-top: 12px; border-radius: 10px; border: 1px solid #222; background: #000; color: #fff; text-align: center; }
+        .auth-btn { width: 100%; padding: 15px; margin-top: 20px; border-radius: 10px; border: none; background: var(--primary); color: #000; font-weight: 800; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="devPanel">
-        <h2 style="color: var(--primary); margin-bottom: 5px;">NETWORK SECURITY</h2>
+        <h2 style="color: var(--primary); margin-bottom: 5px; font-weight: 800;">COMMAND TERMINAL</h2>
+        <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 20px;">SYSTEM OVERSEER MODE</p>
         
-        <div style="margin-bottom: 25px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 20px; border: 1px solid var(--border);">
-            <p style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); margin-bottom: 10px;">ACTIVE IP FILTERS</p>
-            <div id="ipList" style="font-family: 'Fira Code'; font-size: 0.75rem; color: var(--danger); margin-bottom: 15px;"></div>
-            <input type="text" id="manualIP" class="dev-input" placeholder="Manual IP (e.g. 192.168.1.55)">
+        <div class="dev-card">
+            <p style="font-size: 0.6rem; font-weight: 800; color: var(--text-dim);">IP BLACKLIST</p>
+            <div id="ipList" style="font-family: 'Fira Code'; font-size: 0.7rem; margin: 10px 0; color: var(--danger);"></div>
+            <input type="text" id="manualIP" class="dev-input" placeholder="Enter IP Address...">
             <button class="dev-btn" style="background: var(--danger); width: 100%;" onclick="ipBanManual()">BLACKLIST IP</button>
         </div>
 
         <div id="devUserList"></div>
-        <button class="nav-link" onclick="toggleDev()" style="margin-top: 20px; width: 100%; border: 1px solid var(--border);">EXIT TERMINAL</button>
+        <button class="nav-link" onclick="toggleDev()" style="margin-top: 20px; width: 100%; border: 1px solid var(--border);">CLOSE TERMINAL</button>
     </div>
 
     <div id="authOverlay" class="modal">
         <div class="auth-box">
-            <h2>NEBULA OS</h2>
+            <h1 style="letter-spacing: 5px; margin-bottom: 10px;">NEBULA</h1>
             <input type="text" id="userInput" class="auth-field" placeholder="CALLSIGN">
-            <input type="password" id="passInput" class="auth-field" placeholder="KEY">
+            <input type="password" id="passInput" class="auth-field" placeholder="ACCESS KEY">
             <button class="auth-btn" onclick="processAuth()">INITIALIZE</button>
-            <p style="margin-top: 20px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleMode()" id="toggleTxt">NEW USER? REGISTER</p>
+            <p style="margin-top: 20px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleAuthMode()" id="toggleTxt">NEW USER? REGISTER</p>
         </div>
     </div>
 
     <nav>
-        <div style="display:flex; align-items:center; gap:10px;"><div style="width:20px; height:20px; background:var(--primary); border-radius:4px;"></div><h1 style="font-size:1rem; letter-spacing:4px;">NEBULA</h1></div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:15px; height:15px; background:var(--primary); border-radius:3px;"></div>
+            <h1 style="font-size:0.9rem; letter-spacing:3px; font-weight: 800;">NEBULA OS</h1>
+        </div>
         <div>
             <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color: var(--warning);">[ CMD ]</span>
-            <span id="navUser" style="margin-left:15px; font-weight:800; color:var(--primary);">GUEST</span>
-            <span class="nav-link" onclick="doLogout()">Exit</span>
+            <span id="navUser" style="margin-left:15px; font-weight:800; color:var(--primary); font-size: 0.8rem;">GUEST</span>
+            <span class="nav-link" onclick="doLogout()">LOGOUT</span>
         </div>
     </nav>
 
     <header>
-        <h2 id="welcomeTxt">Welcome</h2>
-        <input type="text" id="gameSearch" placeholder="Search Modules..." onkeyup="doSearch()">
+        <h2 id="welcomeTxt">Welcome, Operative</h2>
+        <input type="text" id="gameSearch" placeholder="Filter Modules..." onkeyup="doSearch()">
     </header>
 
     <div id="gameGrid" class="grid"></div>
 
     <script>
-        const _0x5a21 = "MTIzNDU2Nzgh";
-        const MOCK_IP = "127.0.0.1"; // Simulate current IP
-        let isLogin = true;
+        const _0xADMIN = "MTIzNDU2Nzgh"; // 12345678!
+        const MOCK_IP = "127.0.0.1";
+        let isLoginMode = true;
+        let trackingInterval = null;
 
         const gameList = [
-            { name: "Eggshell", cat: "Shooter", url: "eggshell.html" }, { name: "Neon-Golf", cat: "Sports", url: "Neon-Golf.html" }, 
-            { name: "Neon-Hex", cat: "Strategy", url: "Neon-Hex.html" }, { name: "Neon-Pong", cat: "Arcade", url: "Neon-Pong.html" }, 
-            { name: "Neon-Slams", cat: "Sports", url: "Neon-Slams.html" }, { name: "Neon-Slash", cat: "Action", url: "Neon-Slash.html" }, 
-            { name: "AI run", cat: "System", url: "ai.html" }, { name: "Basketball", cat: "Sports", url: "basketball.html" }, 
-            { name: "Blockblast", cat: "Puzzle", url: "blockblast.html" }, { name: "Blockbreaker", cat: "Arcade", url: "blockbreaker.html" }, 
-            { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" }, { name: "Cricket", cat: "Sports", url: "cricket.html" }, 
-            { name: "Crossy Roads", cat: "Arcade", url: "crossyroads.html" }, { name: "Drift", cat: "Racing", url: "drift.html" }, 
-            { name: "Football", cat: "Sports", url: "football.html" }, { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" }, 
-            { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" }, { name: "Neon Trail", cat: "Adventure", url: "neon-trail.html" }, 
-            { name: "Overdrive", cat: "Racing", url: "overdrive.html" }, { name: "Pacman", cat: "Arcade", url: "pacman.html" }, 
-            { name: "Snake", cat: "Arcade", url: "snake.html" }, { name: "Space Adventure", cat: "Sci-Fi", url: "spaceadventure.html" }, 
-            { name: "Sparks Maths", cat: "Edu", url: "sparksmaths.html" }, { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" }, 
+            { name: "Eggshell", cat: "Shooter", url: "eggshell.html" },
+            { name: "Neon-Golf", cat: "Sports", url: "Neon-Golf.html" },
+            { name: "Neon-Hex", cat: "Strategy", url: "Neon-Hex.html" },
+            { name: "Neon-Pong", cat: "Arcade", url: "Neon-Pong.html" },
+            { name: "Neon-Slams", cat: "Sports", url: "Neon-Slams.html" },
+            { name: "Neon-Slash", cat: "Action", url: "Neon-Slash.html" },
+            { name: "AI run", cat: "System", url: "ai.html" },
+            { name: "Basketball", cat: "Sports", url: "basketball.html" },
+            { name: "Blockblast", cat: "Puzzle", url: "blockblast.html" },
+            { name: "Blockbreaker", cat: "Arcade", url: "blockbreaker.html" },
+            { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" },
+            { name: "Cricket", cat: "Sports", url: "cricket.html" },
+            { name: "Crossy Roads", cat: "Arcade", url: "crossyroads.html" },
+            { name: "Drift", cat: "Racing", url: "drift.html" },
+            { name: "Football", cat: "Sports", url: "football.html" },
+            { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" },
+            { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" },
+            { name: "Neon Trail", cat: "Adventure", url: "neon-trail.html" },
+            { name: "Overdrive", cat: "Racing", url: "overdrive.html" },
+            { name: "Pacman", cat: "Arcade", url: "pacman.html" },
+            { name: "Snake", cat: "Arcade", url: "snake.html" },
+            { name: "Space Adventure", cat: "Sci-Fi", url: "spaceadventure.html" },
+            { name: "Sparks Maths", cat: "Edu", url: "sparksmaths.html" },
+            { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" },
             { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
         ];
 
-        // --- IP LOGIC ---
-        function ipBanManual() {
-            const target = document.getElementById('manualIP').value.trim();
-            if(!target) return;
-            applyIPBan(target);
-            document.getElementById('manualIP').value = '';
-        }
-
-        function applyIPBan(ip) {
-            const user = localStorage.getItem('neb_active');
-            if (ip === MOCK_IP && user === 'ADMIN') return alert("CANNOT BAN ADMIN IP");
-            
-            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            if(!i.includes(ip)) i.push(ip);
-            localStorage.setItem('neb_ipbans', JSON.stringify(i));
-            refreshDevList();
-        }
-
-        function unIPBan(ip) {
-            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            i = i.filter(x => x !== ip);
-            localStorage.setItem('neb_ipbans', JSON.stringify(i));
-            refreshDevList();
-        }
-
-        // --- ANTI-TAMPER ---
+        // --- ANTI-TAMPER (CONSOLE BAN) ---
         document.addEventListener('keydown', (e) => {
             if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C"))) {
-                e.preventDefault();
                 const user = localStorage.getItem('neb_active');
                 if (user && user !== 'ADMIN') {
+                    e.preventDefault();
                     let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
-                    b[user.toLowerCase()] = { message: "CONSOLE TAMPERING", expiry: Date.now() + 86400000 };
+                    b[user.toLowerCase()] = { message: "CONSOLE TAMPERING", expiry: Date.now() + 86400000 }; // 24h
                     localStorage.setItem('neb_bans', JSON.stringify(b));
                     doLogout();
                 }
             }
         });
 
-        // --- AUTH ---
+        // --- AUTH LOGIC ---
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
 
-            if(ipBans.includes(MOCK_IP) && u.toUpperCase() !== 'ADMIN') return alert("NETWORK BLOCKED");
+            // Admin Network Bypass
+            if(ipBans.includes(MOCK_IP) && u.toUpperCase() !== 'ADMIN') {
+                return alert("NETWORK RESTRICTED: Your IP is blacklisted.");
+            }
 
+            // Standard Ban Check
             if(bans[u.toLowerCase()]) {
                 const b = bans[u.toLowerCase()];
                 if(b.expiry && Date.now() > b.expiry) {
                     delete bans[u.toLowerCase()];
                     localStorage.setItem('neb_bans', JSON.stringify(bans));
-                } else return alert(`BANNED: ${b.message}`);
+                } else return alert(`ACCESS DENIED: ${b.message}`);
             }
 
-            if(u.toUpperCase() === 'ADMIN' && p === atob(_0x5a21)) {
-                localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return;
+            // Admin Login
+            if(u.toUpperCase() === 'ADMIN' && p === atob(_0xADMIN)) {
+                localStorage.setItem('neb_active', 'ADMIN');
+                location.reload();
+                return;
             }
 
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            if(isLogin) {
-                if(db[u] && db[u].pw === p) { 
-                    db[u].lastIP = MOCK_IP; // Capture IP on login
+            if(isLoginMode) {
+                if(db[u] && db[u].pw === p) {
+                    db[u].lastIP = MOCK_IP;
                     localStorage.setItem('neb_db', JSON.stringify(db));
-                    localStorage.setItem('neb_active', u); 
-                    location.reload(); 
-                } else alert("INVALID");
+                    localStorage.setItem('neb_active', u);
+                    location.reload();
+                } else alert("INVALID CREDENTIALS");
             } else {
-                if(db[u]) return alert("EXISTS");
+                if(db[u]) return alert("USER ALREADY REGISTERED");
                 db[u] = { pw: p, playtime: {}, lastIP: MOCK_IP };
                 localStorage.setItem('neb_db', JSON.stringify(db));
-                localStorage.setItem('neb_active', u); 
+                localStorage.setItem('neb_active', u);
                 location.reload();
             }
         }
 
-        // --- DEV UI ---
+        // --- PLAYTIME TRACKING ---
+        function startTracking(gameName) {
+            if(trackingInterval) clearInterval(trackingInterval);
+            trackingInterval = setInterval(() => {
+                const user = localStorage.getItem('neb_active');
+                if (!user || user === 'ADMIN') return;
+                
+                let db = JSON.parse(localStorage.getItem('neb_db')) || {};
+                if(!db[user].playtime) db[user].playtime = {};
+                db[user].playtime[gameName] = (db[user].playtime[gameName] || 0) + 1;
+                
+                localStorage.setItem('neb_db', JSON.stringify(db));
+                renderUI(); 
+            }, 60000); // 1 Minute Pulse
+        }
+
+        // --- ADMIN FUNCTIONS ---
         function refreshDevList() {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
             const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            
+
             document.getElementById('ipList').innerHTML = ipBans.map(ip => `
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                     <span>${ip}</span><span onclick="unIPBan('${ip}')" style="color:var(--primary); cursor:pointer;">[LIFT]</span>
-                </div>`).join('') || 'NONE';
+                </div>`).join('') || 'NO ACTIVE FILTERS';
 
             document.getElementById('devUserList').innerHTML = Object.keys(db).map(u => {
                 const isB = !!bans[u.toLowerCase()];
-                const userIP = db[u].lastIP || "Unknown";
+                const userIP = db[u].lastIP || "0.0.0.0";
                 return `
-                    <div class="dev-user-card">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-weight:800;">${u.toUpperCase()}</span>
-                            <span style="font-family:'Fira Code'; font-size:0.6rem; color:var(--text-dim);">${userIP}</span>
-                        </div>
-                        <div class="dev-btn-group" style="margin-top:10px;">
-                            <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="handleBan('${u}')">${isB ? 'Unban' : 'Ban'}</button>
-                            <button class="dev-btn" style="background:var(--warning)" onclick="applyIPBan('${userIP}')">Ban IP</button>
-                            <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="viewAudit('${u}')">View Stats & IP</button>
-                        </div>
-                    </div>`;
+                <div class="dev-card">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="font-weight:800;">${u.toUpperCase()}</span>
+                        <span style="font-family:'Fira Code'; font-size:0.6rem; color:var(--text-dim);">${userIP}</span>
+                    </div>
+                    <div class="dev-btn-group">
+                        <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="toggleUserBan('${u}')">${isB ? 'Unban' : 'Ban User'}</button>
+                        <button class="dev-btn" style="background:var(--warning)" onclick="applyIPBan('${userIP}')">Ban IP</button>
+                        <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="viewAudit('${u}')">Audit Data</button>
+                    </div>
+                </div>`;
             }).join('');
         }
 
-        function handleBan(u) {
+        function toggleUserBan(u) {
             let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
             if(b[u.toLowerCase()]) delete b[u.toLowerCase()];
-            else b[u.toLowerCase()] = { message: "Manual Ban", expiry: null };
+            else b[u.toLowerCase()] = { message: "Manual Exclusion", expiry: null };
             localStorage.setItem('neb_bans', JSON.stringify(b));
+            refreshDevList();
+        }
+
+        function applyIPBan(ip) {
+            if(ip === MOCK_IP && localStorage.getItem('neb_active') === 'ADMIN') return alert("ADMIN IP PROTECTED");
+            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            if(!i.includes(ip)) i.push(ip);
+            localStorage.setItem('neb_ipbans', JSON.stringify(i));
+            refreshDevList();
+        }
+
+        function ipBanManual() {
+            const ip = document.getElementById('manualIP').value.trim();
+            if(ip) { applyIPBan(ip); document.getElementById('manualIP').value = ''; }
+        }
+
+        function unIPBan(ip) {
+            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            localStorage.setItem('neb_ipbans', JSON.stringify(i.filter(x => x !== ip)));
             refreshDevList();
         }
 
         function viewAudit(u) {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const user = db[u];
-            let out = `USER: ${u}\nLAST IP: ${user.lastIP || 'N/A'}\n\nPLAYTIME:\n`;
-            for(let g in user.playtime) out += `- ${g}: ${user.playtime[g]}m\n`;
+            const data = db[u];
+            let out = `AUDIT LOG: ${u}\nIP: ${data.lastIP}\n\nPLAYTIME:\n`;
+            for(let g in data.playtime) out += `- ${g}: ${data.playtime[g]} minutes\n`;
             alert(out);
         }
 
-        function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
-        function toggleMode() { isLogin = !isLogin; document.getElementById('toggleTxt').innerText = isLogin ? "NEW USER? REGISTER" : "BACK TO LOGIN"; }
+        // --- UI HELPERS ---
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('toggleTxt').innerText = isLoginMode ? "NEW USER? REGISTER" : "BACK TO LOGIN"; }
         function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshDevList(); }
+        function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
+        function doSearch() {
+            const q = document.getElementById('gameSearch').value.toLowerCase();
+            document.querySelectorAll('.card').forEach(c => c.style.display = c.dataset.name.includes(q) ? 'flex' : 'none');
+        }
 
         function renderUI() {
             const u = localStorage.getItem('neb_active'); if(!u) return;
@@ -246,17 +291,12 @@
             
             document.getElementById('gameGrid').innerHTML = gameList.map(g => `
                 <a href="${g.url}" target="_blank" class="card" onclick="startTracking('${g.name}')" data-name="${g.name.toLowerCase()}">
-                    <span style="font-size:1.4rem; font-weight:800;">${g.name}</span>
-                    <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:10px;">
-                        <span style="font-size:0.6rem; color:var(--text-dim);">${g.cat}</span>
-                        <span style="color:var(--primary); font-family:'Fira Code'; font-size:0.8rem;">${pt[g.name] || 0}m</span>
+                    <span style="font-size:1.2rem; font-weight:800;">${g.name}</span>
+                    <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:10px; margin-top:10px;">
+                        <span style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase;">${g.cat}</span>
+                        <span style="color:var(--primary); font-family:'Fira Code'; font-size:0.75rem;">${pt[g.name] || 0}m</span>
                     </div>
                 </a>`).join('');
-        }
-
-        function doSearch() {
-            const q = document.getElementById('gameSearch').value.toLowerCase();
-            document.querySelectorAll('.card').forEach(c => c.style.display = c.dataset.name.includes(q) ? 'flex' : 'none');
         }
 
         if(localStorage.getItem('neb_active')) renderUI();
