@@ -35,16 +35,14 @@
         .bg-mesh {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at 50% -20%, var(--primary), transparent 50%), radial-gradient(circle at 100% 100%, var(--primary), transparent 30%);
-            opacity: 0.15; filter: blur(80px); z-index: -1; animation: pulse 10s infinite alternate;
+            opacity: 0.15; filter: blur(80px); z-index: -1;
         }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.1; } 100% { transform: scale(1.1); opacity: 0.2; } }
 
         nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; background: rgba(5, 6, 8, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
         .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; padding: 10px 15px; text-decoration: none; }
         
         .theme-selector { display: flex; gap: 6px; align-items: center; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 30px; border: 1px solid var(--border); flex-wrap: wrap; max-width: 280px; }
         .dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.3); transition: 0.2s; }
-        .dot:hover { transform: scale(1.2); }
 
         #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 850px; height: 100vh; background: #0a0c10; border-right: 1px solid var(--border); z-index: 4000; transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); padding: 30px; overflow-y: auto; }
         #devPanel.active { left: 0; box-shadow: 20px 0 50px #000; }
@@ -56,15 +54,13 @@
         .ban-btn { padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: #fff; font-size: 0.6rem; font-weight: 800; cursor: pointer; margin: 2px; transition: 0.2s; }
         .ban-btn.danger { border-color: var(--danger); color: var(--danger); }
         .ban-btn.success { border-color: var(--primary); color: var(--primary); }
-        .ban-btn:hover { background: rgba(255,255,255,0.1); }
 
         .search-container { padding: 60px 5% 20px; text-align: center; }
         #moduleSearch { width: 100%; max-width: 600px; padding: 20px; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: #fff; text-align: center; font-size: 1rem; }
-        #moduleSearch:focus { outline: none; border-color: var(--primary); }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding: 40px 5% 100px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding: 40px 5%; }
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 30px; text-decoration: none; color: white; text-align: center; font-weight: 800; transition: 0.3s; }
-        .card:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .card:hover { border-color: var(--primary); transform: translateY(-5px); }
 
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .auth-box { width: 90%; max-width: 400px; padding: 50px; background: #0d1117; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
@@ -76,66 +72,53 @@
     <div class="bg-mesh"></div>
 
     <div id="devPanel">
-        <h2 style="color: var(--primary); margin-bottom: 5px;">SYSTEM OVERSEER</h2>
-        <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 25px;">Full Access Terminal</p>
-        
+        <h2 style="color: var(--primary); margin-bottom: 5px;">COMMAND TERMINAL</h2>
         <div class="admin-card">
-            <h3>USER DATABASE</h3>
+            <h3>CONNECTED USERS</h3>
             <table class="admin-table">
-                <thead><tr><th>USER</th><th>IP ADDRESS</th><th>DEVICE ID</th><th>ACTIONS</th></tr></thead>
+                <thead><tr><th>USER</th><th>IP</th><th>DEVICE ID</th><th>BAN OPS</th></tr></thead>
                 <tbody id="userRows"></tbody>
             </table>
         </div>
-
         <div class="admin-card">
-            <h3 style="color:var(--danger)">ACTIVE BLACKLIST (ACC/IP/DEV)</h3>
+            <h3 style="color:var(--danger)">SECURITY BLACKLIST (REVERT)</h3>
             <div id="blacklistLog" style="margin-top: 15px;"></div>
         </div>
-        
-        <button class="nav-link" onclick="toggleDev()" style="width:100%; border:1px solid var(--border); border-radius:8px; margin-top:10px;">EXIT TERMINAL</button>
+        <button class="nav-link" onclick="toggleDev()" style="width:100%; border:1px solid var(--border); border-radius:8px;">EXIT</button>
     </div>
 
     <div id="authOverlay" class="modal">
         <div class="auth-box">
             <h1 style="letter-spacing: 10px; color: var(--primary); margin-bottom: 20px;">NEBULA</h1>
-            <input type="text" id="userInput" class="auth-field" placeholder="CALLSIGN">
+            <input type="text" id="userInput" class="auth-field" placeholder="ID">
             <input type="password" id="passInput" class="auth-field" placeholder="KEY">
-            <button style="width:100%; padding:18px; margin-top:30px; border-radius:15px; background:var(--primary); font-weight: 800; border:none; cursor:pointer;" onclick="processAuth()">INITIALIZE</button>
-            <p style="margin-top: 25px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleAuthMode()" id="toggleTxt">REGISTER NEW ID</p>
+            <button style="width:100%; padding:18px; margin-top:30px; border-radius:15px; background:var(--primary); font-weight: 800; border:none;" onclick="processAuth()">LOG IN</button>
+            <p style="margin-top: 25px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleAuthMode()" id="toggleTxt">REGISTER</p>
         </div>
     </div>
 
     <nav>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:15px; height:15px; background:var(--primary); border-radius:3px;"></div>
-            <h1 style="font-size:0.9rem; letter-spacing:4px;">NEBULA</h1>
-        </div>
+        <h1 style="font-size:1rem; letter-spacing:4px;">NEBULA</h1>
         <div class="theme-selector">
             <div class="dot" style="background:#ff4444" onclick="changeTheme('red')"></div>
             <div class="dot" style="background:#00d9ff" onclick="changeTheme('blue')"></div>
-            <div class="dot" style="background:#ffcc00" onclick="changeTheme('yellow')"></div>
             <div class="dot" style="background:#00ff88" onclick="changeTheme('green')"></div>
-            <div class="dot" style="background:#ff8800" onclick="changeTheme('orange')"></div>
-            <div class="dot" style="background:#ff00bb" onclick="changeTheme('pink')"></div>
             <div class="dot" style="background:#a855f7" onclick="changeTheme('purple')"></div>
-            <div class="dot" style="background:#14b8a6" onclick="changeTheme('teal')"></div>
-            <div class="dot" style="background:#ffffff" onclick="changeTheme('white')"></div>
             <div class="dot" style="background:#bef264" onclick="changeTheme('lime')"></div>
         </div>
         <div>
-            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" target="_blank" class="nav-link" style="color:var(--primary)">Support</a>
             <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color:var(--warning)">[ADMIN]</span>
             <span class="nav-link" onclick="doLogout()">Logout</span>
         </div>
     </nav>
 
-    <div class="search-container"><input type="text" id="moduleSearch" placeholder="Search modules..." onkeyup="filterModules()"></div>
+    <div class="search-container"><input type="text" id="moduleSearch" placeholder="Search..." onkeyup="filterModules()"></div>
     <div id="gameGrid" class="grid"></div>
 
     <script>
         const _0xADMIN_USER = "ADMIN", _0xADMIN_PASS = "12345678!";
-        const DEVICE_ID = btoa(navigator.userAgent).substring(10, 22);
-        const MOCK_IP = "172.16." + Math.floor(Math.random()*254) + "." + Math.floor(Math.random()*254);
+        const DEVICE_ID = btoa(navigator.userAgent).substring(10, 25);
+        const MOCK_IP = "172.20.1." + Math.floor(Math.random()*254);
         let isLoginMode = true;
 
         const gameList = [
@@ -154,22 +137,36 @@
             { name: "Sparks Logs", url: "sparxsmaths-log.html" }, { name: "Tic Tac Toe", url: "tictactoe.html" }
         ];
 
+        // --- THE KICK LOGIC ---
+        function securityPulse() {
+            const activeUser = localStorage.getItem('neb_active');
+            if (!activeUser || activeUser === 'ADMIN') return;
+
+            const bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
+            // If current user, IP, or Device ID is found in blacklist, force logout
+            if (bans[activeUser.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID]) {
+                const b = bans[activeUser.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID];
+                if (!b.expiry || Date.now() < b.expiry) {
+                    localStorage.removeItem('neb_active');
+                    location.reload();
+                }
+            }
+        }
+        setInterval(securityPulse, 2000); // Check every 2 seconds
+
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
             const bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
 
-            // Admin Immunity Bypass
             if(u.toUpperCase() === _0xADMIN_USER && p === _0xADMIN_PASS) {
                 localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return;
             }
 
-            // Check if Account, IP, or Device is banned
-            const activeBan = bans[u.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID];
-            if (activeBan) {
-                if (!activeBan.expiry || Date.now() < activeBan.expiry) {
-                    alert(`ACCESS RESTRICTED: ${activeBan.type}\nExpires: ${activeBan.expiry ? new Date(activeBan.expiry).toLocaleString() : 'PERMANENT'}`);
-                    return;
+            if (bans[u.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID]) {
+                const b = bans[u.toLowerCase()] || bans[MOCK_IP] || bans[DEVICE_ID];
+                if (!b.expiry || Date.now() < b.expiry) {
+                    alert("ACCESS DENIED: RED-FLAGGED ID/IP/HWID"); return;
                 }
             }
 
@@ -179,9 +176,9 @@
                     db[u].lastIP = MOCK_IP; db[u].lastDev = DEVICE_ID;
                     localStorage.setItem('neb_db', JSON.stringify(db));
                     localStorage.setItem('neb_active', u); location.reload();
-                } else alert("INVALID ACCESS KEY");
+                } else alert("INVALID KEY");
             } else {
-                if(db[u]) return alert("ID ALREADY EXISTS");
+                if(db[u]) return alert("ID TAKEN");
                 db[u] = { pw: p, lastIP: MOCK_IP, lastDev: DEVICE_ID };
                 localStorage.setItem('neb_db', JSON.stringify(db));
                 localStorage.setItem('neb_active', u); location.reload();
@@ -191,22 +188,21 @@
         function applyBan(target, type) {
             const dur = document.getElementById(`dur-${target}`).value;
             let blacklist = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            // Correct expiry calculation in MS
             let expiry = dur === "0" ? null : Date.now() + (parseInt(dur) * 1000);
             
-            blacklist[target.toLowerCase()] = { type, expiry, date: new Date().toLocaleString() };
+            // Store target exactly as provided to ensure Revert works
+            blacklist[target.toString()] = { type, expiry, raw: target };
             localStorage.setItem('neb_blacklist', JSON.stringify(blacklist));
             refreshAdminUI();
-            alert(`Locked ${type}: ${target}`);
         }
 
-        function revertBan(target) {
+        function revertBan(key) {
             let blacklist = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            // Using toLowerCase to ensure match
-            delete blacklist[target.toLowerCase()];
-            localStorage.setItem('neb_blacklist', JSON.stringify(blacklist));
-            refreshAdminUI();
-            alert(`Restriction Lifted for: ${target}`);
+            if (blacklist[key]) {
+                delete blacklist[key];
+                localStorage.setItem('neb_blacklist', JSON.stringify(blacklist));
+                refreshAdminUI();
+            }
         }
 
         function refreshAdminUI() {
@@ -215,34 +211,26 @@
             
             document.getElementById('userRows').innerHTML = Object.keys(db).map(u => `
                 <tr>
-                    <td style="color:var(--primary); font-weight:800">${u}</td>
-                    <td>${db[u].lastIP}</td>
-                    <td style="font-family:monospace">${db[u].lastDev}</td>
+                    <td style="color:var(--primary)">${u}</td><td>${db[u].lastIP}</td><td style="font-size:0.5rem">${db[u].lastDev}</td>
                     <td>
-                        <select id="dur-${u}" style="background:#000;color:#fff;font-size:0.6rem;padding:2px;border:1px solid #333">
-                            <option value="86400">1D</option><option value="604800">1W</option>
-                            <option value="2592000">1M</option><option value="0">PERM</option>
-                        </select>
-                        <button class="ban-btn danger" onclick="applyBan('${u}','Account')">ACC</button>
+                        <select id="dur-${u}" style="background:#000;color:#fff;font-size:0.6rem"><option value="86400">1D</option><option value="0">PERM</option></select>
+                        <button class="ban-btn danger" onclick="applyBan('${u.toLowerCase()}','ACC')">ACC</button>
                         <button class="ban-btn danger" onclick="applyBan('${db[u].lastIP}','IP')">IP</button>
-                        <button class="ban-btn danger" onclick="applyBan('${db[u].lastDev}','Device')">DEV</button>
+                        <button class="ban-btn danger" onclick="applyBan('${db[u].lastDev}','DEV')">DEV</button>
                     </td>
                 </tr>`).join('');
 
             document.getElementById('blacklistLog').innerHTML = Object.keys(blacklist).map(k => `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(255,0,0,0.02)">
-                    <span>
-                        <b style="color:var(--danger)">[${blacklist[k].type}]</b> ${k}<br>
-                        <small style="color:var(--text-dim)">Exp: ${blacklist[k].expiry ? new Date(blacklist[k].expiry).toLocaleString() : 'NEVER'}</small>
-                    </span>
-                    <button class="ban-btn success" onclick="revertBan('${k}')">REVERT ACCESS</button>
-                </div>`).join('') || '<p style="color:var(--text-dim); padding:10px;">Security status: Clear.</p>';
+                <div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #222;background:rgba(255,0,0,0.05)">
+                    <span><b>[${blacklist[k].type}]</b> ${k}</span>
+                    <button class="ban-btn success" onclick="revertBan('${k}')">REVERT</button>
+                </div>`).join('') || 'No bans active.';
         }
 
         function changeTheme(color) { document.body.className = `theme-${color}`; localStorage.setItem('neb_theme', color); }
         function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshAdminUI(); }
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
-        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('toggleTxt').innerText = isLoginMode ? "REGISTER NEW ID" : "BACK TO LOGIN"; }
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('toggleTxt').innerText = isLoginMode ? "REGISTER" : "LOGIN"; }
         function filterModules() {
             const q = document.getElementById('moduleSearch').value.toLowerCase();
             document.querySelectorAll('.card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q) ? 'flex' : 'none');
