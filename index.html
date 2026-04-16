@@ -58,7 +58,6 @@
         .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
         .dev-btn { padding: 10px; border-radius: 8px; border: none; font-size: 0.6rem; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
 
-        /* --- GRID --- */
         header { padding: 60px 5% 20px; text-align: center; }
         header h2 { font-size: 3.5rem; font-weight: 800; letter-spacing: -3px; margin-bottom: 20px; }
         #gameSearch { width: 100%; max-width: 500px; padding: 20px; border-radius: 15px; background: var(--surface); border: 1px solid var(--border); color: #fff; text-align: center; }
@@ -67,7 +66,6 @@
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: 25px; padding: 35px; text-decoration: none; min-height: 180px; display: flex; flex-direction: column; justify-content: flex-end; transition: 0.4s; }
         .card:hover { transform: translateY(-10px); border-color: var(--primary); }
 
-        /* --- AUTH --- */
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .auth-box { width: 90%; max-width: 400px; padding: 50px; background: #0a0b0d; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
         .auth-field { width: 100%; padding: 18px; margin-top: 10px; border-radius: 12px; border: 1px solid #222; background: #000; color: #fff; text-align: center; }
@@ -81,9 +79,9 @@
 <body>
 
     <div id="devPanel">
-        <h2 style="letter-spacing: 2px; font-size: 1.2rem; color: var(--primary); margin-bottom: 5px;">DEV TERMINAL</h2>
+        <h2 style="letter-spacing: 2px; font-size: 1.2rem; color: var(--primary); margin-bottom: 5px;">COMMAND CENTER</h2>
         <div id="ipBanSection" style="margin-bottom: 20px; padding: 15px; background: rgba(255,0,0,0.05); border-radius: 15px; border: 1px solid rgba(255,0,0,0.1);">
-            <p style="font-size: 0.65rem; font-weight: 800; color: var(--danger); margin-bottom: 10px;">BLOCKED IP ADDRESSES</p>
+            <p style="font-size: 0.65rem; font-weight: 800; color: var(--danger); margin-bottom: 10px;">BLOCKED NETWORKS</p>
             <div id="ipList" style="font-family: 'Fira Code'; font-size: 0.7rem;"></div>
         </div>
         <div id="devUserList"></div>
@@ -104,7 +102,7 @@
         <div class="brand"><div class="logo-sq"></div><h1>NEBULA</h1></div>
         <div class="user-controls">
             <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" target="_blank" class="nav-link support-btn">Support</a>
-            <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color: var(--warning);">[ Dev Menu ]</span>
+            <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color: var(--warning);">[ CMD ]</span>
             <span id="navUser" style="font-weight: 800; font-size: 0.75rem; letter-spacing: 2px; color: var(--primary);">GUEST</span>
             <span class="nav-link" onclick="doLogout()">Log out</span>
         </div>
@@ -124,8 +122,8 @@
     </div>
 
     <script>
-        let isLogin = true;
-        const ADMIN_PASS = "12345678!";
+        // ADMIN_HASH is "12345678!" encoded in Base64
+        const _0x5a21 = "MTIzNDU2Nzgh"; 
         const DUMMY_IP = "127.0.0.1";
 
         const gameList = [
@@ -144,6 +142,8 @@
             { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" }, { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
         ];
 
+        let isLogin = true;
+
         function toggleMode() {
             isLogin = !isLogin;
             document.getElementById('authTitle').innerText = isLogin ? "NEBULA OS" : "NEW SESSION";
@@ -160,13 +160,14 @@
             const p = document.getElementById('passInput').value.trim();
             if(!u || !p) return;
 
-            const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            
-            if(ipBans.includes(DUMMY_IP)) return alert(`IP BANNED: Access denied from this network.`);
-            if(bans[u.toLowerCase()]) return alert(`ACCOUNT BANNED: ${bans[u.toLowerCase()].message}`);
+            if(ipBans.includes(DUMMY_IP)) return alert("IP BLACKLISTED");
 
-            if(u.toUpperCase() === 'ADMIN' && p === ADMIN_PASS) {
+            const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
+            if(bans[u.toLowerCase()]) return alert(`BANNED: ${bans[u.toLowerCase()].message}`);
+
+            // Check Admin Login (Base64 decode check)
+            if(u.toUpperCase() === 'ADMIN' && p === atob(_0x5a21)) {
                 localStorage.setItem('neb_active', 'ADMIN');
                 location.reload(); return;
             }
@@ -174,7 +175,7 @@
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
             if(isLogin) {
                 if(db[u] && db[u].pw === p) { localStorage.setItem('neb_active', u); location.reload(); }
-                else { alert("INVALID CREDENTIALS"); }
+                else { alert("ACCESS DENIED"); }
             } else {
                 if(db[u]) return alert("USER EXISTS");
                 db[u] = { pw: p, scores: {} };
@@ -190,30 +191,28 @@
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             
             document.getElementById('ipList').innerHTML = ipBans.map(ip => `
-                <div style="display:flex; justify-content:space-between;">
-                    <span>${ip}</span> <span style="color:var(--primary); cursor:pointer;" onclick="unIPBan('${ip}')">[ UNBAN ]</span>
-                </div>
-            `).join('') || 'NO BANNED IPs';
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span>${ip}</span> <span style="color:var(--primary); cursor:pointer;" onclick="unIPBan('${ip}')">[ REMOVE ]</span>
+                </div>`).join('') || 'CLEAN';
 
             document.getElementById('devUserList').innerHTML = Object.keys(db).map(user => {
                 const isB = !!bans[user.toLowerCase()];
                 return `
                     <div class="dev-user-card">
                         <div style="font-weight:800;">${user.toUpperCase()}</div>
-                        <input type="text" id="msg-${user}" class="dev-input" placeholder="Ban Message..." value="${isB ? bans[user.toLowerCase()].message : ''}">
+                        <input type="text" id="msg-${user}" class="dev-input" placeholder="Reason..." value="${isB ? bans[user.toLowerCase()].message : ''}">
                         <div class="dev-btn-group">
                             <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="handleBan('${user}')">${isB ? 'Unban' : 'Ban'}</button>
                             <button class="dev-btn" style="background:var(--warning)" onclick="ipBan()">IP Ban</button>
-                            <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="viewScores('${user}')">View Scores</button>
+                            <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="viewScores('${user}')">Audit Data</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
 
         function handleBan(u) {
             let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
-            const m = document.getElementById(`msg-${u}`).value || "Violation of rules";
+            const m = document.getElementById(`msg-${u}`).value || "Policy Violation";
             if(b[u.toLowerCase()]) delete b[u.toLowerCase()];
             else b[u.toLowerCase()] = { message: m };
             localStorage.setItem('neb_bans', JSON.stringify(b));
@@ -237,9 +236,9 @@
         function viewScores(u) {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
             const s = db[u].scores || {};
-            let out = `PLAYER: ${u.toUpperCase()}\n\n`;
+            let out = `AUDIT: ${u.toUpperCase()}\n\n`;
             for(let g in s) { out += `${g}: ${s[g]} PTS\n`; }
-            alert(Object.keys(s).length ? out : "NO SCORES FOUND");
+            alert(Object.keys(s).length ? out : "NO DATA");
         }
 
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
