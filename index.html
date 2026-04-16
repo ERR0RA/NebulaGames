@@ -22,7 +22,7 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; background-image: radial-gradient(circle at 50% -20%, rgba(0,255,136,0.1), transparent 70%); }
 
         nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; background: rgba(3, 4, 6, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
-        .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; padding: 10px 15px; }
+        .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; padding: 10px 15px; text-decoration: none; }
 
         /* --- DEV PANEL --- */
         #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 550px; height: 100vh; background: #07080a; border-right: 1px solid var(--border); z-index: 4000; transition: 0.5s; padding: 40px; overflow-y: auto; }
@@ -30,35 +30,41 @@
         .dev-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 15px; margin-bottom: 15px; }
         
         .ban-timer-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin: 10px 0; }
-        .timer-opt { background: #111; border: 1px solid #333; color: #666; padding: 6px; border-radius: 4px; font-size: 0.55rem; cursor: pointer; font-weight: 800; text-align: center; transition: 0.2s; }
+        .timer-opt { background: #111; border: 1px solid #333; color: #666; padding: 6px; border-radius: 4px; font-size: 0.55rem; cursor: pointer; font-weight: 800; text-align: center; }
         .timer-opt.active { border-color: var(--primary); color: var(--primary); background: rgba(0,255,136,0.05); }
 
-        .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .dev-input { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 10px; border-radius: 5px; font-size: 0.8rem; margin-bottom: 10px; }
+        .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .dev-btn { padding: 10px; border-radius: 6px; border: none; font-size: 0.6rem; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
 
-        /* --- AUTH --- */
+        /* --- UI --- */
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .auth-box { width: 90%; max-width: 400px; padding: 40px; background: #0a0b0d; border-radius: 30px; text-align: center; border: 1px solid var(--border); }
         .auth-field { width: 100%; padding: 15px; margin-top: 12px; border-radius: 10px; border: 1px solid #222; background: #000; color: #fff; text-align: center; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 40px 5%; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 30px; text-decoration: none; height: 120px; display: flex; align-items: center; justify-content: center; font-weight: 800; transition: 0.3s; }
-        .card:hover { border-color: var(--primary); background: rgba(255,255,255,0.05); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; padding: 40px 5%; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; padding: 20px; text-decoration: none; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; text-align: center; }
+        .card:hover { border-color: var(--primary); background: rgba(255,255,255,0.05); transform: translateY(-3px); }
+        .card span { font-size: 0.85rem; font-weight: 800; }
+        .card small { font-size: 0.6rem; color: var(--text-dim); margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div id="devPanel">
-        <h2 style="color: var(--primary); font-weight: 800;">ROOT ACCESS</h2>
+        <h2 style="color: var(--primary); font-weight: 800; margin-bottom: 20px;">SYSTEM OVERSEER</h2>
+        
         <div class="dev-card">
-            <p style="font-size: 0.6rem; font-weight: 800; color: var(--text-dim); margin-bottom: 10px;">NETWORK & HARDWARE FILTERS</p>
+            <p style="font-size: 0.6rem; font-weight: 800; color: var(--text-dim); margin-bottom: 10px;">GLOBAL FILTERS</p>
             <div id="filterList" style="font-family: 'Fira Code'; font-size: 0.7rem; color: var(--danger); margin-bottom: 15px;"></div>
-            <input type="text" id="manualInput" style="width:100%; background:#000; border:1px solid #222; color:#fff; padding:10px; border-radius:5px; font-size:0.8rem;" placeholder="Manual Entry (IP/Device ID)">
+            <input type="text" id="manualInput" class="dev-input" placeholder="Manual IP or Device ID">
+            <input type="text" id="manualReason" class="dev-input" placeholder="Ban Reason (Optional)">
             <div class="dev-btn-group">
                 <button class="dev-btn" style="background:var(--danger)" onclick="manualAction('ip')">Ban IP</button>
                 <button class="dev-btn" style="background:var(--info)" onclick="manualAction('dev')">Ban Device</button>
             </div>
         </div>
+
         <div id="devUserList"></div>
         <button class="nav-link" onclick="toggleDev()" style="width:100%; border:1px solid var(--border); margin-top:20px; border-radius:8px;">Exit Terminal</button>
     </div>
@@ -68,7 +74,7 @@
             <h1 style="letter-spacing: 5px;">NEBULA</h1>
             <input type="text" id="userInput" class="auth-field" placeholder="CALLSIGN">
             <input type="password" id="passInput" class="auth-field" placeholder="ACCESS KEY">
-            <button class="auth-btn" style="width:100%; padding:15px; margin-top:20px; border-radius:10px; border:none; background:var(--primary); font-weight:800; cursor:pointer;" onclick="processAuth()">INITIALIZE</button>
+            <button style="width:100%; padding:15px; margin-top:20px; border-radius:10px; border:none; background:var(--primary); font-weight:800; cursor:pointer;" onclick="processAuth()">INITIALIZE</button>
             <p style="margin-top: 20px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleAuthMode()" id="toggleTxt">NEW USER? REGISTER</p>
         </div>
     </div>
@@ -91,7 +97,22 @@
         let isLoginMode = true;
         let activeDuration = {};
 
-        const gameList = ["Eggshell", "Neon-Golf", "Neon-Hex", "Neon-Pong", "Neon-Slams", "Neon-Slash"];
+        const gameList = [
+            { name: "Cyber-Strike", url: "Cyber-Strike.html" }, { name: "Neon-Golf", url: "Neon-Golf.html" },
+            { name: "Neon-Hex", url: "Neon-Hex.html" }, { name: "Neon-Pong", url: "Neon-Pong.html" },
+            { name: "Neon-Slams", url: "Neon-Slams.html" }, { name: "Neon-Slash", url: "Neon-Slash.html" },
+            { name: "Three.js", url: "Three.js" }, { name: "AI Run", url: "ai.html" },
+            { name: "Basketball", url: "basketball.html" }, { name: "Blockblast", url: "blockblast.html" },
+            { name: "Blockbreaker", url: "blockbreaker.html" }, { name: "Blockcraft", url: "blockcraft.html" },
+            { name: "Cricket", url: "cricket.html" }, { name: "Crossy Roads", url: "crossyroads.html" },
+            { name: "Drift", url: "drift.html" }, { name: "Eggshell", url: "eggshell.html" },
+            { name: "Football", url: "football.html" }, { name: "Master Armory", url: "masterarmory.html" },
+            { name: "Minesweeper", url: "minesweeper.html" }, { name: "Neon Trail", url: "neon-trail.html" },
+            { name: "Overdrive", url: "overdrive.html" }, { name: "Pacman", url: "pacman.html" },
+            { name: "Reader", url: "reader.html" }, { name: "Snake", url: "snake.html" },
+            { name: "Space Adventure", url: "spaceadventure.html" }, { name: "Sparks Maths", url: "sparksmaths.html" },
+            { name: "Sparks Logs", url: "sparxsmaths-log.html" }, { name: "Tic Tac Toe", url: "tictactoe.html" }
+        ];
 
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
@@ -103,9 +124,9 @@
             const isAdmin = (u.toUpperCase() === 'ADMIN' && p === atob(_0xADMIN));
 
             if (!isAdmin) {
-                if (validateBan(ipB[MOCK_IP], 'ip', MOCK_IP)) return alert("NETWORK BLACKLISTED");
-                if (validateBan(dvB[DEVICE_ID], 'dev', DEVICE_ID)) return alert("HARDWARE RESTRICTED");
-                if (validateBan(acB[u.toLowerCase()], 'acc', u.toLowerCase())) return alert("ACCOUNT SUSPENDED");
+                if (validateBan(ipB[MOCK_IP], 'ip', MOCK_IP)) return;
+                if (validateBan(dvB[DEVICE_ID], 'dev', DEVICE_ID)) return;
+                if (validateBan(acB[u.toLowerCase()], 'acc', u.toLowerCase())) return;
             }
 
             if(isAdmin) { localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return; }
@@ -116,9 +137,9 @@
                     db[u].lastIP = MOCK_IP; db[u].lastDev = DEVICE_ID;
                     localStorage.setItem('neb_db', JSON.stringify(db));
                     localStorage.setItem('neb_active', u); location.reload();
-                } else alert("DENIED");
+                } else alert("INVALID ACCESS KEY");
             } else {
-                if(db[u]) return alert("EXISTS");
+                if(db[u]) return alert("CALLSIGN ALREADY REGISTERED");
                 db[u] = { pw: p, lastIP: MOCK_IP, lastDev: DEVICE_ID };
                 localStorage.setItem('neb_db', JSON.stringify(db));
                 localStorage.setItem('neb_active', u); location.reload();
@@ -132,6 +153,9 @@
                 let d = JSON.parse(localStorage.getItem(s)); delete d[key];
                 localStorage.setItem(s, JSON.stringify(d)); return false;
             }
+            const msg = obj.reason ? `REASON: ${obj.reason}` : "UNSPECIFIED VIOLATION";
+            const time = obj.expiry ? `\nLIFTS: ${new Date(obj.expiry).toLocaleString()}` : "\nLIFTS: NEVER (PERMANENT)";
+            alert(`ACCESS DENIED\n${msg}${time}`);
             return true;
         }
 
@@ -141,19 +165,25 @@
             el.classList.add('active');
         }
 
-        function toggleBan(type, key, ref) {
+        function toggleBan(type, key, ref, reasonInputId) {
             let s = type === 'ip' ? 'neb_ipbans' : (type === 'dev' ? 'neb_devbans' : 'neb_bans');
             let d = JSON.parse(localStorage.getItem(s)) || {};
-            if (d[key]) { delete d[key]; } else {
+            if (d[key]) { 
+                delete d[key]; 
+            } else {
                 const days = activeDuration[ref] || 0;
-                d[key] = { expiry: days > 0 ? Date.now() + (days * 86400000) : null };
+                const reason = document.getElementById(reasonInputId)?.value || "No reason provided";
+                d[key] = { 
+                    expiry: days > 0 ? Date.now() + (days * 86400000) : null,
+                    reason: reason
+                };
             }
             localStorage.setItem(s, JSON.stringify(d)); refreshDevList();
         }
 
         function manualAction(type) {
             const val = document.getElementById('manualInput').value.trim();
-            if(val) toggleBan(type, val, 'manual');
+            if(val) toggleBan(type, val, 'manual', 'manualReason');
         }
 
         function refreshDevList() {
@@ -163,9 +193,9 @@
             const acB = JSON.parse(localStorage.getItem('neb_bans')) || {};
 
             let filters = "";
-            for(let k in ipB) filters += `<div>IP: ${k} <span onclick="toggleBan('ip','${k}')">[LIFT]</span></div>`;
-            for(let k in dvB) filters += `<div>DEV: ${k} <span onclick="toggleBan('dev','${k}')">[LIFT]</span></div>`;
-            document.getElementById('filterList').innerHTML = filters || 'SYSTEMS CLEAR';
+            for(let k in ipB) filters += `<div>IP: ${k} (${ipB[k].reason}) <span onclick="toggleBan('ip','${k}')" style="cursor:pointer">[LIFT]</span></div>`;
+            for(let k in dvB) filters += `<div>DEV: ${k} (${dvB[k].reason}) <span onclick="toggleBan('dev','${k}')" style="cursor:pointer">[LIFT]</span></div>`;
+            document.getElementById('filterList').innerHTML = filters || 'NO ACTIVE NETWORK FILTERS';
 
             document.getElementById('devUserList').innerHTML = Object.keys(db).map(u => {
                 const isB = !!acB[u.toLowerCase()];
@@ -180,10 +210,11 @@
                         <div class="timer-opt opt-${u}" onclick="setDuration('${u}', 365, this)">1Y</div>
                         <div class="timer-opt opt-${u}" onclick="setDuration('${u}', 0, this)">∞</div>
                     </div>
+                    <input type="text" id="reason-${u}" class="dev-input" style="margin-top:5px" placeholder="Reason for action...">
                     <div class="dev-btn-group">
-                        <button class="dev-btn" style="background:var(--danger)" onclick="toggleBan('acc','${u.toLowerCase()}','${u}')">${isB ? 'Lift Account' : 'Ban Account'}</button>
-                        <button class="dev-btn" style="background:var(--warning)" onclick="toggleBan('ip','${db[u].lastIP}','${u}')">Ban IP</button>
-                        <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="toggleBan('dev','${db[u].lastDev}','${u}')">Ban Device (${db[u].lastDev})</button>
+                        <button class="dev-btn" style="background:var(--danger)" onclick="toggleBan('acc','${u.toLowerCase()}','${u}', 'reason-${u}')">${isB ? 'Lift Account' : 'Ban Account'}</button>
+                        <button class="dev-btn" style="background:var(--warning)" onclick="toggleBan('ip','${db[u].lastIP}','${u}', 'reason-${u}')">Ban IP</button>
+                        <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="toggleBan('dev','${db[u].lastDev}','${u}', 'reason-${u}')">Ban Device (${db[u].lastDev})</button>
                     </div>
                 </div>`;
             }).join('');
@@ -198,7 +229,11 @@
             document.getElementById('authOverlay').style.display = 'none';
             document.getElementById('navUser').innerText = u.toUpperCase();
             if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
-            document.getElementById('gameGrid').innerHTML = gameList.map(g => `<div class="card">${g}</div>`).join('');
+            document.getElementById('gameGrid').innerHTML = gameList.map(g => `
+                <a href="${g.url}" class="card">
+                    <span>${g.name}</span>
+                    <small>Module Loaded</small>
+                </a>`).join('');
         }
 
         if(localStorage.getItem('neb_active')) renderUI();
