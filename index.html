@@ -31,8 +31,6 @@
         #devPanel.active { left: 0; box-shadow: 50px 0 100px rgba(0,0,0,0.8); }
         .dev-user-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 20px; margin-bottom: 15px; }
         .dev-input { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 10px; border-radius: 8px; font-size: 0.75rem; margin: 10px 0; }
-        .ban-timer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
-        .timer-btn { padding: 5px; font-size: 0.6rem; background: #222; border: 1px solid #333; color: #888; border-radius: 4px; cursor: pointer; }
         .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .dev-btn { padding: 10px; border-radius: 8px; border: none; font-size: 0.6rem; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
 
@@ -56,12 +54,8 @@
         <div style="margin-bottom: 25px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 20px; border: 1px solid var(--border);">
             <p style="font-size: 0.7rem; font-weight: 800; color: var(--text-dim); margin-bottom: 10px;">ACTIVE IP FILTERS</p>
             <div id="ipList" style="font-family: 'Fira Code'; font-size: 0.75rem; color: var(--danger); margin-bottom: 15px;"></div>
-            
-            <input type="text" id="manualIP" class="dev-input" placeholder="Manual IP Address (e.g. 192.168.1.1)">
-            <div class="dev-btn-group">
-                <button class="dev-btn" style="background: var(--danger);" onclick="ipBanManual()">BAN TARGET IP</button>
-                <button class="dev-btn" style="background: var(--warning);" onclick="ipBanCurrent()">BAN CURRENT STATION</button>
-            </div>
+            <input type="text" id="manualIP" class="dev-input" placeholder="Manual IP (e.g. 192.168.1.55)">
+            <button class="dev-btn" style="background: var(--danger); width: 100%;" onclick="ipBanManual()">BLACKLIST IP</button>
         </div>
 
         <div id="devUserList"></div>
@@ -81,7 +75,6 @@
     <nav>
         <div style="display:flex; align-items:center; gap:10px;"><div style="width:20px; height:20px; background:var(--primary); border-radius:4px;"></div><h1 style="font-size:1rem; letter-spacing:4px;">NEBULA</h1></div>
         <div>
-            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" target="_blank" class="nav-link" style="border:1px solid var(--primary);">Support</a>
             <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color: var(--warning);">[ CMD ]</span>
             <span id="navUser" style="margin-left:15px; font-weight:800; color:var(--primary);">GUEST</span>
             <span class="nav-link" onclick="doLogout()">Exit</span>
@@ -97,55 +90,37 @@
 
     <script>
         const _0x5a21 = "MTIzNDU2Nzgh";
-        const CURRENT_STATION_IP = "127.0.0.1"; // Mock IP for local simulation
+        const MOCK_IP = "127.0.0.1"; // Simulate current IP
         let isLogin = true;
-        let activeGame = null;
 
         const gameList = [
-            { name: "Eggshell", cat: "Shooter", url: "eggshell.html" }, 
-            { name: "Neon-Golf", cat: "Sports", url: "Neon-Golf.html" }, 
-            { name: "Neon-Hex", cat: "Strategy", url: "Neon-Hex.html" },
-            { name: "Neon-Pong", cat: "Arcade", url: "Neon-Pong.html" }, 
-            { name: "Neon-Slams", cat: "Sports", url: "Neon-Slams.html" },
-            { name: "Neon-Slash", cat: "Action", url: "Neon-Slash.html" }, 
-            { name: "AI run", cat: "System", url: "ai.html" },
-            { name: "Basketball", cat: "Sports", url: "basketball.html" }, 
-            { name: "Blockblast", cat: "Puzzle", url: "blockblast.html" },
-            { name: "Blockbreaker", cat: "Arcade", url: "blockbreaker.html" }, 
-            { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" },
-            { name: "Cricket", cat: "Sports", url: "cricket.html" }, 
-            { name: "Crossy Roads", cat: "Arcade", url: "crossyroads.html" },
-            { name: "Drift", cat: "Racing", url: "drift.html" }, 
-            { name: "Football", cat: "Sports", url: "football.html" },
-            { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" }, 
-            { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" },
-            { name: "Neon Trail", cat: "Adventure", url: "neon-trail.html" }, 
-            { name: "Overdrive", cat: "Racing", url: "overdrive.html" },
-            { name: "Pacman", cat: "Arcade", url: "pacman.html" }, 
-            { name: "Snake", cat: "Arcade", url: "snake.html" },
-            { name: "Space Adventure", cat: "Sci-Fi", url: "spaceadventure.html" }, 
-            { name: "Sparks Maths", cat: "Edu", url: "sparksmaths.html" },
-            { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" }, 
+            { name: "Eggshell", cat: "Shooter", url: "eggshell.html" }, { name: "Neon-Golf", cat: "Sports", url: "Neon-Golf.html" }, 
+            { name: "Neon-Hex", cat: "Strategy", url: "Neon-Hex.html" }, { name: "Neon-Pong", cat: "Arcade", url: "Neon-Pong.html" }, 
+            { name: "Neon-Slams", cat: "Sports", url: "Neon-Slams.html" }, { name: "Neon-Slash", cat: "Action", url: "Neon-Slash.html" }, 
+            { name: "AI run", cat: "System", url: "ai.html" }, { name: "Basketball", cat: "Sports", url: "basketball.html" }, 
+            { name: "Blockblast", cat: "Puzzle", url: "blockblast.html" }, { name: "Blockbreaker", cat: "Arcade", url: "blockbreaker.html" }, 
+            { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" }, { name: "Cricket", cat: "Sports", url: "cricket.html" }, 
+            { name: "Crossy Roads", cat: "Arcade", url: "crossyroads.html" }, { name: "Drift", cat: "Racing", url: "drift.html" }, 
+            { name: "Football", cat: "Sports", url: "football.html" }, { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" }, 
+            { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" }, { name: "Neon Trail", cat: "Adventure", url: "neon-trail.html" }, 
+            { name: "Overdrive", cat: "Racing", url: "overdrive.html" }, { name: "Pacman", cat: "Arcade", url: "pacman.html" }, 
+            { name: "Snake", cat: "Arcade", url: "snake.html" }, { name: "Space Adventure", cat: "Sci-Fi", url: "spaceadventure.html" }, 
+            { name: "Sparks Maths", cat: "Edu", url: "sparksmaths.html" }, { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" }, 
             { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
         ];
 
         // --- IP LOGIC ---
-        function ipBanCurrent() {
-            const user = localStorage.getItem('neb_active');
-            if (user === 'ADMIN') {
-                return alert("SECURITY OVERRIDE: Admin station cannot be IP banned.");
-            }
-            applyIPBan(CURRENT_STATION_IP);
-        }
-
         function ipBanManual() {
             const target = document.getElementById('manualIP').value.trim();
-            if(!target) return alert("Enter a valid IP");
+            if(!target) return;
             applyIPBan(target);
             document.getElementById('manualIP').value = '';
         }
 
         function applyIPBan(ip) {
+            const user = localStorage.getItem('neb_active');
+            if (ip === MOCK_IP && user === 'ADMIN') return alert("CANNOT BAN ADMIN IP");
+            
             let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             if(!i.includes(ip)) i.push(ip);
             localStorage.setItem('neb_ipbans', JSON.stringify(i));
@@ -163,45 +138,24 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C"))) {
                 e.preventDefault();
-                autoBanForTamper();
+                const user = localStorage.getItem('neb_active');
+                if (user && user !== 'ADMIN') {
+                    let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
+                    b[user.toLowerCase()] = { message: "CONSOLE TAMPERING", expiry: Date.now() + 86400000 };
+                    localStorage.setItem('neb_bans', JSON.stringify(b));
+                    doLogout();
+                }
             }
         });
 
-        function autoBanForTamper() {
-            const user = localStorage.getItem('neb_active');
-            if (!user || user === 'ADMIN') return;
-            let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
-            const expiry = Date.now() + (24 * 60 * 60 * 1000); 
-            b[user.toLowerCase()] = { message: "SYSTEM TAMPERING", expiry: expiry };
-            localStorage.setItem('neb_bans', JSON.stringify(b));
-            doLogout();
-        }
-
-        // --- CORE SYSTEM ---
-        function startTracking(gameName) {
-            activeGame = gameName;
-            setInterval(() => {
-                const user = localStorage.getItem('neb_active');
-                if (activeGame && user) {
-                    let db = JSON.parse(localStorage.getItem('neb_db')) || {};
-                    if (!db[user].playtime) db[user].playtime = {};
-                    db[user].playtime[activeGame] = (db[user].playtime[activeGame] || 0) + 1;
-                    localStorage.setItem('neb_db', JSON.stringify(db));
-                    renderUI(); 
-                }
-            }, 60000); 
-        }
-
-        function toggleMode() { isLogin = !isLogin; document.getElementById('toggleTxt').innerText = isLogin ? "NEW USER? REGISTER" : "BACK TO LOGIN"; }
-        function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshDevList(); }
-
+        // --- AUTH ---
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
 
-            if(ipBans.includes(CURRENT_STATION_IP) && u.toUpperCase() !== 'ADMIN') return alert("NETWORK BLACKLISTED");
+            if(ipBans.includes(MOCK_IP) && u.toUpperCase() !== 'ADMIN') return alert("NETWORK BLOCKED");
 
             if(bans[u.toLowerCase()]) {
                 const b = bans[u.toLowerCase()];
@@ -217,16 +171,22 @@
 
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
             if(isLogin) {
-                if(db[u] && db[u].pw === p) { localStorage.setItem('neb_active', u); location.reload(); }
-                else alert("FAILED");
+                if(db[u] && db[u].pw === p) { 
+                    db[u].lastIP = MOCK_IP; // Capture IP on login
+                    localStorage.setItem('neb_db', JSON.stringify(db));
+                    localStorage.setItem('neb_active', u); 
+                    location.reload(); 
+                } else alert("INVALID");
             } else {
                 if(db[u]) return alert("EXISTS");
-                db[u] = { pw: p, playtime: {} };
+                db[u] = { pw: p, playtime: {}, lastIP: MOCK_IP };
                 localStorage.setItem('neb_db', JSON.stringify(db));
-                localStorage.setItem('neb_active', u); location.reload();
+                localStorage.setItem('neb_active', u); 
+                location.reload();
             }
         }
 
+        // --- DEV UI ---
         function refreshDevList() {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
             const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
@@ -234,19 +194,22 @@
             
             document.getElementById('ipList').innerHTML = ipBans.map(ip => `
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <span>${ip}</span>
-                    <span onclick="unIPBan('${ip}')" style="color:var(--primary); cursor:pointer;">[ LIFT FILTER ]</span>
-                </div>`).join('') || 'NO ACTIVE FILTERS';
+                    <span>${ip}</span><span onclick="unIPBan('${ip}')" style="color:var(--primary); cursor:pointer;">[LIFT]</span>
+                </div>`).join('') || 'NONE';
 
             document.getElementById('devUserList').innerHTML = Object.keys(db).map(u => {
                 const isB = !!bans[u.toLowerCase()];
+                const userIP = db[u].lastIP || "Unknown";
                 return `
                     <div class="dev-user-card">
-                        <div style="font-weight:800;">${u.toUpperCase()}</div>
-                        <input type="text" id="msg-${u}" class="dev-input" placeholder="Reason..." value="${isB ? bans[u.toLowerCase()].message : ''}">
-                        <div class="dev-btn-group">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight:800;">${u.toUpperCase()}</span>
+                            <span style="font-family:'Fira Code'; font-size:0.6rem; color:var(--text-dim);">${userIP}</span>
+                        </div>
+                        <div class="dev-btn-group" style="margin-top:10px;">
                             <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="handleBan('${u}')">${isB ? 'Unban' : 'Ban'}</button>
-                            <button class="dev-btn" style="background:var(--info)" onclick="viewAudit('${u}')">Audit</button>
+                            <button class="dev-btn" style="background:var(--warning)" onclick="applyIPBan('${userIP}')">Ban IP</button>
+                            <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="viewAudit('${u}')">View Stats & IP</button>
                         </div>
                     </div>`;
             }).join('');
@@ -255,20 +218,22 @@
         function handleBan(u) {
             let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
             if(b[u.toLowerCase()]) delete b[u.toLowerCase()];
-            else b[u.toLowerCase()] = { message: document.getElementById(`msg-${u}`).value || "Violation", expiry: null };
+            else b[u.toLowerCase()] = { message: "Manual Ban", expiry: null };
             localStorage.setItem('neb_bans', JSON.stringify(b));
             refreshDevList();
         }
 
         function viewAudit(u) {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const pt = db[u].playtime || {};
-            let out = `USER: ${u}\n`;
-            for(let g in pt) out += `${g}: ${pt[g]} MINS\n`;
+            const user = db[u];
+            let out = `USER: ${u}\nLAST IP: ${user.lastIP || 'N/A'}\n\nPLAYTIME:\n`;
+            for(let g in user.playtime) out += `- ${g}: ${user.playtime[g]}m\n`;
             alert(out);
         }
 
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
+        function toggleMode() { isLogin = !isLogin; document.getElementById('toggleTxt').innerText = isLogin ? "NEW USER? REGISTER" : "BACK TO LOGIN"; }
+        function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshDevList(); }
 
         function renderUI() {
             const u = localStorage.getItem('neb_active'); if(!u) return;
@@ -284,7 +249,7 @@
                     <span style="font-size:1.4rem; font-weight:800;">${g.name}</span>
                     <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:10px;">
                         <span style="font-size:0.6rem; color:var(--text-dim);">${g.cat}</span>
-                        <span style="color:var(--primary); font-family:'Fira Code'; font-size:0.8rem;">${pt[g.name] || 0} MINS</span>
+                        <span style="color:var(--primary); font-family:'Fira Code'; font-size:0.8rem;">${pt[g.name] || 0}m</span>
                     </div>
                 </a>`).join('');
         }
