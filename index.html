@@ -94,20 +94,33 @@
         let isLogin = true;
         let activeGame = null;
 
+        // Cyber-Strike has been removed from this list
         const gameList = [
-            { name: "Eggshell", cat: "Shooter", url: "eggshell.html" }, { name: "Cyber-Strike", cat: "Action", url: "Cyber-Strike.html" },
-            { name: "Neon-Golf", cat: "Sports", url: "Neon-Golf.html" }, { name: "Neon-Hex", cat: "Strategy", url: "Neon-Hex.html" },
-            { name: "Neon-Pong", cat: "Arcade", url: "Neon-Pong.html" }, { name: "Neon-Slams", cat: "Sports", url: "Neon-Slams.html" },
-            { name: "Neon-Slash", cat: "Action", url: "Neon-Slash.html" }, { name: "AI run", cat: "System", url: "ai.html" },
-            { name: "Basketball", cat: "Sports", url: "basketball.html" }, { name: "Blockblast", cat: "Puzzle", url: "blockblast.html" },
-            { name: "Blockbreaker", cat: "Arcade", url: "blockbreaker.html" }, { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" },
-            { name: "Cricket", cat: "Sports", url: "cricket.html" }, { name: "Crossy Roads", cat: "Arcade", url: "crossyroads.html" },
-            { name: "Drift", cat: "Racing", url: "drift.html" }, { name: "Football", cat: "Sports", url: "football.html" },
-            { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" }, { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" },
-            { name: "Neon Trail", cat: "Adventure", url: "neon-trail.html" }, { name: "Overdrive", cat: "Racing", url: "overdrive.html" },
-            { name: "Pacman", cat: "Arcade", url: "pacman.html" }, { name: "Snake", cat: "Arcade", url: "snake.html" },
-            { name: "Space Adventure", cat: "Sci-Fi", url: "spaceadventure.html" }, { name: "Sparks Maths", cat: "Edu", url: "sparksmaths.html" },
-            { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" }, { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
+            { name: "Eggshell", cat: "Shooter", url: "eggshell.html" }, 
+            { name: "Neon-Golf", cat: "Sports", url: "Neon-Golf.html" }, 
+            { name: "Neon-Hex", cat: "Strategy", url: "Neon-Hex.html" },
+            { name: "Neon-Pong", cat: "Arcade", url: "Neon-Pong.html" }, 
+            { name: "Neon-Slams", cat: "Sports", url: "Neon-Slams.html" },
+            { name: "Neon-Slash", cat: "Action", url: "Neon-Slash.html" }, 
+            { name: "AI run", cat: "System", url: "ai.html" },
+            { name: "Basketball", cat: "Sports", url: "basketball.html" }, 
+            { name: "Blockblast", cat: "Puzzle", url: "blockblast.html" },
+            { name: "Blockbreaker", cat: "Arcade", url: "blockbreaker.html" }, 
+            { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" },
+            { name: "Cricket", cat: "Sports", url: "cricket.html" }, 
+            { name: "Crossy Roads", cat: "Arcade", url: "crossyroads.html" },
+            { name: "Drift", cat: "Racing", url: "drift.html" }, 
+            { name: "Football", cat: "Sports", url: "football.html" },
+            { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" }, 
+            { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" },
+            { name: "Neon Trail", cat: "Adventure", url: "neon-trail.html" }, 
+            { name: "Overdrive", cat: "Racing", url: "overdrive.html" },
+            { name: "Pacman", cat: "Arcade", url: "pacman.html" }, 
+            { name: "Snake", cat: "Arcade", url: "snake.html" },
+            { name: "Space Adventure", cat: "Sci-Fi", url: "spaceadventure.html" }, 
+            { name: "Sparks Maths", cat: "Edu", url: "sparksmaths.html" },
+            { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" }, 
+            { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
         ];
 
         // --- ANTI-TAMPER DETECTION ---
@@ -123,7 +136,7 @@
             if (!user || user === 'ADMIN') return;
             
             let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
-            const expiry = Date.now() + (1 * 24 * 60 * 60 * 1000); // 1 Day
+            const expiry = Date.now() + (1 * 24 * 60 * 60 * 1000); 
             b[user.toLowerCase()] = { message: "SYSTEM TAMPERING DETECTED (CONSOLE)", expiry: expiry };
             localStorage.setItem('neb_bans', JSON.stringify(b));
             doLogout();
@@ -141,9 +154,9 @@
                     if (!db[user].playtime) db[user].playtime = {};
                     db[user].playtime[activeGame] = (db[user].playtime[activeGame] || 0) + 1;
                     localStorage.setItem('neb_db', JSON.stringify(db));
-                    renderUI(); // Refresh minutes display
+                    renderUI(); 
                 }
-            }, 60000); // 1 Minute pulse
+            }, 60000); 
         }
 
         function toggleMode() { isLogin = !isLogin; document.getElementById('toggleTxt').innerText = isLogin ? "NEW USER? REGISTER" : "BACK TO LOGIN"; }
@@ -188,7 +201,7 @@
             const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             
-            document.getElementById('ipList').innerHTML = ipBans.map(ip => `<div><span>${ip}</span> <span onclick="unIPBan('${ip}')">[X]</span></div>`).join('') || 'NONE';
+            document.getElementById('ipList').innerHTML = ipBans.map(ip => `<div><span>${ip}</span> <span onclick="unIPBan('${ip}')" style="color:var(--primary); cursor:pointer;">[X]</span></div>`).join('') || 'NONE';
 
             document.getElementById('devUserList').innerHTML = Object.keys(db).map(u => {
                 const isB = !!bans[u.toLowerCase()];
@@ -223,6 +236,18 @@
             }
             localStorage.setItem('neb_bans', JSON.stringify(b));
             refreshDevList();
+        }
+
+        function unIPBan(ip) {
+            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            i = i.filter(x => x !== ip);
+            localStorage.setItem('neb_ipbans', JSON.stringify(i)); refreshDevList();
+        }
+
+        function ipBan() {
+            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            if(!i.includes(DUMMY_IP)) i.push(DUMMY_IP);
+            localStorage.setItem('neb_ipbans', JSON.stringify(i)); refreshDevList();
         }
 
         function viewAudit(u) {
