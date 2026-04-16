@@ -27,18 +27,15 @@
         .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-decoration: none; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; transition: 0.3s; padding: 10px 15px; border-radius: 8px; }
         .nav-link:hover { color: var(--primary); background: var(--surface); }
 
-        /* --- DEV PANEL --- */
         #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 550px; height: 100vh; background: #07080a; border-right: 1px solid var(--border); z-index: 4000; transition: 0.6s cubic-bezier(0.2, 0, 0, 1); padding: 40px; overflow-y: auto; }
         #devPanel.active { left: 0; box-shadow: 50px 0 100px rgba(0,0,0,0.8); }
         .dev-user-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 20px; margin-bottom: 15px; }
         .dev-input { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 10px; border-radius: 8px; font-size: 0.75rem; margin: 10px 0; }
         .ban-timer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
         .timer-btn { padding: 5px; font-size: 0.6rem; background: #222; border: 1px solid #333; color: #888; border-radius: 4px; cursor: pointer; }
-        .timer-btn.active { background: var(--warning); color: #000; border-color: #fff; }
         .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .dev-btn { padding: 10px; border-radius: 8px; border: none; font-size: 0.6rem; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
 
-        /* --- GRID --- */
         header { padding: 60px 5% 20px; text-align: center; }
         header h2 { font-size: 3.5rem; font-weight: 800; letter-spacing: -3px; margin-bottom: 20px; }
         #gameSearch { width: 100%; max-width: 500px; padding: 20px; border-radius: 15px; background: var(--surface); border: 1px solid var(--border); color: #fff; text-align: center; }
@@ -92,9 +89,10 @@
     <div id="gameGrid" class="grid"></div>
 
     <script>
-        const _0x5a21 = "MTIzNDU2Nzgh"; // Base64 for 12345678!
+        const _0x5a21 = "MTIzNDU2Nzgh";
         const DUMMY_IP = "127.0.0.1";
         let isLogin = true;
+        let activeGame = null;
 
         const gameList = [
             { name: "Eggshell", cat: "Shooter", url: "eggshell.html" }, { name: "Cyber-Strike", cat: "Action", url: "Cyber-Strike.html" },
@@ -111,6 +109,42 @@
             { name: "Space Adventure", cat: "Sci-Fi", url: "spaceadventure.html" }, { name: "Sparks Maths", cat: "Edu", url: "sparksmaths.html" },
             { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" }, { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
         ];
+
+        // --- ANTI-TAMPER DETECTION ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) || (e.ctrlKey && e.key === "U")) {
+                e.preventDefault();
+                autoBanForTamper();
+            }
+        });
+
+        function autoBanForTamper() {
+            const user = localStorage.getItem('neb_active');
+            if (!user || user === 'ADMIN') return;
+            
+            let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
+            const expiry = Date.now() + (1 * 24 * 60 * 60 * 1000); // 1 Day
+            b[user.toLowerCase()] = { message: "SYSTEM TAMPERING DETECTED (CONSOLE)", expiry: expiry };
+            localStorage.setItem('neb_bans', JSON.stringify(b));
+            doLogout();
+            alert("SYSTEM LOCK: 24h Ban applied for attempting to access dev console.");
+        }
+
+        // --- PLAY TIME TRACKING ---
+        function startTracking(gameName) {
+            activeGame = gameName;
+            setInterval(() => {
+                if (activeGame) {
+                    const user = localStorage.getItem('neb_active');
+                    if (!user) return;
+                    let db = JSON.parse(localStorage.getItem('neb_db')) || {};
+                    if (!db[user].playtime) db[user].playtime = {};
+                    db[user].playtime[activeGame] = (db[user].playtime[activeGame] || 0) + 1;
+                    localStorage.setItem('neb_db', JSON.stringify(db));
+                    renderUI(); // Refresh minutes display
+                }
+            }, 60000); // 1 Minute pulse
+        }
 
         function toggleMode() { isLogin = !isLogin; document.getElementById('toggleTxt').innerText = isLogin ? "NEW USER? REGISTER" : "BACK TO LOGIN"; }
         function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshDevList(); }
@@ -129,8 +163,7 @@
                     delete bans[u.toLowerCase()];
                     localStorage.setItem('neb_bans', JSON.stringify(bans));
                 } else {
-                    const timeRem = b.expiry ? `\nEXPIRES: ${new Date(b.expiry).toLocaleString()}` : "\nPERMANENT";
-                    return alert(`BANNED: ${b.message}${timeRem}`);
+                    return alert(`BANNED: ${b.message}`);
                 }
             }
 
@@ -144,7 +177,7 @@
                 else alert("FAILED");
             } else {
                 if(db[u]) return alert("EXISTS");
-                db[u] = { pw: p, scores: {} };
+                db[u] = { pw: p, playtime: {} };
                 localStorage.setItem('neb_db', JSON.stringify(db));
                 localStorage.setItem('neb_active', u); location.reload();
             }
@@ -155,7 +188,7 @@
             const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             
-            document.getElementById('ipList').innerHTML = ipBans.map(ip => `<div style="display:flex; justify-content:space-between;"><span>${ip}</span><span style="color:var(--primary); cursor:pointer;" onclick="unIPBan('${ip}')">[ UNBAN ]</span></div>`).join('') || 'NONE';
+            document.getElementById('ipList').innerHTML = ipBans.map(ip => `<div><span>${ip}</span> <span onclick="unIPBan('${ip}')">[X]</span></div>`).join('') || 'NONE';
 
             document.getElementById('devUserList').innerHTML = Object.keys(db).map(u => {
                 const isB = !!bans[u.toLowerCase()];
@@ -167,20 +200,18 @@
                             <button class="timer-btn" onclick="setTimer('${u}', 1)">1D</button>
                             <button class="timer-btn" onclick="setTimer('${u}', 3)">3D</button>
                             <button class="timer-btn" onclick="setTimer('${u}', 7)">1W</button>
-                            <button class="timer-btn" onclick="setTimer('${u}', 30)">1M</button>
-                            <button class="timer-btn" onclick="setTimer('${u}', 365)">1Y</button>
                             <button class="timer-btn" onclick="setTimer('${u}', 0)">PERM</button>
                         </div>
                         <div class="dev-btn-group">
                             <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="handleBan('${u}')">${isB ? 'Unban' : 'Confirm Ban'}</button>
-                            <button class="dev-btn" style="background:var(--info)" onclick="viewScores('${u}')">Audit</button>
+                            <button class="dev-btn" style="background:var(--info)" onclick="viewAudit('${u}')">Audit</button>
                         </div>
                     </div>`;
             }).join('');
         }
 
         let selectedDays = {};
-        function setTimer(u, days) { selectedDays[u] = days; alert(`${u} set for ${days || 'Permanent'} ban duration.`); }
+        function setTimer(u, days) { selectedDays[u] = days; }
 
         function handleBan(u) {
             let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
@@ -194,23 +225,11 @@
             refreshDevList();
         }
 
-        function ipBan() {
-            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            if(!i.includes(DUMMY_IP)) i.push(DUMMY_IP);
-            localStorage.setItem('neb_ipbans', JSON.stringify(i)); refreshDevList();
-        }
-
-        function unIPBan(ip) {
-            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            i = i.filter(x => x !== ip);
-            localStorage.setItem('neb_ipbans', JSON.stringify(i)); refreshDevList();
-        }
-
-        function viewScores(u) {
+        function viewAudit(u) {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const s = db[u].scores || {};
-            let out = `AUDIT: ${u}\n`;
-            for(let g in s) out += `${g}: ${s[g]} PTS\n`;
+            const pt = db[u].playtime || {};
+            let out = `USER: ${u}\n`;
+            for(let g in pt) out += `${g}: ${pt[g]} MINS\n`;
             alert(out);
         }
 
@@ -221,14 +240,16 @@
             document.getElementById('authOverlay').style.display = 'none';
             document.getElementById('navUser').innerText = u.toUpperCase();
             if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
+            
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const s = (db[u] && db[u].scores) ? db[u].scores : {};
+            const pt = (db[u] && db[u].playtime) ? db[u].playtime : {};
+            
             document.getElementById('gameGrid').innerHTML = gameList.map(g => `
-                <a href="${g.url}" target="_blank" class="card" data-name="${g.name.toLowerCase()}">
+                <a href="${g.url}" target="_blank" class="card" onclick="startTracking('${g.name}')" data-name="${g.name.toLowerCase()}">
                     <span style="font-size:1.4rem; font-weight:800;">${g.name}</span>
                     <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:10px;">
                         <span style="font-size:0.6rem; color:var(--text-dim);">${g.cat}</span>
-                        <span style="color:var(--primary); font-family:'Fira Code'; font-size:0.8rem;">${s[g.name] || 0} PTS</span>
+                        <span style="color:var(--primary); font-family:'Fira Code'; font-size:0.8rem;">${pt[g.name] || 0} MINS</span>
                     </div>
                 </a>`).join('');
         }
