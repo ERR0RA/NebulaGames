@@ -16,6 +16,8 @@
             --text: #ffffff;
             --text-dim: #64748b;
             --easing: cubic-bezier(0.2, 0, 0, 1);
+            --danger: #ff4444;
+            --warning: #ffaa00;
         }
 
         [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.2); }
@@ -26,150 +28,100 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg);
             color: var(--text);
             min-height: 100vh;
             overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 50% -20%, var(--primary-glow), transparent 70%),
-                linear-gradient(to bottom, transparent, var(--bg));
+            background-image: radial-gradient(circle at 50% -20%, var(--primary-glow), transparent 70%);
         }
 
         /* --- NAVIGATION --- */
         nav {
             display: flex; justify-content: space-between; align-items: center;
             padding: 20px 5%; position: sticky; top: 0; z-index: 1000;
-            background: rgba(3, 4, 6, 0.7); backdrop-filter: blur(20px) saturate(180%);
+            background: rgba(3, 4, 6, 0.8); backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
         }
         .brand { display: flex; align-items: center; gap: 12px; }
-        .logo-sq { 
-            width: 30px; height: 30px; background: var(--primary); 
-            border-radius: 8px; box-shadow: 0 0 30px var(--primary-glow);
-            transform: rotate(-10deg); transition: 0.6s var(--easing);
-        }
-        .brand:hover .logo-sq { transform: rotate(0deg) scale(1.15); box-shadow: 0 0 50px var(--primary); }
+        .logo-sq { width: 30px; height: 30px; background: var(--primary); border-radius: 8px; transform: rotate(-10deg); transition: 0.3s; }
         .brand h1 { font-size: 1.2rem; letter-spacing: 6px; font-weight: 800; }
-        
         .user-controls { display: flex; align-items: center; gap: 20px; }
-        .nav-link { 
-            font-size: 0.7rem; color: var(--text-dim); cursor: pointer; 
-            text-transform: uppercase; letter-spacing: 2px; font-weight: 800;
-            transition: 0.3s; padding: 10px 15px; border-radius: 8px;
-        }
-        .nav-link:hover { color: var(--primary); background: var(--surface); transform: translateY(-2px); }
+        .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; transition: 0.3s; padding: 10px 15px; border-radius: 8px; }
+        .nav-link:hover { color: var(--primary); background: var(--surface); }
 
-        /* --- SUPPORT PANEL --- */
-        #supportPanel {
-            position: fixed; top: 0; right: -100%; width: 100%; max-width: 650px; height: 100vh;
-            background: rgba(5, 6, 8, 0.98); backdrop-filter: blur(50px);
-            border-left: 1px solid var(--border);
-            z-index: 3000; transition: 0.8s var(--easing); padding: 50px;
+        /* --- DEV PANEL --- */
+        #devPanel {
+            position: fixed; top: 0; left: -100%; width: 100%; max-width: 450px; height: 100vh;
+            background: #07080a; border-right: 1px solid var(--border);
+            z-index: 4000; transition: 0.6s var(--easing); padding: 40px;
+            overflow-y: auto;
         }
-        #supportPanel.active { right: 0; box-shadow: -50px 0 150px rgba(0,0,0,0.9); }
+        #devPanel.active { left: 0; box-shadow: 50px 0 100px rgba(0,0,0,0.8); }
+        .dev-user-card { 
+            background: var(--surface); border: 1px solid var(--border); 
+            padding: 15px; border-radius: 15px; margin-bottom: 15px;
+        }
+        .dev-btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .dev-btn { flex: 1; padding: 8px; border-radius: 6px; border: none; font-size: 0.6rem; font-weight: 800; cursor: pointer; color: white; }
 
-        /* --- HERO SECTION --- */
-        header { padding: 120px 5% 60px; max-width: 1400px; margin: 0 auto; text-align: center; }
-        header h2 { 
-            font-size: 5rem; font-weight: 800; letter-spacing: -4px; line-height: 0.85; 
-            margin-bottom: 40px; background: linear-gradient(to bottom, #fff, #444);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .search-container { position: relative; max-width: 550px; margin: 0 auto; }
-        #gameSearch {
-            width: 100%; padding: 25px 35px; border-radius: 20px;
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-            color: #fff; font-size: 1.1rem; transition: 0.5s var(--easing);
-            text-align: center; font-weight: 500;
-        }
-        #gameSearch:focus { border-color: var(--primary); background: rgba(255,255,255,0.07); outline: none; transform: scale(1.02); }
-
-        /* --- GRID & CARDS --- */
-        .grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 25px; padding: 20px 5% 180px; max-width: 1400px; margin: 0 auto;
-        }
-        .card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 35px; padding: 45px; text-decoration: none;
-            display: flex; flex-direction: column; justify-content: flex-end;
-            min-height: 240px; transition: 0.6s var(--easing);
-            position: relative; overflow: hidden;
-        }
-        .card::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.05));
-            opacity: 0; transition: 0.5s;
-        }
-        .card:hover { transform: translateY(-15px); border-color: var(--primary); background: var(--surface-hover); }
-        .card:hover::after { opacity: 1; }
+        /* --- GRID --- */
+        header { padding: 60px 5% 20px; text-align: center; }
+        header h2 { font-size: 3.5rem; font-weight: 800; letter-spacing: -3px; margin-bottom: 20px; }
+        #gameSearch { width: 100%; max-width: 500px; padding: 20px; border-radius: 15px; background: var(--surface); border: 1px solid var(--border); color: #fff; text-align: center; font-size: 1rem; }
         
-        .card-title { font-size: 1.8rem; font-weight: 800; display: block; margin-bottom: 15px; letter-spacing: -1px; }
-        .card-meta { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px 5% 150px; max-width: 1400px; margin: 0 auto; }
+        .card { 
+            background: var(--surface); border: 1px solid var(--border); border-radius: 25px; 
+            padding: 35px; text-decoration: none; min-height: 180px; 
+            display: flex; flex-direction: column; justify-content: flex-end; transition: 0.4s var(--easing); 
+        }
+        .card:hover { transform: translateY(-10px); border-color: var(--primary); background: var(--surface-hover); }
+        .card-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; color: #fff; }
 
         /* --- AUTH --- */
-        .modal { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .auth-box { width: 90%; max-width: 440px; padding: 60px; background: #07080a; border: 1px solid var(--border); border-radius: 45px; text-align: center; }
-        .auth-field { width: 100%; padding: 20px; margin-top: 15px; border-radius: 18px; border: 1px solid #1a1a1a; background: #000; color: #fff; text-align: center; font-size: 1rem; }
-        .auth-btn { width: 100%; padding: 20px; margin-top: 35px; border-radius: 18px; border: none; background: var(--primary); color: #000; font-weight: 800; letter-spacing: 3px; cursor: pointer; }
+        .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
+        .auth-box { width: 90%; max-width: 400px; padding: 50px; background: #0a0b0d; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
+        .auth-field { width: 100%; padding: 18px; margin-top: 10px; border-radius: 12px; border: 1px solid #222; background: #000; color: #fff; text-align: center; }
+        .auth-btn { width: 100%; padding: 18px; margin-top: 25px; border-radius: 12px; border: none; background: var(--primary); font-weight: 800; cursor: pointer; letter-spacing: 2px; }
 
-        /* --- THEME DOCK --- */
-        .dock {
-            position: fixed; bottom: 45px; left: 50%; transform: translateX(-50%);
-            background: rgba(10, 11, 13, 0.8); backdrop-filter: blur(30px);
-            padding: 18px 35px; border-radius: 100px; border: 1px solid var(--border);
-            display: flex; gap: 25px; z-index: 1000; box-shadow: 0 30px 60px rgba(0,0,0,0.6);
-        }
-        .node { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.4s var(--easing); position: relative; }
-        .node:hover { transform: scale(1.4) translateY(-10px); }
-        .node.active::before {
-            content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2px solid var(--primary); opacity: 0.5;
-        }
-        .node.active { border-color: #fff; transform: scale(1.2); }
+        .dock { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(10,11,13,0.8); backdrop-filter: blur(10px); padding: 15px 30px; border-radius: 100px; border: 1px solid var(--border); display: flex; gap: 20px; z-index: 1000; }
+        .node { width: 25px; height: 25px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.3s; }
+        .node.active { border-color: #fff; box-shadow: 0 0 15px var(--primary); }
     </style>
 </head>
 <body>
 
-    <div id="authOverlay" class="modal">
-        <div class="auth-box">
-            <div class="logo-sq" style="margin: 0 auto 30px; transform: rotate(0); width: 50px; height: 50px; border-radius: 12px;"></div>
-            <h2 id="authTitle" style="letter-spacing: 8px; margin-bottom: 10px;">NEBULA OS</h2>
-            <p style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 20px;">BIO-SCAN REQUIRED</p>
-            <input type="text" id="userInput" class="auth-field" placeholder="USER ID">
-            <input type="password" id="passInput" class="auth-field" placeholder="ACCESS KEY">
-            <button class="auth-btn" onclick="processAuth()" id="mainAuthBtn">INITIALIZE</button>
-            <p style="margin-top: 30px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer; letter-spacing: 2px;" onclick="toggleMode()" id="toggleTxt">CREATE NEW IDENTITY</p>
-        </div>
+    <div id="devPanel">
+        <h2 style="letter-spacing: 2px; font-size: 1.2rem; color: var(--primary); margin-bottom: 10px;">DEV TERMINAL</h2>
+        <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 30px;">MANAGE USER ACCESS & NETWORK RESTRICTIONS</p>
+        <div id="devUserList"></div>
+        <button class="nav-link" onclick="toggleDev()" style="margin-top: 30px; width: 100%; border: 1px solid var(--border);">CLOSE TERMINAL</button>
     </div>
 
-    <div id="supportPanel">
-        <div class="nav-link" onclick="toggleSupport()" style="margin-bottom: 40px; display: inline-block;">[ BACK TO INTERFACE ]</div>
-        <h2 style="font-size: 3rem; margin-bottom: 40px; font-weight: 800; letter-spacing: -3px;">SYSTEM ASSISTANCE</h2>
-        <iframe width="100%" height="80%" src="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u&embed=true" frameborder="0" style="border: none; border-radius: 30px; background: #fff; box-shadow: 0 50px 100px rgba(0,0,0,0.5);"></iframe>
+    <div id="authOverlay" class="modal">
+        <div class="auth-box">
+            <h2 id="authTitle" style="letter-spacing: 5px;">NEBULA OS</h2>
+            <input type="text" id="userInput" class="auth-field" placeholder="CALLSIGN">
+            <input type="password" id="passInput" class="auth-field" placeholder="ACCESS KEY">
+            <button class="auth-btn" onclick="processAuth()" id="mainAuthBtn">INITIALIZE</button>
+            <p id="toggleTxt" style="margin-top: 20px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleMode()">NEW USER? REGISTER</p>
+        </div>
     </div>
 
     <nav>
         <div class="brand"><div class="logo-sq"></div><h1>NEBULA</h1></div>
         <div class="user-controls">
-            <span class="nav-link" onclick="toggleSupport()">Support</span>
-            <span id="navUser" style="font-weight: 800; font-size: 0.75rem; color: var(--primary); letter-spacing: 3px;">GUEST</span>
+            <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color: var(--warning);">[ DEV MENU ]</span>
+            <span id="navUser" style="font-weight: 800; font-size: 0.75rem; letter-spacing: 2px; color: var(--primary);">GUEST</span>
             <span class="nav-link" onclick="doLogout()">Terminate</span>
         </div>
     </nav>
 
     <header>
         <h2 id="welcomeTxt">Welcome</h2>
-        <div class="search-container">
-            <input type="text" id="gameSearch" placeholder="Filter Neural Modules..." onkeyup="doSearch()">
-        </div>
+        <input type="text" id="gameSearch" placeholder="Filter Neural Modules..." onkeyup="doSearch()">
     </header>
 
     <div id="gameGrid" class="grid"></div>
@@ -185,6 +137,8 @@
 
     <script>
         let isLogin = true;
+        const ADMIN_PASS = "12345678!";
+
         const gameList = [
             { name: "Eggshell", cat: "Shooter", url: "eggshell.html" },
             { name: "Cyber-Strike", cat: "Action", url: "Cyber-Strike.html" },
@@ -214,23 +168,44 @@
             { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
         ];
 
-        function toggleSupport() { document.getElementById('supportPanel').classList.toggle('active'); }
         function toggleMode() {
             isLogin = !isLogin;
             document.getElementById('authTitle').innerText = isLogin ? "NEBULA OS" : "NEW SESSION";
-            document.getElementById('mainAuthBtn').innerText = isLogin ? "INITIALIZE" : "REGISTER";
+            document.getElementById('toggleTxt').innerText = isLogin ? "NEW USER? REGISTER" : "ALREADY REGISTERED? LOGIN";
+        }
+
+        function toggleDev() {
+            document.getElementById('devPanel').classList.toggle('active');
+            refreshDevList();
         }
 
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
             if(!u || !p) return;
+
+            // Check Banned User or Banned IP Simulation (stored in localStorage)
+            const bans = JSON.parse(localStorage.getItem('neb_bans')) || [];
+            const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            
+            if(bans.includes(u.toLowerCase())) return alert("CRITICAL ERROR: USER ACCOUNT TERMINATED.");
+            // IP ban simulator uses a dummy '127.0.0.1' for this demo environment
+            if(ipBans.includes('127.0.0.1')) return alert("CRITICAL ERROR: ACCESS DENIED FROM THIS STATION.");
+
+            if(u.toUpperCase() === 'ADMIN') {
+                if(p === ADMIN_PASS) {
+                    localStorage.setItem('neb_active', 'ADMIN');
+                    location.reload();
+                } else { alert("ACCESS DENIED: INCORRECT ADMIN KEY"); }
+                return;
+            }
+
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
             if(isLogin) {
                 if(db[u] && db[u].pw === p) { localStorage.setItem('neb_active', u); location.reload(); }
-                else { alert("ERROR: IDENTITY NOT RECOGNIZED"); }
+                else { alert("INVALID CREDENTIALS"); }
             } else {
-                if(db[u]) return alert("ERROR: CALLSIGN TAKEN");
+                if(db[u]) return alert("CALLSIGN ALREADY IN DATABASE");
                 db[u] = { pw: p, scores: {} };
                 localStorage.setItem('neb_db', JSON.stringify(db));
                 localStorage.setItem('neb_active', u);
@@ -238,27 +213,72 @@
             }
         }
 
+        function refreshDevList() {
+            const db = JSON.parse(localStorage.getItem('neb_db')) || {};
+            const bans = JSON.parse(localStorage.getItem('neb_bans')) || [];
+            const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            const container = document.getElementById('devUserList');
+            
+            container.innerHTML = Object.keys(db).map(user => {
+                const isBanned = bans.includes(user.toLowerCase());
+                return `
+                    <div class="dev-user-card">
+                        <div style="font-weight:800; font-size:0.9rem;">${user.toUpperCase()}</div>
+                        <div class="dev-btn-group">
+                            <button class="dev-btn" style="background:${isBanned ? '#555' : 'var(--danger)'}" onclick="toggleBan('${user}')">
+                                ${isBanned ? 'UNBAN USER' : 'BAN USER'}
+                            </button>
+                            <button class="dev-btn" style="background:#333" onclick="toggleIPBan()">
+                                ${ipBans.includes('127.0.0.1') ? 'UNBAN IP' : 'IP BAN'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleBan(user) {
+            let bans = JSON.parse(localStorage.getItem('neb_bans')) || [];
+            user = user.toLowerCase();
+            if(bans.includes(user)) bans = bans.filter(u => u !== user);
+            else bans.push(user);
+            localStorage.setItem('neb_bans', JSON.stringify(bans));
+            refreshDevList();
+        }
+
+        function toggleIPBan() {
+            let ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            const dummyIP = '127.0.0.1';
+            if(ipBans.includes(dummyIP)) ipBans = [];
+            else ipBans.push(dummyIP);
+            localStorage.setItem('neb_ipbans', JSON.stringify(ipBans));
+            refreshDevList();
+        }
+
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
 
         function renderUI() {
             const user = localStorage.getItem('neb_active');
             if(!user) return;
+            
             document.getElementById('authOverlay').style.display = 'none';
             document.getElementById('navUser').innerText = user.toUpperCase();
             document.getElementById('welcomeTxt').innerText = `Welcome, ${user}`;
-            const db = JSON.parse(localStorage.getItem('neb_db'));
-            const scores = db[user].scores || {};
+            
+            if(user === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
+
+            const db = JSON.parse(localStorage.getItem('neb_db')) || {};
+            const scores = (db[user] && db[user].scores) ? db[user].scores : {};
+            
             const grid = document.getElementById('gameGrid');
             grid.innerHTML = gameList.map(g => {
                 const s = scores[g.name] || 0;
                 return `
                     <a href="${g.url}" target="_blank" class="card" data-name="${g.name.toLowerCase()}">
-                        <div style="position:relative; z-index:2;">
-                            <span class="card-title">${g.name}</span>
-                            <div class="card-meta">
-                                <span style="font-size:0.7rem; color:var(--text-dim); font-weight:800; letter-spacing:2px;">${g.cat.toUpperCase()}</span>
-                                <span style="font-family:'Fira Code'; color:var(--primary); font-size:0.85rem; font-weight:800;">${s} PTS</span>
-                            </div>
+                        <span class="card-title">${g.name}</span>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:15px;">
+                            <span style="font-size:0.6rem; color:var(--text-dim); font-weight:800; letter-spacing:1px;">${g.cat.toUpperCase()}</span>
+                            <span style="font-family:'Fira Code'; color:var(--primary); font-size:0.8rem;">${s} PTS</span>
                         </div>
                     </a>`;
             }).join('');
