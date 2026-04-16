@@ -8,7 +8,6 @@
     <style>
         :root {
             --primary: #00ff88;
-            --primary-glow: rgba(0, 255, 136, 0.2);
             --bg: #030406;
             --surface: rgba(255, 255, 255, 0.02);
             --border: rgba(255, 255, 255, 0.07);
@@ -20,283 +19,186 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; background-image: radial-gradient(circle at 50% -20%, var(--primary-glow), transparent 70%); overflow-x: hidden; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; background-image: radial-gradient(circle at 50% -20%, rgba(0,255,136,0.1), transparent 70%); }
 
-        /* --- NAVIGATION --- */
-        nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; position: sticky; top: 0; z-index: 1000; background: rgba(3, 4, 6, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
-        .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-decoration: none; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; transition: 0.3s; padding: 10px 15px; border-radius: 8px; }
-        .nav-link:hover { color: var(--primary); background: var(--surface); }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; background: rgba(3, 4, 6, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
+        .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; padding: 10px 15px; }
 
         /* --- DEV PANEL --- */
-        #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 500px; height: 100vh; background: #07080a; border-right: 1px solid var(--border); z-index: 4000; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); padding: 40px; overflow-y: auto; }
-        #devPanel.active { left: 0; box-shadow: 50px 0 100px rgba(0,0,0,0.9); }
+        #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 550px; height: 100vh; background: #07080a; border-right: 1px solid var(--border); z-index: 4000; transition: 0.5s; padding: 40px; overflow-y: auto; }
+        #devPanel.active { left: 0; box-shadow: 50px 0 100px #000; }
         .dev-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 15px; margin-bottom: 15px; }
-        .dev-input { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 12px; border-radius: 8px; font-size: 0.8rem; margin: 10px 0; font-family: 'Fira Code'; }
-        .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .dev-btn { padding: 12px; border-radius: 8px; border: none; font-size: 0.65rem; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; transition: 0.2s; }
-        .dev-btn:hover { filter: brightness(1.2); }
+        
+        .ban-timer-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin: 10px 0; }
+        .timer-opt { background: #111; border: 1px solid #333; color: #666; padding: 6px; border-radius: 4px; font-size: 0.55rem; cursor: pointer; font-weight: 800; text-align: center; transition: 0.2s; }
+        .timer-opt.active { border-color: var(--primary); color: var(--primary); background: rgba(0,255,136,0.05); }
 
-        /* --- MAIN UI --- */
-        header { padding: 60px 5% 20px; text-align: center; }
-        header h2 { font-size: 3rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 20px; }
-        #gameSearch { width: 100%; max-width: 500px; padding: 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: #fff; text-align: center; font-size: 1rem; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px 5% 100px; max-width: 1400px; margin: 0 auto; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 30px; text-decoration: none; min-height: 160px; display: flex; flex-direction: column; justify-content: flex-end; transition: 0.3s; position: relative; overflow: hidden; }
-        .card:hover { border-color: var(--primary); transform: translateY(-5px); background: var(--surface-hover); }
+        .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .dev-btn { padding: 10px; border-radius: 6px; border: none; font-size: 0.6rem; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
 
         /* --- AUTH --- */
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .auth-box { width: 90%; max-width: 400px; padding: 40px; background: #0a0b0d; border-radius: 30px; text-align: center; border: 1px solid var(--border); }
         .auth-field { width: 100%; padding: 15px; margin-top: 12px; border-radius: 10px; border: 1px solid #222; background: #000; color: #fff; text-align: center; }
-        .auth-btn { width: 100%; padding: 15px; margin-top: 20px; border-radius: 10px; border: none; background: var(--primary); color: #000; font-weight: 800; cursor: pointer; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 40px 5%; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 30px; text-decoration: none; height: 120px; display: flex; align-items: center; justify-content: center; font-weight: 800; transition: 0.3s; }
+        .card:hover { border-color: var(--primary); background: rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
 
     <div id="devPanel">
-        <h2 style="color: var(--primary); margin-bottom: 5px; font-weight: 800;">COMMAND TERMINAL</h2>
-        <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 20px;">SYSTEM OVERSEER MODE</p>
-        
+        <h2 style="color: var(--primary); font-weight: 800;">ROOT ACCESS</h2>
         <div class="dev-card">
-            <p style="font-size: 0.6rem; font-weight: 800; color: var(--text-dim);">IP BLACKLIST</p>
-            <div id="ipList" style="font-family: 'Fira Code'; font-size: 0.7rem; margin: 10px 0; color: var(--danger);"></div>
-            <input type="text" id="manualIP" class="dev-input" placeholder="Enter IP Address...">
-            <button class="dev-btn" style="background: var(--danger); width: 100%;" onclick="ipBanManual()">BLACKLIST IP</button>
+            <p style="font-size: 0.6rem; font-weight: 800; color: var(--text-dim); margin-bottom: 10px;">NETWORK & HARDWARE FILTERS</p>
+            <div id="filterList" style="font-family: 'Fira Code'; font-size: 0.7rem; color: var(--danger); margin-bottom: 15px;"></div>
+            <input type="text" id="manualInput" style="width:100%; background:#000; border:1px solid #222; color:#fff; padding:10px; border-radius:5px; font-size:0.8rem;" placeholder="Manual Entry (IP/Device ID)">
+            <div class="dev-btn-group">
+                <button class="dev-btn" style="background:var(--danger)" onclick="manualAction('ip')">Ban IP</button>
+                <button class="dev-btn" style="background:var(--info)" onclick="manualAction('dev')">Ban Device</button>
+            </div>
         </div>
-
         <div id="devUserList"></div>
-        <button class="nav-link" onclick="toggleDev()" style="margin-top: 20px; width: 100%; border: 1px solid var(--border);">CLOSE TERMINAL</button>
+        <button class="nav-link" onclick="toggleDev()" style="width:100%; border:1px solid var(--border); margin-top:20px; border-radius:8px;">Exit Terminal</button>
     </div>
 
     <div id="authOverlay" class="modal">
         <div class="auth-box">
-            <h1 style="letter-spacing: 5px; margin-bottom: 10px;">NEBULA</h1>
+            <h1 style="letter-spacing: 5px;">NEBULA</h1>
             <input type="text" id="userInput" class="auth-field" placeholder="CALLSIGN">
             <input type="password" id="passInput" class="auth-field" placeholder="ACCESS KEY">
-            <button class="auth-btn" onclick="processAuth()">INITIALIZE</button>
+            <button class="auth-btn" style="width:100%; padding:15px; margin-top:20px; border-radius:10px; border:none; background:var(--primary); font-weight:800; cursor:pointer;" onclick="processAuth()">INITIALIZE</button>
             <p style="margin-top: 20px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleAuthMode()" id="toggleTxt">NEW USER? REGISTER</p>
         </div>
     </div>
 
     <nav>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:15px; height:15px; background:var(--primary); border-radius:3px;"></div>
-            <h1 style="font-size:0.9rem; letter-spacing:3px; font-weight: 800;">NEBULA OS</h1>
-        </div>
+        <div style="display:flex; align-items:center; gap:10px;"><div style="width:15px; height:15px; background:var(--primary); border-radius:3px;"></div><h1 style="font-size:0.9rem; letter-spacing:3px;">NEBULA</h1></div>
         <div>
             <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color: var(--warning);">[ CMD ]</span>
             <span id="navUser" style="margin-left:15px; font-weight:800; color:var(--primary); font-size: 0.8rem;">GUEST</span>
-            <span class="nav-link" onclick="doLogout()">LOGOUT</span>
+            <span class="nav-link" onclick="doLogout()">Logout</span>
         </div>
     </nav>
-
-    <header>
-        <h2 id="welcomeTxt">Welcome, Operative</h2>
-        <input type="text" id="gameSearch" placeholder="Filter Modules..." onkeyup="doSearch()">
-    </header>
 
     <div id="gameGrid" class="grid"></div>
 
     <script>
-        const _0xADMIN = "MTIzNDU2Nzgh"; // 12345678!
+        const _0xADMIN = "MTIzNDU2Nzgh"; 
         const MOCK_IP = "127.0.0.1";
+        const DEVICE_ID = btoa(navigator.userAgent + screen.width).substring(0, 10);
         let isLoginMode = true;
-        let trackingInterval = null;
+        let activeDuration = {};
 
-        const gameList = [
-            { name: "Eggshell", cat: "Shooter", url: "eggshell.html" },
-            { name: "Neon-Golf", cat: "Sports", url: "Neon-Golf.html" },
-            { name: "Neon-Hex", cat: "Strategy", url: "Neon-Hex.html" },
-            { name: "Neon-Pong", cat: "Arcade", url: "Neon-Pong.html" },
-            { name: "Neon-Slams", cat: "Sports", url: "Neon-Slams.html" },
-            { name: "Neon-Slash", cat: "Action", url: "Neon-Slash.html" },
-            { name: "AI run", cat: "System", url: "ai.html" },
-            { name: "Basketball", cat: "Sports", url: "basketball.html" },
-            { name: "Blockblast", cat: "Puzzle", url: "blockblast.html" },
-            { name: "Blockbreaker", cat: "Arcade", url: "blockbreaker.html" },
-            { name: "Blockcraft", cat: "Creative", url: "blockcraft.html" },
-            { name: "Cricket", cat: "Sports", url: "cricket.html" },
-            { name: "Crossy Roads", cat: "Arcade", url: "crossyroads.html" },
-            { name: "Drift", cat: "Racing", url: "drift.html" },
-            { name: "Football", cat: "Sports", url: "football.html" },
-            { name: "Master Armory", cat: "Shooter", url: "masterarmory.html" },
-            { name: "Minesweeper", cat: "Puzzle", url: "minesweeper.html" },
-            { name: "Neon Trail", cat: "Adventure", url: "neon-trail.html" },
-            { name: "Overdrive", cat: "Racing", url: "overdrive.html" },
-            { name: "Pacman", cat: "Arcade", url: "pacman.html" },
-            { name: "Snake", cat: "Arcade", url: "snake.html" },
-            { name: "Space Adventure", cat: "Sci-Fi", url: "spaceadventure.html" },
-            { name: "Sparks Maths", cat: "Edu", url: "sparksmaths.html" },
-            { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" },
-            { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
-        ];
+        const gameList = ["Eggshell", "Neon-Golf", "Neon-Hex", "Neon-Pong", "Neon-Slams", "Neon-Slash"];
 
-        // --- ANTI-TAMPER (CONSOLE BAN) ---
-        document.addEventListener('keydown', (e) => {
-            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C"))) {
-                const user = localStorage.getItem('neb_active');
-                if (user && user !== 'ADMIN') {
-                    e.preventDefault();
-                    let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
-                    b[user.toLowerCase()] = { message: "CONSOLE TAMPERING", expiry: Date.now() + 86400000 }; // 24h
-                    localStorage.setItem('neb_bans', JSON.stringify(b));
-                    doLogout();
-                }
-            }
-        });
-
-        // --- AUTH LOGIC ---
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
-            const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
+            const ipB = JSON.parse(localStorage.getItem('neb_ipbans')) || {};
+            const dvB = JSON.parse(localStorage.getItem('neb_devbans')) || {};
+            const acB = JSON.parse(localStorage.getItem('neb_bans')) || {};
 
-            // Admin Network Bypass
-            if(ipBans.includes(MOCK_IP) && u.toUpperCase() !== 'ADMIN') {
-                return alert("NETWORK RESTRICTED: Your IP is blacklisted.");
+            const isAdmin = (u.toUpperCase() === 'ADMIN' && p === atob(_0xADMIN));
+
+            if (!isAdmin) {
+                if (validateBan(ipB[MOCK_IP], 'ip', MOCK_IP)) return alert("NETWORK BLACKLISTED");
+                if (validateBan(dvB[DEVICE_ID], 'dev', DEVICE_ID)) return alert("HARDWARE RESTRICTED");
+                if (validateBan(acB[u.toLowerCase()], 'acc', u.toLowerCase())) return alert("ACCOUNT SUSPENDED");
             }
 
-            // Standard Ban Check
-            if(bans[u.toLowerCase()]) {
-                const b = bans[u.toLowerCase()];
-                if(b.expiry && Date.now() > b.expiry) {
-                    delete bans[u.toLowerCase()];
-                    localStorage.setItem('neb_bans', JSON.stringify(bans));
-                } else return alert(`ACCESS DENIED: ${b.message}`);
-            }
-
-            // Admin Login
-            if(u.toUpperCase() === 'ADMIN' && p === atob(_0xADMIN)) {
-                localStorage.setItem('neb_active', 'ADMIN');
-                location.reload();
-                return;
-            }
+            if(isAdmin) { localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return; }
 
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
             if(isLoginMode) {
                 if(db[u] && db[u].pw === p) {
-                    db[u].lastIP = MOCK_IP;
+                    db[u].lastIP = MOCK_IP; db[u].lastDev = DEVICE_ID;
                     localStorage.setItem('neb_db', JSON.stringify(db));
-                    localStorage.setItem('neb_active', u);
-                    location.reload();
-                } else alert("INVALID CREDENTIALS");
+                    localStorage.setItem('neb_active', u); location.reload();
+                } else alert("DENIED");
             } else {
-                if(db[u]) return alert("USER ALREADY REGISTERED");
-                db[u] = { pw: p, playtime: {}, lastIP: MOCK_IP };
+                if(db[u]) return alert("EXISTS");
+                db[u] = { pw: p, lastIP: MOCK_IP, lastDev: DEVICE_ID };
                 localStorage.setItem('neb_db', JSON.stringify(db));
-                localStorage.setItem('neb_active', u);
-                location.reload();
+                localStorage.setItem('neb_active', u); location.reload();
             }
         }
 
-        // --- PLAYTIME TRACKING ---
-        function startTracking(gameName) {
-            if(trackingInterval) clearInterval(trackingInterval);
-            trackingInterval = setInterval(() => {
-                const user = localStorage.getItem('neb_active');
-                if (!user || user === 'ADMIN') return;
-                
-                let db = JSON.parse(localStorage.getItem('neb_db')) || {};
-                if(!db[user].playtime) db[user].playtime = {};
-                db[user].playtime[gameName] = (db[user].playtime[gameName] || 0) + 1;
-                
-                localStorage.setItem('neb_db', JSON.stringify(db));
-                renderUI(); 
-            }, 60000); // 1 Minute Pulse
+        function validateBan(obj, type, key) {
+            if (!obj) return false;
+            if (obj.expiry && Date.now() > obj.expiry) {
+                let s = type === 'ip' ? 'neb_ipbans' : (type === 'dev' ? 'neb_devbans' : 'neb_bans');
+                let d = JSON.parse(localStorage.getItem(s)); delete d[key];
+                localStorage.setItem(s, JSON.stringify(d)); return false;
+            }
+            return true;
         }
 
-        // --- ADMIN FUNCTIONS ---
+        function setDuration(ref, days, el) {
+            activeDuration[ref] = days;
+            document.querySelectorAll(`.opt-${ref}`).forEach(o => o.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function toggleBan(type, key, ref) {
+            let s = type === 'ip' ? 'neb_ipbans' : (type === 'dev' ? 'neb_devbans' : 'neb_bans');
+            let d = JSON.parse(localStorage.getItem(s)) || {};
+            if (d[key]) { delete d[key]; } else {
+                const days = activeDuration[ref] || 0;
+                d[key] = { expiry: days > 0 ? Date.now() + (days * 86400000) : null };
+            }
+            localStorage.setItem(s, JSON.stringify(d)); refreshDevList();
+        }
+
+        function manualAction(type) {
+            const val = document.getElementById('manualInput').value.trim();
+            if(val) toggleBan(type, val, 'manual');
+        }
+
         function refreshDevList() {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
-            const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            const ipB = JSON.parse(localStorage.getItem('neb_ipbans')) || {};
+            const dvB = JSON.parse(localStorage.getItem('neb_devbans')) || {};
+            const acB = JSON.parse(localStorage.getItem('neb_bans')) || {};
 
-            document.getElementById('ipList').innerHTML = ipBans.map(ip => `
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <span>${ip}</span><span onclick="unIPBan('${ip}')" style="color:var(--primary); cursor:pointer;">[LIFT]</span>
-                </div>`).join('') || 'NO ACTIVE FILTERS';
+            let filters = "";
+            for(let k in ipB) filters += `<div>IP: ${k} <span onclick="toggleBan('ip','${k}')">[LIFT]</span></div>`;
+            for(let k in dvB) filters += `<div>DEV: ${k} <span onclick="toggleBan('dev','${k}')">[LIFT]</span></div>`;
+            document.getElementById('filterList').innerHTML = filters || 'SYSTEMS CLEAR';
 
             document.getElementById('devUserList').innerHTML = Object.keys(db).map(u => {
-                const isB = !!bans[u.toLowerCase()];
-                const userIP = db[u].lastIP || "0.0.0.0";
+                const isB = !!acB[u.toLowerCase()];
                 return `
                 <div class="dev-card">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span style="font-weight:800;">${u.toUpperCase()}</span>
-                        <span style="font-family:'Fira Code'; font-size:0.6rem; color:var(--text-dim);">${userIP}</span>
+                    <p style="font-weight:800; color:var(--primary); font-size:0.8rem;">${u.toUpperCase()}</p>
+                    <div class="ban-timer-row">
+                        <div class="timer-opt opt-${u}" onclick="setDuration('${u}', 1, this)">1D</div>
+                        <div class="timer-opt opt-${u}" onclick="setDuration('${u}', 3, this)">3D</div>
+                        <div class="timer-opt opt-${u}" onclick="setDuration('${u}', 7, this)">1W</div>
+                        <div class="timer-opt opt-${u}" onclick="setDuration('${u}', 30, this)">1M</div>
+                        <div class="timer-opt opt-${u}" onclick="setDuration('${u}', 365, this)">1Y</div>
+                        <div class="timer-opt opt-${u}" onclick="setDuration('${u}', 0, this)">∞</div>
                     </div>
                     <div class="dev-btn-group">
-                        <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="toggleUserBan('${u}')">${isB ? 'Unban' : 'Ban User'}</button>
-                        <button class="dev-btn" style="background:var(--warning)" onclick="applyIPBan('${userIP}')">Ban IP</button>
-                        <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="viewAudit('${u}')">Audit Data</button>
+                        <button class="dev-btn" style="background:var(--danger)" onclick="toggleBan('acc','${u.toLowerCase()}','${u}')">${isB ? 'Lift Account' : 'Ban Account'}</button>
+                        <button class="dev-btn" style="background:var(--warning)" onclick="toggleBan('ip','${db[u].lastIP}','${u}')">Ban IP</button>
+                        <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="toggleBan('dev','${db[u].lastDev}','${u}')">Ban Device (${db[u].lastDev})</button>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        function toggleUserBan(u) {
-            let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
-            if(b[u.toLowerCase()]) delete b[u.toLowerCase()];
-            else b[u.toLowerCase()] = { message: "Manual Exclusion", expiry: null };
-            localStorage.setItem('neb_bans', JSON.stringify(b));
-            refreshDevList();
-        }
-
-        function applyIPBan(ip) {
-            if(ip === MOCK_IP && localStorage.getItem('neb_active') === 'ADMIN') return alert("ADMIN IP PROTECTED");
-            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            if(!i.includes(ip)) i.push(ip);
-            localStorage.setItem('neb_ipbans', JSON.stringify(i));
-            refreshDevList();
-        }
-
-        function ipBanManual() {
-            const ip = document.getElementById('manualIP').value.trim();
-            if(ip) { applyIPBan(ip); document.getElementById('manualIP').value = ''; }
-        }
-
-        function unIPBan(ip) {
-            let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
-            localStorage.setItem('neb_ipbans', JSON.stringify(i.filter(x => x !== ip)));
-            refreshDevList();
-        }
-
-        function viewAudit(u) {
-            const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const data = db[u];
-            let out = `AUDIT LOG: ${u}\nIP: ${data.lastIP}\n\nPLAYTIME:\n`;
-            for(let g in data.playtime) out += `- ${g}: ${data.playtime[g]} minutes\n`;
-            alert(out);
-        }
-
-        // --- UI HELPERS ---
         function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('toggleTxt').innerText = isLoginMode ? "NEW USER? REGISTER" : "BACK TO LOGIN"; }
         function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshDevList(); }
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
-        function doSearch() {
-            const q = document.getElementById('gameSearch').value.toLowerCase();
-            document.querySelectorAll('.card').forEach(c => c.style.display = c.dataset.name.includes(q) ? 'flex' : 'none');
-        }
 
         function renderUI() {
             const u = localStorage.getItem('neb_active'); if(!u) return;
             document.getElementById('authOverlay').style.display = 'none';
             document.getElementById('navUser').innerText = u.toUpperCase();
             if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
-            
-            const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const pt = (db[u] && db[u].playtime) ? db[u].playtime : {};
-            
-            document.getElementById('gameGrid').innerHTML = gameList.map(g => `
-                <a href="${g.url}" target="_blank" class="card" onclick="startTracking('${g.name}')" data-name="${g.name.toLowerCase()}">
-                    <span style="font-size:1.2rem; font-weight:800;">${g.name}</span>
-                    <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:10px; margin-top:10px;">
-                        <span style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase;">${g.cat}</span>
-                        <span style="color:var(--primary); font-family:'Fira Code'; font-size:0.75rem;">${pt[g.name] || 0}m</span>
-                    </div>
-                </a>`).join('');
+            document.getElementById('gameGrid').innerHTML = gameList.map(g => `<div class="card">${g}</div>`).join('');
         }
 
         if(localStorage.getItem('neb_active')) renderUI();
