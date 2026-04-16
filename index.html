@@ -15,116 +15,86 @@
             --border: rgba(255, 255, 255, 0.07);
             --text: #ffffff;
             --text-dim: #64748b;
-            --easing: cubic-bezier(0.2, 0, 0, 1);
             --danger: #ff4444;
             --warning: #ffaa00;
             --info: #00d9ff;
         }
 
-        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.2); }
-        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.2); }
-
         * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; background-image: radial-gradient(circle at 50% -20%, var(--primary-glow), transparent 70%); }
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            background-image: radial-gradient(circle at 50% -20%, var(--primary-glow), transparent 70%);
-        }
-
-        nav {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 5%; position: sticky; top: 0; z-index: 1000;
-            background: rgba(3, 4, 6, 0.85); backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-        }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .logo-sq { width: 30px; height: 30px; background: var(--primary); border-radius: 8px; }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; position: sticky; top: 0; z-index: 1000; background: rgba(3, 4, 6, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
         .nav-link { font-size: 0.7rem; color: var(--text-dim); cursor: pointer; text-decoration: none; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; transition: 0.3s; padding: 10px 15px; border-radius: 8px; }
         .nav-link:hover { color: var(--primary); background: var(--surface); }
-        .support-btn { border: 1px solid var(--primary); color: var(--primary); }
 
         /* --- DEV PANEL --- */
-        #devPanel {
-            position: fixed; top: 0; left: -100%; width: 100%; max-width: 500px; height: 100vh;
-            background: #07080a; border-right: 1px solid var(--border);
-            z-index: 4000; transition: 0.6s var(--easing); padding: 40px; overflow-y: auto;
-        }
+        #devPanel { position: fixed; top: 0; left: -100%; width: 100%; max-width: 550px; height: 100vh; background: #07080a; border-right: 1px solid var(--border); z-index: 4000; transition: 0.6s cubic-bezier(0.2, 0, 0, 1); padding: 40px; overflow-y: auto; }
         #devPanel.active { left: 0; box-shadow: 50px 0 100px rgba(0,0,0,0.8); }
         .dev-user-card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 20px; margin-bottom: 15px; }
-        .dev-input { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 10px; border-radius: 8px; font-size: 0.75rem; margin-top: 10px; }
-        .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .dev-input { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 10px; border-radius: 8px; font-size: 0.75rem; margin: 10px 0; }
+        .ban-timer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
+        .timer-btn { padding: 5px; font-size: 0.6rem; background: #222; border: 1px solid #333; color: #888; border-radius: 4px; cursor: pointer; }
+        .timer-btn.active { background: var(--warning); color: #000; border-color: #fff; }
+        .dev-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .dev-btn { padding: 10px; border-radius: 8px; border: none; font-size: 0.6rem; font-weight: 800; cursor: pointer; color: white; text-transform: uppercase; }
 
+        /* --- GRID --- */
         header { padding: 60px 5% 20px; text-align: center; }
         header h2 { font-size: 3.5rem; font-weight: 800; letter-spacing: -3px; margin-bottom: 20px; }
         #gameSearch { width: 100%; max-width: 500px; padding: 20px; border-radius: 15px; background: var(--surface); border: 1px solid var(--border); color: #fff; text-align: center; }
-        
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px 5% 150px; max-width: 1400px; margin: 0 auto; }
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: 25px; padding: 35px; text-decoration: none; min-height: 180px; display: flex; flex-direction: column; justify-content: flex-end; transition: 0.4s; }
-        .card:hover { transform: translateY(-10px); border-color: var(--primary); }
 
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .auth-box { width: 90%; max-width: 400px; padding: 50px; background: #0a0b0d; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
         .auth-field { width: 100%; padding: 18px; margin-top: 10px; border-radius: 12px; border: 1px solid #222; background: #000; color: #fff; text-align: center; }
         .auth-btn { width: 100%; padding: 18px; margin-top: 25px; border-radius: 12px; border: none; background: var(--primary); font-weight: 800; cursor: pointer; }
-
-        .dock { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(10,11,13,0.8); padding: 15px 30px; border-radius: 100px; border: 1px solid var(--border); display: flex; gap: 20px; z-index: 1000; }
-        .node { width: 25px; height: 25px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-        .node.active { border-color: #fff; }
     </style>
 </head>
 <body>
 
     <div id="devPanel">
-        <h2 style="letter-spacing: 2px; font-size: 1.2rem; color: var(--primary); margin-bottom: 5px;">COMMAND CENTER</h2>
+        <h2 style="color: var(--primary); margin-bottom: 5px;">COMMAND TERMINAL</h2>
         <div id="ipBanSection" style="margin-bottom: 20px; padding: 15px; background: rgba(255,0,0,0.05); border-radius: 15px; border: 1px solid rgba(255,0,0,0.1);">
-            <p style="font-size: 0.65rem; font-weight: 800; color: var(--danger); margin-bottom: 10px;">BLOCKED NETWORKS</p>
-            <div id="ipList" style="font-family: 'Fira Code'; font-size: 0.7rem;"></div>
+            <p style="font-size: 0.65rem; font-weight: 800; color: var(--danger);">NETWORK FILTERS</p>
+            <div id="ipList" style="font-family: 'Fira Code'; font-size: 0.7rem; margin: 10px 0;"></div>
+            <button class="dev-btn" style="background: var(--danger); width: 100%;" onclick="ipBan()">BAN CURRENT STATION (IP)</button>
         </div>
         <div id="devUserList"></div>
-        <button class="nav-link" onclick="toggleDev()" style="margin-top: 30px; width: 100%; border: 1px solid var(--border);">EXIT TERMINAL</button>
+        <button class="nav-link" onclick="toggleDev()" style="margin-top: 20px; width: 100%; border: 1px solid var(--border);">CLOSE</button>
     </div>
 
     <div id="authOverlay" class="modal">
         <div class="auth-box">
-            <h2 id="authTitle">NEBULA OS</h2>
+            <h2>NEBULA OS</h2>
             <input type="text" id="userInput" class="auth-field" placeholder="CALLSIGN">
-            <input type="password" id="passInput" class="auth-field" placeholder="ACCESS KEY">
-            <button class="auth-btn" onclick="processAuth()" id="mainAuthBtn">INITIALIZE</button>
+            <input type="password" id="passInput" class="auth-field" placeholder="KEY">
+            <button class="auth-btn" onclick="processAuth()">INITIALIZE</button>
             <p style="margin-top: 20px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer;" onclick="toggleMode()" id="toggleTxt">NEW USER? REGISTER</p>
         </div>
     </div>
 
     <nav>
-        <div class="brand"><div class="logo-sq"></div><h1>NEBULA</h1></div>
-        <div class="user-controls">
-            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" target="_blank" class="nav-link support-btn">Support</a>
+        <div style="display:flex; align-items:center; gap:10px;"><div style="width:20px; height:20px; background:var(--primary); border-radius:4px;"></div><h1 style="font-size:1rem; letter-spacing:4px;">NEBULA</h1></div>
+        <div>
+            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" target="_blank" class="nav-link" style="border:1px solid var(--primary);">Support</a>
             <span id="devTrigger" class="nav-link" onclick="toggleDev()" style="display:none; color: var(--warning);">[ CMD ]</span>
-            <span id="navUser" style="font-weight: 800; font-size: 0.75rem; letter-spacing: 2px; color: var(--primary);">GUEST</span>
-            <span class="nav-link" onclick="doLogout()">Log out</span>
+            <span id="navUser" style="margin-left:15px; font-weight:800; color:var(--primary);">GUEST</span>
+            <span class="nav-link" onclick="doLogout()">Exit</span>
         </div>
     </nav>
 
     <header>
         <h2 id="welcomeTxt">Welcome</h2>
-        <input type="text" id="gameSearch" placeholder="Filter Neural Modules..." onkeyup="doSearch()">
+        <input type="text" id="gameSearch" placeholder="Search Modules..." onkeyup="doSearch()">
     </header>
 
     <div id="gameGrid" class="grid"></div>
 
-    <div class="dock">
-        <div class="node active" style="background:#00ff88" onclick="updateTheme('default', this)"></div>
-        <div class="node" style="background:#ff00ff" onclick="updateTheme('cyber', this)"></div>
-        <div class="node" style="background:#00d9ff" onclick="updateTheme('ocean', this)"></div>
-    </div>
-
     <script>
-        // ADMIN_HASH is "12345678!" encoded in Base64
-        const _0x5a21 = "MTIzNDU2Nzgh"; 
+        const _0x5a21 = "MTIzNDU2Nzgh"; // Base64 for 12345678!
         const DUMMY_IP = "127.0.0.1";
+        let isLogin = true;
 
         const gameList = [
             { name: "Eggshell", cat: "Shooter", url: "eggshell.html" }, { name: "Cyber-Strike", cat: "Action", url: "Cyber-Strike.html" },
@@ -142,46 +112,41 @@
             { name: "Tic Tac Toe", cat: "Board", url: "tictactoe.html" }, { name: "Turbo Horizon", cat: "Racing", url: "turbohorizon.html" }
         ];
 
-        let isLogin = true;
-
-        function toggleMode() {
-            isLogin = !isLogin;
-            document.getElementById('authTitle').innerText = isLogin ? "NEBULA OS" : "NEW SESSION";
-            document.getElementById('toggleTxt').innerText = isLogin ? "NEW USER? REGISTER" : "BACK TO LOGIN";
-        }
-
-        function toggleDev() {
-            document.getElementById('devPanel').classList.toggle('active');
-            refreshDevList();
-        }
+        function toggleMode() { isLogin = !isLogin; document.getElementById('toggleTxt').innerText = isLogin ? "NEW USER? REGISTER" : "BACK TO LOGIN"; }
+        function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshDevList(); }
 
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
-            if(!u || !p) return;
-
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
+            const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
+
             if(ipBans.includes(DUMMY_IP)) return alert("IP BLACKLISTED");
 
-            const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
-            if(bans[u.toLowerCase()]) return alert(`BANNED: ${bans[u.toLowerCase()].message}`);
+            if(bans[u.toLowerCase()]) {
+                const b = bans[u.toLowerCase()];
+                if(b.expiry && Date.now() > b.expiry) {
+                    delete bans[u.toLowerCase()];
+                    localStorage.setItem('neb_bans', JSON.stringify(bans));
+                } else {
+                    const timeRem = b.expiry ? `\nEXPIRES: ${new Date(b.expiry).toLocaleString()}` : "\nPERMANENT";
+                    return alert(`BANNED: ${b.message}${timeRem}`);
+                }
+            }
 
-            // Check Admin Login (Base64 decode check)
             if(u.toUpperCase() === 'ADMIN' && p === atob(_0x5a21)) {
-                localStorage.setItem('neb_active', 'ADMIN');
-                location.reload(); return;
+                localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return;
             }
 
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
             if(isLogin) {
                 if(db[u] && db[u].pw === p) { localStorage.setItem('neb_active', u); location.reload(); }
-                else { alert("ACCESS DENIED"); }
+                else alert("FAILED");
             } else {
-                if(db[u]) return alert("USER EXISTS");
+                if(db[u]) return alert("EXISTS");
                 db[u] = { pw: p, scores: {} };
                 localStorage.setItem('neb_db', JSON.stringify(db));
-                localStorage.setItem('neb_active', u);
-                location.reload();
+                localStorage.setItem('neb_active', u); location.reload();
             }
         }
 
@@ -190,31 +155,41 @@
             const bans = JSON.parse(localStorage.getItem('neb_bans')) || {};
             const ipBans = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             
-            document.getElementById('ipList').innerHTML = ipBans.map(ip => `
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <span>${ip}</span> <span style="color:var(--primary); cursor:pointer;" onclick="unIPBan('${ip}')">[ REMOVE ]</span>
-                </div>`).join('') || 'CLEAN';
+            document.getElementById('ipList').innerHTML = ipBans.map(ip => `<div style="display:flex; justify-content:space-between;"><span>${ip}</span><span style="color:var(--primary); cursor:pointer;" onclick="unIPBan('${ip}')">[ UNBAN ]</span></div>`).join('') || 'NONE';
 
-            document.getElementById('devUserList').innerHTML = Object.keys(db).map(user => {
-                const isB = !!bans[user.toLowerCase()];
+            document.getElementById('devUserList').innerHTML = Object.keys(db).map(u => {
+                const isB = !!bans[u.toLowerCase()];
                 return `
                     <div class="dev-user-card">
-                        <div style="font-weight:800;">${user.toUpperCase()}</div>
-                        <input type="text" id="msg-${user}" class="dev-input" placeholder="Reason..." value="${isB ? bans[user.toLowerCase()].message : ''}">
+                        <div style="font-weight:800;">${u.toUpperCase()}</div>
+                        <input type="text" id="msg-${u}" class="dev-input" placeholder="Reason..." value="${isB ? bans[u.toLowerCase()].message : ''}">
+                        <div class="ban-timer-grid">
+                            <button class="timer-btn" onclick="setTimer('${u}', 1)">1D</button>
+                            <button class="timer-btn" onclick="setTimer('${u}', 3)">3D</button>
+                            <button class="timer-btn" onclick="setTimer('${u}', 7)">1W</button>
+                            <button class="timer-btn" onclick="setTimer('${u}', 30)">1M</button>
+                            <button class="timer-btn" onclick="setTimer('${u}', 365)">1Y</button>
+                            <button class="timer-btn" onclick="setTimer('${u}', 0)">PERM</button>
+                        </div>
                         <div class="dev-btn-group">
-                            <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="handleBan('${user}')">${isB ? 'Unban' : 'Ban'}</button>
-                            <button class="dev-btn" style="background:var(--warning)" onclick="ipBan()">IP Ban</button>
-                            <button class="dev-btn" style="background:var(--info); grid-column: span 2;" onclick="viewScores('${user}')">Audit Data</button>
+                            <button class="dev-btn" style="background:${isB ? '#444' : 'var(--danger)'}" onclick="handleBan('${u}')">${isB ? 'Unban' : 'Confirm Ban'}</button>
+                            <button class="dev-btn" style="background:var(--info)" onclick="viewScores('${u}')">Audit</button>
                         </div>
                     </div>`;
             }).join('');
         }
 
+        let selectedDays = {};
+        function setTimer(u, days) { selectedDays[u] = days; alert(`${u} set for ${days || 'Permanent'} ban duration.`); }
+
         function handleBan(u) {
             let b = JSON.parse(localStorage.getItem('neb_bans')) || {};
-            const m = document.getElementById(`msg-${u}`).value || "Policy Violation";
-            if(b[u.toLowerCase()]) delete b[u.toLowerCase()];
-            else b[u.toLowerCase()] = { message: m };
+            if(b[u.toLowerCase()]) { delete b[u.toLowerCase()]; } 
+            else {
+                const days = selectedDays[u] || 0;
+                const expiry = days > 0 ? Date.now() + (days * 24 * 60 * 60 * 1000) : null;
+                b[u.toLowerCase()] = { message: document.getElementById(`msg-${u}`).value || "Violation", expiry: expiry };
+            }
             localStorage.setItem('neb_bans', JSON.stringify(b));
             refreshDevList();
         }
@@ -222,51 +197,40 @@
         function ipBan() {
             let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             if(!i.includes(DUMMY_IP)) i.push(DUMMY_IP);
-            localStorage.setItem('neb_ipbans', JSON.stringify(i));
-            refreshDevList();
+            localStorage.setItem('neb_ipbans', JSON.stringify(i)); refreshDevList();
         }
 
         function unIPBan(ip) {
             let i = JSON.parse(localStorage.getItem('neb_ipbans')) || [];
             i = i.filter(x => x !== ip);
-            localStorage.setItem('neb_ipbans', JSON.stringify(i));
-            refreshDevList();
+            localStorage.setItem('neb_ipbans', JSON.stringify(i)); refreshDevList();
         }
 
         function viewScores(u) {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
             const s = db[u].scores || {};
-            let out = `AUDIT: ${u.toUpperCase()}\n\n`;
-            for(let g in s) { out += `${g}: ${s[g]} PTS\n`; }
-            alert(Object.keys(s).length ? out : "NO DATA");
+            let out = `AUDIT: ${u}\n`;
+            for(let g in s) out += `${g}: ${s[g]} PTS\n`;
+            alert(out);
         }
 
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
 
         function renderUI() {
-            const u = localStorage.getItem('neb_active');
-            if(!u) return;
+            const u = localStorage.getItem('neb_active'); if(!u) return;
             document.getElementById('authOverlay').style.display = 'none';
             document.getElementById('navUser').innerText = u.toUpperCase();
-            document.getElementById('welcomeTxt').innerText = `Welcome, ${u}`;
             if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
-
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
             const s = (db[u] && db[u].scores) ? db[u].scores : {};
             document.getElementById('gameGrid').innerHTML = gameList.map(g => `
                 <a href="${g.url}" target="_blank" class="card" data-name="${g.name.toLowerCase()}">
-                    <span class="card-title">${g.name}</span>
+                    <span style="font-size:1.4rem; font-weight:800;">${g.name}</span>
                     <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:10px;">
-                        <span style="font-size:0.6rem; color:var(--text-dim); font-weight:800;">${g.cat}</span>
+                        <span style="font-size:0.6rem; color:var(--text-dim);">${g.cat}</span>
                         <span style="color:var(--primary); font-family:'Fira Code'; font-size:0.8rem;">${s[g.name] || 0} PTS</span>
                     </div>
                 </a>`).join('');
-        }
-
-        function updateTheme(t, el) {
-            document.documentElement.setAttribute('data-theme', t);
-            document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
         }
 
         function doSearch() {
