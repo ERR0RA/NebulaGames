@@ -3,148 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEBULA | Reader Max</title>
+    <title>NEBULA | Sparx Reader Elite</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;800&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #00ff88; --bg: #050608; --surface: #0d1117; --border: #30363d; --accent: #238636; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: #fff; padding: 20px; overflow-x: hidden; }
+        :root { --primary: #00ff88; --bg: #050608; --surface: #0d1117; --border: #30363d; --danger: #ff4444; }
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: #fff; padding: 20px; transition: 0.1s; }
         
-        .max-container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+        /* Panic Mode Style */
+        body.panic { filter: brightness(0); background: #000; }
+
+        .app-wrapper { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
         
-        /* Left Side: Analyzer */
-        .main-deck { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 30px; position: relative; overflow: hidden; }
-        .main-deck::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--primary), transparent); animation: scan 3s linear infinite; }
-        @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-
-        h1 { font-weight: 800; color: var(--primary); font-size: 1.2rem; letter-spacing: 4px; margin-bottom: 20px; }
+        .main-engine { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 30px; border-top: 4px solid var(--primary); }
         
-        .mode-selector { display: flex; gap: 10px; margin-bottom: 20px; }
-        .mode-btn { flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #888; border-radius: 8px; cursor: pointer; font-size: 0.7rem; font-weight: 800; transition: 0.3s; }
-        .mode-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(0, 255, 136, 0.1); }
-
-        textarea { width: 100%; height: 120px; background: #000; border: 1px solid var(--border); color: var(--primary); border-radius: 12px; padding: 15px; font-family: monospace; font-size: 0.8rem; margin-bottom: 15px; }
+        h1 { font-size: 1.2rem; letter-spacing: 6px; color: var(--primary); margin-bottom: 25px; display: flex; justify-content: space-between; }
         
-        .btn-execute { width: 100%; padding: 15px; background: var(--primary); color: #000; border: none; border-radius: 12px; font-weight: 900; letter-spacing: 2px; cursor: pointer; transition: 0.2s; }
-        .btn-execute:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0, 255, 136, 0.4); }
+        .input-group { margin-bottom: 20px; }
+        label { font-size: 0.65rem; color: #666; text-transform: uppercase; margin-bottom: 8px; display: block; letter-spacing: 1px; }
+        
+        input, textarea { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 12px; padding: 15px; font-size: 0.85rem; transition: 0.3s; }
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 15px rgba(0, 255, 136, 0.2); }
 
-        /* Right Side: Intelligence Hub */
-        .intel-hub { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; }
-        .intel-card { background: #000; border: 1px solid var(--border); padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 3px solid var(--primary); }
-        .intel-card h4 { font-size: 0.7rem; color: var(--primary); margin-bottom: 5px; text-transform: uppercase; }
-        .intel-card p { font-size: 0.75rem; color: #ccc; line-height: 1.4; }
+        .mode-row { display: flex; gap: 8px; margin-bottom: 20px; }
+        .mode-btn { flex: 1; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: #555; border-radius: 10px; font-size: 0.65rem; font-weight: 800; cursor: pointer; }
+        .mode-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(0, 255, 136, 0.05); }
 
-        /* Neural Output */
-        #neuralOutput { margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.5); border: 1px dashed var(--primary); border-radius: 12px; display: none; }
-        .logic-step { font-size: 0.8rem; margin-bottom: 8px; color: #00ff88; font-family: monospace; }
-        .logic-step span { color: #fff; }
-
-        .status-bar { display: flex; justify-content: space-between; margin-top: 20px; font-size: 0.6rem; color: #444; text-transform: uppercase; }
+        .btn-solve { width: 100%; padding: 18px; background: var(--primary); color: #000; border: none; border-radius: 14px; font-weight: 900; letter-spacing: 2px; cursor: pointer; margin-top: 10px; }
+        
+        .output-panel { margin-top: 25px; padding: 20px; background: #000; border-radius: 15px; border-left: 4px solid var(--primary); display: none; }
+        
+        .side-panel { display: flex; flex-direction: column; gap: 15px; }
+        .info-card { background: var(--surface); border: 1px solid var(--border); padding: 15px; border-radius: 15px; font-size: 0.75rem; }
+        .info-card h4 { color: var(--primary); margin-bottom: 8px; font-size: 0.7rem; }
+        
+        .panic-btn { background: var(--danger); color: white; padding: 10px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; margin-top: auto; width: 100%; }
     </style>
 </head>
 <body>
 
-    <div class="max-container">
-        <div class="main-deck">
-            <h1>NEURAL.READER.MAX</h1>
-            
-            <div class="mode-selector">
-                <button class="mode-btn active" onclick="setMode('DESC', this)">DESCRIPTION</button>
-                <button class="mode-btn" onclick="setMode('EVENT', this)">EVENT/TIME</button>
-                <button class="mode-btn" onclick="setMode('CHAR', this)">CHARACTER</button>
-                <button class="mode-btn" onclick="setMode('QUOTE', this)">DIALOGUE</button>
-            </div>
+<div class="app-wrapper">
+    <div class="main-engine">
+        <h1>NEBULA.SOLVER <span>v9.2</span></h1>
 
-            <textarea id="logicInput" placeholder="TYPE EXTRACT FRAGMENTS OR KEYWORDS HERE..."></textarea>
-            
-            <input type="text" id="targetQuery" placeholder="WHAT IS THE QUESTION ASKING?" 
-                   style="width: 100%; padding: 12px; background: #000; border: 1px solid var(--border); color: #fff; border-radius: 10px; margin-bottom: 15px;">
-
-            <button class="btn-execute" onclick="runNeuralAnalysis()">EXECUTE ANALYSIS</button>
-
-            <div id="neuralOutput">
-                <div class="logic-step">> INITIALIZING HEURISTIC SEARCH...</div>
-                <div class="logic-step">> MAPPING CONTEXTUAL CLUSTERS...</div>
-                <div id="finalLogic" style="margin-top:15px; color: #fff; font-size: 0.9rem; line-height: 1.6;"></div>
-            </div>
-            
-            <div class="status-bar">
-                <span>Core: Nebula_v8.0</span>
-                <span>Status: Optimal</span>
-                <span>Enc: Enabled</span>
-            </div>
+        <div class="mode-row">
+            <button class="mode-btn active" onclick="setMode('Inference', this)">INFERENCE</button>
+            <button class="mode-btn" onclick="setMode('Literal', this)">LITERAL</button>
+            <button class="mode-btn" onclick="setMode('Vocab', this)">VOCAB</button>
         </div>
 
-        <div class="intel-hub">
-            <h3 style="font-size: 0.8rem; margin-bottom: 15px; color: #888;">INTEL GUIDES</h3>
-            
-            <div class="intel-card">
-                <h4>Anchor Search</h4>
-                <p>Find the unique noun in the question. Search the text for that word plus 2 sentences above.</p>
-            </div>
+        <div class="input-group">
+            <label>Keyword from Extract (Anchor)</label>
+            <input type="text" id="anchorInput" placeholder="Type the main subject/name you see...">
+        </div>
 
-            <div class="intel-card">
-                <h4>Adjective Map</h4>
-                <p>If asking 'how' someone felt, ignore dialogue and look for verbs ending in -ly.</p>
-            </div>
+        <div class="input-group">
+            <label>The Question (Fragment)</label>
+            <textarea id="questionInput" style="height: 60px;" placeholder="What is being asked?"></textarea>
+        </div>
 
-            <div class="intel-card">
-                <h4>The "But" Rule</h4>
-                <p>Answers are often hidden right after words like 'however', 'but', or 'yet'.</p>
-            </div>
+        <button class="btn-solve" onclick="runSolver()">EXECUTE HEURISTICS</button>
 
-            <div class="btn-execute" style="background: transparent; border: 1px solid var(--primary); color: var(--primary); font-size: 0.6rem; padding: 10px;" onclick="window.location.href='index.html'">
-                RETURN TO SYSTEM
-            </div>
+        <div id="solverOutput" class="output-panel">
+            <h4 style="color: var(--primary); margin-bottom: 10px;">ANALYSIS COMPLETE:</h4>
+            <p id="resultText" style="line-height: 1.6; font-size: 0.9rem;"></p>
         </div>
     </div>
 
-    <script>
-        let currentMode = 'DESC';
+    <div class="side-panel">
+        <div class="info-card">
+            <h4>QUICK BYPASS TIPS</h4>
+            <p>1. If copy-paste is blocked, focus on the <b>first word</b> of the 3rd paragraph.</p>
+            <p style="margin-top:8px;">2. Answers are 80% likely to be in the <b>same tense</b> as the question.</p>
+        </div>
 
-        function setMode(mode, btn) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
+        <div class="info-card" id="historyCard">
+            <h4>DATA NODES</h4>
+            <div id="recentNodes" style="color: #666;">No recent logs...</div>
+        </div>
 
-        function runNeuralAnalysis() {
-            const input = document.getElementById('logicInput').value;
-            const query = document.getElementById('targetQuery').value;
-            const output = document.getElementById('neuralOutput');
-            const result = document.getElementById('finalLogic');
+        <button class="panic-btn" onclick="triggerPanic()">PANIC MODE (ESC)</button>
+        <p style="font-size: 0.6rem; color: #444; text-align: center;">Press ESC to blackout screen</p>
+    </div>
+</div>
 
-            if(!input || !query) return;
+<script>
+    let currentMode = 'Inference';
 
-            output.style.display = 'block';
-            result.innerHTML = "Processing...";
+    function setMode(mode, btn) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
 
-            // Simulated Advanced Logic
-            setTimeout(() => {
-                let strategy = "";
-                
-                switch(currentMode) {
-                    case 'DESC':
-                        strategy = `Look for sensory words (smell, sight, sound) around the keywords "${query}". The answer is likely in the adjectives.`;
-                        break;
-                    case 'EVENT':
-                        strategy = `Focus on chronological markers (First, then, later, clock times). Scan the middle of the paragraph for sequences.`;
-                        break;
-                    case 'CHAR':
-                        strategy = `Focus on internal thoughts vs external actions. Is ${query} thinking or doing? Look for "thought", "felt", or "knew".`;
-                        break;
-                    case 'QUOTE':
-                        strategy = `Locate the quotation marks closest to "${query}". The speaker is usually identified in the tag immediately following the closing quote.`;
-                        break;
-                }
+    function triggerPanic() {
+        document.body.classList.toggle('panic');
+    }
 
-                result.innerHTML = `
-                    <strong style="color:var(--primary)">RECOMMENDED SCAN PATH:</strong><br>
-                    ${strategy}<br><br>
-                    <small style="color:#555">Logic applied: Contextual Clustering v4.2</small>
-                `;
-            }, 1000);
-        }
-    </script>
+    // Shortcut for Panic Mode
+    window.addEventListener('keydown', (e) => {
+        if (e.key === "Escape") triggerPanic();
+    });
+
+    function runSolver() {
+        const anchor = document.getElementById('anchorInput').value.trim();
+        const question = document.getElementById('questionInput').value.trim();
+        const out = document.getElementById('solverOutput');
+        const res = document.getElementById('resultText');
+
+        if(!anchor) return;
+
+        out.style.display = 'block';
+        
+        const logic = {
+            'Inference': `Scan for <b>"${anchor}"</b>. Look for the sentence containing a feeling (sad, happy, angry). If the question asks 'why', the answer is usually in the sentence <i>before</i> "${anchor}".`,
+            'Literal': `Scan for <b>"${anchor}"</b>. Look for a date, color, or specific object name within 10 words of it. This is a direct fact-check question.`,
+            'Vocab': `Find <b>"${anchor}"</b>. Replace it with each option. The correct option will not change the overall 'vibe' of the sentence.`
+        };
+
+        res.innerHTML = logic[currentMode];
+
+        // Save to Data Nodes
+        let nodes = JSON.parse(localStorage.getItem('neb_nodes') || '[]');
+        nodes.unshift(anchor.toUpperCase());
+        if(nodes.length > 5) nodes.pop();
+        localStorage.setItem('neb_nodes', JSON.stringify(nodes));
+        updateNodes();
+    }
+
+    function updateNodes() {
+        const nodes = JSON.parse(localStorage.getItem('neb_nodes') || '[]');
+        document.getElementById('recentNodes').innerHTML = nodes.map(n => `<div>> ${n}</div>`).join('');
+    }
+
+    window.onload = updateNodes;
+</script>
 </body>
 </html>
