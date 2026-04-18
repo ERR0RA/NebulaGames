@@ -1,0 +1,16 @@
+{
+  "short_name": "NEBULA",
+  "name": "NEBULA Gaming OS",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "index.html",
+  "background_color": "#050608",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#00ff88"
+}
