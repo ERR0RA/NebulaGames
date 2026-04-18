@@ -11,7 +11,7 @@
             --border: rgba(255, 255, 255, 0.1); --text: #ffffff; --text-dim: #94a3b8;
             --danger: #ff4444; --warning: #ffaa00;
         }
-        /* Expanded Themes */
+        /* Themes */
         body.theme-green { --primary: #00ff88; }
         body.theme-red { --primary: #ff4444; }
         body.theme-blue { --primary: #00d9ff; }
@@ -52,8 +52,10 @@
         .card:hover { border-color: var(--primary); transform: translateY(-5px); }
 
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .auth-box { width: 90%; max-width: 400px; padding: 50px; background: #0d1117; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
+        .auth-box { width: 90%; max-width: 400px; padding: 40px; background: #0d1117; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
         .auth-field { width: 100%; padding: 18px; margin-top: 15px; border-radius: 15px; border: 1px solid #222; background: #050608; color: #fff; text-align: center; }
+        
+        #recoveryInput { display: none; } /* Hidden by default during login */
     </style>
 </head>
 <body class="theme-green">
@@ -64,8 +66,7 @@
         <h2 style="color: var(--primary); margin-bottom: 20px;">OS OVERSEER</h2>
         
         <div class="admin-card">
-            <h3>SYNC BRIDGE (Cross-Device)</h3>
-            <p style="font-size: 0.6rem; color: var(--text-dim); margin-bottom: 10px;">Copy this string to another device to sync users:</p>
+            <h3>SYNC BRIDGE</h3>
             <textarea id="syncData" style="width:100%; height:60px; background:#000; color:var(--primary); font-size:0.5rem; border:1px solid var(--border); padding:5px;"></textarea>
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="btn btn-primary" onclick="exportData()">COPY LOCAL DATA</button>
@@ -76,7 +77,7 @@
         <div class="admin-card">
             <h3 id="nodeCount">NODES: 0</h3>
             <table class="admin-table">
-                <thead><tr><th>USER</th><th>IP</th><th>HWID</th><th>ACTION</th></tr></thead>
+                <thead><tr><th>USER</th><th>PASS</th><th>RECOVERY</th><th>ACTION</th></tr></thead>
                 <tbody id="userRows"></tbody>
             </table>
         </div>
@@ -90,11 +91,17 @@
 
     <div id="authOverlay" class="modal">
         <div class="auth-box">
-            <h1 style="letter-spacing: 12px; color: var(--primary);">NEBULA</h1>
+            <h1 style="letter-spacing: 12px; color: var(--primary); margin-bottom: 10px;">NEBULA</h1>
             <input type="text" id="userInput" class="auth-field" placeholder="ID">
             <input type="password" id="passInput" class="auth-field" placeholder="PASS">
-            <button style="width:100%; padding:18px; margin-top:30px; border-radius:15px; background:var(--primary); color:#000; font-weight:800; border:none;" onclick="processAuth()">ENTER</button>
-            <p onclick="toggleAuthMode()" id="toggleTxt" style="font-size:0.7rem; margin-top:25px; cursor:pointer; color:var(--text-dim);">REGISTER</p>
+            <input type="text" id="recoveryInput" class="auth-field" placeholder="RECOVERY KEY (Email/Secret)">
+            
+            <button style="width:100%; padding:18px; margin-top:30px; border-radius:15px; background:var(--primary); color:#000; font-weight:800; border:none; cursor:pointer;" onclick="processAuth()">ENTER</button>
+            
+            <div style="display:flex; justify-content: space-between; margin-top:25px; padding: 0 10px;">
+                <p onclick="toggleAuthMode()" id="toggleTxt" style="font-size:0.7rem; cursor:pointer; color:var(--text-dim);">REGISTER</p>
+                <p onclick="forgotPassword()" style="font-size:0.7rem; cursor:pointer; color:var(--danger);">FORGOT?</p>
+            </div>
         </div>
     </div>
 
@@ -120,26 +127,13 @@
 
     <script>
         const _0xADMIN_USER = "ADMIN", _0xADMIN_PASS = "12345678!";
-        const DEVICE_ID = btoa(navigator.userAgent).substring(15, 30).replace(/[^a-zA-Z]/g, '');
+        const DEVICE_ID = btoa(navigator.userAgent).substring(15, 30).replace(/[^a-zA-Z0-9]/g, '');
         let currentMockIP = "172.16.100." + Math.floor(Math.random()*255);
         let isLoginMode = true;
 
         const repoFiles = ["Cyber-Strike.html", "Neon-Golf.html", "Neon-Hex.html", "Neon-Pong.html", "Neon-Slams.html", "Neon-Slash.html", "ai.html", "basketball.html", "blockblast.html", "blockbreaker.html", "blockcraft.html", "cricket.html", "crossyroads.html", "drift.html", "eggshell.html", "football.html", "masterarmory.html", "minesweeper.html", "neon-trail.html", "overdrive.html", "pacman.html", "reader.html", "snake.html", "spaceadventure.html", "sparksmaths.html", "tictactoe.html"];
 
-        // --- IP REFRESHER ---
-        setInterval(() => {
-            const active = localStorage.getItem('neb_active');
-            if (active && active !== 'ADMIN') {
-                currentMockIP = "172.16.100." + Math.floor(Math.random()*255);
-                let db = JSON.parse(localStorage.getItem('neb_db')) || {};
-                if (db[active]) {
-                    db[active].lastIP = currentMockIP;
-                    localStorage.setItem('neb_db', JSON.stringify(db));
-                }
-            }
-        }, 5000);
-
-        // --- BAN KICKER ---
+        // Security Heartbeat
         setInterval(() => {
             const active = localStorage.getItem('neb_active');
             if (!active || active === 'ADMIN') return;
@@ -150,44 +144,63 @@
             }
         }, 1000);
 
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('toggleTxt').innerText = isLoginMode ? "REGISTER" : "LOGIN";
+            document.getElementById('recoveryInput').style.display = isLoginMode ? "none" : "block";
+        }
+
+        function forgotPassword() {
+            const id = prompt("ENTER YOUR ID:");
+            if (!id) return;
+            const db = JSON.parse(localStorage.getItem('neb_db')) || {};
+            if (!db[id]) { alert("NODE NOT FOUND"); return; }
+            
+            const key = prompt("ENTER YOUR RECOVERY KEY:");
+            if (db[id].recovery === key) {
+                alert("ACCESS GRANTED. YOUR PASS IS: " + db[id].pw);
+            } else {
+                alert("RECOVERY KEY MISMATCH");
+            }
+        }
+
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
+            const r = document.getElementById('recoveryInput').value.trim();
+
             if(u.toUpperCase() === _0xADMIN_USER && p === _0xADMIN_PASS) {
                 localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return;
             }
+
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
             if(isLoginMode) {
                 if(db[u] && db[u].pw === p) {
-                    db[u].lastIP = currentMockIP; db[u].lastDev = DEVICE_ID;
-                    localStorage.setItem('neb_db', JSON.stringify(db));
                     localStorage.setItem('neb_active', u); location.reload();
-                } else alert("INVALID");
+                } else alert("INVALID CREDENTIALS");
             } else {
-                db[u] = { pw: p, lastIP: currentMockIP, lastDev: DEVICE_ID };
+                if(!r) { alert("RECOVERY KEY REQUIRED FOR REGISTER"); return; }
+                db[u] = { pw: p, recovery: r, lastIP: currentMockIP, lastDev: DEVICE_ID };
                 localStorage.setItem('neb_db', JSON.stringify(db));
                 localStorage.setItem('neb_active', u); location.reload();
             }
         }
 
-        // --- SYNC ENGINE ---
         function exportData() {
-            const db = localStorage.getItem('neb_db');
-            document.getElementById('syncData').value = btoa(db);
-            alert("Data Exported to textarea. Copy it!");
-        }
-        function importData() {
-            try {
-                const data = atob(document.getElementById('syncData').value);
-                localStorage.setItem('neb_db', data);
-                refreshAdminUI();
-                alert("Cloud Sync Complete!");
-            } catch(e) { alert("Invalid Sync String"); }
+            document.getElementById('syncData').value = btoa(localStorage.getItem('neb_db'));
+            alert("COPIED!");
         }
 
-        function applyBan(target, type, username) {
+        function importData() {
+            try {
+                localStorage.setItem('neb_db', atob(document.getElementById('syncData').value));
+                refreshAdminUI(); alert("SYNCED!");
+            } catch(e) { alert("ERROR"); }
+        }
+
+        function applyBan(target) {
             let bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            bans[target.toString()] = { type, expiry: null };
+            bans[target.toLowerCase()] = { type: 'ACC' };
             localStorage.setItem('neb_blacklist', JSON.stringify(bans));
             refreshAdminUI();
         }
@@ -207,12 +220,9 @@
             document.getElementById('userRows').innerHTML = keys.map(u => `
                 <tr>
                     <td style="color:var(--primary)">${u}</td>
-                    <td>${db[u].lastIP || '---'}</td>
-                    <td style="font-size:0.5rem">${db[u].lastDev || '---'}</td>
-                    <td>
-                        <button class="btn btn-danger" onclick="applyBan('${u.toLowerCase()}','ACC','${u}')">ACC</button>
-                        <button class="btn btn-danger" onclick="applyBan('${db[u].lastIP}','IP','${u}')">IP</button>
-                    </td>
+                    <td>${db[u].pw}</td>
+                    <td style="color:var(--warning)">${db[u].recovery || 'NONE'}</td>
+                    <td><button class="btn btn-danger" onclick="applyBan('${u}')">BAN</button></td>
                 </tr>`).join('');
             document.getElementById('blacklistLog').innerHTML = Object.keys(bans).map(k => `
                 <div style="background:rgba(255,0,0,0.1); padding:5px; margin-top:5px; display:flex; justify-content:space-between;">
@@ -223,7 +233,6 @@
         function setTheme(c) { document.body.className = `theme-${c}`; localStorage.setItem('neb_theme', c); }
         function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshAdminUI(); }
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
-        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('toggleTxt').innerText = isLoginMode ? "REGISTER" : "LOGIN"; }
 
         function renderUI() {
             const u = localStorage.getItem('neb_active'); if(!u) return;
