@@ -1,134 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sparx Reader</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #121212;
-      color: #ddd;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      background: #1e1e1e;
-      padding: 30px;
-      border-radius: 15px;
-    }
-    h1 { color: #00ff9d; text-align: center; }
-    input, textarea, button {
-      width: 100%;
-      padding: 14px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-    }
-    input, textarea { background: #2a2a2a; color: #fff; }
-    button {
-      background: #00ff9d;
-      color: #000;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover { background: #00cc7a; }
-    .history {
-      background: #2a2a2a;
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
-      max-height: 500px;
-      overflow-y: auto;
-    }
-    .item {
-      background: #333;
-      padding: 12px;
-      margin: 8px 0;
-      border-radius: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .back-btn {
-      background: #555;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      display: inline-block;
-      margin-bottom: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEBULA | Bookwork Helper</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff88; --bg: #050608; --surface: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1); --text: #ffffff; --text-dim: #94a3b8;
+            --danger: #ff4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text); 
+            padding: 40px 5%; 
+        }
+
+        .container { max-width: 800px; margin: 0 auto; }
+
+        h1 { font-weight: 800; letter-spacing: 5px; color: var(--primary); text-align: center; margin-bottom: 30px; }
+
+        .input-group { 
+            background: var(--surface); 
+            padding: 25px; 
+            border-radius: 20px; 
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            background: #000; 
+            border: 1px solid var(--border); 
+            color: #fff; 
+            border-radius: 10px; 
+            text-align: center;
+        }
+
+        input:focus { border-color: var(--primary); outline: none; }
+
+        .btn { 
+            width: 100%; 
+            padding: 15px; 
+            border-radius: 10px; 
+            border: none; 
+            background: var(--primary); 
+            color: #000; 
+            font-weight: 800; 
+            cursor: pointer; 
+            transition: 0.2s;
+        }
+
+        .btn:hover { opacity: 0.8; transform: scale(0.98); }
+
+        .search-box { 
+            margin-bottom: 20px; 
+            border-color: var(--primary); 
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .history { display: flex; flex-direction: column; gap: 10px; }
+
+        .item { 
+            background: var(--surface); 
+            border: 1px solid var(--border); 
+            padding: 15px 20px; 
+            border-radius: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            transition: 0.2s;
+        }
+
+        .item:hover { border-color: var(--primary); background: rgba(255,255,255,0.08); }
+
+        .code-tag { 
+            background: var(--primary); 
+            color: #000; 
+            padding: 4px 10px; 
+            border-radius: 6px; 
+            font-weight: 800; 
+            margin-right: 15px;
+        }
+
+        .ans-text { color: var(--text); font-weight: 500; }
+
+        .actions { display: flex; gap: 10px; }
+
+        .btn-small { padding: 5px 10px; font-size: 0.7rem; border-radius: 5px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: #fff; }
+        .btn-del { border-color: var(--danger); color: var(--danger); }
+
+        .back-link { text-decoration: none; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 20px; display: inline-block; }
+        .back-link:hover { color: var(--primary); }
+
+        /* Notification Pop */
+        #notif { 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+            background: var(--primary); color: #000; padding: 10px 20px; 
+            border-radius: 30px; font-weight: 800; display: none; z-index: 100;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <a href="index.html" class="back-btn">← Back to Main Menu</a>
-    
-    <h1>📖 Sparx Reader - Bookwork Helper</h1>
-    
-    <input type="text" id="bookworkCode" placeholder="Enter Bookwork Code (e.g. 4C, 8B)">
-    <input type="text" id="answer" placeholder="Type the answer you used">
-    <button onclick="saveEntry()">💾 Save Bookwork Entry</button>
 
-    <h2>Saved Entries</h2>
-    <div class="history" id="history"></div>
-  </div>
+    <div id="notif">COPIED TO CLIPBOARD</div>
 
-  <script>
-    function saveEntry() {
-      const code = document.getElementById('bookworkCode').value.trim().toUpperCase();
-      const ans = document.getElementById('answer').value.trim();
+    <div class="container">
+        <a href="index.html" class="back-link">← BACK TO TERMINAL</a>
+        
+        <h1>SPARX.HELPER</h1>
 
-      if (!code || !ans) {
-        alert("Please fill both fields!");
-        return;
-      }
+        <div class="input-group">
+            <input type="text" id="bookworkCode" placeholder="BOOKWORK CODE (e.g., 4C)">
+            <input type="text" id="answer" placeholder="THE CORRECT ANSWER">
+            <button class="btn" onclick="saveEntry()">SAVE DATA NODE</button>
+        </div>
 
-      let entries = JSON.parse(localStorage.getItem('sparxBookwork') || '[]');
-      entries.unshift({ code, answer: ans, time: new Date().toLocaleString() });
+        <input type="text" id="searchInput" class="search-box" onkeyup="searchEntries()" placeholder="🔍 SEARCH CODES...">
 
-      localStorage.setItem('sparxBookwork', JSON.stringify(entries));
-      loadHistory();
+        <div id="history" class="history"></div>
+    </div>
 
-      document.getElementById('bookworkCode').value = '';
-      document.getElementById('answer').value = '';
-    }
+    <script>
+        function saveEntry() {
+            const code = document.getElementById('bookworkCode').value.trim().toUpperCase();
+            const ans = document.getElementById('answer').value.trim();
 
-    function loadHistory() {
-      const entries = JSON.parse(localStorage.getItem('sparxBookwork') || '[]');
-      const div = document.getElementById('history');
+            if (!code || !ans) return;
 
-      if (entries.length === 0) {
-        div.innerHTML = '<p style="color:#777;">No bookwork saved yet. Start adding some!</p>';
-        return;
-      }
+            let entries = JSON.parse(localStorage.getItem('sparxBookwork') || '[]');
+            
+            // If code exists, update it, otherwise add new
+            const idx = entries.findIndex(e => e.code === code);
+            if (idx > -1) {
+                entries[idx].answer = ans;
+            } else {
+                entries.unshift({ code, answer: ans });
+            }
 
-      let html = '';
-      entries.forEach((e, i) => {
-        html += `
-          <div class="item">
-            <div>
-              <strong style="color:#00ff9d;">${e.code}</strong> → ${e.answer}
-              <br><small>${e.time}</small>
-            </div>
-            <button onclick="deleteEntry(${i})" style="background:#ff4444;color:white;border:none;padding:6px 12px;border-radius:6px;">Delete</button>
-          </div>`;
-      });
-      div.innerHTML = html;
-    }
+            localStorage.setItem('sparxBookwork', JSON.stringify(entries));
+            loadHistory();
+            document.getElementById('bookworkCode').value = '';
+            document.getElementById('answer').value = '';
+        }
 
-    function deleteEntry(i) {
-      let entries = JSON.parse(localStorage.getItem('sparxBookwork') || '[]');
-      entries.splice(i, 1);
-      localStorage.setItem('sparxBookwork', JSON.stringify(entries));
-      loadHistory();
-    }
+        function loadHistory() {
+            const entries = JSON.parse(localStorage.getItem('sparxBookwork') || '[]');
+            const container = document.getElementById('history');
 
-    window.onload = loadHistory;
-  </script>
+            if (entries.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-dim);">No data nodes found.</p>`;
+                return;
+            }
+
+            container.innerHTML = entries.map((e, i) => `
+                <div class="item">
+                    <div onclick="copyText('${e.answer}')" style="flex-grow:1; cursor:pointer;">
+                        <span class="code-tag">${e.code}</span>
+                        <span class="ans-text">${e.answer}</span>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-small btn-del" onclick="deleteEntry(${i})">DELETE</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function copyText(txt) {
+            navigator.clipboard.writeText(txt);
+            const n = document.getElementById('notif');
+            n.style.display = 'block';
+            setTimeout(() => n.style.display = 'none', 2000);
+        }
+
+        function searchEntries() {
+            const query = document.getElementById('searchInput').value.toUpperCase();
+            const items = document.querySelectorAll('.item');
+            items.forEach(item => {
+                const code = item.querySelector('.code-tag').innerText;
+                item.style.display = code.includes(query) ? 'flex' : 'none';
+            });
+        }
+
+        function deleteEntry(i) {
+            let entries = JSON.parse(localStorage.getItem('sparxBookwork') || '[]');
+            entries.splice(i, 1);
+            localStorage.setItem('sparxBookwork', JSON.stringify(entries));
+            loadHistory();
+        }
+
+        window.onload = loadHistory;
+    </script>
 </body>
 </html>
