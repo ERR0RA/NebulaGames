@@ -11,7 +11,7 @@
             --border: rgba(255, 255, 255, 0.1); --text: #ffffff; --text-dim: #94a3b8;
             --danger: #ff4444; --warning: #ffaa00;
         }
-        /* Expanded Themes */
+        /* Themes */
         body.theme-green { --primary: #00ff88; }
         body.theme-red { --primary: #ff4444; }
         body.theme-blue { --primary: #00d9ff; }
@@ -48,8 +48,15 @@
         .btn-danger { border-color: var(--danger); color: var(--danger); }
 
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; padding: 40px 5%; }
+        
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px; }
+            .card { padding: 25px 10px; font-size: 0.7rem; }
+            nav h1 { font-size: 0.8rem; }
+        }
+
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; padding: 35px 15px; text-decoration: none; color: white; text-align: center; font-weight: 800; transition: 0.3s; }
-        .card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .card:hover { border-color: var(--primary); transform: translateY(-5px); background: rgba(255,255,255,0.08); }
 
         .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .auth-box { width: 90%; max-width: 400px; padding: 50px; background: #0d1117; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
@@ -64,8 +71,7 @@
         <h2 style="color: var(--primary); margin-bottom: 20px;">OS OVERSEER</h2>
         
         <div class="admin-card">
-            <h3>SYNC BRIDGE (Cross-Device)</h3>
-            <p style="font-size: 0.6rem; color: var(--text-dim); margin-bottom: 10px;">Copy this string to another device to sync users:</p>
+            <h3>SYNC BRIDGE</h3>
             <textarea id="syncData" style="width:100%; height:60px; background:#000; color:var(--primary); font-size:0.5rem; border:1px solid var(--border); padding:5px;"></textarea>
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="btn btn-primary" onclick="exportData()">COPY LOCAL DATA</button>
@@ -120,13 +126,20 @@
 
     <script>
         const _0xADMIN_USER = "ADMIN", _0xADMIN_PASS = "12345678!";
-        const DEVICE_ID = btoa(navigator.userAgent).substring(15, 30).replace(/[^a-zA-Z]/g, '');
+        const DEVICE_ID = btoa(navigator.userAgent).substring(15, 30).replace(/[^a-zA-Z0-9]/g, '');
         let currentMockIP = "172.16.100." + Math.floor(Math.random()*255);
         let isLoginMode = true;
 
-        const repoFiles = ["Cyber-Strike.html", "Neon-Golf.html", "Neon-Hex.html", "Neon-Pong.html", "Neon-Slams.html", "Neon-Slash.html", "ai.html", "basketball.html", "blockblast.html", "blockbreaker.html", "blockcraft.html", "cricket.html", "crossyroads.html", "drift.html", "eggshell.html", "football.html", "masterarmory.html", "minesweeper.html", "neon-trail.html", "overdrive.html", "pacman.html", "reader.html", "snake.html", "spaceadventure.html", "sparksmaths.html", "tictactoe.html"];
+        const repoFiles = [
+            "Cyber-Strike.html", "Neon-Golf.html", "Neon-Hex.html", "Neon-Pong.html", 
+            "Neon-Slams.html", "Neon-Slash.html", "ai.html", "basketball.html", 
+            "blockblast.html", "blockbreaker.html", "blockcraft.html", "cricket.html", 
+            "drift.html", "football.html", "masterarmory.html", "minesweeper.html", 
+            "neon-trail.html", "overdrive.html", "pacman.html", "reader.html", 
+            "snake.html", "spaceadventure.html", "sparksmaths.html", "tictactoe.html"
+        ];
 
-        // --- IP REFRESHER ---
+        // --- AUTH & SECURITY LOGIC ---
         setInterval(() => {
             const active = localStorage.getItem('neb_active');
             if (active && active !== 'ADMIN') {
@@ -139,7 +152,6 @@
             }
         }, 5000);
 
-        // --- BAN KICKER ---
         setInterval(() => {
             const active = localStorage.getItem('neb_active');
             if (!active || active === 'ADMIN') return;
@@ -170,11 +182,10 @@
             }
         }
 
-        // --- SYNC ENGINE ---
         function exportData() {
             const db = localStorage.getItem('neb_db');
             document.getElementById('syncData').value = btoa(db);
-            alert("Data Exported to textarea. Copy it!");
+            alert("Data Exported!");
         }
         function importData() {
             try {
@@ -182,7 +193,7 @@
                 localStorage.setItem('neb_db', data);
                 refreshAdminUI();
                 alert("Cloud Sync Complete!");
-            } catch(e) { alert("Invalid Sync String"); }
+            } catch(e) { alert("Invalid Data"); }
         }
 
         function applyBan(target, type, username) {
@@ -230,8 +241,13 @@
             document.getElementById('authOverlay').style.display = 'none';
             if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
             setTheme(localStorage.getItem('neb_theme') || 'green');
+            
             document.getElementById('gameGrid').innerHTML = repoFiles.map(f => {
                 let label = f.replace('.html', '').replace('-', ' ').toUpperCase();
+                
+                // RENAME: Change "SNAKE" to "EAT THE FRUIT"
+                if (label === "SNAKE") label = "EAT THE FRUIT";
+                
                 return `<a href="${f}" target="_blank" class="card">${label}</a>`;
             }).join('');
         }
