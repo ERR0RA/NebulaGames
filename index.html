@@ -97,7 +97,7 @@
             <h3>MULTI-DEVICE BRIDGE</h3>
             <textarea id="syncData" placeholder="PASTE SYNC STRING..." style="width:100%; height:80px; background:#000; color:var(--primary); font-size:0.6rem; border:1px solid var(--border); margin:10px 0; padding:10px; border-radius:8px;"></textarea>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button class="btn" onclick="exportData()">GENERATE STRING</button>
+                <button class="btn" onclick="exportData()">GENERATE FULL STRING</button>
                 <button class="btn" onclick="importData()">MERGE DATABASE</button>
             </div>
         </div>
@@ -155,16 +155,27 @@
         }
 
         async function exportAndEmail() {
-            const db = localStorage.getItem('neb_db') || "{}";
             const user = localStorage.getItem('neb_active');
+            if (!user || user === 'ADMIN') return;
+
+            // 1. Get the full DB and isolate ONLY the active user's data
+            let fullDB = JSON.parse(localStorage.getItem('neb_db')) || {};
+            let userDataOnly = {};
+            
+            if (fullDB[user]) {
+                userDataOnly[user] = fullDB[user];
+            }
+            
+            // Convert just this user's object to a string
+            const dbString = JSON.stringify(userDataOnly);
             const isWin = getDeviceInfo() === "Windows";
             
-            // Auto Copy
-            try { await navigator.clipboard.writeText(db); } catch(e){}
+            // Auto Copy just the user's data
+            try { await navigator.clipboard.writeText(dbString); } catch(e){}
 
             const email = "NEBULA.osmain@gmail.com";
             const sub = `SYNC_${user}`;
-            const body = `DATABASE_SYNC:\n\n${db}`;
+            const body = `DATABASE_SYNC:\n\n${dbString}`;
 
             if(isWin) {
                 window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`, '_blank');
@@ -202,20 +213,28 @@
         }
 
         function exportData() {
+            // Admin still copies the full database for backups
             const data = btoa(localStorage.getItem('neb_db'));
             document.getElementById('syncData').value = data;
             navigator.clipboard.writeText(data);
-            alert("COPIED");
+            alert("FULL DATABASE COPIED");
         }
 
         function importData() {
             try {
                 const input = document.getElementById('syncData').value;
-                const decoded = JSON.parse(atob(input));
+                // Check if it's base64 (from Admin export) or raw JSON (from User email)
+                let decoded;
+                try {
+                    decoded = JSON.parse(atob(input)); // Try Base64 first
+                } catch(e) {
+                    decoded = JSON.parse(input); // If it fails, assume it's raw JSON from the email
+                }
+                
                 let localDB = JSON.parse(localStorage.getItem('neb_db')) || {};
                 localStorage.setItem('neb_db', JSON.stringify({...localDB, ...decoded}));
                 refreshAdminUI();
-            } catch(e) { alert("ERROR"); }
+            } catch(e) { alert("ERROR PARSING DATA"); }
         }
 
         function refreshAdminUI() {
