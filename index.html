@@ -12,24 +12,19 @@
             --danger: #ff4444; --warning: #ffaa00;
         }
 
-        /* Responsive Themes */
         body.theme-green { --primary: #00ff88; }
         body.theme-red { --primary: #ff4444; }
         body.theme-blue { --primary: #00d9ff; }
-        body.theme-purple { --primary: #a855f7; }
-        body.theme-gold { --primary: #ffcc00; }
 
         * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; transition: 0.3s; }
 
-        /* Mobile Background Mesh */
         .bg-mesh {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at 50% -20%, var(--primary), transparent 50%);
             opacity: 0.15; filter: blur(60px); z-index: -1;
         }
 
-        /* Responsive Navigation */
         nav { 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 10px 15px; background: rgba(5, 6, 8, 0.95); 
@@ -39,7 +34,6 @@
         
         .nav-logo { font-size: 0.9rem; letter-spacing: 2px; font-weight: 800; }
 
-        /* Responsive Grid */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
@@ -48,7 +42,6 @@
 
         @media (min-width: 768px) {
             .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding: 40px 5%; }
-            .nav-logo { font-size: 1.2rem; }
         }
 
         .card { 
@@ -60,7 +53,6 @@
         }
         .card:active { transform: scale(0.95); border-color: var(--primary); }
 
-        /* Admin Panel - Full Mobile Height */
         #devPanel { 
             position: fixed; top: 0; right: -100%; width: 100%; 
             height: 100%; background: #0a0c10; z-index: 4000; 
@@ -70,9 +62,6 @@
         #devPanel.active { right: 0; }
 
         .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-
-        /* Multi-Device Sync Bridge Display */
-        .sync-info { font-size: 0.6rem; color: var(--text-dim); margin-top: 5px; }
 
         .auth-box { 
             width: 85%; max-width: 380px; padding: 30px; 
@@ -85,9 +74,9 @@
             background: transparent; color: #fff; font-size: 0.7rem; font-weight: 800; 
         }
         
-        .btn-full { width: 100%; margin-top: 10px; }
+        .btn-full { width: 100%; margin-top: 10px; cursor: pointer; }
         
-        input { font-size: 16px !important; } /* Prevents iOS zoom on focus */
+        input { font-size: 16px !important; }
     </style>
 </head>
 <body class="theme-green">
@@ -99,18 +88,17 @@
         
         <div class="admin-card">
             <h3>MULTI-DEVICE BRIDGE</h3>
-            <p class="sync-info">Paste a Sync String from another device to merge accounts:</p>
             <textarea id="syncData" placeholder="PASTE SYNC STRING..." style="width:100%; height:80px; background:#000; color:var(--primary); font-size:0.6rem; border:1px solid var(--border); margin:10px 0; padding:10px; border-radius:8px;"></textarea>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button class="btn btn-primary" onclick="exportData()">GENERATE STRING</button>
-                <button class="btn btn-primary" onclick="importData()">MERGE DATABASE</button>
+                <button class="btn" onclick="exportData()">GENERATE STRING</button>
+                <button class="btn" onclick="importData()">MERGE DATABASE</button>
             </div>
+            <button class="btn btn-full" style="border-color: var(--warning); color: var(--warning); margin-top:10px;" onclick="requestEmailBackup()">MANUAL EMAIL SYNC</button>
         </div>
 
-        <div class="admin-card" style="overflow-x: auto;">
+        <div class="admin-card">
             <h3 id="nodeCount">NODES: 0</h3>
-            <table class="admin-table" style="width:100%; margin-top:10px; font-size:0.65rem;">
-                <thead><tr style="color:var(--text-dim)"><th>ID</th><th>DEVICE</th><th>ACTION</th></tr></thead>
+            <table style="width:100%; margin-top:10px; font-size:0.65rem; border-collapse: collapse;">
                 <tbody id="userRows"></tbody>
             </table>
         </div>
@@ -118,11 +106,11 @@
         <button class="btn btn-primary btn-full" onclick="toggleDev()">CLOSE TERMINAL</button>
     </div>
 
-    <div id="authOverlay" class="modal" style="position:fixed; inset:0; background:#000; z-index:5000; display:flex; align-items:center; justify-content:center;">
+    <div id="authOverlay" style="position:fixed; inset:0; background:#050608; z-index:5000; display:flex; align-items:center; justify-content:center;">
         <div class="auth-box">
             <h1 style="letter-spacing: 5px; color: var(--primary); margin-bottom: 20px; text-align:center;">NEBULA<span style="font-size:0.5rem; vertical-align:middle;">.OS</span></h1>
-            <input type="text" id="userInput" class="auth-field" placeholder="USER ID" style="width:100%; padding:15px; background:#050608; border:1px solid #222; color:#fff; border-radius:12px; margin-bottom:10px; text-align:center;">
-            <input type="password" id="passInput" class="auth-field" placeholder="PASSWORD" style="width:100%; padding:15px; background:#050608; border:1px solid #222; color:#fff; border-radius:12px; text-align:center;">
+            <input type="text" id="userInput" placeholder="USER ID" style="width:100%; padding:15px; background:#000; border:1px solid #222; color:#fff; border-radius:12px; margin-bottom:10px; text-align:center;">
+            <input type="password" id="passInput" placeholder="PASSWORD" style="width:100%; padding:15px; background:#000; border:1px solid #222; color:#fff; border-radius:12px; text-align:center;">
             
             <button class="btn-full" style="padding:15px; border-radius:12px; background:var(--primary); color:#000; font-weight:800; border:none;" onclick="processAuth()">INITIALIZE</button>
             <p onclick="toggleAuthMode()" id="toggleTxt" style="text-align:center; font-size:0.7rem; margin-top:20px; color:var(--text-dim); cursor:pointer;">NEED ACCOUNT? REGISTER</p>
@@ -143,17 +131,27 @@
         const _0xADMIN_USER = "ADMIN", _0xADMIN_PASS = "12345678!";
         let isLoginMode = true;
 
-        // Mobile Device Info
         const getDeviceInfo = () => {
             const ua = navigator.userAgent;
-            if (/android/i.test(ua)) return "Android";
-            if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
-            return "PC";
+            return /iPhone|iPad|iPod/i.test(ua) ? "iOS" : /android/i.test(ua) ? "Android" : "PC";
         };
 
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
             document.getElementById('toggleTxt').innerText = isLoginMode ? "NEED ACCOUNT? REGISTER" : "HAVE ACCOUNT? LOGIN";
+        }
+
+        // --- EMAIL SYNC LOGIC ---
+        function requestEmailBackup() {
+            const db = localStorage.getItem('neb_db');
+            const user = localStorage.getItem('neb_active');
+            
+            const consent = confirm("OPTIONAL SYNC: Would you like to backup your local node data to NEBULA.osmain@gmail.com?");
+            
+            if (consent && db) {
+                const mailto = `mailto:NEBULA.osmain@gmail.com?subject=NEBULA_SYNC_${user}&body=${encodeURIComponent(db)}`;
+                window.location.href = mailto;
+            }
         }
 
         function processAuth() {
@@ -162,44 +160,44 @@
             if(!u || !p) return;
 
             if(u.toUpperCase() === _0xADMIN_USER && p === _0xADMIN_PASS) {
-                localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return;
+                localStorage.setItem('neb_active', 'ADMIN');
+                location.reload();
+                return;
             }
 
             let db = JSON.parse(localStorage.getItem('neb_db')) || {};
+            
             if(isLoginMode) {
                 if(db[u] && db[u].pw === p) {
-                    localStorage.setItem('neb_active', u); location.reload();
+                    localStorage.setItem('neb_active', u);
+                    requestEmailBackup(); // Optional Sync Prompt
+                    setTimeout(() => location.reload(), 500);
                 } else alert("ACCESS DENIED");
             } else {
                 db[u] = { pw: p, device: getDeviceInfo(), date: new Date().toLocaleDateString() };
                 localStorage.setItem('neb_db', JSON.stringify(db));
-                localStorage.setItem('neb_active', u); location.reload();
+                localStorage.setItem('neb_active', u);
+                requestEmailBackup(); // Optional Sync Prompt
+                setTimeout(() => location.reload(), 500);
             }
         }
 
-        // Multi-Device Sync Functions
         function exportData() {
-            const data = localStorage.getItem('neb_db');
-            const encoded = btoa(data);
-            document.getElementById('syncData').value = encoded;
-            navigator.clipboard.writeText(encoded);
-            alert("SYNC STRING COPIED. Use this on your other device.");
+            const data = btoa(localStorage.getItem('neb_db'));
+            document.getElementById('syncData').value = data;
+            navigator.clipboard.writeText(data);
+            alert("SYNC STRING COPIED");
         }
 
         function importData() {
-            const input = document.getElementById('syncData').value;
-            if(!input) return;
             try {
+                const input = document.getElementById('syncData').value;
                 const decoded = JSON.parse(atob(input));
-                let localDB = JSON.parse(localStorage.getItem('neb_db')) || {};
-                
-                // MERGE: This combines local accounts with imported ones
-                const mergedDB = {...localDB, ...decoded};
-                localStorage.setItem('neb_db', JSON.stringify(mergedDB));
-                
+                const localDB = JSON.parse(localStorage.getItem('neb_db')) || {};
+                localStorage.setItem('neb_db', JSON.stringify({...localDB, ...decoded}));
                 refreshAdminUI();
-                alert("DEVICES SYNCED SUCCESSFULLY");
-            } catch(e) { alert("INVALID SYNC STRING"); }
+                alert("SYNC SUCCESSFUL");
+            } catch(e) { alert("INVALID STRING"); }
         }
 
         function refreshAdminUI() {
@@ -207,15 +205,15 @@
             const keys = Object.keys(db);
             document.getElementById('nodeCount').innerText = `NODES: ${keys.length}`;
             document.getElementById('userRows').innerHTML = keys.map(u => `
-                <tr>
-                    <td style="color:var(--primary); padding:10px 0;">${u}</td>
-                    <td style="color:#666;">${db[u].device || 'UNK'}</td>
-                    <td><button class="btn" style="color:var(--danger); border-color:var(--danger); padding:4px 8px;" onclick="deleteNode('${u}')">X</button></td>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="color:var(--primary); padding:10px;">${u}</td>
+                    <td style="color:var(--text-dim);">${db[u].device}</td>
+                    <td style="text-align:right;"><button class="btn" style="color:var(--danger);" onclick="deleteNode('${u}')">X</button></td>
                 </tr>`).join('');
         }
 
         function deleteNode(u) {
-            if(confirm("Wipe this node?")) {
+            if(confirm("Wipe node?")) {
                 let db = JSON.parse(localStorage.getItem('neb_db'));
                 delete db[u];
                 localStorage.setItem('neb_db', JSON.stringify(db));
