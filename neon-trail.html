@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NEON-GRID | Bot Battle</title>
     <style>
         body { 
@@ -15,22 +16,84 @@
             height: 100vh; 
             margin: 0; 
             overflow: hidden;
+            touch-action: none; /* Prevents pull-to-refresh on mobile */
         }
+        
         canvas { 
             border: 4px solid #004400; 
             box-shadow: 0 0 20px #004400;
             background: #050505;
+            max-width: 95vw; /* Keeps canvas inside the screen width */
+            height: auto;    /* Maintains aspect ratio */
+            touch-action: none;
         }
-        #ui { margin-bottom: 20px; text-align: center; }
+
+        #ui { margin-bottom: 10px; text-align: center; }
+        h1 { font-size: 1.5rem; margin: 5px 0; }
         .controls { color: #888; font-size: 0.8rem; margin-top: 10px; }
-        #msg { position: absolute; font-size: 2rem; font-weight: bold; text-shadow: 0 0 10px #0f0; pointer-events: none; }
-        button {
+        
+        #msg { 
+            position: absolute; 
+            font-size: 2rem; 
+            font-weight: bold; 
+            text-shadow: 0 0 10px #0f0; 
+            pointer-events: none; 
+            text-align: center;
+        }
+
+        button.btn {
             background: #000; color: #0f0; border: 1px solid #0f0;
             padding: 5px 15px; cursor: pointer; font-family: 'Courier New';
-            margin-top: 5px;
+            margin-top: 5px; font-weight: bold;
         }
-        button:hover { background: #0f0; color: #000; }
-        .active-bot { color: #f00; border-color: #f00; }
+        button.btn:hover, button.btn:active { background: #0f0; color: #000; }
+        .active-bot { color: #f00 !important; border-color: #f00 !important; }
+
+        /* Mobile Touch Controls */
+        #touch-controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            padding: 15px;
+            box-sizing: border-box;
+            margin-top: 10px;
+        }
+
+        .dpad {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.3s;
+        }
+
+        .dpad .row { display: flex; }
+
+        .dpad-btn {
+            width: 45px;
+            height: 45px;
+            margin: 3px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #0f0;
+            color: #0f0;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            user-select: none;
+            touch-action: manipulation; /* Optimizes for fast tapping */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .dpad-btn:active { background: #0f0; color: #000; }
+
+        /* Player 2 styling */
+        #dpad-p2 .dpad-btn { border-color: #f00; color: #f00; background: rgba(255, 0, 0, 0.1); }
+        #dpad-p2 .dpad-btn:active { background: #f00; color: #000; }
+
+        @media (min-width: 768px) {
+            #touch-controls { display: none; } /* Hide touch controls on larger desktop screens */
+        }
     </style>
 </head>
 <body>
@@ -38,12 +101,31 @@
     <div id="ui">
         <h1>NEON_GRID_BATTLE</h1>
         <div id="score">P1: 0 | P2: 0</div>
-        <button id="botToggle">BOT: OFF</button>
+        <button class="btn" id="botToggle">BOT: OFF</button>
         <div class="controls" id="ctrl-text">P1: WASD | P2: ARROWS</div>
     </div>
 
     <div id="msg"></div>
     <canvas id="game" width="600" height="400"></canvas>
+
+    <div id="touch-controls">
+        <div class="dpad" id="dpad-p1">
+            <div class="dpad-btn" onpointerdown="moveP1('up')">W</div>
+            <div class="row">
+                <div class="dpad-btn" onpointerdown="moveP1('left')">A</div>
+                <div class="dpad-btn" onpointerdown="moveP1('down')">S</div>
+                <div class="dpad-btn" onpointerdown="moveP1('right')">D</div>
+            </div>
+        </div>
+        <div class="dpad" id="dpad-p2">
+            <div class="dpad-btn" onpointerdown="moveP2('up')">↑</div>
+            <div class="row">
+                <div class="dpad-btn" onpointerdown="moveP2('left')">←</div>
+                <div class="dpad-btn" onpointerdown="moveP2('down')">↓</div>
+                <div class="dpad-btn" onpointerdown="moveP2('right')">→</div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById('game');
@@ -63,6 +145,11 @@
             botBtn.innerText = botEnabled ? "BOT: ACTIVE" : "BOT: OFF";
             botBtn.classList.toggle('active-bot');
             document.getElementById('ctrl-text').innerText = botEnabled ? "P1: WASD | P2: AI CONTROL" : "P1: WASD | P2: ARROWS";
+            
+            // Dim and disable P2 controls when bot is active
+            const p2pad = document.getElementById('dpad-p2');
+            p2pad.style.opacity = botEnabled ? "0.3" : "1";
+            p2pad.style.pointerEvents = botEnabled ? "none" : "auto";
             reset();
         };
 
@@ -75,20 +162,35 @@
             gameActive = true;
         }
 
+        // Shared movement logic for Keyboard AND Touch Controls
+        window.moveP1 = function(dir) {
+            if (dir === 'up' && p1.dy === 0) { p1.dx = 0; p1.dy = -UNIT; }
+            if (dir === 'down' && p1.dy === 0) { p1.dx = 0; p1.dy = UNIT; }
+            if (dir === 'left' && p1.dx === 0) { p1.dx = -UNIT; p1.dy = 0; }
+            if (dir === 'right' && p1.dx === 0) { p1.dx = UNIT; p1.dy = 0; }
+        };
+
+        window.moveP2 = function(dir) {
+            if (botEnabled) return;
+            if (dir === 'up' && p2.dy === 0) { p2.dx = 0; p2.dy = -UNIT; }
+            if (dir === 'down' && p2.dy === 0) { p2.dx = 0; p2.dy = UNIT; }
+            if (dir === 'left' && p2.dx === 0) { p2.dx = -UNIT; p2.dy = 0; }
+            if (dir === 'right' && p2.dx === 0) { p2.dx = UNIT; p2.dy = 0; }
+        };
+
+        // Keyboard mappings
         window.addEventListener('keydown', e => {
             // Player 1
-            if (e.key === 'w' && p1.dy === 0) { p1.dx = 0; p1.dy = -UNIT; }
-            if (e.key === 's' && p1.dy === 0) { p1.dx = 0; p1.dy = UNIT; }
-            if (e.key === 'a' && p1.dx === 0) { p1.dx = -UNIT; p1.dy = 0; }
-            if (e.key === 'd' && p1.dx === 0) { p1.dx = UNIT; p1.dy = 0; }
+            if (e.key === 'w') moveP1('up');
+            if (e.key === 's') moveP1('down');
+            if (e.key === 'a') moveP1('left');
+            if (e.key === 'd') moveP1('right');
 
-            // Player 2 (Only if bot is off)
-            if (!botEnabled) {
-                if (e.key === 'ArrowUp' && p2.dy === 0) { p2.dx = 0; p2.dy = -UNIT; }
-                if (e.key === 'ArrowDown' && p2.dy === 0) { p2.dx = 0; p2.dy = UNIT; }
-                if (e.key === 'ArrowLeft' && p2.dx === 0) { p2.dx = -UNIT; p2.dy = 0; }
-                if (e.key === 'ArrowRight' && p2.dx === 0) { p2.dx = UNIT; p2.dy = 0; }
-            }
+            // Player 2
+            if (e.key === 'ArrowUp') moveP2('up');
+            if (e.key === 'ArrowDown') moveP2('down');
+            if (e.key === 'ArrowLeft') moveP2('left');
+            if (e.key === 'ArrowRight') moveP2('right');
         });
 
         function isHazard(x, y) {
@@ -97,25 +199,21 @@
         }
 
         function runBot() {
-            // 1. Check if about to hit something
             const nextX = p2.x + p2.dx;
             const nextY = p2.y + p2.dy;
 
             if (isHazard(nextX, nextY)) {
-                // 2. Look for an alternative direction
                 const possibleMoves = [
                     {dx: UNIT, dy: 0}, {dx: -UNIT, dy: 0},
                     {dx: 0, dy: UNIT}, {dx: 0, dy: -UNIT}
                 ];
 
-                // Remove the opposite direction (can't pull a 180)
                 const safeMoves = possibleMoves.filter(m => {
                     const isOpposite = (m.dx === -p2.dx && m.dy === -p2.dy);
                     return !isOpposite && !isHazard(p2.x + m.dx, p2.y + m.dy);
                 });
 
                 if (safeMoves.length > 0) {
-                    // Pick the best move (randomly if multiple safe spots)
                     const move = safeMoves[Math.floor(Math.random() * safeMoves.length)];
                     p2.dx = move.dx;
                     p2.dy = move.dy;
@@ -138,10 +236,10 @@
                 endGame("DRAW!");
             } else if (p1Dead) {
                 score.p2++;
-                endGame("PLAYER 2 WINS!");
+                endGame("P2 WINS!");
             } else if (p2Dead) {
                 score.p1++;
-                endGame("PLAYER 1 WINS!");
+                endGame("P1 WINS!");
             }
 
             if (gameActive) {
