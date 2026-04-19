@@ -12,7 +12,13 @@
             --danger: #ff4444; --warning: #ffaa00;
         }
 
+        /* Dynamic Themes */
         body.theme-green { --primary: #00ff88; }
+        body.theme-red { --primary: #ff4444; }
+        body.theme-blue { --primary: #00d9ff; }
+        body.theme-purple { --primary: #a855f7; }
+        body.theme-gold { --primary: #ffcc00; }
+
         * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; transition: 0.3s; }
 
@@ -37,6 +43,10 @@
             gap: 12px; padding: 20px; 
         }
 
+        @media (min-width: 768px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding: 40px 5%; }
+        }
+
         .card { 
             background: var(--surface); border: 1px solid var(--border); 
             border-radius: 12px; padding: 25px 10px; text-decoration: none; 
@@ -44,8 +54,8 @@
             transition: 0.2s; display: flex; align-items: center; justify-content: center;
             min-height: 100px;
         }
+        .card:active { transform: scale(0.95); border-color: var(--primary); }
 
-        /* Admin Panel */
         #devPanel { 
             position: fixed; top: 0; right: -100%; width: 100%; 
             height: 100%; background: #0a0c10; z-index: 4000; 
@@ -53,13 +63,16 @@
             padding: 20px; overflow-y: auto; 
         }
         #devPanel.active { right: 0; }
+
         .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
 
         .auth-box { width: 85%; max-width: 380px; padding: 30px; background: #0d1117; border-radius: 25px; border: 1px solid var(--border); }
-        .auth-field { width: 100%; padding: 15px; background: #050608; border: 1px solid #222; color: #fff; border-radius: 12px; margin-bottom: 10px; text-align: center; }
+        .auth-field { width: 100%; padding: 15px; background: #050608; border: 1px solid #222; color: #fff; border-radius: 12px; margin-bottom: 10px; text-align: center; font-size: 16px; }
 
-        .btn { padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: #fff; font-size: 0.7rem; font-weight: 800; }
-        .btn-full { width: 100%; margin-top: 10px; }
+        .btn { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: #fff; font-size: 0.7rem; font-weight: 800; }
+        .btn-full { width: 100%; margin-top: 10px; cursor: pointer; }
+
+        .theme-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; display: inline-block; margin: 5px; }
     </style>
 </head>
 <body class="theme-green">
@@ -70,6 +83,17 @@
         <h2 style="color: var(--primary); margin-bottom: 20px; font-size: 1.2rem;">OVERSEER CONSOLE</h2>
         
         <div class="admin-card">
+            <h3>THEME SELECTOR</h3>
+            <div style="margin-top:10px;">
+                <div class="theme-swatch" style="background:#00ff88" onclick="setTheme('green')"></div>
+                <div class="theme-swatch" style="background:#ff4444" onclick="setTheme('red')"></div>
+                <div class="theme-swatch" style="background:#00d9ff" onclick="setTheme('blue')"></div>
+                <div class="theme-swatch" style="background:#a855f7" onclick="setTheme('purple')"></div>
+                <div class="theme-swatch" style="background:#ffcc00" onclick="setTheme('gold')"></div>
+            </div>
+        </div>
+
+        <div class="admin-card">
             <h3>MULTI-DEVICE BRIDGE</h3>
             <textarea id="syncData" placeholder="PASTE SYNC STRING..." style="width:100%; height:80px; background:#000; color:var(--primary); font-size:0.6rem; border:1px solid var(--border); margin:10px 0; padding:10px; border-radius:8px;"></textarea>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -78,15 +102,14 @@
             </div>
         </div>
 
-        <div class="admin-card" style="overflow-x: auto;">
+        <div class="admin-card">
             <h3 id="nodeCount">NODES: 0</h3>
             <table style="width:100%; margin-top:10px; font-size:0.65rem;">
-                <thead><tr style="color:var(--text-dim)"><th>ID</th><th>DEVICE</th><th>RECOVERY</th><th>ACTION</th></tr></thead>
                 <tbody id="userRows"></tbody>
             </table>
         </div>
 
-        <button class="btn btn-primary btn-full" style="background:var(--primary); color:#000;" onclick="toggleDev()">CLOSE TERMINAL</button>
+        <button class="btn btn-full" style="background:var(--primary); color:#000;" onclick="toggleDev()">CLOSE TERMINAL</button>
     </div>
 
     <div id="authOverlay" style="position:fixed; inset:0; background:#000; z-index:5000; display:flex; align-items:center; justify-content:center;">
@@ -117,10 +140,13 @@
 
         const getDeviceInfo = () => {
             const ua = navigator.userAgent;
-            if (/android/i.test(ua)) return "Android";
-            if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
-            return "PC";
+            return /Win/.test(ua) ? "Windows" : /iPhone|iPad|iPod/.test(ua) ? "iOS" : /android/i.test(ua) ? "Android" : "PC";
         };
+
+        function setTheme(t) {
+            document.body.className = `theme-${t}`;
+            localStorage.setItem('neb_theme', t);
+        }
 
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
@@ -128,27 +154,22 @@
             document.getElementById('toggleTxt').innerText = isLoginMode ? "NEED ACCOUNT? REGISTER" : "HAVE ACCOUNT? LOGIN";
         }
 
-        async function autoSyncData() {
+        async function exportAndEmail() {
             const db = localStorage.getItem('neb_db') || "{}";
             const user = localStorage.getItem('neb_active');
-            const isWindows = navigator.platform.indexOf('Win') > -1;
+            const isWin = getDeviceInfo() === "Windows";
+            
+            // Auto Copy
+            try { await navigator.clipboard.writeText(db); } catch(e){}
 
-            // 1. Auto-Copy to clipboard
-            try {
-                await navigator.clipboard.writeText(db);
-                console.log("Database copied to clipboard.");
-            } catch (e) { console.error("Clipboard blocked."); }
-
-            // 2. Open Email
             const email = "NEBULA.osmain@gmail.com";
-            const subject = `NEBULA_SYNC_${user}`;
-            const body = `PASTE_SYNC_STRING_HERE:\n\n${db}`;
+            const sub = `SYNC_${user}`;
+            const body = `DATABASE_SYNC:\n\n${db}`;
 
-            if (isWindows) {
-                const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                window.open(gmailUrl, '_blank');
+            if(isWin) {
+                window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`, '_blank');
             } else {
-                window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
             }
         }
 
@@ -167,7 +188,7 @@
             if(isLoginMode) {
                 if(db[u] && db[u].pw === p) {
                     localStorage.setItem('neb_active', u);
-                    autoSyncData(); // Trigger Auto Copy & Email
+                    exportAndEmail();
                     setTimeout(() => location.reload(), 1000);
                 } else alert("ACCESS DENIED");
             } else {
@@ -175,28 +196,26 @@
                 db[u] = { pw: p, recovery: r, device: getDeviceInfo(), date: new Date().toLocaleDateString() };
                 localStorage.setItem('neb_db', JSON.stringify(db));
                 localStorage.setItem('neb_active', u);
-                autoSyncData(); // Trigger Auto Copy & Email
+                exportAndEmail();
                 setTimeout(() => location.reload(), 1000);
             }
         }
 
-        // --- ADMIN FUNCTIONS ---
         function exportData() {
             const data = btoa(localStorage.getItem('neb_db'));
             document.getElementById('syncData').value = data;
             navigator.clipboard.writeText(data);
-            alert("SYNC STRING COPIED");
+            alert("COPIED");
         }
 
         function importData() {
-            const input = document.getElementById('syncData').value;
             try {
+                const input = document.getElementById('syncData').value;
                 const decoded = JSON.parse(atob(input));
                 let localDB = JSON.parse(localStorage.getItem('neb_db')) || {};
                 localStorage.setItem('neb_db', JSON.stringify({...localDB, ...decoded}));
                 refreshAdminUI();
-                alert("MERGE COMPLETE");
-            } catch(e) { alert("INVALID STRING"); }
+            } catch(e) { alert("ERROR"); }
         }
 
         function refreshAdminUI() {
@@ -206,19 +225,16 @@
             document.getElementById('userRows').innerHTML = keys.map(u => `
                 <tr>
                     <td style="color:var(--primary); padding:10px 0;">${u}</td>
-                    <td style="color:#666;">${db[u].device || 'UNK'}</td>
-                    <td style="color:#666;">${db[u].recovery || 'NONE'}</td>
-                    <td><button class="btn" style="color:var(--danger); border-color:var(--danger);" onclick="deleteNode('${u}')">X</button></td>
+                    <td style="color:#666;">${db[u].recovery || 'N/A'}</td>
+                    <td><button class="btn" style="color:var(--danger);" onclick="deleteNode('${u}')">X</button></td>
                 </tr>`).join('');
         }
 
         function deleteNode(u) {
-            if(confirm("Wipe this node?")) {
-                let db = JSON.parse(localStorage.getItem('neb_db'));
-                delete db[u];
-                localStorage.setItem('neb_db', JSON.stringify(db));
-                refreshAdminUI();
-            }
+            let db = JSON.parse(localStorage.getItem('neb_db'));
+            delete db[u];
+            localStorage.setItem('neb_db', JSON.stringify(db));
+            refreshAdminUI();
         }
 
         function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshAdminUI(); }
@@ -226,11 +242,14 @@
 
         function renderUI() {
             const u = localStorage.getItem('neb_active');
+            const t = localStorage.getItem('neb_theme');
+            if(t) setTheme(t);
             if(!u) return;
             document.getElementById('authOverlay').style.display = 'none';
             if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
             
-            const repoFiles = ["Cyber-Strike.html", "Neon-Golf.html", "Neon-Hex.html", "Neon-Pong.html", "Neon-Slams.html", "Neon-Slash.html", "ai.html", "snake.html", "pacman.html", "tictactoe.html"];
+            const repoFiles = ["Cyber-Strike.html", "Neon-Golf.html", "Neon-Hex.html", "Neon-Pong.html", "Neon-Slams.html", "Neon-Slash.html", "ai.html", "basketball.html", "blockblast.html", "blockbreaker.html", "blockcraft.html", "cricket.html", "crossyroads.html", "drift.html", "eggshell.html", "football.html", "masterarmory.html", "minesweeper.html", "neon-trail.html", "overdrive.html", "pacman.html", "reader.html", "snake.html", "spaceadventure.html", "sparksmaths.html", "tictactoe.html"];
+
             document.getElementById('gameGrid').innerHTML = repoFiles.map(f => {
                 let label = f.replace('.html', '').replace('-', ' ').toUpperCase();
                 return `<a href="${f}" class="card">${label}</a>`;
