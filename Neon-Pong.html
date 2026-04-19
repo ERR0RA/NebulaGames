@@ -1,21 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NEON_PONG GLITCHED | Hard Mode</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        canvas { border: 2px solid #004400; background: #050505; box-shadow: 0 0 20px #002200; display: none; }
-        #ui { margin-bottom: 10px; font-size: 1.5rem; display: none; }
-        .menu { text-align: center; border: 2px solid #0f0; padding: 30px; background: #050505; box-shadow: 0 0 15px #004400; }
-        .btn { background: #0f0; color: #000; border: none; padding: 15px 30px; margin: 10px; cursor: pointer; font-family: monospace; font-weight: bold; width: 220px; }
-        .btn:hover { background: #fff; transform: scale(1.05); }
+        body { 
+            background: #000; color: #0f0; font-family: 'Courier New', monospace; 
+            margin: 0; overflow: hidden; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; height: 100vh;
+            touch-action: none; /* Prevents zooming/scrolling */
+        }
+        canvas { 
+            border: 2px solid #004400; background: #050505; 
+            box-shadow: 0 0 20px #002200; display: none;
+            max-width: 95vw; max-height: 70vh; 
+        }
+        #ui { margin-bottom: 10px; font-size: 1.2rem; display: none; text-align: center; }
+        .menu { 
+            text-align: center; border: 2px solid #0f0; padding: 20px; 
+            background: #050505; box-shadow: 0 0 15px #004400; width: 80%; max-width: 400px;
+        }
+        .btn { 
+            background: #0f0; color: #000; border: none; padding: 15px; 
+            margin: 10px 0; cursor: pointer; font-family: monospace; 
+            font-weight: bold; width: 100%; font-size: 1rem;
+        }
         .status { color: #f00; font-size: 0.7rem; margin-top: 5px; font-weight: bold; }
+        
+        /* Mobile Control Hint */
+        #mobile-hint {
+            position: fixed; bottom: 10px; font-size: 0.6rem; color: #444;
+            display: block; pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
     <div id="menu" class="menu">
-        <h1>NEON_PONG_ULTRA</h1>
+        <h1 style="font-size: 1.5rem;">NEON_PONG_ULTRA</h1>
         <button class="btn" onclick="startGame(true)">VS OMNI_BOT</button><br>
         <button class="btn" onclick="startGame(false)">2 PLAYERS (Local)</button>
         <div id="mode-text" class="status">HARD_MODE: PREDICTIVE_TRACKING_ACTIVE</div>
@@ -23,6 +46,7 @@
 
     <div id="ui">P1 [<span id="s1">0</span>] - [<span id="s2">0</span>] <span id="p2Name">P2</span></div>
     <canvas id="pong" width="700" height="400"></canvas>
+    <div id="mobile-hint">DRAG SIDES TO MOVE PADDLES</div>
 
 <script>
     const canvas = document.getElementById('pong');
@@ -30,15 +54,44 @@
     const s1 = document.getElementById('s1');
     const s2 = document.getElementById('s2');
     
-    let score = { p1: 0, p2: 0 }, particles = [], keys = {};
+    let score = { p1: 0, p2: 0 }, keys = {};
     let isBot = false, gameActive = false, predictedY = 200;
 
-    let ball = { x: 350, y: 200, vx: 5, vy: 3, size: 8, speed: 7 };
-    let p1 = { x: 20, y: 160, w: 10, h: 80 };
-    let p2 = { x: 670, y: 160, w: 10, h: 80 };
+    let ball = { x: 350, y: 200, vx: 5, vy: 3, size: 10, speed: 7 };
+    let p1 = { x: 20, y: 160, w: 12, h: 80 };
+    let p2 = { x: 668, y: 160, w: 12, h: 80 };
 
+    // Keyboard Listeners
     window.onkeydown = e => keys[e.code] = true;
     window.onkeyup = e => keys[e.code] = false;
+
+    // Mobile Touch Listeners
+    canvas.addEventListener('touchstart', handleTouch, {passive: false});
+    canvas.addEventListener('touchmove', handleTouch, {passive: false});
+
+    function handleTouch(e) {
+        if (!gameActive) return;
+        e.preventDefault();
+        
+        const rect = canvas.getBoundingClientRect();
+        const scaleY = canvas.height / rect.height;
+        const scaleX = canvas.width / rect.width;
+
+        for (let i = 0; i < e.touches.length; i++) {
+            const touch = e.touches[i];
+            const touchX = (touch.clientX - rect.left) * scaleX;
+            const touchY = (touch.clientY - rect.top) * scaleY;
+
+            // Left side touch -> Move P1
+            if (touchX < canvas.width / 2) {
+                p1.y = touchY - p1.h / 2;
+            } 
+            // Right side touch -> Move P2 (if not bot)
+            else if (!isBot) {
+                p2.y = touchY - p2.h / 2;
+            }
+        }
+    }
 
     function startGame(botMode) {
         isBot = botMode;
@@ -52,8 +105,7 @@
     }
 
     function predictTrajectory() {
-        if (ball.vx < 0) return 200; // Reset to center when ball moves away
-        
+        if (ball.vx < 0) return 200;
         let tempX = ball.x, tempY = ball.y, tempVY = ball.vy;
         while (tempX < p2.x) {
             tempX += ball.vx; tempY += tempVY;
@@ -71,40 +123,42 @@
     }
 
     function update() {
-        // Player 1 Controls (Universal for Solo)
-        if (keys['KeyW'] || keys['ArrowUp']) if (p1.y > 0) p1.y -= 9;
-        if (keys['KeyS'] || keys['ArrowDown']) if (p1.y < canvas.height - p1.h) p1.y += 9;
+        // Keyboard Controls
+        if (keys['KeyW'] || keys['ArrowUp']) p1.y -= 9;
+        if (keys['KeyS'] || keys['ArrowDown']) p1.y += 9;
 
-        // Omni-Bot Logic
         if (isBot) {
             if (ball.vx > 0) {
                 let target = predictedY - p2.h / 2;
-                // Bot "jitters" more as ball gets faster
                 let jitter = (Math.random() - 0.5) * (ball.speed * 0.5);
                 if (p2.y < target + jitter) p2.y += 8;
                 else if (p2.y > target + jitter) p2.y -= 8;
             }
         } else {
-            if (keys['ArrowUp'] && p2.y > 0) p2.y -= 9;
-            if (keys['ArrowDown'] && p2.y < canvas.height - p2.h) p2.y += 9;
+            if (keys['ArrowUp']) p2.y -= 9;
+            if (keys['ArrowDown']) p2.y += 9;
         }
+
+        // Boundary constraints
+        p1.y = Math.max(0, Math.min(canvas.height - p1.h, p1.y));
+        p2.y = Math.max(0, Math.min(canvas.height - p2.h, p2.y));
 
         ball.x += ball.vx; ball.y += ball.vy;
 
         if (ball.y <= 0 || ball.y >= canvas.height - ball.size) {
             ball.vy *= -1;
-            predictedY = predictTrajectory(); // Recalculate on bounce
+            predictedY = predictTrajectory();
         }
 
         const collide = (p) => ball.x < p.x + p.w && ball.x + ball.size > p.x && ball.y < p.y + p.h && ball.y + ball.size > p.y;
 
         if (collide(p1)) {
-            ball.speed += 0.6; ball.vx = ball.speed;
+            ball.speed += 0.7; ball.vx = ball.speed;
             ball.vy = (ball.y - (p1.y + p1.h/2)) * 0.35;
             predictedY = predictTrajectory();
         }
         if (collide(p2)) {
-            ball.speed += 0.6; ball.vx = -ball.speed;
+            ball.speed += 0.7; ball.vx = -ball.speed;
             ball.vy = (ball.y - (p2.y + p2.h/2)) * 0.35;
         }
 
@@ -113,15 +167,26 @@
     }
 
     function draw() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#0f0';
+        
         ctx.shadowBlur = 15; ctx.shadowColor = '#0f0';
+        ctx.fillStyle = '#0f0';
         ctx.fillRect(p1.x, p1.y, p1.w, p1.h);
         ctx.fillRect(p2.x, p2.y, p2.w, p2.h);
+        
         ctx.fillStyle = '#fff';
+        ctx.shadowColor = '#fff';
         ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
         ctx.shadowBlur = 0;
+
+        // Center line
+        ctx.strokeStyle = 'rgba(0, 68, 0, 0.5)';
+        ctx.setLineDash([10, 10]);
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/2, 0);
+        ctx.lineTo(canvas.width/2, canvas.height);
+        ctx.stroke();
     }
 
     function loop() {
