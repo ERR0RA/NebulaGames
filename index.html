@@ -146,7 +146,7 @@
             const db = localStorage.getItem('neb_db');
             const user = localStorage.getItem('neb_active');
             
-            const consent = confirm("OPTIONAL SYNC: Would you like to backup your local node data to NEBULA.osmain@gmail.com?");
+            const consent = confirm("OPTIONAL SYNC: Would you like to backup your local node data to nebula.osmain@gmail.com?");
             
             if (consent && db) {
                 const mailto = `mailto:NEBULA.osmain@gmail.com?subject=NEBULA_SYNC_${user}&body=${encodeURIComponent(db)}`;
