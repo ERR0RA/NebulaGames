@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEBULA | Gaming OS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEBULA | Mobile Ready OS</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -11,51 +11,83 @@
             --border: rgba(255, 255, 255, 0.1); --text: #ffffff; --text-dim: #94a3b8;
             --danger: #ff4444; --warning: #ffaa00;
         }
-        /* Themes */
+
+        /* Responsive Themes */
         body.theme-green { --primary: #00ff88; }
         body.theme-red { --primary: #ff4444; }
         body.theme-blue { --primary: #00d9ff; }
         body.theme-purple { --primary: #a855f7; }
         body.theme-gold { --primary: #ffcc00; }
-        body.theme-rose { --primary: #ff0077; }
-        body.theme-midnight { --primary: #3344ff; }
-        body.theme-aqua { --primary: #00fff2; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; }
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; transition: 0.3s; }
 
+        /* Mobile Background Mesh */
         .bg-mesh {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% -20%, var(--primary), transparent 50%), radial-gradient(circle at 100% 100%, var(--primary), transparent 30%);
-            opacity: 0.12; filter: blur(80px); z-index: -1;
+            background: radial-gradient(circle at 50% -20%, var(--primary), transparent 50%);
+            opacity: 0.15; filter: blur(60px); z-index: -1;
         }
 
-        nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; background: rgba(5, 6, 8, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; }
+        /* Responsive Navigation */
+        nav { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px 15px; background: rgba(5, 6, 8, 0.95); 
+            backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); 
+            position: sticky; top: 0; z-index: 1000; 
+        }
         
-        .theme-swatch { display: flex; gap: 5px; margin-right: 15px; }
-        .swatch { width: 15px; height: 15px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); }
+        .nav-logo { font-size: 0.9rem; letter-spacing: 2px; font-weight: 800; }
 
-        #devPanel { position: fixed; top: 0; right: -100%; width: 100%; max-width: 800px; height: 100vh; background: #0a0c10; border-left: 2px solid var(--primary); z-index: 4000; transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1); padding: 30px; overflow-y: auto; }
-        #devPanel.active { right: 0; box-shadow: -30px 0 60px #000; }
-        
-        .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        .admin-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-        .admin-table th { text-align: left; color: var(--text-dim); padding: 12px; border-bottom: 1px solid var(--border); }
-        .admin-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.02); }
-        
-        .btn { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: #fff; font-size: 0.65rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        .btn-primary { border-color: var(--primary); color: var(--primary); }
-        .btn-danger { border-color: var(--danger); color: var(--danger); }
+        /* Responsive Grid */
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+            gap: 12px; padding: 20px; 
+        }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; padding: 40px 5%; }
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; padding: 35px 15px; text-decoration: none; color: white; text-align: center; font-weight: 800; transition: 0.3s; }
-        .card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        @media (min-width: 768px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding: 40px 5%; }
+            .nav-logo { font-size: 1.2rem; }
+        }
 
-        .modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .auth-box { width: 90%; max-width: 400px; padding: 40px; background: #0d1117; border-radius: 40px; text-align: center; border: 1px solid var(--border); }
-        .auth-field { width: 100%; padding: 18px; margin-top: 15px; border-radius: 15px; border: 1px solid #222; background: #050608; color: #fff; text-align: center; }
+        .card { 
+            background: var(--surface); border: 1px solid var(--border); 
+            border-radius: 12px; padding: 25px 10px; text-decoration: none; 
+            color: white; text-align: center; font-size: 0.7rem; font-weight: 800; 
+            transition: 0.2s; display: flex; align-items: center; justify-content: center;
+            min-height: 100px;
+        }
+        .card:active { transform: scale(0.95); border-color: var(--primary); }
+
+        /* Admin Panel - Full Mobile Height */
+        #devPanel { 
+            position: fixed; top: 0; right: -100%; width: 100%; 
+            height: 100%; background: #0a0c10; z-index: 4000; 
+            transition: 0.4s cubic-bezier(0.1, 0.7, 0.1, 1); 
+            padding: 20px; overflow-y: auto; 
+        }
+        #devPanel.active { right: 0; }
+
+        .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+
+        /* Multi-Device Sync Bridge Display */
+        .sync-info { font-size: 0.6rem; color: var(--text-dim); margin-top: 5px; }
+
+        .auth-box { 
+            width: 85%; max-width: 380px; padding: 30px; 
+            background: #0d1117; border-radius: 25px; 
+            border: 1px solid var(--border); 
+        }
+
+        .btn { 
+            padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); 
+            background: transparent; color: #fff; font-size: 0.7rem; font-weight: 800; 
+        }
         
-        #recoveryInput { display: none; } /* Hidden by default during login */
+        .btn-full { width: 100%; margin-top: 10px; }
+        
+        input { font-size: 16px !important; } /* Prevents iOS zoom on focus */
     </style>
 </head>
 <body class="theme-green">
@@ -63,63 +95,45 @@
     <div class="bg-mesh"></div>
 
     <div id="devPanel">
-        <h2 style="color: var(--primary); margin-bottom: 20px;">OS OVERSEER</h2>
+        <h2 style="color: var(--primary); margin-bottom: 20px; font-size: 1.2rem;">OVERSEER CONSOLE</h2>
         
         <div class="admin-card">
-            <h3>SYNC BRIDGE</h3>
-            <textarea id="syncData" style="width:100%; height:60px; background:#000; color:var(--primary); font-size:0.5rem; border:1px solid var(--border); padding:5px;"></textarea>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn btn-primary" onclick="exportData()">COPY LOCAL DATA</button>
-                <button class="btn btn-primary" onclick="importData()">IMPORT CLOUD DATA</button>
+            <h3>MULTI-DEVICE BRIDGE</h3>
+            <p class="sync-info">Paste a Sync String from another device to merge accounts:</p>
+            <textarea id="syncData" placeholder="PASTE SYNC STRING..." style="width:100%; height:80px; background:#000; color:var(--primary); font-size:0.6rem; border:1px solid var(--border); margin:10px 0; padding:10px; border-radius:8px;"></textarea>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <button class="btn btn-primary" onclick="exportData()">GENERATE STRING</button>
+                <button class="btn btn-primary" onclick="importData()">MERGE DATABASE</button>
             </div>
         </div>
 
-        <div class="admin-card">
+        <div class="admin-card" style="overflow-x: auto;">
             <h3 id="nodeCount">NODES: 0</h3>
-            <table class="admin-table">
-                <thead><tr><th>USER</th><th>PASS</th><th>RECOVERY</th><th>ACTION</th></tr></thead>
+            <table class="admin-table" style="width:100%; margin-top:10px; font-size:0.65rem;">
+                <thead><tr style="color:var(--text-dim)"><th>ID</th><th>DEVICE</th><th>ACTION</th></tr></thead>
                 <tbody id="userRows"></tbody>
             </table>
         </div>
 
-        <div class="admin-card">
-            <h3 style="color:var(--danger)">BLACKLIST</h3>
-            <div id="blacklistLog"></div>
-        </div>
-        <button class="btn btn-primary" onclick="toggleDev()" style="width:100%; padding:15px;">EXIT</button>
+        <button class="btn btn-primary btn-full" onclick="toggleDev()">CLOSE TERMINAL</button>
     </div>
 
-    <div id="authOverlay" class="modal">
+    <div id="authOverlay" class="modal" style="position:fixed; inset:0; background:#000; z-index:5000; display:flex; align-items:center; justify-content:center;">
         <div class="auth-box">
-            <h1 style="letter-spacing: 12px; color: var(--primary); margin-bottom: 10px;">NEBULA</h1>
-            <input type="text" id="userInput" class="auth-field" placeholder="ID">
-            <input type="password" id="passInput" class="auth-field" placeholder="PASS">
-            <input type="text" id="recoveryInput" class="auth-field" placeholder="RECOVERY KEY (Email/Secret)">
+            <h1 style="letter-spacing: 5px; color: var(--primary); margin-bottom: 20px; text-align:center;">NEBULA<span style="font-size:0.5rem; vertical-align:middle;">.OS</span></h1>
+            <input type="text" id="userInput" class="auth-field" placeholder="USER ID" style="width:100%; padding:15px; background:#050608; border:1px solid #222; color:#fff; border-radius:12px; margin-bottom:10px; text-align:center;">
+            <input type="password" id="passInput" class="auth-field" placeholder="PASSWORD" style="width:100%; padding:15px; background:#050608; border:1px solid #222; color:#fff; border-radius:12px; text-align:center;">
             
-            <button style="width:100%; padding:18px; margin-top:30px; border-radius:15px; background:var(--primary); color:#000; font-weight:800; border:none; cursor:pointer;" onclick="processAuth()">ENTER</button>
-            
-            <div style="display:flex; justify-content: space-between; margin-top:25px; padding: 0 10px;">
-                <p onclick="toggleAuthMode()" id="toggleTxt" style="font-size:0.7rem; cursor:pointer; color:var(--text-dim);">REGISTER</p>
-                <p onclick="forgotPassword()" style="font-size:0.7rem; cursor:pointer; color:var(--danger);">FORGOT?</p>
-            </div>
+            <button class="btn-full" style="padding:15px; border-radius:12px; background:var(--primary); color:#000; font-weight:800; border:none;" onclick="processAuth()">INITIALIZE</button>
+            <p onclick="toggleAuthMode()" id="toggleTxt" style="text-align:center; font-size:0.7rem; margin-top:20px; color:var(--text-dim); cursor:pointer;">NEED ACCOUNT? REGISTER</p>
         </div>
     </div>
 
     <nav>
-        <div style="display:flex; align-items:center;">
-            <div class="theme-swatch">
-                <div class="swatch" style="background:#00ff88" onclick="setTheme('green')"></div>
-                <div class="swatch" style="background:#ff4444" onclick="setTheme('red')"></div>
-                <div class="swatch" style="background:#00d9ff" onclick="setTheme('blue')"></div>
-                <div class="swatch" style="background:#a855f7" onclick="setTheme('purple')"></div>
-                <div class="swatch" style="background:#ffcc00" onclick="setTheme('gold')"></div>
-                <div class="swatch" style="background:#ff0077" onclick="setTheme('rose')"></div>
-            </div>
-            <h1 style="font-size:1rem; letter-spacing:3px;">NEBULA<span style="color:var(--primary)">.OS</span></h1>
-        </div>
-        <div>
-            <span id="devTrigger" class="btn btn-primary" onclick="toggleDev()" style="display:none; margin-right:15px;">ADMIN</span>
-            <span class="btn" onclick="doLogout()">Logout</span>
+        <div class="nav-logo">NEBULA<span style="color:var(--primary)">.OS</span></div>
+        <div style="display:flex; gap:8px;">
+            <span id="devTrigger" class="btn" style="display:none; border-color:var(--primary); color:var(--primary);" onclick="toggleDev()">ADM</span>
+            <span class="btn" onclick="doLogout()">OFF</span>
         </div>
     </nav>
 
@@ -127,47 +141,25 @@
 
     <script>
         const _0xADMIN_USER = "ADMIN", _0xADMIN_PASS = "12345678!";
-        const DEVICE_ID = btoa(navigator.userAgent).substring(15, 30).replace(/[^a-zA-Z0-9]/g, '');
-        let currentMockIP = "172.16.100." + Math.floor(Math.random()*255);
         let isLoginMode = true;
 
-        const repoFiles = ["Cyber-Strike.html", "Neon-Golf.html", "Neon-Hex.html", "Neon-Pong.html", "Neon-Slams.html", "Neon-Slash.html", "ai.html", "basketball.html", "blockblast.html", "blockbreaker.html", "blockcraft.html", "cricket.html", "crossyroads.html", "drift.html", "eggshell.html", "football.html", "masterarmory.html", "minesweeper.html", "neon-trail.html", "overdrive.html", "pacman.html", "reader.html", "snake.html", "spaceadventure.html", "sparksmaths.html", "tictactoe.html"];
-
-        // Security Heartbeat
-        setInterval(() => {
-            const active = localStorage.getItem('neb_active');
-            if (!active || active === 'ADMIN') return;
-            const bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            if (bans[active.toLowerCase()] || bans[currentMockIP] || bans[DEVICE_ID]) {
-                localStorage.removeItem('neb_active');
-                location.reload();
-            }
-        }, 1000);
+        // Mobile Device Info
+        const getDeviceInfo = () => {
+            const ua = navigator.userAgent;
+            if (/android/i.test(ua)) return "Android";
+            if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+            return "PC";
+        };
 
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
-            document.getElementById('toggleTxt').innerText = isLoginMode ? "REGISTER" : "LOGIN";
-            document.getElementById('recoveryInput').style.display = isLoginMode ? "none" : "block";
-        }
-
-        function forgotPassword() {
-            const id = prompt("ENTER YOUR ID:");
-            if (!id) return;
-            const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            if (!db[id]) { alert("NODE NOT FOUND"); return; }
-            
-            const key = prompt("ENTER YOUR RECOVERY KEY:");
-            if (db[id].recovery === key) {
-                alert("ACCESS GRANTED. YOUR PASS IS: " + db[id].pw);
-            } else {
-                alert("RECOVERY KEY MISMATCH");
-            }
+            document.getElementById('toggleTxt').innerText = isLoginMode ? "NEED ACCOUNT? REGISTER" : "HAVE ACCOUNT? LOGIN";
         }
 
         function processAuth() {
             const u = document.getElementById('userInput').value.trim();
             const p = document.getElementById('passInput').value.trim();
-            const r = document.getElementById('recoveryInput').value.trim();
+            if(!u || !p) return;
 
             if(u.toUpperCase() === _0xADMIN_USER && p === _0xADMIN_PASS) {
                 localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return;
@@ -177,71 +169,74 @@
             if(isLoginMode) {
                 if(db[u] && db[u].pw === p) {
                     localStorage.setItem('neb_active', u); location.reload();
-                } else alert("INVALID CREDENTIALS");
+                } else alert("ACCESS DENIED");
             } else {
-                if(!r) { alert("RECOVERY KEY REQUIRED FOR REGISTER"); return; }
-                db[u] = { pw: p, recovery: r, lastIP: currentMockIP, lastDev: DEVICE_ID };
+                db[u] = { pw: p, device: getDeviceInfo(), date: new Date().toLocaleDateString() };
                 localStorage.setItem('neb_db', JSON.stringify(db));
                 localStorage.setItem('neb_active', u); location.reload();
             }
         }
 
+        // Multi-Device Sync Functions
         function exportData() {
-            document.getElementById('syncData').value = btoa(localStorage.getItem('neb_db'));
-            alert("COPIED!");
+            const data = localStorage.getItem('neb_db');
+            const encoded = btoa(data);
+            document.getElementById('syncData').value = encoded;
+            navigator.clipboard.writeText(encoded);
+            alert("SYNC STRING COPIED. Use this on your other device.");
         }
 
         function importData() {
+            const input = document.getElementById('syncData').value;
+            if(!input) return;
             try {
-                localStorage.setItem('neb_db', atob(document.getElementById('syncData').value));
-                refreshAdminUI(); alert("SYNCED!");
-            } catch(e) { alert("ERROR"); }
-        }
-
-        function applyBan(target) {
-            let bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            bans[target.toLowerCase()] = { type: 'ACC' };
-            localStorage.setItem('neb_blacklist', JSON.stringify(bans));
-            refreshAdminUI();
-        }
-
-        function revertBan(key) {
-            let bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
-            delete bans[key];
-            localStorage.setItem('neb_blacklist', JSON.stringify(bans));
-            refreshAdminUI();
+                const decoded = JSON.parse(atob(input));
+                let localDB = JSON.parse(localStorage.getItem('neb_db')) || {};
+                
+                // MERGE: This combines local accounts with imported ones
+                const mergedDB = {...localDB, ...decoded};
+                localStorage.setItem('neb_db', JSON.stringify(mergedDB));
+                
+                refreshAdminUI();
+                alert("DEVICES SYNCED SUCCESSFULLY");
+            } catch(e) { alert("INVALID SYNC STRING"); }
         }
 
         function refreshAdminUI() {
             const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const bans = JSON.parse(localStorage.getItem('neb_blacklist')) || {};
             const keys = Object.keys(db);
             document.getElementById('nodeCount').innerText = `NODES: ${keys.length}`;
             document.getElementById('userRows').innerHTML = keys.map(u => `
                 <tr>
-                    <td style="color:var(--primary)">${u}</td>
-                    <td>${db[u].pw}</td>
-                    <td style="color:var(--warning)">${db[u].recovery || 'NONE'}</td>
-                    <td><button class="btn btn-danger" onclick="applyBan('${u}')">BAN</button></td>
+                    <td style="color:var(--primary); padding:10px 0;">${u}</td>
+                    <td style="color:#666;">${db[u].device || 'UNK'}</td>
+                    <td><button class="btn" style="color:var(--danger); border-color:var(--danger); padding:4px 8px;" onclick="deleteNode('${u}')">X</button></td>
                 </tr>`).join('');
-            document.getElementById('blacklistLog').innerHTML = Object.keys(bans).map(k => `
-                <div style="background:rgba(255,0,0,0.1); padding:5px; margin-top:5px; display:flex; justify-content:space-between;">
-                    <span>${k}</span><button class="btn btn-primary" onclick="revertBan('${k}')">REV</button>
-                </div>`).join('');
         }
 
-        function setTheme(c) { document.body.className = `theme-${c}`; localStorage.setItem('neb_theme', c); }
+        function deleteNode(u) {
+            if(confirm("Wipe this node?")) {
+                let db = JSON.parse(localStorage.getItem('neb_db'));
+                delete db[u];
+                localStorage.setItem('neb_db', JSON.stringify(db));
+                refreshAdminUI();
+            }
+        }
+
         function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshAdminUI(); }
         function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
 
         function renderUI() {
-            const u = localStorage.getItem('neb_active'); if(!u) return;
+            const u = localStorage.getItem('neb_active');
+            if(!u) return;
             document.getElementById('authOverlay').style.display = 'none';
             if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
-            setTheme(localStorage.getItem('neb_theme') || 'green');
+            
+            const repoFiles = ["Cyber-Strike.html", "Neon-Golf.html", "Neon-Hex.html", "Neon-Pong.html", "Neon-Slams.html", "Neon-Slash.html", "ai.html", "basketball.html", "blockblast.html", "blockbreaker.html", "blockcraft.html", "cricket.html", "crossyroads.html", "drift.html", "eggshell.html", "football.html", "masterarmory.html", "minesweeper.html", "neon-trail.html", "overdrive.html", "pacman.html", "reader.html", "snake.html", "spaceadventure.html", "sparksmaths.html", "tictactoe.html"];
+
             document.getElementById('gameGrid').innerHTML = repoFiles.map(f => {
                 let label = f.replace('.html', '').replace('-', ' ').toUpperCase();
-                return `<a href="${f}" target="_blank" class="card">${label}</a>`;
+                return `<a href="${f}" class="card">${label}</a>`;
             }).join('');
         }
         renderUI();
