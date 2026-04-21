@@ -1,16 +1,10 @@
 {
-  "short_name": "NEBULA",
-  "name": "NEBULA Gaming OS",
-  "icons": [
-    {
-      "src": "icon.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ],
-  "start_url": "index.html",
-  "background_color": "#050608",
-  "display": "standalone",
-  "scope": "/",
-  "theme_color": "#00ff88"
+  "name": "Theme extention",
+  "description": "Base Level Extension",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "Theme.html",
+    "default_icon": "image.png"
+  }
 }
