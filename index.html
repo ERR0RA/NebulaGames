@@ -3,278 +3,451 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA | Mobile Ready OS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;800&display=swap" rel="stylesheet">
+    <title>NEBULA v2 | Quantum OS</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
         :root {
-            --primary: #00ff88; --bg: #050608; --surface: rgba(255, 255, 255, 0.05);
-            --border: rgba(255, 255, 255, 0.1); --text: #ffffff; --text-dim: #94a3b8;
-            --danger: #ff4444; --warning: #ffaa00;
+            --primary: #00ff88;
+            --primary-glow: rgba(0, 255, 136, 0.3);
+            --bg: #030406;
+            --surface: rgba(255, 255, 255, 0.03);
+            --surface-hover: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --error: #ff4757;
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Dynamic Themes */
-        body.theme-green { --primary: #00ff88; }
-        body.theme-red { --primary: #ff4444; }
-        body.theme-blue { --primary: #00d9ff; }
-        body.theme-purple { --primary: #a855f7; }
-        body.theme-gold { --primary: #ffcc00; }
+        /* Themes */
+        body.theme-cyan { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.3); }
+        body.theme-purple { --primary: #a855f7; --primary-glow: rgba(168, 85, 247, 0.3); }
+        body.theme-amber { --primary: #fbbf24; --primary-glow: rgba(251, 191, 36, 0.3); }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; transition: 0.3s; }
-
-        .bg-mesh {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% -20%, var(--primary), transparent 50%);
-            opacity: 0.15; filter: blur(60px); z-index: -1;
-        }
-
-        nav { 
-            display: flex; justify-content: space-between; align-items: center; 
-            padding: 10px 15px; background: rgba(5, 6, 8, 0.95); 
-            backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); 
-            position: sticky; top: 0; z-index: 1000; 
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        .nav-logo { font-size: 0.9rem; letter-spacing: 2px; font-weight: 800; }
-
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
-            gap: 12px; padding: 20px; 
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
 
-        @media (min-width: 768px) {
-            .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding: 40px 5%; }
+        /* Animated Background Mesh */
+        .nebula-bg {
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, var(--primary-glow), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(79, 70, 229, 0.15), transparent 40%);
+            filter: blur(80px);
+            z-index: -1;
+            animation: pulse 10s infinite alternate;
         }
 
-        .card { 
-            background: var(--surface); border: 1px solid var(--border); 
-            border-radius: 12px; padding: 25px 10px; text-decoration: none; 
-            color: white; text-align: center; font-size: 0.7rem; font-weight: 800; 
-            transition: 0.2s; display: flex; align-items: center; justify-content: center;
-            min-height: 100px;
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.1); }
         }
-        .card:active { transform: scale(0.95); border-color: var(--primary); }
 
-        #devPanel { 
-            position: fixed; top: 0; right: -100%; width: 100%; 
-            height: 100%; background: #0a0c10; z-index: 4000; 
-            transition: 0.4s cubic-bezier(0.1, 0.7, 0.1, 1); 
-            padding: 20px; overflow-y: auto; 
+        /* Layout Structure */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 2rem;
+            background: rgba(3, 4, 6, 0.7);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        #devPanel.active { right: 0; }
 
-        .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .logo {
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-        .auth-box { width: 85%; max-width: 380px; padding: 30px; background: #0d1117; border-radius: 25px; border: 1px solid var(--border); }
-        .auth-field { width: 100%; padding: 15px; background: #050608; border: 1px solid #222; color: #fff; border-radius: 12px; margin-bottom: 10px; text-align: center; font-size: 16px; }
+        .logo span { color: var(--primary); text-shadow: 0 0 15px var(--primary-glow); }
 
-        .btn { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: #fff; font-size: 0.7rem; font-weight: 800; }
-        .btn-full { width: 100%; margin-top: 10px; cursor: pointer; }
+        /* Auth System */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: var(--transition);
+        }
 
-        .theme-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; display: inline-block; margin: 5px; }
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-group { margin-bottom: 1.5rem; }
+        .input-group label { display: block; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--text-dim); font-weight: 600; }
+        
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            transition: var(--transition);
+        }
+
+        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+
+        /* App Grid */
+        .content-area { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+        .grid-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .app-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-card:hover {
+            background: var(--surface-hover);
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px -10px var(--primary-glow);
+        }
+
+        .app-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-primary:hover { opacity: 0.9; transform: scale(1.02); }
+
+        .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--surface); }
+
+        /* Admin Panel Drawer */
+        .drawer {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100%;
+            background: #0a0c10;
+            border-left: 1px solid var(--border);
+            z-index: 2000;
+            transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 2rem;
+        }
+
+        .drawer.active { right: 0; box-shadow: -20px 0 50px rgba(0,0,0,0.5); }
+
+        @media (max-width: 480px) {
+            .drawer { width: 100%; right: -100%; }
+            .auth-card { padding: 1.5rem; border: none; background: transparent; }
+        }
     </style>
 </head>
 <body class="theme-green">
+    <div class="nebula-bg"></div>
 
-    <div class="bg-mesh"></div>
-
-    <div id="devPanel">
-        <h2 style="color: var(--primary); margin-bottom: 20px; font-size: 1.2rem;">OVERSEER CONSOLE</h2>
-        
-        <div class="admin-card">
-            <h3>THEME SELECTOR</h3>
-            <div style="margin-top:10px;">
-                <div class="theme-swatch" style="background:#00ff88" onclick="setTheme('green')"></div>
-                <div class="theme-swatch" style="background:#ff4444" onclick="setTheme('red')"></div>
-                <div class="theme-swatch" style="background:#00d9ff" onclick="setTheme('blue')"></div>
-                <div class="theme-swatch" style="background:#a855f7" onclick="setTheme('purple')"></div>
-                <div class="theme-swatch" style="background:#ffcc00" onclick="setTheme('gold')"></div>
+    <div id="authLayer" class="overlay">
+        <div class="auth-card">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h1 class="logo" style="justify-content: center; font-size: 2rem;">NEBULA<span>.OS</span></h1>
+                <p style="color: var(--text-dim); font-size: 0.9rem;">Quantum Interface v2.0</p>
             </div>
-        </div>
-
-        <div class="admin-card">
-            <h3>MULTI-DEVICE BRIDGE</h3>
-            <textarea id="syncData" placeholder="PASTE SYNC STRING..." style="width:100%; height:80px; background:#000; color:var(--primary); font-size:0.6rem; border:1px solid var(--border); margin:10px 0; padding:10px; border-radius:8px;"></textarea>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button class="btn" onclick="exportData()">GENERATE FULL STRING</button>
-                <button class="btn" onclick="importData()">MERGE DATABASE</button>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <h3 id="nodeCount">NODES: 0</h3>
-            <table style="width:100%; margin-top:10px; font-size:0.65rem;">
-                <tbody id="userRows"></tbody>
-            </table>
-        </div>
-
-        <button class="btn btn-full" style="background:var(--primary); color:#000;" onclick="toggleDev()">CLOSE TERMINAL</button>
-    </div>
-
-    <div id="authOverlay" style="position:fixed; inset:0; background:#000; z-index:5000; display:flex; align-items:center; justify-content:center;">
-        <div class="auth-box">
-            <h1 style="letter-spacing: 5px; color: var(--primary); margin-bottom: 20px; text-align:center;">NEBULA<span style="font-size:0.5rem; vertical-align:middle;">.OS</span></h1>
-            <input type="text" id="userInput" class="auth-field" placeholder="USER ID">
-            <input type="password" id="passInput" class="auth-field" placeholder="PASSWORD">
-            <input type="email" id="recoveryInput" class="auth-field" placeholder="RECOVERY EMAIL" style="display:none;">
             
-            <button class="btn-full" style="padding:15px; border-radius:12px; background:var(--primary); color:#000; font-weight:800; border:none;" onclick="processAuth()">INITIALIZE</button>
-            <p onclick="toggleAuthMode()" id="toggleTxt" style="text-align:center; font-size:0.7rem; margin-top:20px; color:var(--text-dim); cursor:pointer;">NEED ACCOUNT? REGISTER</p>
+            <div class="input-group">
+                <label>Terminal ID</label>
+                <input type="text" id="uID" placeholder="Enter username...">
+            </div>
+            
+            <div class="input-group">
+                <label>Access Key</label>
+                <input type="password" id="uKey" placeholder="••••••••">
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="App.auth.login()">
+                INITIALIZE SESSION
+            </button>
+            
+            <p id="authSwitch" style="text-align: center; margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-dim); cursor: pointer;" onclick="App.auth.toggleMode()">
+                New Operator? Register Terminal
+            </p>
         </div>
     </div>
 
     <nav>
-        <div class="nav-logo">NEBULA<span style="color:var(--primary)">.OS</span></div>
-        <div style="display:flex; gap:8px;">
-            <span id="devTrigger" class="btn" style="display:none; border-color:var(--primary); color:var(--primary);" onclick="toggleDev()">ADM</span>
-            <span class="btn" onclick="doLogout()">OFF</span>
+        <div class="logo">NEBULA<span>.OS</span></div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <div id="adminBadge" style="display:none; color: var(--primary); font-size: 0.7rem; font-weight: 800; border: 1px solid var(--primary); padding: 4px 8px; border-radius: 4px;">ADM</div>
+            <button class="btn btn-ghost" onclick="App.ui.toggleAdmin()" id="admBtn" style="display:none;"><i data-lucide="shield"></i></button>
+            <button class="btn btn-ghost" onclick="App.auth.logout()"><i data-lucide="power"></i></button>
         </div>
     </nav>
 
-    <div id="gameGrid" class="grid"></div>
+    <main class="content-area">
+        <div class="grid-header">
+            <div>
+                <h2 id="welcomeMsg">Welcome, Operator</h2>
+                <p style="color: var(--text-dim); font-size: 0.8rem;" id="sysDate"></p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="searchApps" placeholder="Search Modules..." style="padding: 8px 15px; width: 200px;" oninput="App.ui.filterGrid()">
+            </div>
+        </div>
+
+        <div id="appGrid" class="app-grid">
+            </div>
+    </main>
+
+    <div id="adminPanel" class="drawer">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+            <h3>System Control</h3>
+            <button class="btn btn-ghost" onclick="App.ui.toggleAdmin()"><i data-lucide="x"></i></button>
+        </div>
+
+        <div class="input-group">
+            <label>Interface Theme</label>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="App.ui.setTheme('green')" style="width: 30px; height: 30px; border-radius: 50%; background: #00ff88; border: none; cursor: pointer;"></button>
+                <button onclick="App.ui.setTheme('cyan')" style="width: 30px; height: 30px; border-radius: 50%; background: #00d9ff; border: none; cursor: pointer;"></button>
+                <button onclick="App.ui.setTheme('purple')" style="width: 30px; height: 30px; border-radius: 50%; background: #a855f7; border: none; cursor: pointer;"></button>
+                <button onclick="App.ui.setTheme('amber')" style="width: 30px; height: 30px; border-radius: 50%; background: #fbbf24; border: none; cursor: pointer;"></button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Node Management</label>
+            <div id="userList" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px;">
+                </div>
+        </div>
+
+        <div style="margin-top: 2rem;">
+            <button class="btn btn-ghost" style="width: 100%; margin-bottom: 10px;" onclick="App.data.exportJSON()">Export Database</button>
+            <button class="btn btn-ghost" style="width: 100%;" onclick="document.getElementById('importFile').click()">Import Database</button>
+            <input type="file" id="importFile" style="display:none" onchange="App.data.importJSON(event)">
+        </div>
+    </div>
 
     <script>
-        const _0xADMIN_USER = "ADMIN", _0xADMIN_PASS = "12345678!";
-        let isLoginMode = true;
+        /**
+         * NEBULA.OS CORE ENGINE
+         * Organized via Modular Pattern
+         */
+        const App = {
+            state: {
+                user: null,
+                isLoginMode: true,
+                apps: ["Cyber-Strike", "Neon-Golf", "Neon-Hex", "Neon-Pong", "Neon-Slams", "Neon-Slash", "AI-Core", "Basketball", "Block-Blast", "Block-Breaker", "Block-Craft", "Cricket", "Crossy-Roads", "Drift-King", "Eggshell", "Football", "Master-Armory", "Minesweeper", "Neon-Trail", "Overdrive", "Pacman", "Reader", "Snake-Pro", "Space-Adventure", "Sparks-Maths", "Tic-Tac-Toe"],
+                db: JSON.parse(localStorage.getItem('nebula_v2_db')) || {}
+            },
 
-        const getDeviceInfo = () => {
-            const ua = navigator.userAgent;
-            return /Win/.test(ua) ? "Windows" : /iPhone|iPad|iPod/.test(ua) ? "iOS" : /android/i.test(ua) ? "Android" : "PC";
+            auth: {
+                login() {
+                    const u = document.getElementById('uID').value.trim();
+                    const p = document.getElementById('uKey').value;
+                    
+                    if (!u || !p) return alert("Credentials Required");
+
+                    // Simple Admin Simulation (In real apps, use proper backend auth)
+                    if (u.toLowerCase() === 'admin' && p === 'admin123') {
+                        this.success('ADMIN');
+                        return;
+                    }
+
+                    if (App.state.isLoginMode) {
+                        const user = App.state.db[u];
+                        if (user && user.p === p) {
+                            this.success(u);
+                        } else {
+                            alert("Access Denied: Invalid Hash");
+                        }
+                    } else {
+                        if (App.state.db[u]) return alert("Node already exists");
+                        App.state.db[u] = { p: p, created: new Date().toISOString() };
+                        App.data.save();
+                        this.success(u);
+                    }
+                },
+
+                success(user) {
+                    App.state.user = user;
+                    localStorage.setItem('nebula_active_session', user);
+                    location.reload();
+                },
+
+                logout() {
+                    localStorage.removeItem('nebula_active_session');
+                    location.reload();
+                },
+
+                toggleMode() {
+                    App.state.isLoginMode = !App.state.isLoginMode;
+                    document.getElementById('authSwitch').innerText = App.state.isLoginMode 
+                        ? "New Operator? Register Terminal" 
+                        : "Existing Operator? Terminal Login";
+                }
+            },
+
+            data: {
+                save() {
+                    localStorage.setItem('nebula_v2_db', JSON.stringify(App.state.db));
+                },
+                exportJSON() {
+                    const dataStr = JSON.stringify(App.state.db, null, 2);
+                    const blob = new Blob([dataStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `nebula_backup_${new Date().getTime()}.json`;
+                    link.click();
+                },
+                importJSON(event) {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const imported = JSON.parse(e.target.result);
+                            App.state.db = { ...App.state.db, ...imported };
+                            App.data.save();
+                            alert("Database Synchronized");
+                            App.ui.renderUserList();
+                        } catch (err) { alert("Invalid Backup Format"); }
+                    };
+                    reader.readAsText(file);
+                }
+            },
+
+            ui: {
+                init() {
+                    lucide.createIcons();
+                    const active = localStorage.getItem('nebula_active_session');
+                    if (active) {
+                        document.getElementById('authLayer').style.opacity = '0';
+                        setTimeout(() => document.getElementById('authLayer').style.display = 'none', 300);
+                        App.state.user = active;
+                        this.renderDashboard();
+                    }
+                    document.getElementById('sysDate').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    this.setTheme(localStorage.getItem('neb_theme') || 'green');
+                },
+
+                setTheme(t) {
+                    document.body.className = `theme-${t}`;
+                    localStorage.setItem('neb_theme', t);
+                },
+
+                toggleAdmin() {
+                    document.getElementById('adminPanel').classList.toggle('active');
+                    this.renderUserList();
+                },
+
+                renderDashboard() {
+                    document.getElementById('welcomeMsg').innerText = `Welcome, ${App.state.user}`;
+                    if (App.state.user === 'ADMIN') {
+                        document.getElementById('admBtn').style.display = 'flex';
+                        document.getElementById('adminBadge').style.display = 'block';
+                    }
+                    this.renderGrid(App.state.apps);
+                },
+
+                renderGrid(list) {
+                    const container = document.getElementById('appGrid');
+                    container.innerHTML = list.map(app => `
+                        <a href="${app.toLowerCase()}.html" class="app-card">
+                            <div class="app-icon"><i data-lucide="layout-grid"></i></div>
+                            <span style="font-weight:600; font-size:0.8rem;">${app.replace(/-/g, ' ')}</span>
+                        </a>
+                    `).join('');
+                    lucide.createIcons();
+                },
+
+                filterGrid() {
+                    const term = document.getElementById('searchApps').value.toLowerCase();
+                    const filtered = App.state.apps.filter(a => a.toLowerCase().includes(term));
+                    this.renderGrid(filtered);
+                },
+
+                renderUserList() {
+                    const container = document.getElementById('userList');
+                    const keys = Object.keys(App.state.db);
+                    container.innerHTML = keys.length ? keys.map(k => `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.8rem;">
+                            <span>${k}</span>
+                            <span style="color:var(--error); cursor:pointer;" onclick="App.ui.deleteUser('${k}')">Remove</span>
+                        </div>
+                    `).join('') : '<p style="font-size:0.7rem; color:var(--text-dim);">No remote nodes found.</p>';
+                },
+
+                deleteUser(k) {
+                    if(confirm(`Purge data for ${k}?`)) {
+                        delete App.state.db[k];
+                        App.data.save();
+                        this.renderUserList();
+                    }
+                }
+            }
         };
 
-        function setTheme(t) {
-            document.body.className = `theme-${t}`;
-            localStorage.setItem('neb_theme', t);
-        }
-
-        function toggleAuthMode() {
-            isLoginMode = !isLoginMode;
-            document.getElementById('recoveryInput').style.display = isLoginMode ? "none" : "block";
-            document.getElementById('toggleTxt').innerText = isLoginMode ? "NEED ACCOUNT? REGISTER" : "HAVE ACCOUNT? LOGIN";
-        }
-
-        async function exportAndEmail() {
-            const user = localStorage.getItem('neb_active');
-            if (!user || user === 'ADMIN') return;
-
-            // 1. Get the full DB and isolate ONLY the active user's data
-            let fullDB = JSON.parse(localStorage.getItem('neb_db')) || {};
-            let userDataOnly = {};
-            
-            if (fullDB[user]) {
-                userDataOnly[user] = fullDB[user];
-            }
-            
-            // Convert just this user's object to a string
-            const dbString = JSON.stringify(userDataOnly);
-            const isWin = getDeviceInfo() === "Windows";
-            
-            // Auto Copy just the user's data
-            try { await navigator.clipboard.writeText(dbString); } catch(e){}
-
-            const email = "NEBULA.osmain@gmail.com";
-            const sub = `SYNC_${user}`;
-            const body = `DATABASE_SYNC:\n\n${dbString}`;
-
-            if(isWin) {
-                window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`, '_blank');
-            } else {
-                window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
-            }
-        }
-
-        function processAuth() {
-            const u = document.getElementById('userInput').value.trim();
-            const p = document.getElementById('passInput').value.trim();
-            const r = document.getElementById('recoveryInput').value.trim();
-            if(!u || !p) return;
-
-            if(u.toUpperCase() === _0xADMIN_USER && p === _0xADMIN_PASS) {
-                localStorage.setItem('neb_active', 'ADMIN'); location.reload(); return;
-            }
-
-            let db = JSON.parse(localStorage.getItem('neb_db')) || {};
-
-            if(isLoginMode) {
-                if(db[u] && db[u].pw === p) {
-                    localStorage.setItem('neb_active', u);
-                    exportAndEmail();
-                    setTimeout(() => location.reload(), 1000);
-                } else alert("ACCESS DENIED");
-            } else {
-                if(!r) { alert("RECOVERY EMAIL REQUIRED"); return; }
-                db[u] = { pw: p, recovery: r, device: getDeviceInfo(), date: new Date().toLocaleDateString() };
-                localStorage.setItem('neb_db', JSON.stringify(db));
-                localStorage.setItem('neb_active', u);
-                exportAndEmail();
-                setTimeout(() => location.reload(), 1000);
-            }
-        }
-
-        function exportData() {
-            // Admin still copies the full database for backups
-            const data = btoa(localStorage.getItem('neb_db'));
-            document.getElementById('syncData').value = data;
-            navigator.clipboard.writeText(data);
-            alert("FULL DATABASE COPIED");
-        }
-
-        function importData() {
-            try {
-                const input = document.getElementById('syncData').value;
-                // Check if it's base64 (from Admin export) or raw JSON (from User email)
-                let decoded;
-                try {
-                    decoded = JSON.parse(atob(input)); // Try Base64 first
-                } catch(e) {
-                    decoded = JSON.parse(input); // If it fails, assume it's raw JSON from the email
-                }
-                
-                let localDB = JSON.parse(localStorage.getItem('neb_db')) || {};
-                localStorage.setItem('neb_db', JSON.stringify({...localDB, ...decoded}));
-                refreshAdminUI();
-            } catch(e) { alert("ERROR PARSING DATA"); }
-        }
-
-        function refreshAdminUI() {
-            const db = JSON.parse(localStorage.getItem('neb_db')) || {};
-            const keys = Object.keys(db);
-            document.getElementById('nodeCount').innerText = `NODES: ${keys.length}`;
-            document.getElementById('userRows').innerHTML = keys.map(u => `
-                <tr>
-                    <td style="color:var(--primary); padding:10px 0;">${u}</td>
-                    <td style="color:#666;">${db[u].recovery || 'N/A'}</td>
-                    <td><button class="btn" style="color:var(--danger);" onclick="deleteNode('${u}')">X</button></td>
-                </tr>`).join('');
-        }
-
-        function deleteNode(u) {
-            let db = JSON.parse(localStorage.getItem('neb_db'));
-            delete db[u];
-            localStorage.setItem('neb_db', JSON.stringify(db));
-            refreshAdminUI();
-        }
-
-        function toggleDev() { document.getElementById('devPanel').classList.toggle('active'); refreshAdminUI(); }
-        function doLogout() { localStorage.removeItem('neb_active'); location.reload(); }
-
-        function renderUI() {
-            const u = localStorage.getItem('neb_active');
-            const t = localStorage.getItem('neb_theme');
-            if(t) setTheme(t);
-            if(!u) return;
-            document.getElementById('authOverlay').style.display = 'none';
-            if(u === 'ADMIN') document.getElementById('devTrigger').style.display = 'inline-block';
-            
-            const repoFiles = ["Cyber-Strike.html", "Neon-Golf.html", "Neon-Hex.html", "Neon-Pong.html", "Neon-Slams.html", "Neon-Slash.html", "ai.html", "basketball.html", "blockblast.html", "blockbreaker.html", "blockcraft.html", "cricket.html", "crossyroads.html", "drift.html", "eggshell.html", "football.html", "masterarmory.html", "minesweeper.html", "neon-trail.html", "overdrive.html", "pacman.html", "reader.html", "snake.html", "spaceadventure.html", "sparksmaths.html", "tictactoe.html"];
-
-            document.getElementById('gameGrid').innerHTML = repoFiles.map(f => {
-                let label = f.replace('.html', '').replace('-', ' ').toUpperCase();
-                return `<a href="${f}" class="card">${label}</a>`;
-            }).join('');
-        }
-        renderUI();
+        // Launch Engine
+        window.onload = () => App.ui.init();
     </script>
 </body>
 </html>
