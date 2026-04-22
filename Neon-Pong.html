@@ -3,77 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON_PONG | WIDE_TACTICAL</title>
+    <title>NEON_PONG | ULTIMATE_TACTICAL</title>
     <style>
-        :root { --neon: #0f0; --bg: #050505; }
+        :root { --neon: #0f0; --glitch: #f0f; --tank: #0cf; --bg: #030303; }
         body { 
             background: #000; color: var(--neon); font-family: 'Courier New', monospace; 
             margin: 0; overflow: hidden; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; height: 100vh;
         }
-        body::before {
+        /* CRT & Scanline Overlay */
+        body::after {
             content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 10; background-size: 100% 4px, 3px 100%; pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 10; background-size: 100% 3px, 3px 100%; pointer-events: none;
         }
         canvas { 
-            border: 3px solid #004400; background: var(--bg); 
-            box-shadow: 0 0 40px #002200; display: none;
-            max-width: 98vw; max-height: 80vh; image-rendering: pixelated;
+            border: 4px solid #003300; background: var(--bg); 
+            box-shadow: 0 0 50px #001100; display: none;
+            max-width: 98vw; max-height: 85vh; image-rendering: pixelated;
         }
         .menu { 
             text-align: center; border: 2px solid var(--neon); padding: 30px; 
-            background: #000; box-shadow: 0 0 25px #004400; width: 95%; max-width: 700px;
+            background: #000; box-shadow: 0 0 30px #004400; width: 95%; max-width: 800px;
             position: relative; z-index: 20;
         }
-        .config-box { display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; }
-        .team-panel { border: 1px solid #030; padding: 15px; flex: 1; background: #080808; }
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .team-panel { border: 1px solid #040; padding: 15px; background: #050505; border-radius: 4px; }
+        .unit-config { margin-bottom: 10px; text-align: left; }
+        label { font-size: 0.7rem; color: #666; text-transform: uppercase; display: block; margin-bottom: 3px; }
+        select { background: #000; color: var(--neon); border: 1px solid #030; width: 100%; padding: 8px; font-family: monospace; cursor: pointer; }
         .btn-start { 
-            background: var(--neon); color: #000; border: none; padding: 15px; 
+            background: var(--neon); color: #000; border: none; padding: 18px; 
             cursor: pointer; font-family: monospace; font-weight: bold; width: 100%;
-            text-transform: uppercase; letter-spacing: 2px;
+            text-transform: uppercase; letter-spacing: 4px; transition: 0.2s;
         }
-        select { background: #000; color: var(--neon); border: 1px solid var(--neon); margin: 5px 0; width: 100%; padding: 5px; }
-        #ui { position: absolute; top: 10px; font-size: 1.2rem; text-shadow: 0 0 10px var(--neon); z-index: 5; background: rgba(0,0,0,0.7); padding: 5px 20px; border-radius: 20px; }
-        .control-map { font-size: 0.65rem; color: #666; margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-start:hover { background: #fff; box-shadow: 0 0 25px var(--neon); }
+        #ui { position: absolute; top: 15px; font-size: 1.4rem; z-index: 5; background: rgba(0,0,0,0.8); padding: 8px 30px; border: 1px solid #020; border-radius: 50px; display: none; }
+        .controls-hint { font-size: 0.6rem; color: #444; margin-top: 15px; display: flex; justify-content: space-around; }
     </style>
 </head>
 <body>
 
-    <div id="ui" style="display:none">
-        <span id="labelL" style="color:#666; font-size:0.7rem"></span> 
-        <span id="s1" style="margin: 0 30px; font-weight: bold;">0</span> 
-        <span id="s2" style="margin: 0 30px; font-weight: bold;">0</span>
-        <span id="labelR" style="color:#666; font-size:0.7rem"></span>
+    <div id="ui">
+        <span id="labelL" style="color: #444; font-size: 0.8rem;"></span>
+        <span id="s1" style="margin: 0 25px; color: var(--neon);">0</span>
+        <span id="s2" style="margin: 0 25px; color: var(--neon);">0</span>
+        <span id="labelR" style="color: #444; font-size: 0.8rem;"></span>
     </div>
 
     <div id="menu" class="menu">
-        <h1 style="margin-top:0; letter-spacing: 5px;">NEON_PONG.WIDE_CORE</h1>
-        <div class="config-box">
+        <h1 style="margin: 0 0 20px 0; letter-spacing: 8px; font-size: 1.8rem;">NEON_PONG.OS</h1>
+        <div class="config-grid">
             <div class="team-panel">
-                <h3 style="color:#0f0">LEFT_SIDE</h3>
-                <label>Back Line:</label>
-                <select id="L1"><option value="PLAYER">HUMAN (W/S)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="NONE">EMPTY</option></select>
-                <label>Front Line:</label>
-                <select id="L2"><option value="NONE">EMPTY</option><option value="PLAYER">HUMAN (R/F)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option></select>
+                <h3 style="margin-top:0; color: var(--neon);">[ LEFT_CORE ]</h3>
+                <div class="unit-config">
+                    <label>Position: Back (Sniper)</label>
+                    <select id="L1"><option value="PLAYER">HUMAN (W/S)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="NONE">EMPTY</option></select>
+                </div>
+                <div class="unit-config">
+                    <label>Position: Front (Defender)</label>
+                    <select id="L2"><option value="NONE">EMPTY</option><option value="PLAYER">HUMAN (R/F)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option></select>
+                </div>
             </div>
             <div class="team-panel">
-                <h3 style="color:#0f0">RIGHT_SIDE</h3>
-                <label>Back Line:</label>
-                <select id="R1"><option value="PLAYER">HUMAN (UP/DN)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="NONE">EMPTY</option></select>
-                <label>Front Line:</label>
-                <select id="R2"><option value="NONE">EMPTY</option><option value="PLAYER">HUMAN (I/K)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option></select>
+                <h3 style="margin-top:0; color: var(--neon);">[ RIGHT_CORE ]</h3>
+                <div class="unit-config">
+                    <label>Position: Back (Sniper)</label>
+                    <select id="R1"><option value="PLAYER">HUMAN (UP/DN)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="NONE">EMPTY</option></select>
+                </div>
+                <div class="unit-config">
+                    <label>Position: Front (Defender)</label>
+                    <select id="R2"><option value="NONE">EMPTY</option><option value="PLAYER">HUMAN (I/K)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option></select>
+                </div>
             </div>
         </div>
-        <button class="btn-start" onclick="initGame()">Initialize Wide-Mode</button>
-        <div class="control-map">
-            <div>P1: W/S | P2: R/F</div>
-            <div>P3: Arrows | P4: I/K</div>
+        <button class="btn-start" onclick="initGame()">Initialize Simulation</button>
+        <div class="controls-hint">
+            <span>P1: W/S | P2: R/F</span>
+            <span>P3: Arrows | P4: I/K</span>
         </div>
     </div>
 
-    <canvas id="pong" width="1000" height="450"></canvas>
+    <canvas id="pong" width="1100" height="500"></canvas>
 
 <script>
     const canvas = document.getElementById('pong');
@@ -82,20 +94,20 @@
     let gameActive = false, units = [], particles = [];
 
     const TYPES = {
-        OMNI:   { speed: 7, jitter: 2,  color: '#0f0', h: 70, predict: true },
-        GLITCH: { speed: 11, jitter: 40, color: '#f0f', h: 50, predict: true },
-        TANK:   { speed: 3.5, jitter: 0, color: '#0cf', h: 140, predict: false },
-        PLAYER: { speed: 8, jitter: 0,  color: '#fff', h: 70, predict: false }
+        OMNI:   { speed: 7.5, jitter: 1,  color: '#0f0', h: 80, predict: true },
+        GLITCH: { speed: 12,  jitter: 45, color: '#f0f', h: 60, predict: true },
+        TANK:   { speed: 3.8, jitter: 0,  color: '#0cf', h: 150, predict: false },
+        PLAYER: { speed: 9,   jitter: 0,  color: '#fff', h: 80, predict: false }
     };
 
     window.onkeydown = e => keys[e.code] = true;
     window.onkeyup = e => keys[e.code] = false;
 
-    function createParticle(x, y, color) {
-        for(let i=0; i<10; i++) {
+    function spawnBurst(x, y, color) {
+        for(let i=0; i<15; i++) {
             particles.push({
-                x, y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, 
-                life: 1.0, color
+                x, y, vx: (Math.random()-0.5)*14, vy: (Math.random()-0.5)*14, 
+                life: 1.0, color, size: Math.random()*3
             });
         }
     }
@@ -110,53 +122,59 @@
         ['L', 'R'].forEach(side => {
             config[side].forEach((type, i) => {
                 if (type === 'NONE') return;
-                // Extended separation for the 1000px board
-                let x = (side === 'L') ? (i === 0 ? 20 : 180) : (i === 0 ? 968 : 808);
+                // Tactical separation on 1100px board
+                let x = (side === 'L') ? (i === 0 ? 25 : 220) : (i === 0 ? 1063 : 868);
                 units.push({
-                    x, y: 200, side, type, h: TYPES[type].h, w: 12, 
+                    x, y: 210, side, type, h: TYPES[type].h, w: 12, 
                     speed: TYPES[type].speed, color: TYPES[type].color,
-                    targetY: 225, id: side + (i + 1)
+                    targetY: 250, id: side + (i + 1)
                 });
             });
         });
 
         document.getElementById('menu').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
-        document.getElementById('labelL').innerText = config.L.filter(v=>v!=="NONE").join(" + ");
-        document.getElementById('labelR').innerText = config.R.filter(v=>v!=="NONE").join(" + ");
+        document.getElementById('labelL').innerText = config.L.filter(v=>v!=="NONE").join("+");
+        document.getElementById('labelR').innerText = config.R.filter(v=>v!=="NONE").join("+");
         canvas.style.display = 'block';
         gameActive = true;
         resetBall();
         loop();
     }
 
-    let ball = { x: 500, y: 225, vx: 6, vy: 3, size: 8, speed: 8 };
+    let ball = { x: 550, y: 250, vx: 7, vy: 4, size: 10, speed: 9 };
 
     function predict(u) {
         if (!TYPES[u.type].predict) return ball.y;
-        if ((u.side === 'L' && ball.vx > 0) || (u.side === 'R' && ball.vx < 0)) return 225;
+        // Don't predict if ball is moving away
+        if ((u.side === 'L' && ball.vx > 0) || (u.side === 'R' && ball.vx < 0)) return 250;
+        
         let tx = ball.x, ty = ball.y, tvy = ball.vy;
+        let iterations = 0;
         while (u.side === 'L' ? tx > u.x : tx < u.x) {
             tx += ball.vx; ty += tvy;
-            if (ty <= 0 || ty >= 450) tvy *= -1;
-            if (tx < 0 || tx > 1000) break;
+            if (ty <= 0 || ty >= 490) tvy *= -1;
+            if (iterations++ > 200) break; 
         }
         return ty;
     }
 
     function resetBall() {
-        ball.x = 500; ball.y = 225; ball.speed = 8;
+        ball.x = 550; ball.y = 250; ball.speed = 9;
         ball.vx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
-        ball.vy = (Math.random() - 0.5) * 10;
+        ball.vy = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 5 + 4);
         units.forEach(u => u.targetY = predict(u));
     }
 
     function update() {
-        particles.forEach((p, i) => {
-            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+        // Handle Particles
+        for(let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx; p.y += p.vy; p.life -= 0.025;
             if(p.life <= 0) particles.splice(i, 1);
-        });
+        }
 
+        // Handle Units
         units.forEach(u => {
             if (u.type === 'PLAYER') {
                 if (u.id === 'L1' && keys['KeyW']) u.y -= u.speed;
@@ -165,55 +183,86 @@
                 if (u.id === 'L2' && keys['KeyF']) u.y += u.speed;
                 if (u.id === 'R1' && keys['ArrowUp']) u.y -= u.speed;
                 if (u.id === 'R1' && keys['ArrowDown']) u.y += u.speed;
-                if (u.id === 'R2' && keys['KeyI']) u.y -= u.speed; // P4 Alternative
-                if (u.id === 'R2' && keys['KeyK']) u.y += u.speed; // P4 Alternative
+                if (u.id === 'R2' && keys['KeyI']) u.y -= u.speed;
+                if (u.id === 'R2' && keys['KeyK']) u.y += u.speed;
             } else {
                 let drift = (Math.random() - 0.5) * TYPES[u.type].jitter;
                 if (u.y + u.h/2 < u.targetY + drift) u.y += u.speed;
                 else if (u.y + u.h/2 > u.targetY + drift) u.y -= u.speed;
             }
-            u.y = Math.max(0, Math.min(450 - u.h, u.y));
+            u.y = Math.max(0, Math.min(500 - u.h, u.y));
         });
 
-        ball.x += ball.vx; ball.y += ball.vy;
-        if (ball.y <= 0 || ball.y >= 442) { 
-            ball.vy *= -1; 
+        // Ball Movement & Bound Protection
+        ball.x += ball.vx; 
+        ball.y += ball.vy;
+
+        if (ball.y <= 0) {
+            ball.y = 2; ball.vy = Math.abs(ball.vy) + 0.2;
+            units.forEach(u => u.targetY = predict(u));
+        } else if (ball.y >= 490) {
+            ball.y = 488; ball.vy = -Math.abs(ball.vy) - 0.2;
             units.forEach(u => u.targetY = predict(u));
         }
 
+        // Anti-Glide check
+        if (Math.abs(ball.vy) < 1.5) ball.vy *= 2;
+
+        // Collision Logic
         units.forEach(u => {
             if (ball.x < u.x + u.w && ball.x + ball.size > u.x && ball.y < u.y + u.h && ball.y + ball.size > u.y) {
-                createParticle(ball.x, ball.y, u.color);
-                ball.speed = Math.min(ball.speed + 0.4, 22);
+                spawnBurst(ball.x, ball.y, u.color);
+                ball.speed = Math.min(ball.speed + 0.5, 25);
                 ball.vx = (u.side === 'L' ? 1 : -1) * ball.speed;
-                ball.vy = (ball.y - (u.y + u.h/2)) * 0.45;
+                
+                // Dynamic vertical bounce based on hit location
+                let impact = (ball.y - (u.y + u.h/2)) * 0.5;
+                ball.vy = Math.abs(impact) < 2 ? (impact > 0 ? 3 : -3) : impact;
+                
+                // Repredict for all bots
                 units.forEach(unit => unit.targetY = predict(unit));
+                
+                // Nudge ball out of paddle to prevent multi-hit stick
+                ball.x += (u.side === 'L' ? 5 : -5);
             }
         });
 
+        // Scoring
         if (ball.x < 0) { score.p2++; document.getElementById('s2').innerText = score.p2; resetBall(); }
-        if (ball.x > 1000) { score.p1++; document.getElementById('s1').innerText = score.p1; resetBall(); }
+        if (ball.x > 1100) { score.p1++; document.getElementById('s1').innerText = score.p1; resetBall(); }
     }
 
     function draw() {
-        ctx.fillStyle = 'rgba(0, 15, 0, 0.2)';
-        ctx.fillRect(0, 0, 1000, 450);
+        // High-speed Motion Blur
+        ctx.fillStyle = 'rgba(0, 10, 0, 0.25)';
+        ctx.fillRect(0, 0, 1100, 500);
         
+        // Background Grid
         ctx.strokeStyle = '#010';
-        for(let i=0; i<1000; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,450); ctx.stroke(); }
+        ctx.lineWidth = 1;
+        for(let i=0; i<1100; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,500); ctx.stroke(); }
+        for(let j=0; j<500; j+=50) { ctx.beginPath(); ctx.moveTo(0,j); ctx.lineTo(1100,j); ctx.stroke(); }
         
+        // Particles
         particles.forEach(p => {
-            ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`;
-            ctx.fillRect(p.x, p.y, 2, 2);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
         });
+        ctx.globalAlpha = 1.0;
 
+        // Units
         units.forEach(u => {
-            ctx.shadowBlur = 15; ctx.shadowColor = u.color;
+            ctx.shadowBlur = 20; ctx.shadowColor = u.color;
             ctx.fillStyle = u.color;
             ctx.fillRect(u.x, u.y, u.w, u.h);
+            // Internal Glow detail
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fillRect(u.x+3, u.y+5, 6, u.h-10);
         });
 
-        ctx.shadowBlur = 10; ctx.shadowColor = "#fff";
+        // Ball
+        ctx.shadowBlur = 15; ctx.shadowColor = "#fff";
         ctx.fillStyle = '#fff';
         ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
         ctx.shadowBlur = 0;
