@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON_PONG | TACTICAL_OVERHAUL</title>
+    <title>NEON_PONG | WIDE_TACTICAL</title>
     <style>
         :root { --neon: #0f0; --bg: #050505; }
         body { 
@@ -11,7 +11,6 @@
             margin: 0; overflow: hidden; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; height: 100vh;
         }
-        /* CRT Scanline Effect */
         body::before {
             content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
@@ -21,53 +20,60 @@
         canvas { 
             border: 3px solid #004400; background: var(--bg); 
             box-shadow: 0 0 40px #002200; display: none;
-            max-width: 95vw; max-height: 75vh; image-rendering: pixelated;
+            max-width: 98vw; max-height: 80vh; image-rendering: pixelated;
         }
         .menu { 
             text-align: center; border: 2px solid var(--neon); padding: 30px; 
-            background: #000; box-shadow: 0 0 25px #004400; width: 90%; max-width: 650px;
+            background: #000; box-shadow: 0 0 25px #004400; width: 95%; max-width: 700px;
             position: relative; z-index: 20;
         }
-        .config-box { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
+        .config-box { display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; }
         .team-panel { border: 1px solid #030; padding: 15px; flex: 1; background: #080808; }
         .btn-start { 
             background: var(--neon); color: #000; border: none; padding: 15px; 
             cursor: pointer; font-family: monospace; font-weight: bold; width: 100%;
-            text-transform: uppercase; letter-spacing: 2px; transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 2px;
         }
-        .btn-start:hover { background: #fff; box-shadow: 0 0 20px var(--neon); }
         select { background: #000; color: var(--neon); border: 1px solid var(--neon); margin: 5px 0; width: 100%; padding: 5px; }
-        #ui { position: absolute; top: 20px; font-size: 1.5rem; text-shadow: 0 0 10px var(--neon); z-index: 5; }
+        #ui { position: absolute; top: 10px; font-size: 1.2rem; text-shadow: 0 0 10px var(--neon); z-index: 5; background: rgba(0,0,0,0.7); padding: 5px 20px; border-radius: 20px; }
+        .control-map { font-size: 0.65rem; color: #666; margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     </style>
 </head>
 <body>
 
     <div id="ui" style="display:none">
-        <span id="labelL" style="color:#aaa; font-size:0.8rem"></span> 
-        <span id="s1" style="margin: 0 20px;">0</span> 
-        <span style="color:#222">VS</span>
-        <span id="s2" style="margin: 0 20px;">0</span>
-        <span id="labelR" style="color:#aaa; font-size:0.8rem"></span>
+        <span id="labelL" style="color:#666; font-size:0.7rem"></span> 
+        <span id="s1" style="margin: 0 30px; font-weight: bold;">0</span> 
+        <span id="s2" style="margin: 0 30px; font-weight: bold;">0</span>
+        <span id="labelR" style="color:#666; font-size:0.7rem"></span>
     </div>
 
     <div id="menu" class="menu">
-        <h1 style="margin-top:0; letter-spacing: 5px;">NEON_PONG.sys</h1>
+        <h1 style="margin-top:0; letter-spacing: 5px;">NEON_PONG.WIDE_CORE</h1>
         <div class="config-box">
             <div class="team-panel">
-                <h3 style="color:#0f0">LEFT_CORE</h3>
+                <h3 style="color:#0f0">LEFT_SIDE</h3>
+                <label>Back Line:</label>
                 <select id="L1"><option value="PLAYER">HUMAN (W/S)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="NONE">EMPTY</option></select>
+                <label>Front Line:</label>
                 <select id="L2"><option value="NONE">EMPTY</option><option value="PLAYER">HUMAN (R/F)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option></select>
             </div>
             <div class="team-panel">
-                <h3 style="color:#0f0">RIGHT_CORE</h3>
+                <h3 style="color:#0f0">RIGHT_SIDE</h3>
+                <label>Back Line:</label>
                 <select id="R1"><option value="PLAYER">HUMAN (UP/DN)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="NONE">EMPTY</option></select>
-                <select id="R2"><option value="NONE">EMPTY</option><option value="PLAYER">HUMAN (PgU/PgD)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option></select>
+                <label>Front Line:</label>
+                <select id="R2"><option value="NONE">EMPTY</option><option value="PLAYER">HUMAN (I/K)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option></select>
             </div>
         </div>
-        <button class="btn-start" onclick="initGame()">Execute Game Loop</button>
+        <button class="btn-start" onclick="initGame()">Initialize Wide-Mode</button>
+        <div class="control-map">
+            <div>P1: W/S | P2: R/F</div>
+            <div>P3: Arrows | P4: I/K</div>
+        </div>
     </div>
 
-    <canvas id="pong" width="800" height="450"></canvas>
+    <canvas id="pong" width="1000" height="450"></canvas>
 
 <script>
     const canvas = document.getElementById('pong');
@@ -78,7 +84,7 @@
     const TYPES = {
         OMNI:   { speed: 7, jitter: 2,  color: '#0f0', h: 70, predict: true },
         GLITCH: { speed: 11, jitter: 40, color: '#f0f', h: 50, predict: true },
-        TANK:   { speed: 3.5, jitter: 0, color: '#0cf', h: 130, predict: false },
+        TANK:   { speed: 3.5, jitter: 0, color: '#0cf', h: 140, predict: false },
         PLAYER: { speed: 8, jitter: 0,  color: '#fff', h: 70, predict: false }
     };
 
@@ -86,9 +92,9 @@
     window.onkeyup = e => keys[e.code] = false;
 
     function createParticle(x, y, color) {
-        for(let i=0; i<8; i++) {
+        for(let i=0; i<10; i++) {
             particles.push({
-                x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, 
+                x, y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, 
                 life: 1.0, color
             });
         }
@@ -104,8 +110,8 @@
         ['L', 'R'].forEach(side => {
             config[side].forEach((type, i) => {
                 if (type === 'NONE') return;
-                // Tactical Separation: Front line is closer to center (120px vs 20px)
-                let x = (side === 'L') ? (i === 0 ? 20 : 120) : (i === 0 ? 768 : 668);
+                // Extended separation for the 1000px board
+                let x = (side === 'L') ? (i === 0 ? 20 : 180) : (i === 0 ? 968 : 808);
                 units.push({
                     x, y: 200, side, type, h: TYPES[type].h, w: 12, 
                     speed: TYPES[type].speed, color: TYPES[type].color,
@@ -116,13 +122,15 @@
 
         document.getElementById('menu').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
+        document.getElementById('labelL').innerText = config.L.filter(v=>v!=="NONE").join(" + ");
+        document.getElementById('labelR').innerText = config.R.filter(v=>v!=="NONE").join(" + ");
         canvas.style.display = 'block';
         gameActive = true;
         resetBall();
         loop();
     }
 
-    let ball = { x: 400, y: 225, vx: 5, vy: 3, size: 8, speed: 7 };
+    let ball = { x: 500, y: 225, vx: 6, vy: 3, size: 8, speed: 8 };
 
     function predict(u) {
         if (!TYPES[u.type].predict) return ball.y;
@@ -131,22 +139,21 @@
         while (u.side === 'L' ? tx > u.x : tx < u.x) {
             tx += ball.vx; ty += tvy;
             if (ty <= 0 || ty >= 450) tvy *= -1;
-            if (tx < 0 || tx > 800) break;
+            if (tx < 0 || tx > 1000) break;
         }
         return ty;
     }
 
     function resetBall() {
-        ball.x = 400; ball.y = 225; ball.speed = 7;
+        ball.x = 500; ball.y = 225; ball.speed = 8;
         ball.vx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
         ball.vy = (Math.random() - 0.5) * 10;
         units.forEach(u => u.targetY = predict(u));
     }
 
     function update() {
-        // Particles
         particles.forEach((p, i) => {
-            p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
             if(p.life <= 0) particles.splice(i, 1);
         });
 
@@ -158,8 +165,8 @@
                 if (u.id === 'L2' && keys['KeyF']) u.y += u.speed;
                 if (u.id === 'R1' && keys['ArrowUp']) u.y -= u.speed;
                 if (u.id === 'R1' && keys['ArrowDown']) u.y += u.speed;
-                if (u.id === 'R2' && keys['PageUp']) u.y -= u.speed;
-                if (u.id === 'R2' && keys['PageDown']) u.y += u.speed;
+                if (u.id === 'R2' && keys['KeyI']) u.y -= u.speed; // P4 Alternative
+                if (u.id === 'R2' && keys['KeyK']) u.y += u.speed; // P4 Alternative
             } else {
                 let drift = (Math.random() - 0.5) * TYPES[u.type].jitter;
                 if (u.y + u.h/2 < u.targetY + drift) u.y += u.speed;
@@ -177,41 +184,36 @@
         units.forEach(u => {
             if (ball.x < u.x + u.w && ball.x + ball.size > u.x && ball.y < u.y + u.h && ball.y + ball.size > u.y) {
                 createParticle(ball.x, ball.y, u.color);
-                ball.speed = Math.min(ball.speed + 0.5, 20);
+                ball.speed = Math.min(ball.speed + 0.4, 22);
                 ball.vx = (u.side === 'L' ? 1 : -1) * ball.speed;
-                ball.vy = (ball.y - (u.y + u.h/2)) * 0.4;
+                ball.vy = (ball.y - (u.y + u.h/2)) * 0.45;
                 units.forEach(unit => unit.targetY = predict(unit));
             }
         });
 
         if (ball.x < 0) { score.p2++; document.getElementById('s2').innerText = score.p2; resetBall(); }
-        if (ball.x > 800) { score.p1++; document.getElementById('s1').innerText = score.p1; resetBall(); }
+        if (ball.x > 1000) { score.p1++; document.getElementById('s1').innerText = score.p1; resetBall(); }
     }
 
     function draw() {
-        // Motion Blur Trail
-        ctx.fillStyle = 'rgba(0, 10, 0, 0.25)';
-        ctx.fillRect(0, 0, 800, 450);
+        ctx.fillStyle = 'rgba(0, 15, 0, 0.2)';
+        ctx.fillRect(0, 0, 1000, 450);
         
-        // Grid lines
         ctx.strokeStyle = '#010';
-        for(let i=0; i<800; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,450); ctx.stroke(); }
+        for(let i=0; i<1000; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,450); ctx.stroke(); }
         
         particles.forEach(p => {
             ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`;
-            ctx.fillRect(p.x, p.y, 3, 3);
+            ctx.fillRect(p.x, p.y, 2, 2);
         });
 
         units.forEach(u => {
             ctx.shadowBlur = 15; ctx.shadowColor = u.color;
             ctx.fillStyle = u.color;
             ctx.fillRect(u.x, u.y, u.w, u.h);
-            // Energy bar inside paddle
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.fillRect(u.x + 4, u.y + 5, 4, u.h - 10);
         });
 
-        ctx.shadowBlur = 20; ctx.shadowColor = "#fff";
+        ctx.shadowBlur = 10; ctx.shadowColor = "#fff";
         ctx.fillStyle = '#fff';
         ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
         ctx.shadowBlur = 0;
