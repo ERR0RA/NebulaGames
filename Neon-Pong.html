@@ -9,7 +9,7 @@
             background: #000; color: #0f0; font-family: 'Courier New', monospace; 
             margin: 0; overflow: hidden; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; height: 100vh;
-            touch-action: none; /* Prevents zooming/scrolling */
+            touch-action: none;
         }
         canvas { 
             border: 2px solid #004400; background: #050505; 
@@ -27,8 +27,6 @@
             font-weight: bold; width: 100%; font-size: 1rem;
         }
         .status { color: #f00; font-size: 0.7rem; margin-top: 5px; font-weight: bold; }
-        
-        /* Mobile Control Hint */
         #mobile-hint {
             position: fixed; bottom: 10px; font-size: 0.6rem; color: #444;
             display: block; pointer-events: none;
@@ -39,12 +37,13 @@
 
     <div id="menu" class="menu">
         <h1 style="font-size: 1.5rem;">NEON_PONG_ULTRA</h1>
-        <button class="btn" onclick="startGame(true)">VS OMNI_BOT</button><br>
-        <button class="btn" onclick="startGame(false)">2 PLAYERS (Local)</button>
+        <button class="btn" onclick="startGame('pvb')">VS OMNI_BOT</button><br>
+        <button class="btn" onclick="startGame('pvp')">2 PLAYERS (Local)</button><br>
+        <button class="btn" style="background: #500; color: #f00; border: 1px solid #f00;" onclick="startGame('bvb')">BOT vs BOT (SPECTATE)</button>
         <div id="mode-text" class="status">HARD_MODE: PREDICTIVE_TRACKING_ACTIVE</div>
     </div>
 
-    <div id="ui">P1 [<span id="s1">0</span>] - [<span id="s2">0</span>] <span id="p2Name">P2</span></div>
+    <div id="ui"><span id="p1Name">P1</span> [<span id="s1">0</span>] - [<span id="s2">0</span>] <span id="p2Name">P2</span></div>
     <canvas id="pong" width="700" height="400"></canvas>
     <div id="mobile-hint">DRAG SIDES TO MOVE PADDLES</div>
 
@@ -55,24 +54,24 @@
     const s2 = document.getElementById('s2');
     
     let score = { p1: 0, p2: 0 }, keys = {};
-    let isBot = false, gameActive = false, predictedY = 200;
+    let gameMode = 'pvp'; // 'pvp', 'pvb', or 'bvb'
+    let gameActive = false;
+    let predictedY_P2 = 200;
+    let predictedY_P1 = 200;
 
     let ball = { x: 350, y: 200, vx: 5, vy: 3, size: 10, speed: 7 };
     let p1 = { x: 20, y: 160, w: 12, h: 80 };
     let p2 = { x: 668, y: 160, w: 12, h: 80 };
 
-    // Keyboard Listeners
     window.onkeydown = e => keys[e.code] = true;
     window.onkeyup = e => keys[e.code] = false;
 
-    // Mobile Touch Listeners
     canvas.addEventListener('touchstart', handleTouch, {passive: false});
     canvas.addEventListener('touchmove', handleTouch, {passive: false});
 
     function handleTouch(e) {
         if (!gameActive) return;
         e.preventDefault();
-        
         const rect = canvas.getBoundingClientRect();
         const scaleY = canvas.height / rect.height;
         const scaleX = canvas.width / rect.width;
@@ -82,33 +81,39 @@
             const touchX = (touch.clientX - rect.left) * scaleX;
             const touchY = (touch.clientY - rect.top) * scaleY;
 
-            // Left side touch -> Move P1
-            if (touchX < canvas.width / 2) {
+            if (touchX < canvas.width / 2 && gameMode !== 'bvb') {
                 p1.y = touchY - p1.h / 2;
             } 
-            // Right side touch -> Move P2 (if not bot)
-            else if (!isBot) {
+            else if (touchX >= canvas.width / 2 && gameMode === 'pvp') {
                 p2.y = touchY - p2.h / 2;
             }
         }
     }
 
-    function startGame(botMode) {
-        isBot = botMode;
+    function startGame(mode) {
+        gameMode = mode;
         gameActive = true;
         document.getElementById('menu').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
         canvas.style.display = 'block';
-        document.getElementById('p2Name').innerText = isBot ? "OMNI_BOT" : "P2";
+        
+        document.getElementById('p1Name').innerText = mode === 'bvb' ? "BOT_ALPHA" : "P1";
+        document.getElementById('p2Name').innerText = mode !== 'pvp' ? "OMNI_BOT" : "P2";
+        
         resetBall();
         loop();
     }
 
-    function predictTrajectory() {
-        if (ball.vx < 0) return 200;
+    function predictTrajectory(direction) {
+        // If ball is moving away from the paddle, return center
+        if ((direction === 'right' && ball.vx < 0) || (direction === 'left' && ball.vx > 0)) return 200;
+        
         let tempX = ball.x, tempY = ball.y, tempVY = ball.vy;
-        while (tempX < p2.x) {
-            tempX += ball.vx; tempY += tempVY;
+        let targetX = (direction === 'right') ? p2.x : p1.x + p1.w;
+
+        while (direction === 'right' ? tempX < targetX : tempX > targetX) {
+            tempX += ball.vx; 
+            tempY += tempVY;
             if (tempY <= 0 || tempY >= canvas.height - ball.size) tempVY *= -1;
         }
         return tempY;
@@ -119,17 +124,27 @@
         ball.speed = 7;
         ball.vx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
         ball.vy = (Math.random() - 0.5) * 8;
-        predictedY = predictTrajectory();
+        predictedY_P2 = predictTrajectory('right');
+        predictedY_P1 = predictTrajectory('left');
     }
 
     function update() {
-        // Keyboard Controls
-        if (keys['KeyW'] || keys['ArrowUp']) p1.y -= 9;
-        if (keys['KeyS'] || keys['ArrowDown']) p1.y += 9;
+        // P1 Control logic
+        if (gameMode === 'bvb') {
+            if (ball.vx < 0) {
+                let target = predictedY_P1 - p1.h / 2;
+                if (p1.y < target) p1.y += 8;
+                else if (p1.y > target) p1.y -= 8;
+            }
+        } else {
+            if (keys['KeyW']) p1.y -= 9;
+            if (keys['KeyS']) p1.y += 9;
+        }
 
-        if (isBot) {
+        // P2 Control logic
+        if (gameMode !== 'pvp') {
             if (ball.vx > 0) {
-                let target = predictedY - p2.h / 2;
+                let target = predictedY_P2 - p2.h / 2;
                 let jitter = (Math.random() - 0.5) * (ball.speed * 0.5);
                 if (p2.y < target + jitter) p2.y += 8;
                 else if (p2.y > target + jitter) p2.y -= 8;
@@ -139,7 +154,6 @@
             if (keys['ArrowDown']) p2.y += 9;
         }
 
-        // Boundary constraints
         p1.y = Math.max(0, Math.min(canvas.height - p1.h, p1.y));
         p2.y = Math.max(0, Math.min(canvas.height - p2.h, p2.y));
 
@@ -147,7 +161,8 @@
 
         if (ball.y <= 0 || ball.y >= canvas.height - ball.size) {
             ball.vy *= -1;
-            predictedY = predictTrajectory();
+            predictedY_P1 = predictTrajectory('left');
+            predictedY_P2 = predictTrajectory('right');
         }
 
         const collide = (p) => ball.x < p.x + p.w && ball.x + ball.size > p.x && ball.y < p.y + p.h && ball.y + ball.size > p.y;
@@ -155,11 +170,12 @@
         if (collide(p1)) {
             ball.speed += 0.7; ball.vx = ball.speed;
             ball.vy = (ball.y - (p1.y + p1.h/2)) * 0.35;
-            predictedY = predictTrajectory();
+            predictedY_P2 = predictTrajectory('right');
         }
         if (collide(p2)) {
             ball.speed += 0.7; ball.vx = -ball.speed;
             ball.vy = (ball.y - (p2.y + p2.h/2)) * 0.35;
+            predictedY_P1 = predictTrajectory('left');
         }
 
         if (ball.x < 0) { score.p2++; s2.innerText = score.p2; resetBall(); }
@@ -180,7 +196,6 @@
         ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
         ctx.shadowBlur = 0;
 
-        // Center line
         ctx.strokeStyle = 'rgba(0, 68, 0, 0.5)';
         ctx.setLineDash([10, 10]);
         ctx.beginPath();
