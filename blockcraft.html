@@ -2,45 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blockcraft Evolution | Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEBULA | Blockcraft Elite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;600;800&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Orbitron', sans-serif; }
+        :root {
+            --primary: #00ff88;
+            --glass: rgba(15, 18, 24, 0.4);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+        }
+
+        body { margin: 0; overflow: hidden; background: #020305; font-family: 'Plus Jakarta Sans', sans-serif; cursor: crosshair; }
+
+        /* HUD Glass Styling */
+        #hud {
+            position: absolute; top: 30px; left: 30px;
+            padding: 20px; background: var(--glass);
+            backdrop-filter: blur(20px); border: 1px solid var(--border);
+            border-radius: 20px; color: var(--text); z-index: 10;
+        }
+
         #crosshair {
             position: absolute; top: 50%; left: 50%;
-            width: 15px; height: 15px;
-            border: 2px solid rgba(255,255,255,0.8);
-            transform: translate(-50%, -50%); pointer-events: none;
+            width: 20px; height: 20px; border: 2px solid var(--primary);
+            border-radius: 50%; transform: translate(-50%, -50%);
+            pointer-events: none; mix-blend-mode: difference;
         }
+
+        /* Apple-style Liquid Hotbar */
         #hotbar {
             position: absolute; bottom: 30px; left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7); padding: 10px;
-            border-radius: 10px; border: 2px solid #555;
-            display: flex; gap: 10px; color: white;
+            transform: translateX(-50%); display: flex; gap: 12px;
+            padding: 12px; background: var(--glass);
+            backdrop-filter: blur(30px); border: 1px solid var(--border);
+            border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
+
         .slot {
-            width: 50px; height: 50px; border: 2px solid transparent;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 10px; text-align: center; background: #333;
+            width: 55px; height: 55px; border-radius: 16px;
+            background: rgba(255,255,255,0.03); border: 1px solid transparent;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); color: var(--text); font-size: 9px;
         }
-        .active { border-color: #00ff88; background: #444; }
-        .info { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; font-size: 12px; }
+
+        .slot.active {
+            background: rgba(var(--primary-rgb), 0.1);
+            border-color: var(--primary); transform: scale(1.1) translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,255,136,0.2);
+        }
+
+        .block-preview { width: 20px; height: 20px; margin-bottom: 4px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
     <div id="crosshair"></div>
-    <div class="info">
-        <b>WASD</b>: Move | <b>SPACE</b>: Jump | <b>1-4</b>: Hotbar<br>
-        <b>LEFT CLICK</b>: Break | <b>RIGHT CLICK</b>: Place
+    
+    <div id="hud">
+        <h2 style="margin:0; font-size: 1rem; color: var(--primary);">NEBULA VOXEL CORE</h2>
+        <p style="font-size: 0.7rem; opacity: 0.6; margin-bottom: 15px;">v5.0 Stable Release</p>
+        <div style="font-size: 0.8rem; line-height: 1.6;">
+            [L-CLICK] DE-ATOMIZE<br>
+            [R-CLICK] CONSTRUCT<br>
+            [SPACE] JUMP / ASCEND
+        </div>
     </div>
 
     <div id="hotbar">
-        <div id="slot1" class="slot active">1<br>GRASS</div>
-        <div id="slot2" class="slot">2<br>DIRT</div>
-        <div id="slot3" class="slot">3<br>STONE</div>
-        <div id="slot4" class="slot">4<br>WOOD</div>
+        <div id="slot1" class="slot active"><div class="block-preview" style="background:#55ab55"></div>GRASS</div>
+        <div id="slot2" class="slot"><div class="block-preview" style="background:#8B4513"></div>DIRT</div>
+        <div id="slot3" class="slot"><div class="block-preview" style="background:#777777"></div>STONE</div>
+        <div id="slot4" class="slot"><div class="block-preview" style="background:#5D4037"></div>WOOD</div>
     </div>
 
     <script type="importmap">
@@ -52,88 +85,108 @@
         import { PointerLockControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/PointerLockControls.js';
 
         let scene, camera, renderer, controls, raycaster;
-        let blocks = [];
         let moveFwd = false, moveBwd = false, moveL = false, moveR = false, canJump = false;
         let velocity = new THREE.Vector3();
-        let direction = new THREE.Vector3();
         let prevTime = performance.now();
-
-        const blockTypes = {
-            1: { name: 'grass', color: 0x55ab55 },
-            2: { name: 'dirt', color: 0x8B4513 },
-            3: { name: 'stone', color: 0x777777 },
-            4: { name: 'wood', color: 0x5D4037 }
-        };
         let selectedSlot = 1;
+        
+        // Block Registry
+        const BLOCKS = {
+            1: { name: 'grass', color: 0x55ab55, roughness: 0.8 },
+            2: { name: 'dirt', color: 0x8B4513, roughness: 0.9 },
+            3: { name: 'stone', color: 0x777777, roughness: 0.4 },
+            4: { name: 'wood', color: 0x5D4037, roughness: 0.7 }
+        };
 
+        const activeBlocks = [];
         const highlightBox = new THREE.Mesh(
-            new THREE.BoxGeometry(1.02, 1.02, 1.02),
-            new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 })
+            new THREE.BoxGeometry(1.01, 1.01, 1.01),
+            new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true, transparent: true, opacity: 0.5 })
         );
 
         init();
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB);
-            scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+            scene.background = new THREE.Color(0x020305);
+            scene.fog = new THREE.FogExp2(0x020305, 0.02);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 15, 0);
+            camera.position.set(5, 10, 5);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
 
             controls = new PointerLockControls(camera, document.body);
             document.body.addEventListener('click', () => controls.lock());
 
-            // Better Lighting
-            const ambient = new THREE.HemisphereLight(0xffffff, 0x888888, 0.7);
+            // --- Advanced Lighting ---
+            const ambient = new THREE.AmbientLight(0x404040, 1.5);
             scene.add(ambient);
 
-            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            const sun = new THREE.DirectionalLight(0xffffff, 2.5);
             sun.position.set(50, 100, 50);
             sun.castShadow = true;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
             scene.add(sun);
 
             scene.add(highlightBox);
             raycaster = new THREE.Raycaster();
+            raycaster.far = 10;
 
-            // --- Generate Map (40x40 Area) ---
-            const mapSize = 20; // 20 each way = 40x40
-            for(let x = -mapSize; x < mapSize; x++) {
-                for(let z = -mapSize; z < mapSize; z++) {
-                    // Create simple rolling hills using sine waves
-                    const noise = Math.sin(x * 0.2) * Math.cos(z * 0.2) * 2;
-                    const height = Math.floor(noise) + 5;
+            // --- World Generation ---
+            generateWorld();
 
-                    for(let y = 0; y <= height; y++) {
-                        let type = 'stone';
-                        if (y === height) type = 'grass';
-                        else if (y > height - 2) type = 'dirt';
-                        
+            // --- Input Logic ---
+            setupInputs();
+            animate();
+        }
+
+        function generateWorld() {
+            const size = 16;
+            for(let x = -size; x < size; x++) {
+                for(let z = -size; z < size; z++) {
+                    const h = Math.floor(Math.sin(x/5) * Math.cos(z/5) * 3) + 5;
+                    for(let y = 0; y <= h; y++) {
+                        let type = (y === h) ? 'grass' : (y > h-2 ? 'dirt' : 'stone');
                         createBlock(x, y, z, type);
-                    }
-
-                    // Random Trees
-                    if (Math.random() > 0.985 && x % 2 === 0) {
-                        spawnTree(x, height + 1, z);
                     }
                 }
             }
+        }
 
-            // --- Input Listeners ---
+        function createBlock(x, y, z, typeName) {
+            const typeKey = Object.keys(BLOCKS).find(k => BLOCKS[k].name === typeName);
+            const config = BLOCKS[typeKey];
+            
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: config.color, 
+                roughness: config.roughness,
+                metalness: 0.1
+            });
+            
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            activeBlocks.push(mesh);
+        }
+
+        function setupInputs() {
             document.addEventListener('keydown', (e) => {
                 if (e.code === 'KeyW') moveFwd = true;
                 if (e.code === 'KeyS') moveBwd = true;
                 if (e.code === 'KeyA') moveL = true;
                 if (e.code === 'KeyD') moveR = true;
-                if (e.code === 'Space' && canJump) { velocity.y += 12; canJump = false; }
+                if (e.code === 'Space' && canJump) { velocity.y += 15; canJump = false; }
                 
-                // Hotbar
                 if (['Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(e.code)) {
                     document.getElementById(`slot${selectedSlot}`).classList.remove('active');
                     selectedSlot = parseInt(e.key);
@@ -152,46 +205,19 @@
                 if (!controls.isLocked) return;
                 
                 raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-                const intersects = raycaster.intersectObjects(blocks);
+                const intersects = raycaster.intersectObjects(activeBlocks);
 
                 if (intersects.length > 0) {
                     const intersect = intersects[0];
                     if (e.button === 0) { // Break
                         scene.remove(intersect.object);
-                        blocks = blocks.filter(b => b !== intersect.object);
+                        activeBlocks.splice(activeBlocks.indexOf(intersect.object), 1);
                     } else if (e.button === 2) { // Place
                         const pos = intersect.object.position.clone().add(intersect.face.normal);
-                        createBlock(pos.x, Math.round(pos.y), pos.z, blockTypes[selectedSlot].name);
+                        createBlock(pos.x, Math.round(pos.y), pos.z, BLOCKS[selectedSlot].name);
                     }
                 }
             });
-
-            animate();
-        }
-
-        function createBlock(x, y, z, type) {
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
-            const material = new THREE.MeshStandardMaterial({ color: blockTypes[getSlotByName(type)].color });
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(x, y, z);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            scene.add(mesh);
-            blocks.push(mesh);
-        }
-
-        function spawnTree(x, y, z) {
-            for(let i=0; i<4; i++) createBlock(x, y+i, z, 'wood'); // Trunk
-            // Leaves
-            for(let ix=-1; ix<=1; ix++) {
-                for(let iz=-1; iz<=1; iz++) {
-                    createBlock(x+ix, y+4, z+iz, 'grass');
-                }
-            }
-        }
-
-        function getSlotByName(name) {
-            return Object.keys(blockTypes).find(key => blockTypes[key].name === name);
         }
 
         function animate() {
@@ -200,31 +226,33 @@
             const delta = (time - prevTime) / 1000;
 
             if (controls.isLocked) {
+                // Physics Simulation
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 30.0 * delta; // Gravity
+                velocity.y -= 40.0 * delta; // Gravity
 
+                const direction = new THREE.Vector3();
                 direction.z = Number(moveFwd) - Number(moveBwd);
                 direction.x = Number(moveR) - Number(moveL);
                 direction.normalize();
 
-                if (moveFwd || moveBwd) velocity.z -= direction.z * 80.0 * delta;
-                if (moveL || moveR) velocity.x -= direction.x * 80.0 * delta;
+                if (moveFwd || moveBwd) velocity.z -= direction.z * 120.0 * delta;
+                if (moveL || moveR) velocity.x -= direction.x * 120.0 * delta;
 
                 controls.moveRight(-velocity.x * delta);
                 controls.moveForward(-velocity.z * delta);
                 camera.position.y += velocity.y * delta;
 
-                // Simple Ground Collision
-                if (camera.position.y < 4) {
+                // Simple Ground Level Collision
+                if (camera.position.y < 3.5) {
                     velocity.y = 0;
-                    camera.position.y = 4;
+                    camera.position.y = 3.5;
                     canJump = true;
                 }
 
-                // Interaction Highlight
+                // Hover Highlight Logic
                 raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-                const intersects = raycaster.intersectObjects(blocks);
+                const intersects = raycaster.intersectObjects(activeBlocks);
                 if (intersects.length > 0) {
                     highlightBox.position.copy(intersects[0].object.position);
                     highlightBox.visible = true;
@@ -232,6 +260,7 @@
                     highlightBox.visible = false;
                 }
             }
+
             prevTime = time;
             renderer.render(scene, camera);
         }
@@ -241,8 +270,7 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
-        
-        // Disable context menu for right-click placement
+
         document.addEventListener('contextmenu', e => e.preventDefault());
     </script>
 </body>
