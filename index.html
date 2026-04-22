@@ -10,6 +10,7 @@
 
     <style>
         :root {
+            /* Default fallback */
             --primary: #00ff88;
             --primary-rgb: 0, 255, 136;
             --bg: #020305;
@@ -20,9 +21,17 @@
             --radius: 24px;
         }
 
+        /* --- THEME DEFINITIONS --- */
+        body.theme-green { --primary: #00ff88; --primary-rgb: 0, 255, 136; }
         body.theme-cyan { --primary: #00f2ff; --primary-rgb: 0, 242, 255; }
         body.theme-purple { --primary: #bf00ff; --primary-rgb: 191, 0, 255; }
         body.theme-gold { --primary: #ffcc00; --primary-rgb: 255, 204, 0; }
+        body.theme-red { --primary: #ff3333; --primary-rgb: 255, 51, 51; }
+        body.theme-orange { --primary: #ff8800; --primary-rgb: 255, 136, 0; }
+        body.theme-pink { --primary: #ff00aa; --primary-rgb: 255, 0, 170; }
+        body.theme-blue { --primary: #0088ff; --primary-rgb: 0, 136, 255; }
+        body.theme-lime { --primary: #aaff00; --primary-rgb: 170, 255, 0; }
+        body.theme-white { --primary: #ffffff; --primary-rgb: 255, 255, 255; }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
@@ -34,6 +43,7 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             display: flex;
             flex-direction: column;
+            transition: color 0.3s ease; /* Smooth transitions for the whole app */
         }
 
         /* High-End Liquid Background */
@@ -47,6 +57,7 @@
             background: radial-gradient(circle, rgba(var(--primary-rgb), 0.12) 0%, transparent 70%);
             border-radius: 50%; filter: blur(100px);
             animation: move 20s infinite alternate ease-in-out;
+            transition: background 0.5s ease;
         }
 
         @keyframes move {
@@ -54,7 +65,7 @@
             100% { transform: translate(20%, 15%) rotate(90deg); }
         }
 
-        /* Auth Gate (Fixed Bug: Always hidden by default to prevent flicker) */
+        /* Auth Gate */
         .auth-gate {
             position: fixed; inset: 0; background: var(--bg); z-index: 9999;
             display: none; align-items: center; justify-content: center;
@@ -94,7 +105,7 @@
         }
 
         .logo { font-weight: 800; font-size: 1.1rem; letter-spacing: 2px; }
-        .logo span { color: var(--primary); text-shadow: 0 0 15px var(--primary); }
+        .logo span { color: var(--primary); text-shadow: 0 0 15px rgba(var(--primary-rgb), 0.5); transition: color 0.3s; }
 
         .nav-controls { display: flex; gap: 10px; align-items: center; }
 
@@ -105,7 +116,7 @@
         }
         .btn-nav:hover { background: var(--primary); color: black; border-color: var(--primary); }
 
-        /* Game Grid - Refined liquid glass look */
+        /* Game Grid */
         .container { flex: 1; padding: 20px; overflow-y: auto; }
         
         .module-grid {
@@ -148,6 +159,21 @@
 
         .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 
+        /* Color Picker Grid */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .color-dot {
+            width: 100%; aspect-ratio: 1; border-radius: 50%;
+            cursor: pointer; border: 2px solid rgba(255,255,255,0.1);
+            transition: 0.2s;
+        }
+        .color-dot:hover { transform: scale(1.15); border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+
         @media (max-width: 500px) {
             .drawer { width: 100%; right: -100%; }
             .module-grid { grid-template-columns: repeat(2, 1fr); }
@@ -188,17 +214,24 @@
         
         <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
             <p style="font-size: 0.6rem; color: var(--text-dim); margin-bottom: 10px;">UI CHROMATICS</p>
-            <div style="display: flex; gap: 10px;">
-                <div onclick="Kernel.ui.setTheme('green')" style="width:35px; height:35px; background:#00ff88; border-radius:50%; cursor:pointer;"></div>
-                <div onclick="Kernel.ui.setTheme('cyan')" style="width:35px; height:35px; background:#00f2ff; border-radius:50%; cursor:pointer;"></div>
-                <div onclick="Kernel.ui.setTheme('purple')" style="width:35px; height:35px; background:#bf00ff; border-radius:50%; cursor:pointer;"></div>
-                <div onclick="Kernel.ui.setTheme('gold')" style="width:35px; height:35px; background:#ffcc00; border-radius:50%; cursor:pointer;"></div>
+            <div class="color-grid">
+                <div class="color-dot" onclick="Kernel.ui.setTheme('green')" style="background:#00ff88;"></div>
+                <div class="color-dot" onclick="Kernel.ui.setTheme('cyan')" style="background:#00f2ff;"></div>
+                <div class="color-dot" onclick="Kernel.ui.setTheme('purple')" style="background:#bf00ff;"></div>
+                <div class="color-dot" onclick="Kernel.ui.setTheme('gold')" style="background:#ffcc00;"></div>
+                <div class="color-dot" onclick="Kernel.ui.setTheme('pink')" style="background:#ff00aa;"></div>
+                
+                <div class="color-dot" onclick="Kernel.ui.setTheme('red')" style="background:#ff3333;"></div>
+                <div class="color-dot" onclick="Kernel.ui.setTheme('orange')" style="background:#ff8800;"></div>
+                <div class="color-dot" onclick="Kernel.ui.setTheme('blue')" style="background:#0088ff;"></div>
+                <div class="color-dot" onclick="Kernel.ui.setTheme('lime')" style="background:#aaff00;"></div>
+                <div class="color-dot" onclick="Kernel.ui.setTheme('white')" style="background:#ffffff;"></div>
             </div>
         </div>
 
         <div style="margin-top: 20px; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
             <p style="font-size: 0.6rem; color: var(--text-dim); margin-bottom: 10px;">SESSION DATA</p>
-            <p id="opDisplay" style="font-size: 0.9rem; color: var(--primary); font-weight: 800;">---</p>
+            <p id="opDisplay" style="font-size: 0.9rem; color: var(--primary); font-weight: 800; transition: color 0.3s;">---</p>
         </div>
     </div>
 
@@ -206,7 +239,6 @@
         const Kernel = {
             state: {
                 isLoginMode: true,
-                // Fixed Database Keys and corrected file names from original source
                 db: JSON.parse(localStorage.getItem('neb_v4_db')) || {},
                 repo: [
                     { n: "Cyber Strike", f: "Cyber-Strike.html" },
@@ -244,7 +276,6 @@
                     const p = document.getElementById('nodePass').value;
                     if(!u || !p) return;
 
-                    // Support legacy admin and new DB
                     if(Kernel.state.isLoginMode) {
                         if((u === 'ADMIN' && p === '2013') || Kernel.state.db[u] === p) {
                             this.establish(u);
@@ -258,7 +289,7 @@
                 },
                 establish(user) {
                     localStorage.setItem('neb_v4_active', user);
-                    localStorage.removeItem('neb_active'); // Final fix for old version ghosting
+                    localStorage.removeItem('neb_active');
                     location.reload();
                 },
                 logout() {
@@ -276,7 +307,6 @@
                     const session = localStorage.getItem('neb_v4_active');
                     const gate = document.getElementById('authGate');
                     
-                    // Kill old home page ghosting immediately
                     if(localStorage.getItem('neb_active')) {
                         localStorage.removeItem('neb_active');
                         location.reload();
@@ -296,7 +326,9 @@
                     lucide.createIcons();
                 },
                 setTheme(t) {
-                    document.body.className = `theme-${t}`;
+                    // Update body class
+                    document.body.className = ''; 
+                    document.body.classList.add(`theme-${t}`);
                     localStorage.setItem('neb_theme', t);
                 },
                 toggleAdmin() {
@@ -315,7 +347,6 @@
             }
         };
 
-        // Entry Point
         window.addEventListener('DOMContentLoaded', () => Kernel.ui.init());
     </script>
 </body>
