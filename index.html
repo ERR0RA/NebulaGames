@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA | Quantum Arcade v4.7</title>
+    <title>NEBULA OS | v5.2 Quantum</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -13,251 +13,223 @@
             --primary: #00ff88;
             --primary-rgb: 0, 255, 136;
             --bg: #020305;
-            --glass: rgba(15, 18, 24, 0.6);
-            --border: rgba(255, 255, 255, 0.08);
+            --glass: rgba(15, 18, 24, 0.8);
+            --border: rgba(255, 255, 255, 0.1);
             --text-main: #ffffff;
             --text-dim: #94a3b8;
-            --radius: 20px;
         }
 
+        /* Dynamic Theme Classes */
         body.theme-green { --primary: #00ff88; --primary-rgb: 0, 255, 136; }
         body.theme-cyan { --primary: #00f2ff; --primary-rgb: 0, 242, 255; }
         body.theme-purple { --primary: #bf00ff; --primary-rgb: 191, 0, 255; }
-        body.theme-gold { --primary: #ffcc00; --primary-rgb: 255, 204, 0; }
         body.theme-red { --primary: #ff3333; --primary-rgb: 255, 51, 51; }
+        body.theme-gold { --primary: #ffcc00; --primary-rgb: 255, 204, 0; }
+        body.theme-pink { --primary: #ff0077; --primary-rgb: 255, 0, 119; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: default; }
         
         body {
             background-color: var(--bg);
             color: var(--text-main);
-            min-height: 100vh;
-            overflow: hidden;
+            height: 100vh;
+            /* FIXED SCROLLING: Changed from hidden to allow layout to breathe */
+            overflow: hidden; 
             font-family: 'Plus Jakarta Sans', sans-serif;
             display: flex;
             flex-direction: column;
         }
 
-        /* --- BACKGROUND --- */
-        .nebula-canvas {
+        .desktop-bg {
             position: fixed; inset: 0; z-index: -1;
-            background: radial-gradient(circle at 50% 50%, #0a0c12 0%, #020305 100%);
+            background: radial-gradient(circle at bottom right, rgba(var(--primary-rgb), 0.07), transparent 60%);
         }
-        .liquid-orb {
-            position: absolute; width: 60vw; height: 60vw;
-            background: radial-gradient(circle, rgba(var(--primary-rgb), 0.12) 0%, transparent 70%);
-            border-radius: 50%; filter: blur(100px);
-            animation: move 20s infinite alternate ease-in-out;
-        }
-        @keyframes move { from { transform: translate(-10%, -10%); } to { transform: translate(20%, 20%); } }
 
-        /* --- NAV --- */
+        /* --- TASKBAR --- */
         nav {
-            padding: 15px 25px; display: flex; justify-content: space-between;
+            height: 60px; padding: 0 25px; display: flex; justify-content: space-between;
             align-items: center; border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(30px); background: var(--glass);
-            z-index: 100;
+            backdrop-filter: blur(20px); background: var(--glass); z-index: 100;
+            flex-shrink: 0;
         }
-        .sys-info { display: flex; align-items: center; gap: 15px; }
-        #sysClock { font-family: 'Fira Code'; font-size: 0.85rem; color: var(--primary); font-weight: bold; }
-
-        /* --- TOOLBAR --- */
-        .toolbar {
-            padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px;
-        }
-        .search-field {
-            width: 100%; max-width: 600px; padding: 15px 25px; border-radius: 50px;
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            color: white; font-size: 1rem; text-align: center; outline: none;
-        }
-        .search-field:focus { border-color: var(--primary); }
-        .node-stats { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
-
-        /* --- GRID --- */
-        .container { flex: 1; padding: 0 20px 40px; overflow-y: auto; scrollbar-width: none; }
-        .container::-webkit-scrollbar { display: none; }
         
-        .module-grid {
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 15px; max-width: 1200px; margin: 0 auto;
+        .sys-status { display: flex; align-items: center; gap: 15px; font-size: 0.85rem; }
+        .support-link { color: var(--primary); text-decoration: none; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; }
+
+        /* --- MAIN SCROLLABLE AREA --- */
+        .main-stage {
+            flex: 1; 
+            overflow-y: auto; /* ENABLED SCROLLING */
+            padding: 20px;
+            scroll-behavior: smooth;
         }
 
-        .module-card {
-            background: var(--glass); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 25px 15px;
-            display: flex; flex-direction: column; align-items: center;
-            text-decoration: none; color: white; transition: 0.3s ease;
-        }
-        .module-card:hover { transform: translateY(-5px); border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); }
-
-        .icon-box { color: var(--primary); margin-bottom: 12px; }
-
-        /* --- AUTH --- */
-        .auth-gate {
-            position: fixed; inset: 0; background: var(--bg); z-index: 9999;
-            display: none; align-items: center; justify-content: center;
-        }
-        .auth-panel {
-            width: 320px; padding: 40px; border-radius: 30px; text-align: center;
-            border: 1px solid var(--border); background: var(--glass);
+        .search-container {
+            width: 100%; max-width: 500px; margin: 40px auto; position: sticky; top: 0; z-index: 10;
         }
 
-        /* --- DRAWER --- */
-        .drawer {
-            position: fixed; right: -350px; top: 0; width: 350px; height: 100%;
-            background: #05070a; border-left: 1px solid var(--border); z-index: 500;
-            transition: 0.4s ease; padding: 40px;
+        .os-input {
+            width: 100%; padding: 16px 25px; border-radius: 12px;
+            background: #0f1218; border: 1px solid var(--border);
+            color: white; font-size: 0.9rem; outline: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .drawer.active { right: 0; }
 
-        .btn-nav {
-            background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border);
-            padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 0.7rem;
+        /* --- GRID ENGINE --- */
+        .grid-engine {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 25px; max-width: 1100px; margin: 0 auto 100px;
         }
-        .btn-action {
-            width: 100%; padding: 15px; border-radius: 12px; background: var(--primary);
-            color: #000; font-weight: 800; border: none; cursor: pointer; margin-top: 10px;
+
+        .app-icon {
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            padding: 20px; border-radius: 20px; transition: 0.3s;
+            text-decoration: none; color: inherit;
         }
+
+        .app-icon:hover {
+            background: rgba(var(--primary-rgb), 0.1);
+            transform: translateY(-5px);
+        }
+
+        .icon-visual {
+            width: 64px; height: 64px; border-radius: 18px;
+            background: #161b22; display: flex; align-items: center; justify-content: center;
+            color: var(--primary); border: 1px solid var(--border);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        .app-label { font-size: 0.75rem; font-weight: 600; text-align: center; }
+
+        /* --- SYSTEM DRAWER --- */
+        .sys-drawer {
+            position: fixed; right: -400px; top: 0; width: 350px; height: 100%;
+            background: #05070a; border-left: 1px solid var(--border); transition: 0.4s ease;
+            padding: 40px; z-index: 200; box-shadow: -20px 0 40px rgba(0,0,0,0.5);
+        }
+        .sys-drawer.open { right: 0; }
+
+        .color-palette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .color-opt { height: 40px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; }
+        .color-opt:hover { transform: scale(1.05); }
+
+        .btn-prime {
+            width: 100%; padding: 15px; border-radius: 10px; border: none;
+            background: var(--primary); color: #000; font-weight: 800; cursor: pointer; margin-top: 10px;
+        }
+
+        /* Scrollbar Styling */
+        .main-stage::-webkit-scrollbar { width: 8px; }
+        .main-stage::-webkit-scrollbar-track { background: transparent; }
+        .main-stage::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        .main-stage::-webkit-scrollbar-thumb:hover { background: var(--primary); }
     </style>
 </head>
 <body class="theme-green">
-    <div class="nebula-canvas"><div class="liquid-orb"></div></div>
-
-    <div id="authGate" class="auth-gate">
-        <div class="auth-panel">
-            <h2 style="margin-bottom: 20px; letter-spacing: 2px;">NEBULA<span style="color:var(--primary)">.OS</span></h2>
-            <input type="text" id="nodeID" style="width:100%; padding:12px; margin-bottom:10px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:8px; text-align:center;" placeholder="NODE ID">
-            <input type="password" id="nodePass" style="width:100%; padding:12px; margin-bottom:20px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:8px; text-align:center;" placeholder="ACCESS KEY">
-            <button class="btn-action" onclick="Kernel.auth.login()">INITIALIZE</button>
-        </div>
-    </div>
+    <div class="desktop-bg"></div>
 
     <nav>
-        <div class="sys-info">
+        <div class="sys-status">
             <div style="font-weight: 800;">NEBULA<span style="color:var(--primary)">.OS</span></div>
-            <div id="sysClock">00:00:00</div>
+            <a href="https://forms.cloud.microsoft/Pages/DesignPageV2.aspx?prevorigin=Marketing&origin=NeoPortalPage&subpage=design&id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" target="_blank" class="support-link">SUPPORT_PORTAL</a>
         </div>
-        <div style="display:flex; gap:8px;">
-            <button class="btn-nav" id="admBtn" style="display:none;" onclick="Kernel.ui.toggleAdmin()">SETTINGS</button>
-            <button class="btn-nav" onclick="Kernel.auth.logout()">LOGOUT</button>
+        <div class="sys-status">
+            <div id="sysTime" style="font-family: 'Fira Code';">00:00:00</div>
+            <button onclick="Kernel.ui.toggleSys()" style="background:transparent; border:none; color:white; cursor:pointer;">
+                <i data-lucide="menu"></i>
+            </button>
         </div>
     </nav>
 
-    <div class="toolbar">
-        <input type="text" id="gameSearch" class="search-field" placeholder="Search Data Modules..." onkeyup="Kernel.ui.filter()">
-        <div class="node-stats" id="nodeStats">Nodes Active: --</div>
-    </div>
-
-    <div class="container">
-        <div id="moduleGrid" class="module-grid"></div>
-    </div>
-
-    <div id="sysDrawer" class="drawer">
-        <h3 style="margin-bottom:20px;">SYSTEM_THEME</h3>
-        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
-            <div onclick="Kernel.ui.setTheme('green')" style="background:#00ff88; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
-            <div onclick="Kernel.ui.setTheme('cyan')" style="background:#00f2ff; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
-            <div onclick="Kernel.ui.setTheme('purple')" style="background:#bf00ff; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
-            <div onclick="Kernel.ui.setTheme('gold')" style="background:#ffcc00; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
-            <div onclick="Kernel.ui.setTheme('red')" style="background:#ff3333; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
+    <main class="main-stage">
+        <div class="search-container">
+            <input type="text" id="appSearch" class="os-input" placeholder="Search modules..." onkeyup="Kernel.ui.search()">
         </div>
-        <button class="btn-nav" style="margin-top:40px; width:100%;" onclick="Kernel.ui.toggleAdmin()">CLOSE</button>
+
+        <div id="grid" class="grid-engine"></div>
+    </main>
+
+    <div id="drawer" class="sys-drawer">
+        <h2 style="margin-bottom: 10px;">Settings</h2>
+        <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 30px;">SYSTEM CONFIGURATION v5.2</p>
+        
+        <div style="margin-bottom: 30px;">
+            <p style="font-size: 0.65rem; font-weight: 800; color: var(--text-dim); margin-bottom: 10px; text-transform: uppercase;">Accent Color</p>
+            <div class="color-palette">
+                <div class="color-opt" onclick="Kernel.ui.setTheme('green')" style="background:#00ff88;"></div>
+                <div class="color-opt" onclick="Kernel.ui.setTheme('cyan')" style="background:#00f2ff;"></div>
+                <div class="color-opt" onclick="Kernel.ui.setTheme('purple')" style="background:#bf00ff;"></div>
+                <div class="color-opt" onclick="Kernel.ui.setTheme('red')" style="background:#ff3333;"></div>
+                <div class="color-opt" onclick="Kernel.ui.setTheme('gold')" style="background:#ffcc00;"></div>
+                <div class="color-opt" onclick="Kernel.ui.setTheme('pink')" style="background:#ff0077;"></div>
+            </div>
+        </div>
+
+        <p style="font-size: 0.65rem; font-weight: 800; color: var(--text-dim); margin-bottom: 10px; text-transform: uppercase;">External</p>
+        <button class="btn-prime" onclick="window.open('https://forms.cloud.microsoft/Pages/DesignPageV2.aspx?prevorigin=Marketing&origin=NeoPortalPage&subpage=design&id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u')">OPEN SUPPORT</button>
+        <button class="btn-prime" style="background: #222; color: #fff;" onclick="Kernel.ui.toggleSys()">CLOSE</button>
     </div>
 
     <script>
         const Kernel = {
-            repo: [
-                { n: "Cyber Strike", f: "Cyber-Strike.html" },
-                { n: "Neon Golf", f: "Neon-Golf.html" },
-                { n: "Neon Hex", f: "Neon-Hex.html" },
-                { n: "Neon Pong", f: "Neon-Pong.html" },
-                { n: "Neon Slams", f: "Neon-Slams.html" },
-                { n: "Neon Slash", f: "Neon-Slash.html" },
-                { n: "AI Core", f: "ai.html" },
-                { n: "Basketball", f: "basketball.html" },
-                { n: "Block Blast", f: "blockblast.html" },
-                { n: "Block Breaker", f: "blockbreaker.html" },
-                { n: "Block Craft", f: "blockcraft.html" },
-                { n: "Cricket", f: "cricket.html" },
-                { n: "Drift King", f: "drift.html" },
-                { n: "Football", f: "football.html" },
-                { n: "Master Armory", f: "masterarmory.html" },
-                { n: "Minesweeper", f: "minesweeper.html" },
-                { n: "Neon Trail", f: "neon-trail.html" },
-                { n: "Overdrive", f: "overdrive.html" },
-                { n: "Reader", f: "reader.html" },
-                { n: "Snake Pro", f: "snake.html" },
-                { n: "AI 2", f: "Ai2.html" },
-                { n: "Space Adventure", f: "spaceadventure.html" },
-                { n: "Sparks Maths", f: "sparksmaths.html" },
-                { n: "Tic Tac Toe", f: "tictactoe.html" }
+            apps: [
+                { n: "Cyber Strike", f: "Cyber-Strike.html", i: "zap" },
+                { n: "Neon Golf", f: "Neon-Golf.html", i: "target" },
+                { n: "Neon Hex", f: "Neon-Hex.html", i: "hexagon" },
+                { n: "Neon Pong", f: "Neon-Pong.html", i: "activity" },
+                { n: "Neon Slams", f: "Neon-Slams.html", i: "dribbble" },
+                { n: "Neon Slash", f: "Neon-Slash.html", i: "sword" },
+                { n: "AI Core", f: "ai.html", i: "bot" },
+                { n: "Basketball", f: "basketball.html", i: "circle" },
+                { n: "Block Blast", f: "blockblast.html", i: "grid" },
+                { n: "Block Breaker", f: "blockbreaker.html", i: "layers" },
+                { n: "Block Craft", f: "blockcraft.html", i: "box" },
+                { n: "Cricket", f: "cricket.html", i: "trophy" },
+                { n: "Drift King", f: "drift.html", i: "navigation-2" },
+                { n: "Football", f: "football.html", i: "award" },
+                { n: "Master Armory", f: "masterarmory.html", i: "shield" },
+                { n: "Minesweeper", f: "minesweeper.html", i: "bomb" },
+                { n: "Neon Trail", f: "neon-trail.html", i: "wind" },
+                { n: "Overdrive", f: "overdrive.html", i: "gauge" },
+                { n: "Reader", f: "reader.html", i: "book-open" },
+                { n: "Snake Pro", f: "snake.html", i: "trending-up" },
+                { n: "AI 2", f: "Ai2.html", i: "cpu" },
+                { n: "Space Adventure", f: "spaceadventure.html", i: "rocket" },
+                { n: "Sparks Maths", f: "sparksmaths.html", i: "divide" },
+                { n: "Tic Tac Toe", f: "tictactoe.html", i: "x" }
             ],
-
-            auth: {
-                login() {
-                    const u = document.getElementById('nodeID').value.toUpperCase();
-                    const p = document.getElementById('nodePass').value;
-                    if(u && p === '2013' || (u && p)) {
-                        localStorage.setItem('neb_session', u);
-                        location.reload();
-                    }
-                },
-                logout() {
-                    localStorage.removeItem('neb_session');
-                    location.reload();
-                }
-            },
 
             ui: {
                 init() {
-                    const user = localStorage.getItem('neb_session');
-                    if(user) {
-                        document.getElementById('authGate').style.display = 'none';
-                        if(user === 'ADMIN') document.getElementById('admBtn').style.display = 'block';
-                        this.render();
-                        this.startClock();
-                        this.setTheme(localStorage.getItem('neb_theme') || 'green');
-                    } else {
-                        document.getElementById('authGate').style.display = 'flex';
-                    }
+                    this.render();
+                    this.startClock();
+                    lucide.createIcons();
+                    const savedTheme = localStorage.getItem('neb_theme') || 'green';
+                    this.setTheme(savedTheme);
+                },
+                render() {
+                    const grid = document.getElementById('grid');
+                    grid.innerHTML = Kernel.apps.map(app => `
+                        <a href="${app.f}" class="app-icon" data-name="${app.n.toLowerCase()}">
+                            <div class="icon-visual"><i data-lucide="${app.i}"></i></div>
+                            <div class="app-label">${app.n}</div>
+                        </a>
+                    `).join('');
                 },
                 startClock() {
-                    const update = () => {
-                        const d = new Date();
-                        document.getElementById('sysClock').innerText = d.toLocaleTimeString([], {hour12: false});
-                    };
-                    update();
-                    setInterval(update, 1000);
+                    setInterval(() => {
+                        document.getElementById('sysTime').innerText = new Date().toLocaleTimeString();
+                    }, 1000);
                 },
+                search() {
+                    const q = document.getElementById('appSearch').value.toLowerCase();
+                    document.querySelectorAll('.app-icon').forEach(icon => {
+                        icon.style.display = icon.dataset.name.includes(q) ? 'flex' : 'none';
+                    });
+                },
+                toggleSys() { document.getElementById('drawer').classList.toggle('open'); },
                 setTheme(t) {
                     document.body.className = `theme-${t}`;
                     localStorage.setItem('neb_theme', t);
-                },
-                toggleAdmin() {
-                    document.getElementById('sysDrawer').classList.toggle('active');
-                },
-                filter() {
-                    const q = document.getElementById('gameSearch').value.toLowerCase();
-                    let visible = 0;
-                    document.querySelectorAll('.module-card').forEach(card => {
-                        const isMatch = card.dataset.name.includes(q);
-                        card.style.display = isMatch ? 'flex' : 'none';
-                        if(isMatch) visible++;
-                    });
-                    document.getElementById('nodeStats').innerText = `Nodes Active: ${visible}`;
-                },
-                render() {
-                    const grid = document.getElementById('moduleGrid');
-                    grid.innerHTML = Kernel.repo.map(item => `
-                        <a href="${item.f}" class="module-card" data-name="${item.n.toLowerCase()}">
-                            <div class="icon-box"><i data-lucide="cpu"></i></div>
-                            <div style="font-size:0.8rem; font-weight:700;">${item.n}</div>
-                            <div style="font-size:0.6rem; color:var(--text-dim); margin-top:4px;">OS_STABLE</div>
-                        </a>
-                    `).join('');
-                    document.getElementById('nodeStats').innerText = `Nodes Active: ${Kernel.repo.length}`;
-                    lucide.createIcons();
                 }
             }
         };
