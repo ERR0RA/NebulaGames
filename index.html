@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA | Quantum Arcade v4.6</title>
+    <title>NEBULA | Quantum Arcade v4.7</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -13,11 +13,11 @@
             --primary: #00ff88;
             --primary-rgb: 0, 255, 136;
             --bg: #020305;
-            --glass: rgba(15, 18, 24, 0.4);
+            --glass: rgba(15, 18, 24, 0.6);
             --border: rgba(255, 255, 255, 0.08);
             --text-main: #ffffff;
             --text-dim: #94a3b8;
-            --radius: 24px;
+            --radius: 20px;
         }
 
         body.theme-green { --primary: #00ff88; --primary-rgb: 0, 255, 136; }
@@ -26,7 +26,7 @@
         body.theme-gold { --primary: #ffcc00; --primary-rgb: 255, 204, 0; }
         body.theme-red { --primary: #ff3333; --primary-rgb: 255, 51, 51; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
             background-color: var(--bg);
@@ -38,119 +38,87 @@
             flex-direction: column;
         }
 
+        /* --- BACKGROUND --- */
         .nebula-canvas {
             position: fixed; inset: 0; z-index: -1;
             background: radial-gradient(circle at 50% 50%, #0a0c12 0%, #020305 100%);
         }
-
         .liquid-orb {
             position: absolute; width: 60vw; height: 60vw;
-            background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15) 0%, transparent 70%);
-            border-radius: 50%; filter: blur(120px);
-            animation: move 25s infinite alternate ease-in-out;
+            background: radial-gradient(circle, rgba(var(--primary-rgb), 0.12) 0%, transparent 70%);
+            border-radius: 50%; filter: blur(100px);
+            animation: move 20s infinite alternate ease-in-out;
         }
+        @keyframes move { from { transform: translate(-10%, -10%); } to { transform: translate(20%, 20%); } }
 
-        @keyframes move {
-            0% { transform: translate(-20%, -20%); }
-            100% { transform: translate(30%, 20%); }
-        }
-
-        /* --- NAVIGATION --- */
+        /* --- NAV --- */
         nav {
-            padding: 12px 25px; display: flex; justify-content: space-between;
-            align-items: center; border: 1px solid var(--border);
-            backdrop-filter: blur(40px); background: var(--glass);
-            margin: 15px; border-radius: 20px; z-index: 100;
+            padding: 15px 25px; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(30px); background: var(--glass);
+            z-index: 100;
         }
+        .sys-info { display: flex; align-items: center; gap: 15px; }
+        #sysClock { font-family: 'Fira Code'; font-size: 0.85rem; color: var(--primary); font-weight: bold; }
 
-        .sys-info { display: flex; align-items: center; gap: 20px; }
-        #sysClock { font-family: 'Fira Code'; font-size: 0.8rem; color: var(--primary); letter-spacing: 1px; }
-
-        /* --- SEARCH & STATS --- */
+        /* --- TOOLBAR --- */
         .toolbar {
-            width: 90%; max-width: 800px; margin: 0 auto 20px;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px;
         }
-
         .search-field {
-            width: 100%; padding: 18px 30px; border-radius: 100px;
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-            color: white; font-size: 1rem; outline: none; transition: 0.4s;
-            text-align: center; backdrop-filter: blur(10px);
+            width: 100%; max-width: 600px; padding: 15px 25px; border-radius: 50px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            color: white; font-size: 1rem; text-align: center; outline: none;
         }
-
-        .search-field:focus { border-color: var(--primary); box-shadow: 0 0 30px rgba(var(--primary-rgb), 0.1); }
-
-        .node-stats { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; }
+        .search-field:focus { border-color: var(--primary); }
+        .node-stats { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
 
         /* --- GRID --- */
-        .container { flex: 1; padding: 0 20px 40px; overflow-y: scroll; scrollbar-width: none; }
+        .container { flex: 1; padding: 0 20px 40px; overflow-y: auto; scrollbar-width: none; }
         .container::-webkit-scrollbar { display: none; }
         
         .module-grid {
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 15px; max-width: 1200px; margin: 0 auto;
         }
 
         .module-card {
             background: var(--glass); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 30px 15px;
+            border-radius: var(--radius); padding: 25px 15px;
             display: flex; flex-direction: column; align-items: center;
-            text-decoration: none; color: white; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none; color: white; transition: 0.3s ease;
         }
+        .module-card:hover { transform: translateY(-5px); border-color: var(--primary); background: rgba(var(--primary-rgb), 0.05); }
 
-        .module-card:hover {
-            transform: translateY(-8px);
-            background: rgba(var(--primary-rgb), 0.05);
-            border-color: var(--primary);
-        }
-
-        .icon-box {
-            width: 45px; height: 45px; margin-bottom: 15px;
-            color: var(--primary); display: flex; align-items: center; justify-content: center;
-            transition: 0.3s;
-        }
-
-        .module-card:hover .icon-box { transform: scale(1.2); filter: drop-shadow(0 0 8px var(--primary)); }
-
-        .app-name { font-weight: 700; font-size: 0.8rem; margin-bottom: 5px; text-align: center; }
-        .score-tag { font-family: 'Fira Code'; font-size: 0.6rem; color: var(--text-dim); }
+        .icon-box { color: var(--primary); margin-bottom: 12px; }
 
         /* --- AUTH --- */
         .auth-gate {
             position: fixed; inset: 0; background: var(--bg); z-index: 9999;
             display: none; align-items: center; justify-content: center;
-            backdrop-filter: blur(40px);
         }
-
         .auth-panel {
-            width: 90%; max-width: 380px; padding: 40px; border-radius: 40px;
-            text-align: center; border: 1px solid var(--border);
-            background: rgba(255,255,255,0.02);
+            width: 320px; padding: 40px; border-radius: 30px; text-align: center;
+            border: 1px solid var(--border); background: var(--glass);
         }
 
         /* --- DRAWER --- */
         .drawer {
-            position: fixed; right: -400px; top: 0; width: 400px; height: 100%;
-            background: rgba(5, 7, 10, 0.98); backdrop-filter: blur(50px);
-            border-left: 1px solid var(--border); z-index: 500;
-            transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1); padding: 40px;
+            position: fixed; right: -350px; top: 0; width: 350px; height: 100%;
+            background: #05070a; border-left: 1px solid var(--border); z-index: 500;
+            transition: 0.4s ease; padding: 40px;
         }
         .drawer.active { right: 0; }
 
-        .btn-action {
-            width: 100%; padding: 16px; border-radius: 16px;
-            background: var(--primary); color: #000; font-weight: 800;
-            border: none; cursor: pointer;
-        }
-
         .btn-nav {
             background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border);
-            padding: 8px 15px; border-radius: 10px; font-size: 0.7rem; cursor: pointer;
+            padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 0.7rem;
         }
-
-        #noResults { display: none; text-align: center; padding: 50px; color: var(--text-dim); font-size: 0.8rem; }
+        .btn-action {
+            width: 100%; padding: 15px; border-radius: 12px; background: var(--primary);
+            color: #000; font-weight: 800; border: none; cursor: pointer; margin-top: 10px;
+        }
     </style>
 </head>
 <body class="theme-green">
@@ -158,141 +126,137 @@
 
     <div id="authGate" class="auth-gate">
         <div class="auth-panel">
-            <h1 style="font-weight: 800; letter-spacing: 3px;">NEBULA<span style="color:var(--primary)">.OS</span></h1>
-            <p style="color: var(--text-dim); font-size: 0.6rem; margin: 10px 0 30px; letter-spacing: 3px;">V4.6 QUANTUM ACCESS</p>
-            <input type="text" id="nodeID" style="width:100%; padding:15px; border-radius:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); color:white; margin-bottom:10px; text-align:center;" placeholder="NODE ID">
-            <input type="password" id="nodePass" style="width:100%; padding:15px; border-radius:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); color:white; margin-bottom:15px; text-align:center;" placeholder="ACCESS KEY">
+            <h2 style="margin-bottom: 20px; letter-spacing: 2px;">NEBULA<span style="color:var(--primary)">.OS</span></h2>
+            <input type="text" id="nodeID" style="width:100%; padding:12px; margin-bottom:10px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:8px; text-align:center;" placeholder="NODE ID">
+            <input type="password" id="nodePass" style="width:100%; padding:12px; margin-bottom:20px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:8px; text-align:center;" placeholder="ACCESS KEY">
             <button class="btn-action" onclick="Kernel.auth.login()">INITIALIZE</button>
         </div>
     </div>
 
     <nav>
         <div class="sys-info">
-            <div class="logo" style="font-weight: 800;">NEBULA<span style="color:var(--primary)">.OS</span></div>
+            <div style="font-weight: 800;">NEBULA<span style="color:var(--primary)">.OS</span></div>
             <div id="sysClock">00:00:00</div>
         </div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-nav" id="admBtn" style="display:none;" onclick="Kernel.ui.toggleAdmin()">SYS</button>
-            <button class="btn-nav" onclick="Kernel.auth.logout()">OFF</button>
+        <div style="display:flex; gap:8px;">
+            <button class="btn-nav" id="admBtn" style="display:none;" onclick="Kernel.ui.toggleAdmin()">SETTINGS</button>
+            <button class="btn-nav" onclick="Kernel.auth.logout()">LOGOUT</button>
         </div>
     </nav>
 
     <div class="toolbar">
-        <input type="text" id="gameSearch" class="search-field" placeholder="Search Quantum Modules..." onkeyup="Kernel.ui.filter()">
-        <div class="node-stats" id="nodeStats">Active Nodes: --</div>
+        <input type="text" id="gameSearch" class="search-field" placeholder="Search Data Modules..." onkeyup="Kernel.ui.filter()">
+        <div class="node-stats" id="nodeStats">Nodes Active: --</div>
     </div>
 
     <div class="container">
-        <div id="noResults">NO COMPATIBLE MODULES FOUND</div>
         <div id="moduleGrid" class="module-grid"></div>
     </div>
 
     <div id="sysDrawer" class="drawer">
-        <h2 style="font-size: 1rem; margin-bottom: 30px; letter-spacing: 2px;">SYSTEM_CONTROL</h2>
-        <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-            <p style="font-size: 0.6rem; color: var(--text-dim); margin-bottom: 10px;">UI CHROMATICS</p>
-            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
-                <div style="background:#00ff88; aspect-ratio:1; border-radius:50%; cursor:pointer;" onclick="Kernel.ui.setTheme('green')"></div>
-                <div style="background:#00f2ff; aspect-ratio:1; border-radius:50%; cursor:pointer;" onclick="Kernel.ui.setTheme('cyan')"></div>
-                <div style="background:#bf00ff; aspect-ratio:1; border-radius:50%; cursor:pointer;" onclick="Kernel.ui.setTheme('purple')"></div>
-                <div style="background:#ffcc00; aspect-ratio:1; border-radius:50%; cursor:pointer;" onclick="Kernel.ui.setTheme('gold')"></div>
-                <div style="background:#ff3333; aspect-ratio:1; border-radius:50%; cursor:pointer;" onclick="Kernel.ui.setTheme('red')"></div>
-            </div>
+        <h3 style="margin-bottom:20px;">SYSTEM_THEME</h3>
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+            <div onclick="Kernel.ui.setTheme('green')" style="background:#00ff88; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
+            <div onclick="Kernel.ui.setTheme('cyan')" style="background:#00f2ff; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
+            <div onclick="Kernel.ui.setTheme('purple')" style="background:#bf00ff; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
+            <div onclick="Kernel.ui.setTheme('gold')" style="background:#ffcc00; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
+            <div onclick="Kernel.ui.setTheme('red')" style="background:#ff3333; aspect-ratio:1; border-radius:50%; cursor:pointer;"></div>
         </div>
-        <button class="btn-nav" style="margin-top:20px; width:100%;" onclick="Kernel.ui.toggleAdmin()">RETURN</button>
+        <button class="btn-nav" style="margin-top:40px; width:100%;" onclick="Kernel.ui.toggleAdmin()">CLOSE</button>
     </div>
 
     <script>
         const Kernel = {
-            state: {
-                repo: [
-                    { n: "Cyber Strike", f: "Cyber-Strike.html" },
-                    { n: "Neon Golf", f: "Neon-Golf.html" },
-                    { n: "Neon Hex", f: "Neon-Hex.html" },
-                    { n: "Neon Pong", f: "Neon-Pong.html" },
-                    { n: "Neon Slams", f: "Neon-Slams.html" },
-                    { n: "Neon Slash", f: "Neon-Slash.html" },
-                    { n: "AI Core", f: "ai.html" },
-                    { n: "Basketball", f: "basketball.html" },
-                    { n: "Block Blast", f: "blockblast.html" },
-                    { n: "Block Breaker", f: "blockbreaker.html" },
-                    { n: "Block Craft", f: "blockcraft.html" },
-                    { n: "Cricket", f: "cricket.html" },
-                    { n: "Drift King", f: "drift.html" },
-                    { n: "Football", f: "football.html" },
-                    { n: "Master Armory", f: "masterarmory.html" },
-                    { n: "Minesweeper", f: "minesweeper.html" },
-                    { n: "Neon Trail", f: "neon-trail.html" },
-                    { n: "Overdrive", f: "overdrive.html" },
-                    { n: "Reader", f: "reader.html" },
-                    { n: "Snake Pro", f: "snake.html" },
-                    { n: "AI 2", f: "Ai2.html" },
-                    { n: "Space Adventure", f: "spaceadventure.html" },
-                    { n: "Sparks Maths", f: "sparksmaths.html" },
-                    { n: "Tic Tac Toe", f: "tictactoe.html" }
-                ]
-            },
+            repo: [
+                { n: "Cyber Strike", f: "Cyber-Strike.html" },
+                { n: "Neon Golf", f: "Neon-Golf.html" },
+                { n: "Neon Hex", f: "Neon-Hex.html" },
+                { n: "Neon Pong", f: "Neon-Pong.html" },
+                { n: "Neon Slams", f: "Neon-Slams.html" },
+                { n: "Neon Slash", f: "Neon-Slash.html" },
+                { n: "AI Core", f: "ai.html" },
+                { n: "Basketball", f: "basketball.html" },
+                { n: "Block Blast", f: "blockblast.html" },
+                { n: "Block Breaker", f: "blockbreaker.html" },
+                { n: "Block Craft", f: "blockcraft.html" },
+                { n: "Cricket", f: "cricket.html" },
+                { n: "Drift King", f: "drift.html" },
+                { n: "Football", f: "football.html" },
+                { n: "Master Armory", f: "masterarmory.html" },
+                { n: "Minesweeper", f: "minesweeper.html" },
+                { n: "Neon Trail", f: "neon-trail.html" },
+                { n: "Overdrive", f: "overdrive.html" },
+                { n: "Reader", f: "reader.html" },
+                { n: "Snake Pro", f: "snake.html" },
+                { n: "AI 2", f: "Ai2.html" },
+                { n: "Space Adventure", f: "spaceadventure.html" },
+                { n: "Sparks Maths", f: "sparksmaths.html" },
+                { n: "Tic Tac Toe", f: "tictactoe.html" }
+            ],
 
             auth: {
                 login() {
                     const u = document.getElementById('nodeID').value.toUpperCase();
                     const p = document.getElementById('nodePass').value;
-                    if(u === 'ADMIN' && p === '2013') {
-                        localStorage.setItem('neb_auth', u);
-                        location.reload();
-                    } else if(u && p) {
-                        localStorage.setItem('neb_auth', u);
+                    if(u && p === '2013' || (u && p)) {
+                        localStorage.setItem('neb_session', u);
                         location.reload();
                     }
                 },
-                logout() { localStorage.removeItem('neb_auth'); location.reload(); }
+                logout() {
+                    localStorage.removeItem('neb_session');
+                    location.reload();
+                }
             },
 
             ui: {
                 init() {
-                    const auth = localStorage.getItem('neb_auth');
-                    if(auth) {
+                    const user = localStorage.getItem('neb_session');
+                    if(user) {
                         document.getElementById('authGate').style.display = 'none';
-                        if(auth === 'ADMIN') document.getElementById('admBtn').style.display = 'block';
+                        if(user === 'ADMIN') document.getElementById('admBtn').style.display = 'block';
                         this.render();
+                        this.startClock();
+                        this.setTheme(localStorage.getItem('neb_theme') || 'green');
                     } else {
                         document.getElementById('authGate').style.display = 'flex';
                     }
-                    this.setTheme(localStorage.getItem('neb_theme') || 'green');
-                    this.startClock();
                 },
                 startClock() {
-                    setInterval(() => {
-                        const now = new Date();
-                        document.getElementById('sysClock').innerText = now.toTimeString().split(' ')[0];
-                    }, 1000);
+                    const update = () => {
+                        const d = new Date();
+                        document.getElementById('sysClock').innerText = d.toLocaleTimeString([], {hour12: false});
+                    };
+                    update();
+                    setInterval(update, 1000);
                 },
                 setTheme(t) {
                     document.body.className = `theme-${t}`;
                     localStorage.setItem('neb_theme', t);
                 },
-                toggleAdmin() { document.getElementById('sysDrawer').classList.toggle('active'); },
+                toggleAdmin() {
+                    document.getElementById('sysDrawer').classList.toggle('active');
+                },
                 filter() {
-                    const val = document.getElementById('gameSearch').value.toLowerCase();
-                    let count = 0;
+                    const q = document.getElementById('gameSearch').value.toLowerCase();
+                    let visible = 0;
                     document.querySelectorAll('.module-card').forEach(card => {
-                        const match = card.dataset.name.includes(val);
-                        card.style.display = match ? 'flex' : 'none';
-                        if(match) count++;
+                        const isMatch = card.dataset.name.includes(q);
+                        card.style.display = isMatch ? 'flex' : 'none';
+                        if(isMatch) visible++;
                     });
-                    document.getElementById('nodeStats').innerText = `Active Nodes: ${count}`;
-                    document.getElementById('noResults').style.display = count === 0 ? 'block' : 'none';
+                    document.getElementById('nodeStats').innerText = `Nodes Active: ${visible}`;
                 },
                 render() {
                     const grid = document.getElementById('moduleGrid');
-                    grid.innerHTML = this.state.repo.map(item => `
+                    grid.innerHTML = Kernel.repo.map(item => `
                         <a href="${item.f}" class="module-card" data-name="${item.n.toLowerCase()}">
-                            <div class="icon-box"><i data-lucide="layers"></i></div>
-                            <span class="app-name">${item.n}</span>
-                            <span class="score-tag">READY_NODE</span>
+                            <div class="icon-box"><i data-lucide="cpu"></i></div>
+                            <div style="font-size:0.8rem; font-weight:700;">${item.n}</div>
+                            <div style="font-size:0.6rem; color:var(--text-dim); margin-top:4px;">OS_STABLE</div>
                         </a>
                     `).join('');
-                    document.getElementById('nodeStats').innerText = `Active Nodes: ${this.state.repo.length}`;
+                    document.getElementById('nodeStats').innerText = `Nodes Active: ${Kernel.repo.length}`;
                     lucide.createIcons();
                 }
             }
