@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>NEXUS-3D | NEBULA CORE</title>
+<title>NEXUS-3D | NEBULA CORE v2</title>
 <style>
-body { margin:0; background:#000; color:#0f0; font-family:monospace; overflow:hidden; }
+body { margin:0; background:#000; overflow:hidden; font-family:monospace; color:#0f0; }
 canvas { width:100vw; height:100vh; display:block; }
 
 #hud {
     position:fixed; bottom:10px; width:100%;
     display:flex; justify-content:space-around;
-    font-size:14px;
 }
 .stat { background:#000; padding:6px 12px; border:1px solid #0f0; }
 
@@ -21,8 +20,7 @@ canvas { width:100vw; height:100vh; display:block; }
 button { padding:15px; background:#0f0; border:none; cursor:pointer; }
 
 #crosshair {
-    position:fixed;
-    top:50%; left:50%;
+    position:fixed; top:50%; left:50%;
     width:6px; height:6px;
     background:#0f0;
     transform:translate(-50%,-50%);
@@ -32,7 +30,7 @@ button { padding:15px; background:#0f0; border:none; cursor:pointer; }
 <body>
 
 <div id="menu">
-    <button onclick="start()">ENTER NEBULA CORE</button>
+    <button onclick="start()">ENTER NEBULA</button>
 </div>
 
 <canvas id="game"></canvas>
@@ -41,28 +39,30 @@ button { padding:15px; background:#0f0; border:none; cursor:pointer; }
 <div id="hud">
     <div class="stat">HP: <span id="hp">100</span></div>
     <div class="stat">SCORE: <span id="score">0</span></div>
-    <div class="stat">WEAPON: <span id="weapon">PISTOL</span></div>
+    <div class="stat">BOTS: <span id="count">0</span></div>
 </div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const c = document.getElementById("game");
+const ctx = c.getContext("2d");
 
-let SIZE=31, world=[], keys={}, active=false;
+let SIZE=31, world=[], active=false;
+let keys={};
+
 let player={x:1.5,y:1.5,dir:0,hp:100};
-let bots=[], particles=[], powerups=[];
-let score=0, weapon="pistol", lastShot=0;
+let bots=[], powerups=[];
+let score=0;
+let lastShot=0;
 
 window.onkeydown=e=>keys[e.code]=true;
 window.onkeyup=e=>keys[e.code]=false;
 window.onclick=shoot;
 
-function generateMaze(){
+function maze(){
     world = Array(SIZE).fill().map(()=>Array(SIZE).fill(1));
     function walk(x,y){
         world[y][x]=0;
-        [[0,-2],[0,2],[-2,0],[2,0]]
-        .sort(()=>Math.random()-0.5)
+        [[0,-2],[0,2],[-2,0],[2,0]].sort(()=>Math.random()-0.5)
         .forEach(([dx,dy])=>{
             let nx=x+dx, ny=y+dy;
             if(nx>0&&ny>0&&nx<SIZE&&ny<SIZE&&world[ny][nx]){
@@ -79,7 +79,7 @@ function canMove(x,y){
 }
 
 function move(){
-    let speed = keys["ShiftLeft"] ? 0.08 : 0.05;
+    let speed = keys["ShiftLeft"]?0.08:0.05;
 
     if(keys["KeyA"]) player.dir-=0.05;
     if(keys["KeyD"]) player.dir+=0.05;
@@ -94,8 +94,7 @@ function move(){
 
 function shoot(){
     let now=Date.now();
-    let cooldown = weapon==="rapid"?100:250;
-    if(now-lastShot<cooldown) return;
+    if(now-lastShot<200) return;
     lastShot=now;
 
     bots.forEach(b=>{
@@ -103,13 +102,8 @@ function shoot(){
         let dist=Math.hypot(dx,dy);
         let angle=Math.atan2(dy,dx)-player.dir;
 
-        if(Math.abs(angle)<0.2 && dist<6){
-            b.hp -= weapon==="rapid"?20:50;
-
-            for(let i=0;i<10;i++){
-                particles.push({x:b.x,y:b.y,life:20});
-            }
-
+        if(Math.abs(angle)<0.15 && dist<7){
+            b.hp-=50;
             if(b.hp<=0){
                 score+=100;
                 spawnPower(b.x,b.y);
@@ -117,22 +111,23 @@ function shoot(){
             }
         }
     });
+
+    // flash feedback
+    ctx.fillStyle="rgba(255,255,255,0.1)";
+    ctx.fillRect(0,0,c.width,c.height);
 }
 
 function spawnBot(){
-    let type = Math.random();
-    let bot = {x:Math.random()*SIZE,y:Math.random()*SIZE,hp:100,speed:0.02,type:"normal"};
-
-    if(type<0.3){ bot.speed=0.04; bot.type="fast"; }
-    if(type>0.8){ bot.hp=200; bot.type="tank"; }
-
-    bots.push(bot);
+    bots.push({
+        x:Math.random()*SIZE,
+        y:Math.random()*SIZE,
+        hp:100,
+        speed:0.02
+    });
 }
 
 function spawnPower(x,y){
-    if(Math.random()<0.4){
-        powerups.push({x,y,type:["heal","rapid","speed"][Math.floor(Math.random()*3)]});
-    }
+    powerups.push({x,y,type:"heal"});
 }
 
 function updateBots(){
@@ -141,7 +136,7 @@ function updateBots(){
         let dist=Math.hypot(dx,dy);
 
         if(dist<0.5){
-            player.hp -= (b.type==="tank"?1:0.5);
+            player.hp-=0.5;
         } else {
             b.x += (dx/dist)*b.speed;
             b.y += (dy/dist)*b.speed;
@@ -149,41 +144,29 @@ function updateBots(){
     });
 }
 
-function updateParticles(){
-    particles.forEach(p=>p.life--);
-    particles = particles.filter(p=>p.life>0);
-}
-
-function updatePowerups(){
-    powerups.forEach(p=>{
-        let dist=Math.hypot(player.x-p.x, player.y-p.y);
-        if(dist<0.5){
-            if(p.type==="heal") player.hp=Math.min(100,player.hp+30);
-            if(p.type==="rapid") weapon="rapid";
-            if(p.type==="speed") player.speedBoost=200;
-            powerups = powerups.filter(x=>x!==p);
-        }
-    });
-}
-
 function render(){
-    canvas.width=innerWidth;
-    canvas.height=innerHeight;
+    c.width=innerWidth;
+    c.height=innerHeight;
 
-    let w=canvas.width,h=canvas.height;
+    let w=c.width,h=c.height;
+
     ctx.fillStyle="#000";
     ctx.fillRect(0,0,w,h);
 
+    let zBuf=new Array(w).fill(20);
+
+    // WALLS
     for(let i=0;i<w;i++){
-        let ray = player.dir + (i/w-0.5);
+        let ray=player.dir+(i/w-0.5);
         let d=0;
 
         while(d<20){
-            d+=0.05;
+            d+=0.03;
             let x=player.x+Math.cos(ray)*d;
             let y=player.y+Math.sin(ray)*d;
 
             if(world[Math.floor(y)] && world[Math.floor(y)][Math.floor(x)]==1){
+                zBuf[i]=d;
                 let hgt=h/d;
                 ctx.fillStyle="#00ff88";
                 ctx.fillRect(i,h/2-hgt/2,1,hgt);
@@ -192,9 +175,43 @@ function render(){
         }
     }
 
-    particles.forEach(p=>{
-        ctx.fillStyle="#ff0044";
-        ctx.fillRect((p.x-player.x)*100+w/2,(p.y-player.y)*100+h/2,2,2);
+    // DRAW BOTS (PROPER 3D)
+    bots.forEach(b=>{
+        let dx=b.x-player.x, dy=b.y-player.y;
+        let dist=Math.hypot(dx,dy);
+        let angle=Math.atan2(dy,dx)-player.dir;
+
+        while(angle<-Math.PI) angle+=Math.PI*2;
+        while(angle>Math.PI) angle-=Math.PI*2;
+
+        if(Math.abs(angle)<0.7){
+            let sx=(angle/1.4+0.5)*w;
+            let size=h/dist;
+
+            if(dist<zBuf[Math.floor(sx)]){
+                ctx.fillStyle="#ff0033";
+                ctx.fillRect(sx-size/6,h/2-size/2,size/3,size);
+
+                // glow
+                ctx.fillStyle="rgba(255,0,0,0.2)";
+                ctx.fillRect(sx-size/4,h/2-size/2,size/2,size);
+            }
+        }
+    });
+
+    // POWERUPS
+    powerups.forEach(p=>{
+        let dx=p.x-player.x, dy=p.y-player.y;
+        let dist=Math.hypot(dx,dy);
+        let angle=Math.atan2(dy,dx)-player.dir;
+
+        if(Math.abs(angle)<0.7){
+            let sx=(angle/1.4+0.5)*w;
+            let size=h/dist;
+
+            ctx.fillStyle="#00ffff";
+            ctx.fillRect(sx-size/8,h/2-size/2,size/4,size/2);
+        }
     });
 
     if(player.hp<30){
@@ -208,8 +225,6 @@ function loop(){
 
     move();
     updateBots();
-    updateParticles();
-    updatePowerups();
 
     if(player.hp<=0){
         alert("SYSTEM FAILURE\nScore: "+score);
@@ -220,23 +235,24 @@ function loop(){
 
     document.getElementById("hp").innerText=Math.floor(player.hp);
     document.getElementById("score").innerText=score;
-    document.getElementById("weapon").innerText=weapon.toUpperCase();
+    document.getElementById("count").innerText=bots.length;
 
     requestAnimationFrame(loop);
 }
 
 function start(){
     document.getElementById("menu").style.display="none";
-    generateMaze();
+    maze();
     active=true;
 
     for(let i=0;i<4;i++) spawnBot();
 
-    setInterval(spawnBot,5000);
+    setInterval(spawnBot,6000);
     setInterval(()=>bots.forEach(b=>b.speed+=0.002),10000);
 
     loop();
 }
 </script>
+
 </body>
 </html>
