@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA | Quantum Liquid</title>
+    <title>NEBULA | Quantum Arcade</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         :root {
-            /* Default fallback */
             --primary: #00ff88;
             --primary-rgb: 0, 255, 136;
             --bg: #020305;
@@ -21,17 +20,12 @@
             --radius: 24px;
         }
 
-        /* --- THEME DEFINITIONS --- */
+        /* Theme Variants */
         body.theme-green { --primary: #00ff88; --primary-rgb: 0, 255, 136; }
         body.theme-cyan { --primary: #00f2ff; --primary-rgb: 0, 242, 255; }
         body.theme-purple { --primary: #bf00ff; --primary-rgb: 191, 0, 255; }
         body.theme-gold { --primary: #ffcc00; --primary-rgb: 255, 204, 0; }
         body.theme-red { --primary: #ff3333; --primary-rgb: 255, 51, 51; }
-        body.theme-orange { --primary: #ff8800; --primary-rgb: 255, 136, 0; }
-        body.theme-pink { --primary: #ff00aa; --primary-rgb: 255, 0, 170; }
-        body.theme-blue { --primary: #0088ff; --primary-rgb: 0, 136, 255; }
-        body.theme-lime { --primary: #aaff00; --primary-rgb: 170, 255, 0; }
-        body.theme-white { --primary: #ffffff; --primary-rgb: 255, 255, 255; }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
@@ -43,10 +37,10 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             display: flex;
             flex-direction: column;
-            transition: color 0.3s ease; /* Smooth transitions for the whole app */
+            transition: 0.3s ease;
         }
 
-        /* High-End Liquid Background */
+        /* Animated Background */
         .nebula-canvas {
             position: fixed; inset: 0; z-index: -1;
             background: radial-gradient(circle at 50% 50%, #0a0c12 0%, #020305 100%);
@@ -57,7 +51,6 @@
             background: radial-gradient(circle, rgba(var(--primary-rgb), 0.12) 0%, transparent 70%);
             border-radius: 50%; filter: blur(100px);
             animation: move 20s infinite alternate ease-in-out;
-            transition: background 0.5s ease;
         }
 
         @keyframes move {
@@ -76,27 +69,9 @@
             width: 90%; max-width: 400px; padding: 40px; border-radius: 40px;
             text-align: center; border: 1px solid var(--border);
             background: linear-gradient(145deg, rgba(255,255,255,0.03), transparent);
-            box-shadow: 0 40px 100px rgba(0,0,0,0.8);
         }
 
-        .input-field {
-            width: 100%; padding: 16px; border-radius: 16px;
-            background: rgba(0,0,0,0.4); border: 1px solid var(--border);
-            color: white; margin-bottom: 12px; text-align: center;
-            font-size: 1rem; transition: 0.3s; outline: none;
-        }
-
-        .input-field:focus { border-color: var(--primary); box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.1); }
-
-        .btn-action {
-            width: 100%; padding: 16px; border-radius: 16px;
-            background: var(--primary); color: #000; font-weight: 800;
-            border: none; cursor: pointer; letter-spacing: 1px; transition: 0.3s;
-        }
-
-        .btn-action:active { transform: scale(0.98); }
-
-        /* Interface Layout */
+        /* Navigation */
         nav {
             padding: 15px 25px; display: flex; justify-content: space-between;
             align-items: center; border-bottom: 1px solid var(--border);
@@ -105,76 +80,88 @@
         }
 
         .logo { font-weight: 800; font-size: 1.1rem; letter-spacing: 2px; }
-        .logo span { color: var(--primary); text-shadow: 0 0 15px rgba(var(--primary-rgb), 0.5); transition: color 0.3s; }
+        .logo span { color: var(--primary); text-shadow: 0 0 15px rgba(var(--primary-rgb), 0.5); }
 
-        .nav-controls { display: flex; gap: 10px; align-items: center; }
-
-        .btn-nav {
-            background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border);
-            padding: 8px 16px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;
-            cursor: pointer; transition: 0.3s; text-transform: uppercase;
+        /* Search Section */
+        .search-container {
+            width: 90%; max-width: 600px; margin: 20px auto;
         }
-        .btn-nav:hover { background: var(--primary); color: black; border-color: var(--primary); }
+
+        .search-field {
+            width: 100%; padding: 18px 30px; border-radius: 100px;
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+            color: white; font-size: 1rem; outline: none; transition: 0.3s;
+            text-align: center; backdrop-filter: blur(10px);
+        }
+
+        .search-field:focus { border-color: var(--primary); box-shadow: 0 0 30px rgba(var(--primary-rgb), 0.2); }
 
         /* Game Grid */
         .container { flex: 1; padding: 20px; overflow-y: auto; }
         
         .module-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 15px; max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px; max-width: 1200px; margin: 0 auto;
         }
 
         .module-card {
             background: var(--glass); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 25px 15px;
+            border-radius: var(--radius); padding: 30px 20px;
             display: flex; flex-direction: column; align-items: center;
-            text-decoration: none; color: white; transition: 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
-            position: relative;
+            text-decoration: none; color: white; transition: 0.4s;
+            position: relative; overflow: hidden;
         }
 
         .module-card:hover {
             transform: translateY(-8px);
             background: rgba(var(--primary-rgb), 0.05);
             border-color: var(--primary);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
         }
 
-        .icon-wrapper {
-            width: 50px; height: 50px; background: rgba(255,255,255,0.03);
-            border-radius: 15px; display: flex; align-items: center; justify-content: center;
-            margin-bottom: 15px; color: var(--primary); transition: 0.3s;
+        .app-name { font-weight: 700; font-size: 1rem; margin-bottom: 8px; text-align: center; }
+        
+        .score-tag {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem; color: var(--primary); opacity: 0.8;
         }
-        .module-card:hover .icon-wrapper { transform: rotate(10deg); background: var(--primary); color: black; }
 
-        .app-name { font-weight: 600; font-size: 0.7rem; letter-spacing: 1px; text-align: center; text-transform: uppercase; }
+        .badge {
+            position: absolute; top: 12px; right: 12px;
+            background: var(--primary); color: #000;
+            font-size: 0.6rem; font-weight: 800; padding: 3px 8px; border-radius: 50px;
+        }
 
-        /* Admin Panel Drawer */
+        /* Generic Inputs & Buttons */
+        .input-field {
+            width: 100%; padding: 16px; border-radius: 16px;
+            background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+            color: white; margin-bottom: 12px; text-align: center; outline: none;
+        }
+
+        .btn-action {
+            width: 100%; padding: 16px; border-radius: 16px;
+            background: var(--primary); color: #000; font-weight: 800;
+            border: none; cursor: pointer; transition: 0.3s;
+        }
+
+        .btn-nav {
+            background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border);
+            padding: 8px 16px; border-radius: 12px; font-size: 0.75rem; cursor: pointer;
+        }
+
+        /* Drawer */
         .drawer {
             position: fixed; right: -400px; top: 0; width: 400px; height: 100%;
-            background: rgba(5, 7, 10, 0.95); backdrop-filter: blur(50px);
+            background: rgba(5, 7, 10, 0.98); backdrop-filter: blur(50px);
             border-left: 1px solid var(--border); z-index: 500;
             transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1); padding: 40px;
         }
-        .drawer.active { right: 0; box-shadow: -20px 0 60px rgba(0,0,0,0.8); }
+        .drawer.active { right: 0; }
 
-        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 15px; }
+        .color-dot { width: 100%; aspect-ratio: 1; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
 
-        /* Color Picker Grid */
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            margin-top: 15px;
-        }
-        
-        .color-dot {
-            width: 100%; aspect-ratio: 1; border-radius: 50%;
-            cursor: pointer; border: 2px solid rgba(255,255,255,0.1);
-            transition: 0.2s;
-        }
-        .color-dot:hover { transform: scale(1.15); border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
-
-        @media (max-width: 500px) {
+        @media (max-width: 600px) {
             .drawer { width: 100%; right: -100%; }
             .module-grid { grid-template-columns: repeat(2, 1fr); }
         }
@@ -186,7 +173,7 @@
     <div id="authGate" class="auth-gate">
         <div class="auth-panel">
             <h1 class="logo">NEBULA<span>.OS</span></h1>
-            <p style="color: var(--text-dim); font-size: 0.65rem; margin-top: 5px; margin-bottom: 30px; letter-spacing: 3px;">QUANTUM INTERFACE v4.1</p>
+            <p style="color: var(--text-dim); font-size: 0.65rem; margin: 10px 0 30px; letter-spacing: 3px;">QUANTUM INTERFACE v4.5</p>
             <input type="text" id="nodeID" class="input-field" placeholder="NODE ID">
             <input type="password" id="nodePass" class="input-field" placeholder="ACCESS KEY">
             <button class="btn-action" onclick="Kernel.auth.login()">INITIALIZE SESSION</button>
@@ -202,14 +189,18 @@
         </div>
     </nav>
 
+    <div class="search-container">
+        <input type="text" id="gameSearch" class="search-field" placeholder="Search Quantum Modules..." onkeyup="Kernel.ui.filter()">
+    </div>
+
     <div class="container">
         <div id="moduleGrid" class="module-grid"></div>
     </div>
 
     <div id="sysDrawer" class="drawer">
-        <div class="drawer-header">
-            <h2 style="letter-spacing: 2px;">SYSTEM_CONTROL</h2>
-            <button class="btn-nav" onclick="Kernel.ui.toggleAdmin()">X</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <h2 style="letter-spacing: 2px; font-size:1rem;">SYSTEM_CONTROL</h2>
+            <button class="btn-nav" onclick="Kernel.ui.toggleAdmin()">CLOSE</button>
         </div>
         
         <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
@@ -219,19 +210,8 @@
                 <div class="color-dot" onclick="Kernel.ui.setTheme('cyan')" style="background:#00f2ff;"></div>
                 <div class="color-dot" onclick="Kernel.ui.setTheme('purple')" style="background:#bf00ff;"></div>
                 <div class="color-dot" onclick="Kernel.ui.setTheme('gold')" style="background:#ffcc00;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('pink')" style="background:#ff00aa;"></div>
-                
                 <div class="color-dot" onclick="Kernel.ui.setTheme('red')" style="background:#ff3333;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('orange')" style="background:#ff8800;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('blue')" style="background:#0088ff;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('lime')" style="background:#aaff00;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('white')" style="background:#ffffff;"></div>
             </div>
-        </div>
-
-        <div style="margin-top: 20px; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-            <p style="font-size: 0.6rem; color: var(--text-dim); margin-bottom: 10px;">SESSION DATA</p>
-            <p id="opDisplay" style="font-size: 0.9rem; color: var(--primary); font-weight: 800; transition: color 0.3s;">---</p>
         </div>
     </div>
 
@@ -241,30 +221,17 @@
                 isLoginMode: true,
                 db: JSON.parse(localStorage.getItem('neb_v4_db')) || {},
                 repo: [
-                    { n: "Cyber Strike", f: "Cyber-Strike.html" },
-                    { n: "Neon Golf", f: "Neon-Golf.html" },
-                    { n: "Neon Hex", f: "Neon-Hex.html" },
-                    { n: "Neon Pong", f: "Neon-Pong.html" },
-                    { n: "Neon Slams", f: "Neon-Slams.html" },
-                    { n: "Neon Slash", f: "Neon-Slash.html" },
-                    { n: "AI Core", f: "ai.html" },
-                    { n: "Basketball", f: "basketball.html" },
-                    { n: "Block Blast", f: "blockblast.html" },
-                    { n: "Block Breaker", f: "blockbreaker.html" },
-                    { n: "Block Craft", f: "blockcraft.html" },
-                    { n: "Cricket", f: "cricket.html" },
-                    { n: "Drift King", f: "drift.html" },
-                    { n: "Football", f: "football.html" },
-                    { n: "Master Armory", f: "masterarmory.html" },
-                    { n: "Minesweeper", f: "minesweeper.html" },
-                    { n: "Neon Trail", f: "neon-trail.html" },
-                    { n: "Overdrive", f: "overdrive.html" },
-                    { n: "Reader", f: "reader.html" },
-                    { n: "Snake Pro", f: "snake.html" },
-                    { n: "AI 2", f: "Ai2.html" },
-                    { n: "Space Adventure", f: "spaceadventure.html" },
-                    { n: "Sparks Maths", f: "sparksmaths.html" },
-                    { n: "Tic Tac Toe", f: "tictactoe.html" }
+                    { n: "Cyber Strike", f: "Cyber-Strike.html", t: "HOT" },
+                    { n: "Neon Golf", f: "Neon-Golf.html", t: "" },
+                    { n: "Neon Hex", f: "Neon-Hex.html", t: "" },
+                    { n: "Neon Pong", f: "Neon-Pong.html", t: "BEST" },
+                    { n: "Blockcraft", f: "blockcraft.html", t: "UPD" },
+                    { n: "Minesweeper", f: "minesweeper.html", t: "" },
+                    { n: "Snake Pro", f: "snake.html", t: "BEST" },
+                    { n: "Master Armory", f: "masterarmory.html", t: "" },
+                    { n: "Drift King", f: "drift.html", t: "" },
+                    { n: "Space Adventure", f: "spaceadventure.html", t: "" },
+                    { n: "Tic Tac Toe", f: "tictactoe.html", t: "" }
                 ]
             },
 
@@ -287,7 +254,6 @@
                 },
                 establish(user) {
                     localStorage.setItem('neb_v4_active', user);
-                    localStorage.removeItem('neb_active');
                     location.reload();
                 },
                 logout() {
@@ -305,15 +271,8 @@
                     const session = localStorage.getItem('neb_v4_active');
                     const gate = document.getElementById('authGate');
                     
-                    if(localStorage.getItem('neb_active')) {
-                        localStorage.removeItem('neb_active');
-                        location.reload();
-                        return;
-                    }
-
                     if(session) {
                         gate.style.display = 'none';
-                        document.getElementById('opDisplay').innerText = session;
                         if(session === 'ADMIN') document.getElementById('admBtn').style.display = 'block';
                         this.render();
                     } else {
@@ -321,25 +280,36 @@
                     }
 
                     this.setTheme(localStorage.getItem('neb_theme') || 'green');
-                    lucide.createIcons();
                 },
                 setTheme(t) {
-                    // Update body class
-                    document.body.className = ''; 
-                    document.body.classList.add(`theme-${t}`);
+                    document.body.className = `theme-${t}`;
                     localStorage.setItem('neb_theme', t);
                 },
                 toggleAdmin() {
                     document.getElementById('sysDrawer').classList.toggle('active');
                 },
+                filter() {
+                    const val = document.getElementById('gameSearch').value.toLowerCase();
+                    document.querySelectorAll('.module-card').forEach(card => {
+                        const name = card.querySelector('.app-name').innerText.toLowerCase();
+                        card.style.display = name.includes(val) ? 'flex' : 'none';
+                    });
+                },
                 render() {
                     const grid = document.getElementById('moduleGrid');
-                    grid.innerHTML = Kernel.state.repo.map(item => `
-                        <a href="${item.f}" class="module-card">
-                            <div class="icon-wrapper"><i data-lucide="layout-grid"></i></div>
-                            <span class="app-name">${item.n}</span>
-                        </a>
-                    `).join('');
+                    const scores = JSON.parse(localStorage.getItem('nebula_scores')) || {};
+                    
+                    grid.innerHTML = Kernel.state.repo.map(item => {
+                        const best = scores[item.n] ? `BEST: ${scores[item.n]}` : '---';
+                        return `
+                            <a href="${item.f}" class="module-card">
+                                ${item.t ? `<div class="badge">${item.t}</div>` : ''}
+                                <div style="color:var(--primary); margin-bottom:15px;"><i data-lucide="cpu"></i></div>
+                                <span class="app-name">${item.n}</span>
+                                <span class="score-tag">${best}</span>
+                            </a>
+                        `;
+                    }).join('');
                     lucide.createIcons();
                 }
             }
