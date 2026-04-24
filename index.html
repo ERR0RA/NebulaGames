@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA OS | v7.0 Secure</title>
+    <title>NEBULA OS | v8.0 ADMIN</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -23,395 +23,254 @@
         body.theme-cyan { --primary: #00f2ff; --primary-rgb: 0, 242, 255; }
         body.theme-purple { --primary: #bf00ff; --primary-rgb: 191, 0, 255; }
         body.theme-red { --primary: #ff3333; --primary-rgb: 255, 51, 51; }
-        body.theme-gold { --primary: #ffcc00; --primary-rgb: 255, 204, 0; }
-        body.theme-pink { --primary: #ff0077; --primary-rgb: 255, 0, 119; }
 
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        
-        body {
-            background-color: var(--bg); color: var(--text-main);
-            height: 100vh; overflow: hidden; 
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            display: flex; flex-direction: column;
-        }
+        body { background-color: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; flex-direction: column; }
+        .desktop-bg { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.08), transparent 60%); }
 
-        .desktop-bg {
-            position: fixed; inset: 0; z-index: -1;
-            background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.08), transparent 60%),
-                        radial-gradient(circle at bottom left, rgba(var(--primary-rgb), 0.05), transparent 60%);
-        }
+        /* --- AUTH SCREEN --- */
+        #auth-screen { position: fixed; inset: 0; background: rgba(2, 3, 5, 0.98); backdrop-filter: blur(25px); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .auth-box { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); padding: 40px; border-radius: 24px; text-align: center; width: 350px; }
+        .auth-input { width: 100%; padding: 15px; border-radius: 12px; background: #000; border: 1px solid var(--border); color: white; margin-bottom: 15px; text-align: center; font-family: 'Fira Code'; }
+        .auth-btn { width: 100%; padding: 15px; border-radius: 12px; background: var(--primary); color: #000; font-weight: 800; border: none; cursor: pointer; }
+        .auth-error { color: #ff3333; font-size: 0.75rem; margin-top: 10px; min-height: 1.2em; font-weight: bold; }
 
-        /* --- AUTH & LOCK SCREEN --- */
-        #auth-screen {
-            position: fixed; inset: 0; background: rgba(2, 3, 5, 0.95); backdrop-filter: blur(20px);
-            z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease;
-        }
-        .auth-box {
-            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
-            padding: 40px; border-radius: 24px; text-align: center; width: 340px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .auth-avatar {
-            width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #1a1f26, #0f1218);
-            margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;
-            color: var(--primary); border: 2px solid var(--primary); box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.3);
-        }
-        .auth-input {
-            width: 100%; padding: 15px; border-radius: 12px; background: rgba(0,0,0,0.5);
-            border: 1px solid var(--border); color: white; font-size: 1rem; text-align: center;
-            margin-bottom: 15px; outline: none; transition: 0.3s; font-family: 'Fira Code', monospace;
-        }
-        .auth-input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.2); }
-        .auth-btn {
-            width: 100%; padding: 15px; border-radius: 12px; background: var(--primary);
-            color: #000; font-weight: 800; border: none; cursor: pointer; transition: 0.2s;
-        }
-        .auth-btn:active { transform: scale(0.98); }
-        .auth-error { color: #ff3333; font-size: 0.8rem; margin-top: 10px; height: 15px; }
-        
-        #setup-form, #login-form { display: none; }
+        /* --- ADMIN PANEL STYLE --- */
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.8rem; }
+        .admin-table th { text-align: left; color: var(--text-dim); padding: 10px; border-bottom: 1px solid var(--border); }
+        .admin-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .status-tag { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        .status-active { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .status-banned { background: rgba(255, 51, 51, 0.2); color: #ff3333; }
+        .ban-btn { background: transparent; border: 1px solid var(--border); color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .ban-btn:hover { border-color: #ff3333; color: #ff3333; }
 
-        /* --- BOOT SCREEN --- */
-        #boot-screen {
-            position: fixed; inset: 0; background: #000; z-index: 9999;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.8s ease;
-        }
-        .boot-logo {
-            font-size: 3rem; font-weight: 800; letter-spacing: 5px; color: #fff;
-            text-shadow: 0 0 20px var(--primary); animation: pulse 2s infinite;
-        }
-        .boot-log { margin-top: 30px; font-family: 'Fira Code', monospace; color: var(--primary); font-size: 0.8rem; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        /* --- COMMON UI --- */
+        nav { height: 45px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(5, 7, 10, 0.6); z-index: 100; }
+        .main-stage { flex: 1; padding: 20px; position: relative; overflow-y: auto; }
+        .grid-engine { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; max-width: 1100px; margin: 0 auto; }
+        .app-icon { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 15px; cursor: pointer; transition: 0.2s; }
+        .app-icon:hover { background: rgba(255,255,255,0.05); border-radius: 16px; }
+        .icon-visual { width: 50px; height: 50px; border-radius: 12px; background: #1a1f26; display: flex; align-items: center; justify-content: center; color: var(--primary); border: 1px solid var(--border); }
 
-        /* --- TOP NAV --- */
-        nav {
-            height: 45px; padding: 0 20px; display: flex; justify-content: space-between;
-            align-items: center; border-bottom: 1px solid var(--border);
-            backdrop-filter: blur(25px); background: rgba(5, 7, 10, 0.6); z-index: 100;
-        }
-        .sys-info { display: flex; align-items: center; gap: 15px; font-size: 0.75rem; }
-        .user-badge { background: rgba(var(--primary-rgb), 0.1); color: var(--primary); padding: 4px 10px; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 6px;}
-        .stat-badge { font-family: 'Fira Code'; color: var(--primary); background: rgba(var(--primary-rgb), 0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; }
-
-        /* --- MAIN DESKTOP --- */
-        .main-stage { flex: 1; overflow-y: auto; padding: 20px; position: relative; }
-        .search-container { width: 100%; max-width: 500px; margin: 10px auto 30px; position: relative; z-index: 10; }
-        .os-input {
-            width: 100%; padding: 14px 20px; border-radius: 12px;
-            background: rgba(15, 18, 24, 0.8); border: 1px solid var(--border);
-            color: white; font-size: 0.9rem; outline: none; backdrop-filter: blur(10px); transition: 0.3s;
-        }
-        .os-input:focus { border-color: var(--primary); box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.2); }
-
-        /* --- APP GRID --- */
-        .grid-engine { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; max-width: 1100px; margin: 0 auto 100px; }
-        .app-icon { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 15px 10px; border-radius: 16px; transition: 0.2s; cursor: pointer; }
-        .app-icon:hover { background: rgba(255,255,255,0.05); transform: translateY(-3px); }
-        .icon-visual {
-            width: 55px; height: 55px; border-radius: 16px; background: linear-gradient(145deg, #1a1f26, #0f1218);
-            display: flex; align-items: center; justify-content: center; color: var(--primary);
-            border: 1px solid var(--border); box-shadow: 0 8px 16px rgba(0,0,0,0.4); pointer-events: none;
-        }
-        .app-label { font-size: 0.75rem; font-weight: 600; text-align: center; pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-
-        /* --- WINDOW MANAGER --- */
-        #window-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
-        .os-window {
-            position: absolute; width: 800px; height: 500px; background: var(--bg); border: 1px solid var(--border);
-            border-radius: 12px; display: flex; flex-direction: column;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(var(--primary-rgb), 0.2);
-            pointer-events: auto; overflow: hidden; animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .window-header { height: 35px; background: #0f1218; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; cursor: grab; }
-        .window-header:active { cursor: grabbing; }
-        .window-title { font-size: 0.75rem; font-weight: 600; color: var(--text-dim); display: flex; align-items: center; gap: 8px;}
-        .window-controls { display: flex; gap: 8px; }
-        .win-btn { width: 12px; height: 12px; border-radius: 50%; border: none; cursor: pointer; }
-        .btn-close { background: #ff3333; } .btn-min { background: #ffcc00; }
-        .window-content { flex: 1; background: #000; position: relative; }
-        .window-content iframe { width: 100%; height: 100%; border: none; }
-        body.dragging iframe { pointer-events: none; }
-
-        /* --- BOTTOM DOCK --- */
-        .dock {
-            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
-            height: 60px; background: rgba(10, 12, 16, 0.8); backdrop-filter: blur(20px);
-            border: 1px solid var(--border); border-radius: 20px; padding: 0 15px;
-            display: flex; align-items: center; gap: 15px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .dock-item {
-            width: 45px; height: 45px; border-radius: 12px; background: #1a1f26; display: flex; align-items: center; justify-content: center;
-            color: var(--primary); cursor: pointer; transition: 0.2s; border: 1px solid transparent; position: relative;
-        }
-        .dock-item:hover { transform: translateY(-5px); border-color: var(--primary); }
-        .dock-item.active::after { content: ''; position: absolute; bottom: -6px; width: 4px; height: 4px; background: var(--primary); border-radius: 50%; }
-
-        /* --- SYSTEM DRAWER --- */
-        .sys-drawer {
-            position: fixed; right: -350px; top: 0; width: 320px; height: 100%; background: rgba(5, 7, 10, 0.98); backdrop-filter: blur(40px);
-            border-left: 1px solid var(--border); transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); padding: 30px; z-index: 200;
-        }
-        .sys-drawer.open { right: 0; }
-        .color-dot { height: 40px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
-        .color-dot:hover { transform: translateY(-3px); border: 2px solid white; }
-        .btn-outline { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: #fff; cursor: pointer; transition: 0.2s; font-weight: bold; margin-top: 10px;}
-        .btn-outline:hover { background: rgba(255,255,255,0.05); }
-        .btn-danger { border-color: #ff3333; color: #ff3333; }
-        .btn-danger:hover { background: rgba(255, 51, 51, 0.1); }
+        /* --- WINDOWS --- */
+        #window-layer { position: absolute; inset: 0; pointer-events: none; }
+        .os-window { position: absolute; width: 700px; height: 450px; background: #05070a; border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; pointer-events: auto; box-shadow: 0 30px 60px rgba(0,0,0,0.7); }
+        .win-head { height: 35px; background: #0f1218; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; cursor: grab; }
+        .win-body { flex: 1; overflow: hidden; background: #000; }
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body class="theme-green">
 
     <div id="auth-screen">
         <div class="auth-box">
-            <div class="auth-avatar"><i data-lucide="user" style="width: 40px; height: 40px;"></i></div>
-            
-            <div id="setup-form">
-                <h2 style="margin-bottom: 5px;">Welcome to Nebula</h2>
-                <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 20px;">Create your local profile</p>
-                <input type="text" id="setup-user" class="auth-input" placeholder="Enter Username" autocomplete="off">
-                <input type="password" id="setup-pin" class="auth-input" placeholder="Create 4-Digit PIN" maxlength="4" autocomplete="off">
-                <button class="auth-btn" onclick="Auth.createAccount()">INITIALIZE SYSTEM</button>
-                <div id="setup-error" class="auth-error"></div>
+            <div id="auth-header">
+                <i data-lucide="shield-check" style="width: 50px; height: 50px; color: var(--primary); margin-bottom: 20px;"></i>
+                <h2 id="auth-title">System Login</h2>
+                <p style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 20px;">Nebula Security Gateway</p>
             </div>
 
-            <div id="login-form">
-                <h2 id="login-greeting" style="margin-bottom: 5px;">Welcome Back</h2>
-                <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 20px;">System Locked</p>
-                <input type="password" id="login-pin" class="auth-input" placeholder="Enter PIN" maxlength="4" autocomplete="off" onkeyup="if(event.key === 'Enter') Auth.login()">
-                <button class="auth-btn" onclick="Auth.login()">UNLOCK</button>
-                <div id="login-error" class="auth-error"></div>
+            <div id="login-fields">
+                <input type="text" id="user-input" class="auth-input" placeholder="Username">
+                <input type="password" id="pin-input" class="auth-input" placeholder="4-Digit PIN">
+                <button class="auth-btn" onclick="Auth.attemptLogin()">ACCESS SYSTEM</button>
+                <div id="auth-msg" class="auth-error"></div>
+                
+                <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <button style="background:none; border:none; color:var(--primary); font-size:0.7rem; cursor:pointer;" onclick="Auth.showRegister()">+ Create Standard Account</button>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div id="boot-screen">
-        <div class="boot-logo">NEBULA<span style="color:var(--primary)">.OS</span></div>
-        <div class="boot-log" id="boot-text">DECRYPTING PROFILE...</div>
     </div>
 
     <div class="desktop-bg"></div>
 
     <nav>
-        <div class="sys-info">
-            <div style="font-weight: 800; letter-spacing: 1px;">NEBULA</div>
-            <div class="user-badge"><i data-lucide="user" style="width:12px;"></i> <span id="nav-username">User</span></div>
-            <div class="stat-badge" id="nodeCount">24_NODES_ACTIVE</div>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <span style="font-weight:800; letter-spacing:1px;">NEBULA OS</span>
+            <span id="user-display" style="font-size:0.7rem; background:rgba(var(--primary-rgb), 0.1); padding:3px 8px; border-radius:10px; color:var(--primary);"></span>
         </div>
-        <div class="sys-info">
-            <div class="hw-stats">
-                <i data-lucide="wifi"></i>
-                <i data-lucide="battery-charging"></i>
-                <span id="bat-level">100%</span>
-            </div>
-            <div style="height: 15px; width: 1px; background: var(--border); margin: 0 5px;"></div>
-            <div id="sysTime" style="font-family: 'Fira Code'; font-weight: bold; color: var(--primary);">00:00</div>
-            <i data-lucide="settings-2" style="cursor:pointer; width:16px; margin-left: 10px;" onclick="Kernel.ui.toggleSys()"></i>
+        <div style="display:flex; gap:15px; align-items:center; font-family:'Fira Code'; font-size:0.8rem;">
+            <span id="clock">00:00</span>
+            <i data-lucide="power" style="width:16px; cursor:pointer; color:#ff3333;" onclick="location.reload()"></i>
         </div>
     </nav>
 
     <main class="main-stage">
-        <div class="search-container">
-            <input type="text" id="appSearch" class="os-input" placeholder="Search Quantum Modules..." onkeyup="Kernel.ui.search()">
-        </div>
         <div id="grid" class="grid-engine"></div>
         <div id="window-layer"></div>
     </main>
 
-    <div id="dock" class="dock" style="display: none;"></div>
-
-    <div id="drawer" class="sys-drawer">
-        <h3 style="margin-bottom: 5px;">Control Panel</h3>
-        <p style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 30px;">System Configuration</p>
-        
-        <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px;">
-            <p style="font-size: 0.65rem; font-weight: 800; color: var(--text-dim); margin-bottom: 12px; text-transform: uppercase;">Accent Color</p>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                <div class="color-dot" onclick="Kernel.ui.setTheme('green')" style="background:#00ff88;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('cyan')" style="background:#00f2ff;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('purple')" style="background:#bf00ff;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('red')" style="background:#ff3333;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('gold')" style="background:#ffcc00;"></div>
-                <div class="color-dot" onclick="Kernel.ui.setTheme('pink')" style="background:#ff0077;"></div>
-            </div>
-        </div>
-
-        <div style="margin-top: auto;">
-            <p style="font-size: 0.65rem; font-weight: 800; color: var(--text-dim); margin-bottom: 12px; text-transform: uppercase;">Security</p>
-            <button class="btn-outline" onclick="Auth.lockSystem()"><i data-lucide="lock" style="width:14px; display:inline; vertical-align:middle;"></i> Lock Desktop</button>
-            <button class="btn-outline btn-danger" onclick="Auth.resetSystem()"><i data-lucide="trash-2" style="width:14px; display:inline; vertical-align:middle;"></i> Factory Reset</button>
-        </div>
-    </div>
-
     <script>
-        // --- AUTHENTICATION ---
+        // --- SECURITY & ADMIN DATABASE ---
+        // Hidden hash for "1234". This prevents the plain password from being searchable.
+        const _K = "MTIzNA=="; 
+        
         const Auth = {
-            user: null, pin: null,
+            currentUser: null,
+            
             init() {
                 lucide.createIcons();
-                const u = localStorage.getItem('nebula_user'), p = localStorage.getItem('nebula_pin');
-                if (u && p) {
-                    this.user = u; this.pin = p;
-                    document.getElementById('setup-form').style.display = 'none';
-                    document.getElementById('login-form').style.display = 'block';
-                    document.getElementById('login-greeting').innerText = `Welcome, ${u}`;
-                } else {
-                    document.getElementById('setup-form').style.display = 'block';
-                    document.getElementById('login-form').style.display = 'none';
+                // Ensure Admin exists in registry
+                let registry = JSON.parse(localStorage.getItem('nebula_registry') || '{}');
+                if(!registry['admin']) {
+                    registry['admin'] = { pin: atob(_K), role: 'admin', banned: false };
+                    localStorage.setItem('nebula_registry', JSON.stringify(registry));
                 }
             },
-            createAccount() {
-                const u = document.getElementById('setup-user').value.trim(), p = document.getElementById('setup-pin').value.trim();
-                if (u.length < 2 || !/^\d{4}$/.test(p)) return;
-                localStorage.setItem('nebula_user', u); localStorage.setItem('nebula_pin', p);
-                this.user = u; this.pin = p; this.unlock();
+
+            attemptLogin() {
+                const u = document.getElementById('user-input').value.toLowerCase().trim();
+                const p = document.getElementById('pin-input').value.trim();
+                const msg = document.getElementById('auth-msg');
+                let registry = JSON.parse(localStorage.getItem('nebula_registry') || '{}');
+
+                if (registry[u]) {
+                    if (registry[u].banned) {
+                        msg.innerText = "CRITICAL: YOUR ACCOUNT IS SUSPENDED.";
+                        return;
+                    }
+                    if (registry[u].pin === p) {
+                        this.success(u, registry[u].role);
+                    } else {
+                        msg.innerText = "ACCESS DENIED: INVALID PIN";
+                    }
+                } else {
+                    msg.innerText = "USER NOT FOUND";
+                }
             },
-            login() {
-                if (document.getElementById('login-pin').value === this.pin) this.unlock();
-                else document.getElementById('login-error').innerText = "INVALID PIN";
+
+            showRegister() {
+                const u = prompt("Enter New Username:");
+                const p = prompt("Enter 4-Digit PIN:");
+                if(!u || !/^\d{4}$/.test(p)) return alert("Invalid inputs.");
+                
+                let registry = JSON.parse(localStorage.getItem('nebula_registry') || '{}');
+                if(registry[u]) return alert("User already exists.");
+                
+                registry[u] = { pin: p, role: 'user', banned: false };
+                localStorage.setItem('nebula_registry', JSON.stringify(registry));
+                alert("Account Created. Please Login.");
             },
-            unlock() {
-                document.getElementById('auth-screen').style.opacity = '0';
-                setTimeout(() => { document.getElementById('auth-screen').style.display = 'none'; Kernel.initSystem(this.user); }, 500);
-            },
-            lockSystem() { location.reload(); },
-            resetSystem() { if(confirm("Wipe all data?")) { localStorage.clear(); location.reload(); } }
+
+            success(username, role) {
+                this.currentUser = { username, role };
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('user-display').innerText = `${username.toUpperCase()} (${role.toUpperCase()})`;
+                Kernel.boot();
+            }
         };
 
-        // --- KERNEL ---
         const Kernel = {
             apps: [
                 { id: "strike", n: "Cyber Strike", f: "Cyber-Strike.html", i: "zap" },
                 { id: "golf", n: "Neon Golf", f: "Neon-Golf.html", i: "target" },
                 { id: "hex", n: "Neon Hex", f: "Neon-Hex.html", i: "hexagon" },
                 { id: "pong", n: "Neon Pong", f: "Neon-Pong.html", i: "activity" },
-                { id: "slams", n: "Neon Slams", f: "Neon-Slams.html", i: "dribbble" },
-                { id: "slash", n: "Neon Slash", f: "Neon-Slash.html", i: "sword" },
                 { id: "ai", n: "AI Core", f: "ai.html", i: "bot" },
-                { id: "basket", n: "Basketball", f: "basketball.html", i: "circle" },
-                { id: "blast", n: "Block Blast", f: "blockblast.html", i: "grid" },
-                { id: "breaker", n: "Block Breaker", f: "blockbreaker.html", i: "layers" },
-                { id: "craft", n: "Block Craft", f: "blockcraft.html", i: "box" },
-                { id: "cricket", n: "Cricket", f: "cricket.html", i: "trophy" },
-                { id: "drift", n: "Drift King", f: "drift.html", i: "navigation-2" },
-                { id: "footy", n: "Football", f: "football.html", i: "award" },
-                { id: "armory", n: "Master Armory", f: "masterarmory.html", i: "shield" },
-                { id: "mines", n: "Minesweeper", f: "minesweeper.html", i: "bomb" },
-                { id: "trail", n: "Neon Trail", f: "neon-trail.html", i: "wind" },
-                { id: "drive", n: "Overdrive", f: "overdrive.html", i: "gauge" },
-                { id: "read", n: "Reader", f: "reader.html", i: "book-open" },
                 { id: "snake", n: "Snake Pro", f: "snake.html", i: "trending-up" },
-                { id: "ai2", n: "AI 2", f: "Ai2.html", i: "cpu" },
-                { id: "space", n: "Space Adventure", f: "spaceadventure.html", i: "rocket" },
-                { id: "math", n: "Sparks Maths", f: "sparksmaths.html", i: "divide" },
                 { id: "ttt", n: "Tic Tac Toe", f: "tictactoe.html", i: "x" }
             ],
-            openWindows: {}, highestZ: 100,
-            initSystem(username) {
-                document.getElementById('nav-username').innerText = username;
-                this.ui.runBootSequence(); this.ui.renderDesktop(); this.ui.startClock(); this.ui.getHardwareStats();
-                this.ui.setTheme(localStorage.getItem('neb_theme') || 'green');
-            },
-            ui: {
-                runBootSequence() {
-                    const boot = document.getElementById('boot-screen'); boot.style.display = 'flex';
-                    setTimeout(() => boot.style.opacity = '1', 10);
-                    const logs = ["VERIFYING...", "MOUNTING...", "STARTING...", "READY"];
-                    let step = 0;
-                    const interval = setInterval(() => {
-                        if(step < logs.length) { document.getElementById('boot-text').innerText = logs[step]; step++; } 
-                        else { clearInterval(interval); boot.style.opacity = '0'; setTimeout(() => boot.style.display = 'none', 800); }
-                    }, 300);
-                },
-                renderDesktop() {
-                    document.getElementById('grid').innerHTML = Kernel.apps.map(app => `
-                        <div class="app-icon" onclick="Kernel.wm.launch('${app.id}')" data-name="${app.n.toLowerCase()}">
-                            <div class="icon-visual"><i data-lucide="${app.i}"></i></div>
-                            <div class="app-label">${app.n}</div>
-                        </div>
-                    `).join('');
-                    lucide.createIcons();
-                },
-                startClock() {
-                    const update = () => document.getElementById('sysTime').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    update(); setInterval(update, 1000);
-                },
-                getHardwareStats() {
-                    if ('getBattery' in navigator) navigator.getBattery().then(b => {
-                        const u = () => document.getElementById('bat-level').innerText = Math.round(b.level * 100) + '%';
-                        u(); b.addEventListener('levelchange', u);
-                    });
-                },
-                search() {
-                    const q = document.getElementById('appSearch').value.toLowerCase();
-                    let count = 0;
-                    document.querySelectorAll('.app-icon').forEach(i => {
-                        const m = i.dataset.name.includes(q); i.style.display = m ? 'flex' : 'none'; if(m) count++;
-                    });
-                    document.getElementById('nodeCount').innerText = `${count}_NODES_ACTIVE`;
-                },
-                toggleSys() { document.getElementById('drawer').classList.toggle('open'); },
-                setTheme(t) { document.body.className = `theme-${t}`; localStorage.setItem('neb_theme', t); }
-            },
-            wm: {
-                launch(appId) {
-                    if(this.focus(appId)) return;
-                    const app = Kernel.apps.find(a => a.id === appId);
-                    Kernel.highestZ++;
-                    const winId = `win-${appId}`, offset = Object.keys(Kernel.openWindows).length * 25;
-                    const html = `
-                        <div class="os-window" id="${winId}" style="left:${50+offset}px;top:${50+offset}px;z-index:${Kernel.highestZ}" onmousedown="Kernel.wm.focus('${appId}')">
-                            <div class="window-header" onmousedown="Kernel.wm.startDrag(event, '${winId}')">
-                                <div class="window-title"><i data-lucide="${app.i}" style="width:14px"></i> ${app.n}</div>
-                                <div class="window-controls">
-                                    <button class="win-btn btn-min" onclick="Kernel.wm.minimize('${appId}')"></button>
-                                    <button class="win-btn btn-close" onclick="Kernel.wm.close('${appId}')"></button>
-                                </div>
-                            </div>
-                            <div class="window-content"><iframe src="${app.f}"></iframe></div>
-                        </div>`;
-                    document.getElementById('window-layer').insertAdjacentHTML('beforeend', html);
-                    lucide.createIcons();
-                    Kernel.openWindows[appId] = { el: document.getElementById(winId), min: false };
-                    this.updateDock();
-                },
-                focus(id) {
-                    const w = Kernel.openWindows[id];
-                    if(!w) return false;
-                    Kernel.highestZ++; w.el.style.zIndex = Kernel.highestZ;
-                    if(w.min) this.minimize(id);
-                    return true;
-                },
-                close(id) { Kernel.openWindows[id].el.remove(); delete Kernel.openWindows[id]; this.updateDock(); },
-                minimize(id) { 
-                    const w = Kernel.openWindows[id]; 
-                    w.el.style.display = w.min ? 'flex' : 'none'; w.min = !w.min; 
-                },
-                updateDock() {
-                    const d = document.getElementById('dock'), keys = Object.keys(Kernel.openWindows);
-                    d.style.display = keys.length ? 'flex' : 'none';
-                    d.innerHTML = keys.map(k => `<div class="dock-item active" onclick="Kernel.wm.focus('${k}')"><i data-lucide="${Kernel.apps.find(a=>a.id===k).i}"></i></div>`).join('');
-                    lucide.createIcons();
-                },
-                dragState: null,
-                startDrag(e, id) {
-                    if(e.target.tagName === 'BUTTON') return;
-                    const el = document.getElementById(id), r = el.getBoundingClientRect();
-                    this.dragState = { el, x: e.clientX - r.left, y: e.clientY - r.top };
-                    document.body.classList.add('dragging');
+
+            boot() {
+                const grid = document.getElementById('grid');
+                let appList = [...this.apps];
+                
+                // Add Admin Tool if user is admin
+                if(Auth.currentUser.role === 'admin') {
+                    appList.unshift({ id: "admin_mgr", n: "Admin Panel", f: "internal_admin", i: "shield-alert" });
                 }
+
+                grid.innerHTML = appList.map(app => `
+                    <div class="app-icon" onclick="Kernel.launch('${app.id}')">
+                        <div class="icon-visual"><i data-lucide="${app.i}"></i></div>
+                        <div class="app-label">${app.n}</div>
+                    </div>
+                `).join('');
+                
+                lucide.createIcons();
+                setInterval(() => {
+                    document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                }, 1000);
+            },
+
+            launch(id) {
+                if(id === 'admin_mgr') return this.openAdminPanel();
+                const app = this.apps.find(a => a.id === id);
+                const winId = `win-${id}`;
+                if(document.getElementById(winId)) return;
+
+                const html = `
+                    <div class="os-window" id="${winId}" style="left:100px; top:100px;">
+                        <div class="win-head" onmousedown="Kernel.drag(event, '${winId}')">
+                            <span>${app.n}</span>
+                            <button onclick="document.getElementById('${winId}').remove()" style="background:red; border:none; width:12px; height:12px; border-radius:50%; cursor:pointer;"></button>
+                        </div>
+                        <div class="win-body"><iframe src="${app.f}"></iframe></div>
+                    </div>`;
+                document.getElementById('window-layer').insertAdjacentHTML('beforeend', html);
+            },
+
+            openAdminPanel() {
+                const winId = 'win-admin';
+                if(document.getElementById(winId)) return;
+
+                const html = `
+                    <div class="os-window" id="${winId}" style="left:50px; top:50px; width:800px; height:500px;">
+                        <div class="win-head" onmousedown="Kernel.drag(event, '${winId}')">
+                            <span>SYSTEM ADMINISTRATION - MASTER REGISTRY</span>
+                            <button onclick="document.getElementById('${winId}').remove()" style="background:red; border:none; width:12px; height:12px; border-radius:50%; cursor:pointer;"></button>
+                        </div>
+                        <div class="win-body" style="padding:20px; background:#0a0c10; overflow-y:auto;">
+                            <h3 style="color:var(--primary)">User Management</h3>
+                            <table class="admin-table" id="admin-table-body">
+                                </table>
+                        </div>
+                    </div>`;
+                document.getElementById('window-layer').insertAdjacentHTML('beforeend', html);
+                this.refreshAdminTable();
+            },
+
+            refreshAdminTable() {
+                const registry = JSON.parse(localStorage.getItem('nebula_registry') || '{}');
+                const table = document.getElementById('admin-table-body');
+                table.innerHTML = `
+                    <tr><th>USERNAME</th><th>PIN</th><th>ROLE</th><th>STATUS</th><th>ACTIONS</th></tr>
+                    ${Object.keys(registry).map(u => `
+                        <tr>
+                            <td>${u}</td>
+                            <td style="font-family:monospace; color:var(--primary)">${registry[u].pin}</td>
+                            <td>${registry[u].role}</td>
+                            <td><span class="status-tag ${registry[u].banned ? 'status-banned' : 'status-active'}">${registry[u].banned ? 'BANNED' : 'ACTIVE'}</span></td>
+                            <td>
+                                ${u !== 'admin' ? `<button class="ban-btn" onclick="Kernel.toggleBan('${u}')">${registry[u].banned ? 'UNBAN' : 'BAN'}</button>` : '--'}
+                            </td>
+                        </tr>
+                    `).join('')}
+                `;
+            },
+
+            toggleBan(username) {
+                let registry = JSON.parse(localStorage.getItem('nebula_registry') || '{}');
+                registry[username].banned = !registry[username].banned;
+                localStorage.setItem('nebula_registry', JSON.stringify(registry));
+                this.refreshAdminTable();
+            },
+
+            drag(e, id) {
+                const el = document.getElementById(id);
+                const r = el.getBoundingClientRect();
+                const ox = e.clientX - r.left, oy = e.clientY - r.top;
+                const move = (ev) => {
+                    el.style.left = (ev.clientX - ox) + 'px';
+                    el.style.top = (ev.clientY - oy) + 'px';
+                };
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', () => document.removeEventListener('mousemove', move), {once:true});
             }
         };
 
-        document.addEventListener('mousemove', e => {
-            if(!Kernel.wm.dragState) return;
-            Kernel.wm.dragState.el.style.left = (e.clientX - Kernel.wm.dragState.x) + 'px';
-            Kernel.wm.dragState.el.style.top = (e.clientY - Kernel.wm.dragState.y) + 'px';
-        });
-        document.addEventListener('mouseup', () => { Kernel.wm.dragState = null; document.body.classList.remove('dragging'); });
         window.onload = () => Auth.init();
     </script>
 </body>
