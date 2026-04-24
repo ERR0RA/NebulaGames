@@ -93,8 +93,7 @@
         }
         .sys-info { display: flex; align-items: center; gap: 15px; font-size: 0.75rem; }
         .user-badge { background: rgba(var(--primary-rgb), 0.1); color: var(--primary); padding: 4px 10px; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 6px;}
-        .hw-stats { display: flex; gap: 10px; color: var(--text-dim); }
-        .hw-stats i { width: 14px; height: 14px; }
+        .stat-badge { font-family: 'Fira Code'; color: var(--primary); background: rgba(var(--primary-rgb), 0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; }
 
         /* --- MAIN DESKTOP --- */
         .main-stage { flex: 1; overflow-y: auto; padding: 20px; position: relative; }
@@ -107,7 +106,7 @@
         .os-input:focus { border-color: var(--primary); box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.2); }
 
         /* --- APP GRID --- */
-        .grid-engine { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; max-width: 1000px; margin: 0 auto; }
+        .grid-engine { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; max-width: 1100px; margin: 0 auto 100px; }
         .app-icon { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 15px 10px; border-radius: 16px; transition: 0.2s; cursor: pointer; }
         .app-icon:hover { background: rgba(255,255,255,0.05); transform: translateY(-3px); }
         .icon-visual {
@@ -120,7 +119,7 @@
         /* --- WINDOW MANAGER --- */
         #window-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
         .os-window {
-            position: absolute; width: 600px; height: 400px; background: var(--bg); border: 1px solid var(--border);
+            position: absolute; width: 800px; height: 500px; background: var(--bg); border: 1px solid var(--border);
             border-radius: 12px; display: flex; flex-direction: column;
             box-shadow: 0 25px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(var(--primary-rgb), 0.2);
             pointer-events: auto; overflow: hidden; animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -185,7 +184,6 @@
                 <input type="password" id="login-pin" class="auth-input" placeholder="Enter PIN" maxlength="4" autocomplete="off" onkeyup="if(event.key === 'Enter') Auth.login()">
                 <button class="auth-btn" onclick="Auth.login()">UNLOCK</button>
                 <div id="login-error" class="auth-error"></div>
-                <button style="background:transparent; border:none; color:var(--text-dim); font-size:0.7rem; margin-top:20px; cursor:pointer; text-decoration:underline;" onclick="Auth.resetSystem()">Wipe System & Factory Reset</button>
             </div>
         </div>
     </div>
@@ -201,6 +199,7 @@
         <div class="sys-info">
             <div style="font-weight: 800; letter-spacing: 1px;">NEBULA</div>
             <div class="user-badge"><i data-lucide="user" style="width:12px;"></i> <span id="nav-username">User</span></div>
+            <div class="stat-badge" id="nodeCount">24_NODES_ACTIVE</div>
         </div>
         <div class="sys-info">
             <div class="hw-stats">
@@ -216,7 +215,7 @@
 
     <main class="main-stage">
         <div class="search-container">
-            <input type="text" id="appSearch" class="os-input" placeholder="Search System Modules..." onkeyup="Kernel.ui.search()">
+            <input type="text" id="appSearch" class="os-input" placeholder="Search Quantum Modules..." onkeyup="Kernel.ui.search()">
         </div>
         <div id="grid" class="grid-engine"></div>
         <div id="window-layer"></div>
@@ -248,240 +247,171 @@
     </div>
 
     <script>
-        // --- AUTHENTICATION MODULE ---
+        // --- AUTHENTICATION ---
         const Auth = {
-            user: null,
-            pin: null,
-
+            user: null, pin: null,
             init() {
                 lucide.createIcons();
-                const savedUser = localStorage.getItem('nebula_user');
-                const savedPin = localStorage.getItem('nebula_pin');
-
-                if (savedUser && savedPin) {
-                    // Returning user
-                    this.user = savedUser;
-                    this.pin = savedPin;
+                const u = localStorage.getItem('nebula_user'), p = localStorage.getItem('nebula_pin');
+                if (u && p) {
+                    this.user = u; this.pin = p;
                     document.getElementById('setup-form').style.display = 'none';
                     document.getElementById('login-form').style.display = 'block';
-                    document.getElementById('login-greeting').innerText = `Welcome, ${this.user}`;
-                    document.getElementById('login-pin').focus();
+                    document.getElementById('login-greeting').innerText = `Welcome, ${u}`;
                 } else {
-                    // New user setup
                     document.getElementById('setup-form').style.display = 'block';
                     document.getElementById('login-form').style.display = 'none';
-                    document.getElementById('setup-user').focus();
                 }
             },
-
             createAccount() {
-                const username = document.getElementById('setup-user').value.trim();
-                const pin = document.getElementById('setup-pin').value.trim();
-                const errorEl = document.getElementById('setup-error');
-
-                if (username.length < 2) { errorEl.innerText = "Username too short."; return; }
-                if (!/^\d{4}$/.test(pin)) { errorEl.innerText = "PIN must be 4 digits."; return; }
-
-                localStorage.setItem('nebula_user', username);
-                localStorage.setItem('nebula_pin', pin);
-                this.user = username;
-                
-                document.getElementById('auth-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('auth-screen').style.display = 'none';
-                    Kernel.initSystem(this.user);
-                }, 500);
+                const u = document.getElementById('setup-user').value.trim(), p = document.getElementById('setup-pin').value.trim();
+                if (u.length < 2 || !/^\d{4}$/.test(p)) return;
+                localStorage.setItem('nebula_user', u); localStorage.setItem('nebula_pin', p);
+                this.user = u; this.pin = p; this.unlock();
             },
-
             login() {
-                const inputPin = document.getElementById('login-pin').value;
-                const errorEl = document.getElementById('login-error');
-
-                if (inputPin === this.pin) {
-                    document.getElementById('login-pin').value = '';
-                    errorEl.innerText = '';
-                    document.getElementById('auth-screen').style.opacity = '0';
-                    setTimeout(() => {
-                        document.getElementById('auth-screen').style.display = 'none';
-                        Kernel.initSystem(this.user);
-                    }, 500);
-                } else {
-                    errorEl.innerText = "ACCESS DENIED. INVALID PIN.";
-                    document.getElementById('login-pin').value = '';
-                }
+                if (document.getElementById('login-pin').value === this.pin) this.unlock();
+                else document.getElementById('login-error').innerText = "INVALID PIN";
             },
-
-            lockSystem() {
-                Kernel.ui.toggleSys(); // Close drawer
-                document.getElementById('auth-screen').style.display = 'flex';
-                setTimeout(() => document.getElementById('auth-screen').style.opacity = '1', 50);
-                document.getElementById('login-pin').focus();
+            unlock() {
+                document.getElementById('auth-screen').style.opacity = '0';
+                setTimeout(() => { document.getElementById('auth-screen').style.display = 'none'; Kernel.initSystem(this.user); }, 500);
             },
-
-            resetSystem() {
-                if(confirm("WARNING: This will delete your profile and system settings. Continue?")) {
-                    localStorage.removeItem('nebula_user');
-                    localStorage.removeItem('nebula_pin');
-                    localStorage.removeItem('neb_theme');
-                    location.reload();
-                }
-            }
+            lockSystem() { location.reload(); },
+            resetSystem() { if(confirm("Wipe all data?")) { localStorage.clear(); location.reload(); } }
         };
 
-        // --- KERNEL & OS MODULE ---
+        // --- KERNEL ---
         const Kernel = {
             apps: [
-                { id: "ai_core", n: "AI Core", f: "ai.html", i: "bot" },
-                { id: "cyber_strike", n: "Cyber Strike", f: "Cyber-Strike.html", i: "zap" },
-                { id: "neon_golf", n: "Neon Golf", f: "Neon-Golf.html", i: "target" },
-                { id: "block_breaker", n: "Block Breaker", f: "blockbreaker.html", i: "layers" },
-                { id: "terminal", n: "Terminal", f: "about:blank", i: "terminal" },
-                { id: "files", n: "File System", f: "about:blank", i: "folder" }
+                { id: "strike", n: "Cyber Strike", f: "Cyber-Strike.html", i: "zap" },
+                { id: "golf", n: "Neon Golf", f: "Neon-Golf.html", i: "target" },
+                { id: "hex", n: "Neon Hex", f: "Neon-Hex.html", i: "hexagon" },
+                { id: "pong", n: "Neon Pong", f: "Neon-Pong.html", i: "activity" },
+                { id: "slams", n: "Neon Slams", f: "Neon-Slams.html", i: "dribbble" },
+                { id: "slash", n: "Neon Slash", f: "Neon-Slash.html", i: "sword" },
+                { id: "ai", n: "AI Core", f: "ai.html", i: "bot" },
+                { id: "basket", n: "Basketball", f: "basketball.html", i: "circle" },
+                { id: "blast", n: "Block Blast", f: "blockblast.html", i: "grid" },
+                { id: "breaker", n: "Block Breaker", f: "blockbreaker.html", i: "layers" },
+                { id: "craft", n: "Block Craft", f: "blockcraft.html", i: "box" },
+                { id: "cricket", n: "Cricket", f: "cricket.html", i: "trophy" },
+                { id: "drift", n: "Drift King", f: "drift.html", i: "navigation-2" },
+                { id: "footy", n: "Football", f: "football.html", i: "award" },
+                { id: "armory", n: "Master Armory", f: "masterarmory.html", i: "shield" },
+                { id: "mines", n: "Minesweeper", f: "minesweeper.html", i: "bomb" },
+                { id: "trail", n: "Neon Trail", f: "neon-trail.html", i: "wind" },
+                { id: "drive", n: "Overdrive", f: "overdrive.html", i: "gauge" },
+                { id: "read", n: "Reader", f: "reader.html", i: "book-open" },
+                { id: "snake", n: "Snake Pro", f: "snake.html", i: "trending-up" },
+                { id: "ai2", n: "AI 2", f: "Ai2.html", i: "cpu" },
+                { id: "space", n: "Space Adventure", f: "spaceadventure.html", i: "rocket" },
+                { id: "math", n: "Sparks Maths", f: "sparksmaths.html", i: "divide" },
+                { id: "ttt", n: "Tic Tac Toe", f: "tictactoe.html", i: "x" }
             ],
-            openWindows: {},
-            highestZ: 100,
-
+            openWindows: {}, highestZ: 100,
             initSystem(username) {
                 document.getElementById('nav-username').innerText = username;
-                this.ui.runBootSequence();
-                this.ui.renderDesktop();
-                this.ui.startClock();
-                this.ui.getHardwareStats();
-                lucide.createIcons();
+                this.ui.runBootSequence(); this.ui.renderDesktop(); this.ui.startClock(); this.ui.getHardwareStats();
                 this.ui.setTheme(localStorage.getItem('neb_theme') || 'green');
             },
-
             ui: {
                 runBootSequence() {
-                    const boot = document.getElementById('boot-screen');
-                    boot.style.display = 'flex';
+                    const boot = document.getElementById('boot-screen'); boot.style.display = 'flex';
                     setTimeout(() => boot.style.opacity = '1', 10);
-
-                    const logs = ["VERIFYING CREDENTIALS...", "MOUNTING VFS...", "STARTING GUI...", "WELCOME TO NEBULA"];
+                    const logs = ["VERIFYING...", "MOUNTING...", "STARTING...", "READY"];
                     let step = 0;
-                    const logEl = document.getElementById('boot-text');
                     const interval = setInterval(() => {
-                        if(step < logs.length) { logEl.innerText = logs[step]; step++; } 
-                        else {
-                            clearInterval(interval);
-                            boot.style.opacity = '0';
-                            setTimeout(() => boot.style.display = 'none', 800);
-                        }
-                    }, 400);
+                        if(step < logs.length) { document.getElementById('boot-text').innerText = logs[step]; step++; } 
+                        else { clearInterval(interval); boot.style.opacity = '0'; setTimeout(() => boot.style.display = 'none', 800); }
+                    }, 300);
                 },
-
                 renderDesktop() {
-                    const grid = document.getElementById('grid');
-                    grid.innerHTML = Kernel.apps.map(app => `
-                        <div class="app-icon" data-name="${app.n.toLowerCase()}" onclick="Kernel.wm.launch('${app.id}')">
+                    document.getElementById('grid').innerHTML = Kernel.apps.map(app => `
+                        <div class="app-icon" onclick="Kernel.wm.launch('${app.id}')" data-name="${app.n.toLowerCase()}">
                             <div class="icon-visual"><i data-lucide="${app.i}"></i></div>
                             <div class="app-label">${app.n}</div>
                         </div>
                     `).join('');
+                    lucide.createIcons();
                 },
-
                 startClock() {
-                    const update = () => {
-                        const now = new Date();
-                        document.getElementById('sysTime').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    };
+                    const update = () => document.getElementById('sysTime').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     update(); setInterval(update, 1000);
                 },
-
-                async getHardwareStats() {
-                    if ('getBattery' in navigator) {
-                        try {
-                            const battery = await navigator.getBattery();
-                            const updateBat = () => { document.getElementById('bat-level').innerText = Math.round(battery.level * 100) + '%'; };
-                            updateBat(); battery.addEventListener('levelchange', updateBat);
-                        } catch(e) {}
-                    }
-                },
-
-                search() {
-                    const q = document.getElementById('appSearch').value.toLowerCase();
-                    document.querySelectorAll('.app-icon').forEach(icon => {
-                        icon.style.display = icon.dataset.name.includes(q) ? 'flex' : 'none';
+                getHardwareStats() {
+                    if ('getBattery' in navigator) navigator.getBattery().then(b => {
+                        const u = () => document.getElementById('bat-level').innerText = Math.round(b.level * 100) + '%';
+                        u(); b.addEventListener('levelchange', u);
                     });
                 },
-
+                search() {
+                    const q = document.getElementById('appSearch').value.toLowerCase();
+                    let count = 0;
+                    document.querySelectorAll('.app-icon').forEach(i => {
+                        const m = i.dataset.name.includes(q); i.style.display = m ? 'flex' : 'none'; if(m) count++;
+                    });
+                    document.getElementById('nodeCount').innerText = `${count}_NODES_ACTIVE`;
+                },
                 toggleSys() { document.getElementById('drawer').classList.toggle('open'); },
                 setTheme(t) { document.body.className = `theme-${t}`; localStorage.setItem('neb_theme', t); }
             },
-
             wm: {
                 launch(appId) {
-                    if(Kernel.openWindows[appId]) { this.focus(appId); return; }
+                    if(this.focus(appId)) return;
                     const app = Kernel.apps.find(a => a.id === appId);
-                    if(!app) return;
-
                     Kernel.highestZ++;
-                    const winId = `win-${appId}`;
-                    const offset = Object.keys(Kernel.openWindows).length * 30;
-
-                    const winHtml = `
-                        <div class="os-window" id="${winId}" style="left: ${100 + offset}px; top: ${100 + offset}px; z-index: ${Kernel.highestZ};" onmousedown="Kernel.wm.focus('${appId}')">
+                    const winId = `win-${appId}`, offset = Object.keys(Kernel.openWindows).length * 25;
+                    const html = `
+                        <div class="os-window" id="${winId}" style="left:${50+offset}px;top:${50+offset}px;z-index:${Kernel.highestZ}" onmousedown="Kernel.wm.focus('${appId}')">
                             <div class="window-header" onmousedown="Kernel.wm.startDrag(event, '${winId}')">
-                                <div class="window-title"><i data-lucide="${app.i}" style="width:14px; height:14px;"></i> ${app.n}</div>
+                                <div class="window-title"><i data-lucide="${app.i}" style="width:14px"></i> ${app.n}</div>
                                 <div class="window-controls">
                                     <button class="win-btn btn-min" onclick="Kernel.wm.minimize('${appId}')"></button>
                                     <button class="win-btn btn-close" onclick="Kernel.wm.close('${appId}')"></button>
                                 </div>
                             </div>
                             <div class="window-content"><iframe src="${app.f}"></iframe></div>
-                        </div>
-                    `;
-                    document.getElementById('window-layer').insertAdjacentHTML('beforeend', winHtml);
+                        </div>`;
+                    document.getElementById('window-layer').insertAdjacentHTML('beforeend', html);
                     lucide.createIcons();
-                    
-                    Kernel.openWindows[appId] = { el: document.getElementById(winId), minimized: false };
+                    Kernel.openWindows[appId] = { el: document.getElementById(winId), min: false };
                     this.updateDock();
                 },
-                close(appId) {
-                    const win = Kernel.openWindows[appId];
-                    if(win) { win.el.remove(); delete Kernel.openWindows[appId]; this.updateDock(); }
+                focus(id) {
+                    const w = Kernel.openWindows[id];
+                    if(!w) return false;
+                    Kernel.highestZ++; w.el.style.zIndex = Kernel.highestZ;
+                    if(w.min) this.minimize(id);
+                    return true;
                 },
-                minimize(appId) {
-                    const win = Kernel.openWindows[appId];
-                    if(win) { win.el.style.display = win.minimized ? 'flex' : 'none'; win.minimized = !win.minimized; }
-                },
-                focus(appId) {
-                    const win = Kernel.openWindows[appId];
-                    if(win) { Kernel.highestZ++; win.el.style.zIndex = Kernel.highestZ; if(win.minimized) this.minimize(appId); }
+                close(id) { Kernel.openWindows[id].el.remove(); delete Kernel.openWindows[id]; this.updateDock(); },
+                minimize(id) { 
+                    const w = Kernel.openWindows[id]; 
+                    w.el.style.display = w.min ? 'flex' : 'none'; w.min = !w.min; 
                 },
                 updateDock() {
-                    const dock = document.getElementById('dock');
-                    const apps = Object.keys(Kernel.openWindows);
-                    if(apps.length === 0) { dock.style.display = 'none'; return; }
-                    
-                    dock.style.display = 'flex';
-                    dock.innerHTML = apps.map(id => {
-                        const app = Kernel.apps.find(a => a.id === id);
-                        return `<div class="dock-item active" onclick="Kernel.wm.focus('${id}')" title="${app.n}"><i data-lucide="${app.i}"></i></div>`;
-                    }).join('');
+                    const d = document.getElementById('dock'), keys = Object.keys(Kernel.openWindows);
+                    d.style.display = keys.length ? 'flex' : 'none';
+                    d.innerHTML = keys.map(k => `<div class="dock-item active" onclick="Kernel.wm.focus('${k}')"><i data-lucide="${Kernel.apps.find(a=>a.id===k).i}"></i></div>`).join('');
                     lucide.createIcons();
                 },
                 dragState: null,
-                startDrag(e, winId) {
-                    if(e.target.tagName === 'BUTTON') return; 
-                    const win = document.getElementById(winId);
-                    const rect = win.getBoundingClientRect();
-                    this.dragState = { win: win, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top };
+                startDrag(e, id) {
+                    if(e.target.tagName === 'BUTTON') return;
+                    const el = document.getElementById(id), r = el.getBoundingClientRect();
+                    this.dragState = { el, x: e.clientX - r.left, y: e.clientY - r.top };
                     document.body.classList.add('dragging');
                 }
             }
         };
 
-        // Drag Listeners
         document.addEventListener('mousemove', e => {
             if(!Kernel.wm.dragState) return;
-            const state = Kernel.wm.dragState;
-            state.win.style.left = (e.clientX - state.offsetX) + 'px';
-            state.win.style.top = (e.clientY - state.offsetY) + 'px';
+            Kernel.wm.dragState.el.style.left = (e.clientX - Kernel.wm.dragState.x) + 'px';
+            Kernel.wm.dragState.el.style.top = (e.clientY - Kernel.wm.dragState.y) + 'px';
         });
         document.addEventListener('mouseup', () => { Kernel.wm.dragState = null; document.body.classList.remove('dragging'); });
-
-        // Initialize App
         window.onload = () => Auth.init();
     </script>
 </body>
