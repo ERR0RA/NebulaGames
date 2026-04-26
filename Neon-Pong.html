@@ -3,58 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON_PONG | SYSTEM_OVERLOAD</title>
+    <title>NEON_PONG | SYSTEM_OVERLOAD_v2</title>
     <style>
-        :root { --neon: #0f0; --glitch: #f0f; --tank: #0cf; --shadow: #555; --reflex: #ff0; }
+        :root { --neon: #0f0; --alpha: #0ff; --beta: #0a6; --neon-p: #f0f; --bg: #020502; }
         body { background: #000; color: var(--neon); font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        
+        /* CRT Overlay Effect */
         body::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255,0,0,0.02), rgba(0,255,0,0.01), rgba(0,0,255,0.02)); z-index: 10; background-size: 100% 3px, 3px 100%; pointer-events: none; }
-        canvas { border: 4px solid #003300; background: #020502; box-shadow: 0 0 50px #001100; display: none; max-width: 98vw; max-height: 80vh; }
-        .menu { text-align: center; border: 2px solid var(--neon); padding: 25px; background: #000; box-shadow: 0 0 30px #004400; width: 95%; max-width: 850px; z-index: 20; max-height: 90vh; overflow-y: auto; }
-        .config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .team-panel { border: 1px solid #040; padding: 10px; background: #050505; }
-        select, button { background: #000; color: var(--neon); border: 1px solid #030; width: 100%; padding: 8px; font-family: monospace; margin-top: 5px; }
-        .btn-start { background: var(--neon); color: #000; font-weight: bold; padding: 15px; cursor: pointer; letter-spacing: 3px; border: none; margin-top: 10px; }
-        .btn-start:hover { background: #fff; box-shadow: 0 0 20px var(--neon); }
-        #ui { position: absolute; top: 10px; font-size: 1.2rem; background: rgba(0,0,0,0.9); padding: 10px 30px; border: 1px solid #020; display: none; z-index: 5; }
-        .msg { position: absolute; color: #fff; font-size: 2rem; font-weight: bold; text-shadow: 0 0 10px var(--neon); pointer-events: none; }
+        
+        canvas { border: 4px solid #003300; background: var(--bg); box-shadow: 0 0 50px #001100; display: none; max-width: 98vw; max-height: 80vh; }
+        
+        .menu { text-align: center; border: 2px solid var(--neon); padding: 25px; background: #000; box-shadow: 0 0 30px #004400; width: 95%; max-width: 900px; z-index: 20; max-height: 90vh; overflow-y: auto; }
+        
+        .config-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .team-panel { border: 1px solid #040; padding: 10px; background: #050505; border-radius: 4px; }
+        
+        select, button { background: #000; color: var(--neon); border: 1px solid #030; width: 100%; padding: 8px; font-family: monospace; margin-top: 5px; cursor: pointer; }
+        .btn-start { background: var(--neon); color: #000; font-weight: bold; padding: 15px; letter-spacing: 3px; border: none; margin-top: 10px; transition: 0.3s; }
+        .btn-start:hover { background: #fff; box-shadow: 0 0 20px var(--neon); transform: scale(1.02); }
+
+        #ui { position: absolute; top: 10px; font-size: 1.2rem; background: rgba(0,0,0,0.9); padding: 10px 30px; border: 1px solid #020; display: none; z-index: 5; letter-spacing: 2px; }
+        .stat-line { font-size: 0.7rem; color: #444; margin-top: 5px; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="ui">
-        [<span id="modeDisp">STD</span>] <span id="s1">0</span> : <span id="s2">0</span>
+        [<span id="modeDisp">STD</span>] <span id="s1" style="color:var(--alpha)">0</span> : <span id="s2" style="color:var(--neon-p)">0</span>
+        <div id="match-log" style="font-size: 0.6rem; color: #666; text-align: center; margin-top: 5px;">SYSTEM_STABLE</div>
     </div>
 
     <div id="menu" class="menu">
-        <h1 style="letter-spacing: 10px;">NEON_PONG.EXE</h1>
+        <h1 style="letter-spacing: 8px; margin-bottom: 5px;">NEON_PONG.EXE <span style="font-size: 0.8rem; vertical-align: middle;">v2.0_OVERLOAD</span></h1>
+        <p style="font-size: 0.7rem; color: #555; margin-bottom: 20px;">STRESS_TESTING_QUANTUM_AI_CORES</p>
         
         <div class="config-grid">
             <div class="team-panel">
-                <h3 style="color:var(--neon)">GAME_MODE</h3>
+                <h3 style="color:var(--neon)">SIM_TYPE</h3>
                 <select id="gameMode">
-                    <option value="STD">STANDARD BATTLE</option>
-                    <option value="SURVIVAL">SURVIVAL (HELL)</option>
-                    <option value="BOSS">BOSS FIGHT (1vs4)</option>
+                    <option value="STD">STANDARD_DUAL</option>
+                    <option value="SURVIVAL">HELL_MODE (RAMP)</option>
+                    <option value="BOSS">CORE_FIGHT (1vs4)</option>
                 </select>
-                <div style="font-size:0.6rem; color:#444; margin-top:10px;">
-                    P1: W/S | P2: R/F<br>P3: UP/DN | P4: I/K
-                </div>
+                <div class="stat-line">P1:W/S | P2:R/F | P3:UP/DN</div>
             </div>
 
             <div class="team-panel">
-                <h3 style="color:var(--neon)">LEFT_TEAM</h3>
-                <select id="L1"><option value="PLAYER">HUMAN (W/S)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="SHADOW">SHADOW_BOT</option><option value="REFLEX">REFLEX_BOT</option></select>
-                <select id="L2"><option value="NONE">EMPTY</option><option value="PLAYER">HUMAN (R/F)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="SHADOW">SHADOW_BOT</option><option value="REFLEX">REFLEX_BOT</option></select>
+                <h3 style="color:var(--alpha)">ALPHA_SECTOR</h3>
+                <select id="L1">
+                    <option value="ALPHA">ALPHA_BOT (ELITE)</option>
+                    <option value="PLAYER">HUMAN_CORE</option>
+                    <option value="OMNI">OMNI_BOT</option>
+                    <option value="BETA">BETA_BOT</option>
+                </select>
+                <select id="L2">
+                    <option value="NONE">-- EMPTY --</option>
+                    <option value="NEON">NEON_BOT</option>
+                    <option value="PLAYER">HUMAN_CORE</option>
+                </select>
             </div>
 
             <div class="team-panel">
-                <h3 style="color:var(--neon)">RIGHT_TEAM</h3>
-                <select id="R1"><option value="OMNI">OMNI_BOT</option><option value="PLAYER">HUMAN (UP/DN)</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="SHADOW">SHADOW_BOT</option><option value="REFLEX">REFLEX_BOT</option></select>
-                <select id="R2"><option value="NONE">EMPTY</option><option value="PLAYER">HUMAN (I/K)</option><option value="OMNI">OMNI_BOT</option><option value="GLITCH">GLITCH_BOT</option><option value="TANK">TANK_BOT</option><option value="SHADOW">SHADOW_BOT</option><option value="REFLEX">REFLEX_BOT</option></select>
+                <h3 style="color:var(--neon-p)">BETA_SECTOR</h3>
+                <select id="R1">
+                    <option value="OMNI">OMNI_BOT</option>
+                    <option value="ALPHA">ALPHA_BOT (ELITE)</option>
+                    <option value="PLAYER">HUMAN_CORE</option>
+                    <option value="NEON">NEON_BOT</option>
+                </select>
+                <select id="R2">
+                    <option value="NONE">-- EMPTY --</option>
+                    <option value="BETA">BETA_BOT</option>
+                    <option value="TANK">TANK_BOT</option>
+                </select>
             </div>
         </div>
 
-        <button class="btn-start" onclick="initGame()">BOOT SYSTEM</button>
+        <button class="btn-start" onclick="initGame()">INITIALIZE BOOT SEQUENCE</button>
     </div>
 
     <canvas id="pong" width="1200" height="500"></canvas>
@@ -67,12 +92,12 @@
     let curMode = "STD", frameCount = 0;
 
     const TYPES = {
-        OMNI:   { speed: 7, jitter: 1, color: '#0f0', h: 80, predict: true },
-        GLITCH: { speed: 13, jitter: 50, color: '#f0f', h: 60, predict: true },
-        TANK:   { speed: 3.5, jitter: 0, color: '#0cf', h: 160, predict: false },
-        SHADOW: { speed: 8, jitter: 5, color: '#555', h: 80, predict: true, special: 'cloak' },
-        REFLEX: { speed: 20, jitter: 0, color: '#ff0', h: 70, predict: false, special: 'reflex' },
-        PLAYER: { speed: 9, jitter: 0, color: '#fff', h: 80, predict: false }
+        ALPHA:  { speed: 11, jitter: 0, color: '#00ffff', h: 80, predict: true, aura: true },
+        BETA:   { speed: 6.5, jitter: 12, color: '#00aa66', h: 85, predict: true, aura: false },
+        NEON:   { speed: 16, jitter: 6, color: '#ff00ff', h: 65, predict: true, trail: true },
+        OMNI:   { speed: 7.5, jitter: 2, color: '#0f0', h: 80, predict: true, aura: false },
+        TANK:   { speed: 4, jitter: 0, color: '#0cf', h: 180, predict: false, aura: false },
+        PLAYER: { speed: 10, jitter: 0, color: '#fff', h: 80, predict: false, aura: false }
     };
 
     window.onkeydown = e => keys[e.code] = true;
@@ -81,24 +106,26 @@
     function initGame() {
         units = []; balls = []; powerups = []; particles = [];
         curMode = document.getElementById('gameMode').value;
+        
         const config = {
             L: [document.getElementById('L1').value, document.getElementById('L2').value],
             R: [document.getElementById('R1').value, document.getElementById('R2').value]
         };
 
         if(curMode === "BOSS") {
-            // Right side becomes one massive boss
-            units.push({ x: 1150, y: 150, side: 'R', type: 'TANK', h: 300, w: 25, speed: 2.5, color: '#f00', id: 'BOSS', targetY: 250 });
+            units.push({ x: 1150, y: 100, side: 'R', type: 'ALPHA', h: 320, w: 25, speed: 3.5, color: '#f33', id: 'BOSS', targetY: 250 });
             config.L.forEach((type, i) => {
                 if(type === 'NONE') return;
-                units.push({ x: i === 0 ? 30 : 250, y: 200, side: 'L', type, h: TYPES[type].h, w: 12, speed: TYPES[type].speed, color: TYPES[type].color, targetY: 250, id: 'L'+(i+1) });
+                let t = TYPES[type];
+                units.push({ x: i === 0 ? 30 : 250, y: 200, side: 'L', type, h: t.h, w: 12, speed: t.speed, color: t.color, targetY: 250, id: 'L'+(i+1) });
             });
         } else {
             ['L', 'R'].forEach(side => {
                 config[side].forEach((type, i) => {
                     if (type === 'NONE') return;
+                    let t = TYPES[type];
                     let x = (side === 'L') ? (i === 0 ? 30 : 250) : (i === 0 ? 1158 : 938);
-                    units.push({ x, y: 200, side, type, h: TYPES[type].h, w: 12, speed: TYPES[type].speed, color: TYPES[type].color, targetY: 250, id: side + (i + 1) });
+                    units.push({ x, y: 200, side, type, h: t.h, w: 12, speed: t.speed, color: t.color, targetY: 250, id: side + (i + 1) });
                 });
             });
         }
@@ -112,131 +139,130 @@
         loop();
     }
 
-    function spawnBall(x = 600, y = 250, vx = null) {
-        let speed = curMode === "SURVIVAL" ? 10 + (score.p1 + score.p2) : 8;
+    function spawnBall() {
+        let speed = curMode === "SURVIVAL" ? 9 + (score.p1 + score.p2)*0.5 : 9;
         balls.push({
-            x, y, size: 10, speed,
-            vx: vx || (Math.random() > 0.5 ? speed : -speed),
-            vy: (Math.random() - 0.5) * 10
+            x: 600, y: 250, size: 10, speed,
+            vx: (Math.random() > 0.5 ? speed : -speed),
+            vy: (Math.random() - 0.5) * 8
         });
     }
 
     function predict(u, b) {
-        if (!TYPES[u.type]?.predict && u.type !== 'TANK') return b.y;
+        if (!TYPES[u.type]?.predict) return b.y;
         if ((u.side === 'L' && b.vx > 0) || (u.side === 'R' && b.vx < 0)) return 250;
+        
         let tx = b.x, ty = b.y, tvy = b.vy;
+        let iter = 0;
         while (u.side === 'L' ? tx > u.x : tx < u.x) {
             tx += b.vx; ty += tvy;
             if (ty <= 0 || ty >= 490) tvy *= -1;
-            if (tx < 0 || tx > 1200) break;
+            if (iter++ > 100) break;
         }
         return ty;
     }
 
     function update() {
         frameCount++;
-        if (frameCount % 600 === 0) { // Spawn Powerup every 10s
-            powerups.push({ x: 400 + Math.random()*400, y: 100 + Math.random()*300, type: ['MULTI', 'EMP', 'TURBO'][Math.floor(Math.random()*3)], life: 500 });
+        if (frameCount % 400 === 0) {
+            powerups.push({ x: 300 + Math.random()*600, y: 100 + Math.random()*300, type: ['MULTI', 'EMP', 'GLITCH'][Math.floor(Math.random()*3)], life: 400 });
         }
 
-        // Particles & Powerups
-        particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.02; if(p.life <= 0) particles.splice(i, 1); });
-        powerups.forEach((p, i) => { p.life--; if(p.life <= 0) powerups.splice(i, 1); });
-
-        // Units Logic
         units.forEach(u => {
             if (u.freeze > 0) { u.freeze--; return; }
+            
             if (u.type === 'PLAYER') {
                 if (u.id === 'L1' && keys['KeyW']) u.y -= u.speed;
                 if (u.id === 'L1' && keys['KeyS']) u.y += u.speed;
-                if (u.id === 'L2' && keys['KeyR']) u.y -= u.speed;
-                if (u.id === 'L2' && keys['KeyF']) u.y += u.speed;
                 if (u.id === 'R1' && keys['ArrowUp']) u.y -= u.speed;
                 if (u.id === 'R1' && keys['ArrowDown']) u.y += u.speed;
-                if (u.id === 'R2' && keys['KeyI']) u.y -= u.speed;
-                if (u.id === 'R2' && keys['KeyK']) u.y += u.speed;
             } else {
-                let activeBall = balls[0]; 
-                u.targetY = predict(u, activeBall);
+                let targetBall = balls[0]; 
+                u.targetY = predict(u, targetBall);
                 let drift = (Math.random() - 0.5) * (TYPES[u.type]?.jitter || 0);
                 
-                if (u.type === 'REFLEX') {
-                    if (Math.abs(activeBall.x - u.x) < 300) {
-                        if (u.y + u.h/2 < u.targetY) u.y += u.speed;
-                        else if (u.y + u.h/2 > u.targetY) u.y -= u.speed;
-                    }
-                } else {
-                    if (u.y + u.h/2 < u.targetY + drift) u.y += u.speed;
-                    else if (u.y + u.h/2 > u.targetY + drift) u.y -= u.speed;
-                }
+                let center = u.y + u.h/2;
+                if (center < u.targetY + drift - 5) u.y += u.speed;
+                else if (center > u.targetY + drift + 5) u.y -= u.speed;
             }
             u.y = Math.max(0, Math.min(500 - u.h, u.y));
         });
 
-        // Ball Logic
         balls.forEach((b, bi) => {
             b.x += b.vx; b.y += b.vy;
-            if (b.y <= 0 || b.y >= 490) b.vy *= -1.05;
+            if (b.y <= 0 || b.y >= 490) b.vy *= -1;
 
-            // Powerup hit
             powerups.forEach((p, pi) => {
-                if (Math.hypot(b.x - p.x, b.y - p.y) < 30) {
-                    applyPower(p.type, b.vx > 0 ? 'L' : 'R');
+                if (Math.hypot(b.x - p.x, b.y - p.y) < 35) {
+                    if (p.type === 'MULTI') spawnBall();
+                    if (p.type === 'EMP') units.filter(u => u.side !== (b.vx > 0 ? 'L' : 'R')).forEach(u => u.freeze = 120);
                     powerups.splice(pi, 1);
                 }
             });
 
-            // Paddle hits
             units.forEach(u => {
                 if (b.x < u.x + u.w && b.x + b.size > u.x && b.y < u.y + u.h && b.y + b.size > u.y) {
                     b.vx = (u.side === 'L' ? 1 : -1) * Math.abs(b.speed);
-                    b.vy = (b.y - (u.y + u.h/2)) * 0.4;
-                    b.speed = Math.min(b.speed + 0.5, 25);
+                    b.vy = (b.y - (u.y + u.h/2)) * 0.35;
+                    b.speed = Math.min(b.speed + 0.3, 22);
+                    // Hit particles
+                    for(let i=0; i<5; i++) particles.push({x:b.x, y:b.y, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, life:1, color:u.color});
                 }
             });
 
-            if (b.x < 0) { score.p2++; resetGame(); }
-            else if (b.x > 1200) { score.p1++; resetGame(); }
+            if (b.x < 0) { score.p2++; reset(); }
+            else if (b.x > 1200) { score.p1++; reset(); }
         });
+
+        particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.04; if(p.life <= 0) particles.splice(i, 1); });
     }
 
-    function applyPower(type, side) {
-        if (type === 'MULTI') spawnBall(600, 250, 8);
-        if (type === 'EMP') units.filter(u => u.side !== side).forEach(u => u.freeze = 180);
-        if (type === 'TURBO') units.filter(u => u.side === side).forEach(u => { u.speed *= 1.5; setTimeout(() => u.speed /= 1.5, 5000); });
-    }
-
-    function resetGame() {
+    function reset() {
         document.getElementById('s1').innerText = score.p1;
         document.getElementById('s2').innerText = score.p2;
         balls = []; spawnBall();
     }
 
     function draw() {
-        ctx.fillStyle = 'rgba(0, 10, 0, 0.2)';
+        ctx.fillStyle = 'rgba(0, 8, 0, 0.3)';
         ctx.fillRect(0, 0, 1200, 500);
 
+        // Grid lines
+        ctx.strokeStyle = '#010'; ctx.lineWidth = 1;
+        for(let i=0; i<1200; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,500); ctx.stroke(); }
+
         powerups.forEach(p => {
-            ctx.fillStyle = '#fff';
-            ctx.shadowBlur = 20; ctx.shadowColor = '#fff';
-            ctx.fillRect(p.x, p.y, 20, 20);
+            ctx.shadowBlur = 15; ctx.shadowColor = '#fff';
+            ctx.fillStyle = '#fff'; ctx.fillRect(p.x, p.y, 20, 20);
             ctx.shadowBlur = 0;
-            ctx.fillStyle = '#000'; ctx.fillText(p.type[0], p.x+5, p.y+15);
         });
 
         units.forEach(u => {
-            let alpha = u.type === 'SHADOW' ? 0.2 + Math.abs(Math.sin(frameCount/20)) * 0.5 : 1;
-            ctx.globalAlpha = alpha;
-            ctx.shadowBlur = 15; ctx.shadowColor = u.color;
-            ctx.fillStyle = u.freeze > 0 ? '#fff' : u.color;
+            ctx.shadowBlur = TYPES[u.type].aura ? 30 : 10;
+            ctx.shadowColor = u.color;
+            ctx.fillStyle = u.freeze > 0 ? '#444' : u.color;
+            
+            if(TYPES[u.type].trail) {
+                ctx.strokeStyle = u.color;
+                ctx.strokeRect(u.x - 4, u.y - 4, u.w + 8, u.h + 8);
+            }
+
             ctx.fillRect(u.x, u.y, u.w, u.h);
+        });
+
+        particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life;
+            ctx.fillRect(p.x, p.y, 3, 3);
         });
         ctx.globalAlpha = 1;
 
         balls.forEach(b => {
+            ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
             ctx.fillStyle = '#fff';
             ctx.fillRect(b.x, b.y, b.size, b.size);
         });
+        ctx.shadowBlur = 0;
     }
 
     function loop() {
