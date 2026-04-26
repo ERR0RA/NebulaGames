@@ -3,136 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON_PONG | SYSTEM_OVERLOAD_v2</title>
+    <title>NEON_PONG | MOBILE_OVERLOAD</title>
     <style>
-        :root { --neon: #0f0; --alpha: #0ff; --beta: #0a6; --neon-p: #f0f; --bg: #020502; }
-        body { background: #000; color: var(--neon); font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        :root { 
+            --neon: #0f0; --alpha: #0ff; --neon-p: #f0f; --king: #ff3333;
+            --bg: #050508; 
+        }
+        * { box-sizing: border-box; touch-action: none; }
+        body { 
+            background: var(--bg); color: var(--neon); font-family: 'Courier New', monospace; 
+            margin: 0; overflow: hidden; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; height: 100vh;
+        }
         
-        /* CRT Overlay Effect */
-        body::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255,0,0,0.02), rgba(0,255,0,0.01), rgba(0,0,255,0.02)); z-index: 10; background-size: 100% 3px, 3px 100%; pointer-events: none; }
+        canvas { 
+            background: #000; 
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+            display: none; width: 100%; height: auto; max-height: 70vh;
+        }
         
-        canvas { border: 4px solid #003300; background: var(--bg); box-shadow: 0 0 50px #001100; display: none; max-width: 98vw; max-height: 80vh; }
+        .menu { 
+            text-align: center; border: 1px solid rgba(0,255,136,0.3); padding: 20px; 
+            background: rgba(5, 5, 10, 0.95); backdrop-filter: blur(10px);
+            width: 95%; max-width: 800px; z-index: 20; max-height: 95vh; overflow-y: auto;
+        }
         
-        .menu { text-align: center; border: 2px solid var(--neon); padding: 25px; background: #000; box-shadow: 0 0 30px #004400; width: 95%; max-width: 900px; z-index: 20; max-height: 90vh; overflow-y: auto; }
-        
-        .config-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
-        .team-panel { border: 1px solid #040; padding: 10px; background: #050505; border-radius: 4px; }
-        
-        select, button { background: #000; color: var(--neon); border: 1px solid #030; width: 100%; padding: 8px; font-family: monospace; margin-top: 5px; cursor: pointer; }
-        .btn-start { background: var(--neon); color: #000; font-weight: bold; padding: 15px; letter-spacing: 3px; border: none; margin-top: 10px; transition: 0.3s; }
-        .btn-start:hover { background: #fff; box-shadow: 0 0 20px var(--neon); transform: scale(1.02); }
+        .config-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
+        @media (min-width: 600px) { .config-grid { grid-template-columns: repeat(3, 1fr); } }
 
-        #ui { position: absolute; top: 10px; font-size: 1.2rem; background: rgba(0,0,0,0.9); padding: 10px 30px; border: 1px solid #020; display: none; z-index: 5; letter-spacing: 2px; }
-        .stat-line { font-size: 0.7rem; color: #444; margin-top: 5px; text-align: center; }
+        .team-panel { border: 1px solid rgba(255,255,255,0.05); padding: 10px; background: rgba(255,255,255,0.02); }
+        
+        h1 { font-size: 1.5rem; letter-spacing: 5px; text-shadow: 0 0 15px var(--neon); }
+        
+        select, button { 
+            background: #111; color: #fff; border: 1px solid #333; 
+            width: 100%; padding: 12px; font-family: monospace; margin-top: 5px; font-size: 14px;
+        }
+        
+        .btn-start { 
+            background: var(--neon); color: #000; font-weight: 800; 
+            padding: 15px; letter-spacing: 3px; border: none; cursor: pointer;
+        }
+
+        #ui { 
+            position: absolute; top: 10px; font-size: 1.2rem;
+            background: rgba(0,0,0,0.8); padding: 5px 20px; border-radius: 20px;
+            display: none; z-index: 15; border: 1px solid rgba(0,255,136,0.2);
+        }
+
+        .mobile-hint { font-size: 0.6rem; color: #444; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div id="ui">
-        [<span id="modeDisp">STD</span>] <span id="s1" style="color:var(--alpha)">0</span> : <span id="s2" style="color:var(--neon-p)">0</span>
-        <div id="match-log" style="font-size: 0.6rem; color: #666; text-align: center; margin-top: 5px;">SYSTEM_STABLE</div>
+        <span id="s1" style="color:var(--alpha)">0</span> 
+        <span style="color:#444;"> : </span> 
+        <span id="s2" style="color:var(--neon-p)">0</span>
     </div>
 
     <div id="menu" class="menu">
-        <h1 style="letter-spacing: 8px; margin-bottom: 5px;">NEON_PONG.EXE <span style="font-size: 0.8rem; vertical-align: middle;">v2.0_OVERLOAD</span></h1>
-        <p style="font-size: 0.7rem; color: #555; margin-bottom: 20px;">STRESS_TESTING_QUANTUM_AI_CORES</p>
-        
+        <h1>NEON_PONG</h1>
         <div class="config-grid">
             <div class="team-panel">
-                <h3 style="color:var(--neon)">SIM_TYPE</h3>
+                <h3 style="color:var(--neon); font-size: 0.7rem;">MODE</h3>
                 <select id="gameMode">
-                    <option value="STD">STANDARD_DUAL</option>
-                    <option value="SURVIVAL">HELL_MODE (RAMP)</option>
-                    <option value="BOSS">CORE_FIGHT (1vs4)</option>
-                </select>
-                <div class="stat-line">P1:W/S | P2:R/F | P3:UP/DN</div>
-            </div>
-
-            <div class="team-panel">
-                <h3 style="color:var(--alpha)">ALPHA_SECTOR</h3>
-                <select id="L1">
-                    <option value="ALPHA">ALPHA_BOT (ELITE)</option>
-                    <option value="PLAYER">HUMAN_CORE</option>
-                    <option value="OMNI">OMNI_BOT</option>
-                    <option value="BETA">BETA_BOT</option>
-                </select>
-                <select id="L2">
-                    <option value="NONE">-- EMPTY --</option>
-                    <option value="NEON">NEON_BOT</option>
-                    <option value="PLAYER">HUMAN_CORE</option>
+                    <option value="STD">DUAL_SIM</option>
+                    <option value="SURVIVAL">HELL_MODE</option>
+                    <option value="BOSS">KING_1v4</option>
                 </select>
             </div>
-
             <div class="team-panel">
-                <h3 style="color:var(--neon-p)">BETA_SECTOR</h3>
-                <select id="R1">
-                    <option value="OMNI">OMNI_BOT</option>
-                    <option value="ALPHA">ALPHA_BOT (ELITE)</option>
-                    <option value="PLAYER">HUMAN_CORE</option>
-                    <option value="NEON">NEON_BOT</option>
-                </select>
-                <select id="R2">
-                    <option value="NONE">-- EMPTY --</option>
-                    <option value="BETA">BETA_BOT</option>
-                    <option value="TANK">TANK_BOT</option>
-                </select>
+                <h3 style="color:var(--alpha); font-size: 0.7rem;">LEFT_CORES</h3>
+                <select id="L1" class="bot-sel"></select>
+                <select id="L2" class="bot-sel"></select>
+            </div>
+            <div class="team-panel">
+                <h3 style="color:var(--neon-p); font-size: 0.7rem;">RIGHT_CORES</h3>
+                <select id="R1" class="bot-sel"></select>
+                <select id="R2" class="bot-sel"></select>
             </div>
         </div>
-
-        <button class="btn-start" onclick="initGame()">INITIALIZE BOOT SEQUENCE</button>
+        <button class="btn-start" onclick="initGame()">BOOT_CORE</button>
+        <div class="mobile-hint">PC: WASD/Arrows | MOBILE: Touch Sides</div>
     </div>
 
-    <canvas id="pong" width="1200" height="500"></canvas>
+    <canvas id="pong" width="1200" height="600"></canvas>
 
 <script>
     const canvas = document.getElementById('pong');
     const ctx = canvas.getContext('2d');
     let score = { p1: 0, p2: 0 }, keys = {};
-    let gameActive = false, units = [], particles = [], balls = [], powerups = [];
-    let curMode = "STD", frameCount = 0;
+    let touchPos = { L: null, R: null };
+    let gameActive = false, units = [], particles = [], balls = [], frameCount = 0;
 
     const TYPES = {
-        ALPHA:  { speed: 11, jitter: 0, color: '#00ffff', h: 80, predict: true, aura: true },
-        BETA:   { speed: 6.5, jitter: 12, color: '#00aa66', h: 85, predict: true, aura: false },
-        NEON:   { speed: 16, jitter: 6, color: '#ff00ff', h: 65, predict: true, trail: true },
-        OMNI:   { speed: 7.5, jitter: 2, color: '#0f0', h: 80, predict: true, aura: false },
-        TANK:   { speed: 4, jitter: 0, color: '#0cf', h: 180, predict: false, aura: false },
-        PLAYER: { speed: 10, jitter: 0, color: '#fff', h: 80, predict: false, aura: false }
+        ALPHA:  { speed: 12, jitter: 0, color: '#00ffff', h: 80, predict: true },
+        NEON:   { speed: 18, jitter: 4, color: '#ff00ff', h: 60, predict: true },
+        BETA:   { speed: 7, jitter: 12, color: '#00aa66', h: 85, predict: true },
+        OMNI:   { speed: 8.5, jitter: 1, color: '#0f0', h: 80, predict: true },
+        TANK:   { speed: 5, jitter: 0, color: '#0cf', h: 180, predict: false },
+        KING:   { speed: 14, jitter: 0, color: '#f33', h: 350, predict: true },
+        PLAYER: { speed: 12, jitter: 0, color: '#fff', h: 80, predict: false }
     };
 
+    // Populate Menus
+    document.querySelectorAll('.bot-sel').forEach(sel => {
+        Object.keys(TYPES).forEach(k => { if(k!=='KING') sel.add(new Option(k+(k==='PLAYER'?'_USER':'_BOT'), k)); });
+        if(sel.id.includes('2')) { sel.prepend(new Option("--EMPTY--", "NONE")); sel.value = "NONE"; }
+    });
+
+    // Inputs
     window.onkeydown = e => keys[e.code] = true;
     window.onkeyup = e => keys[e.code] = false;
+    
+    canvas.addEventListener('touchstart', handleTouch, {passive: false});
+    canvas.addEventListener('touchmove', handleTouch, {passive: false});
+    canvas.addEventListener('touchend', e => { touchPos = { L: null, R: null }; });
+
+    function handleTouch(e) {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        for(let t of e.touches) {
+            let x = (t.clientX - rect.left) / rect.width * 1200;
+            let y = (t.clientY - rect.top) / rect.height * 600;
+            if(x < 600) touchPos.L = y; else touchPos.R = y;
+        }
+    }
 
     function initGame() {
-        units = []; balls = []; powerups = []; particles = [];
-        curMode = document.getElementById('gameMode').value;
-        
-        const config = {
-            L: [document.getElementById('L1').value, document.getElementById('L2').value],
-            R: [document.getElementById('R1').value, document.getElementById('R2').value]
-        };
+        units = []; balls = []; particles = [];
+        let mode = document.getElementById('gameMode').value;
+        const config = { L: [document.getElementById('L1').value, document.getElementById('L2').value], R: [document.getElementById('R1').value, document.getElementById('R2').value] };
 
-        if(curMode === "BOSS") {
-            units.push({ x: 1150, y: 100, side: 'R', type: 'ALPHA', h: 320, w: 25, speed: 3.5, color: '#f33', id: 'BOSS', targetY: 250 });
-            config.L.forEach((type, i) => {
-                if(type === 'NONE') return;
-                let t = TYPES[type];
-                units.push({ x: i === 0 ? 30 : 250, y: 200, side: 'L', type, h: t.h, w: 12, speed: t.speed, color: t.color, targetY: 250, id: 'L'+(i+1) });
-            });
+        if(mode === "BOSS") {
+            units.push({ x: 1150, y: 125, side: 'R', type: 'KING', h: 350, w: 25, speed: 5, color: '#f33', id: 'BOSS' });
+            config.L.forEach((t, i) => { if(t!=='NONE') units.push({ x: i===0?30:250, y: 250, side:'L', type:t, h:TYPES[t].h, w:12, speed:TYPES[t].speed, color:TYPES[t].color, id:'L'+i }); });
         } else {
-            ['L', 'R'].forEach(side => {
-                config[side].forEach((type, i) => {
-                    if (type === 'NONE') return;
-                    let t = TYPES[type];
-                    let x = (side === 'L') ? (i === 0 ? 30 : 250) : (i === 0 ? 1158 : 938);
-                    units.push({ x, y: 200, side, type, h: t.h, w: 12, speed: t.speed, color: t.color, targetY: 250, id: side + (i + 1) });
-                });
-            });
+            ['L','R'].forEach(s => config[s].forEach((t,i) => { 
+                if(t!=='NONE') units.push({ x: s==='L'?(i===0?30:250):(i===0?1158:938), y: 250, side: s, type: t, h: TYPES[t].h, w: 12, speed: TYPES[t].speed, color: TYPES[t].color, id: s+i });
+            }));
         }
 
         document.getElementById('menu').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
-        document.getElementById('modeDisp').innerText = curMode;
         canvas.style.display = 'block';
         gameActive = true;
         spawnBall();
@@ -140,136 +154,62 @@
     }
 
     function spawnBall() {
-        let speed = curMode === "SURVIVAL" ? 9 + (score.p1 + score.p2)*0.5 : 9;
-        balls.push({
-            x: 600, y: 250, size: 10, speed,
-            vx: (Math.random() > 0.5 ? speed : -speed),
-            vy: (Math.random() - 0.5) * 8
-        });
-    }
-
-    function predict(u, b) {
-        if (!TYPES[u.type]?.predict) return b.y;
-        if ((u.side === 'L' && b.vx > 0) || (u.side === 'R' && b.vx < 0)) return 250;
-        
-        let tx = b.x, ty = b.y, tvy = b.vy;
-        let iter = 0;
-        while (u.side === 'L' ? tx > u.x : tx < u.x) {
-            tx += b.vx; ty += tvy;
-            if (ty <= 0 || ty >= 490) tvy *= -1;
-            if (iter++ > 100) break;
-        }
-        return ty;
+        let s = 10 + (score.p1 + score.p2)*0.2;
+        balls.push({ x: 600, y: 300, vx: Math.random()>0.5?s:-s, vy: (Math.random()-0.5)*10, size: 10, speed: s });
     }
 
     function update() {
         frameCount++;
-        if (frameCount % 400 === 0) {
-            powerups.push({ x: 300 + Math.random()*600, y: 100 + Math.random()*300, type: ['MULTI', 'EMP', 'GLITCH'][Math.floor(Math.random()*3)], life: 400 });
-        }
-
         units.forEach(u => {
-            if (u.freeze > 0) { u.freeze--; return; }
-            
-            if (u.type === 'PLAYER') {
-                if (u.id === 'L1' && keys['KeyW']) u.y -= u.speed;
-                if (u.id === 'L1' && keys['KeyS']) u.y += u.speed;
-                if (u.id === 'R1' && keys['ArrowUp']) u.y -= u.speed;
-                if (u.id === 'R1' && keys['ArrowDown']) u.y += u.speed;
+            if(u.type === 'PLAYER') {
+                if(u.side === 'L') {
+                    if(keys['KeyW'] || (touchPos.L && touchPos.L < u.y + u.h/2)) u.y -= u.speed;
+                    if(keys['KeyS'] || (touchPos.L && touchPos.L > u.y + u.h/2)) u.y += u.speed;
+                } else {
+                    if(keys['ArrowUp'] || (touchPos.R && touchPos.R < u.y + u.h/2)) u.y -= u.speed;
+                    if(keys['ArrowDown'] || (touchPos.R && touchPos.R > u.y + u.h/2)) u.y += u.speed;
+                }
             } else {
-                let targetBall = balls[0]; 
-                u.targetY = predict(u, targetBall);
-                let drift = (Math.random() - 0.5) * (TYPES[u.type]?.jitter || 0);
-                
-                let center = u.y + u.h/2;
-                if (center < u.targetY + drift - 5) u.y += u.speed;
-                else if (center > u.targetY + drift + 5) u.y -= u.speed;
+                let b = balls[0];
+                let ty = (u.side==='L'&&b.vx>0) || (u.side==='R'&&b.vx<0) ? 300 : b.y;
+                let drift = (Math.random()-0.5) * (TYPES[u.type].jitter || 0);
+                if(u.y+u.h/2 < ty + drift) u.y += u.speed;
+                else if(u.y+u.h/2 > ty + drift) u.y -= u.speed;
             }
-            u.y = Math.max(0, Math.min(500 - u.h, u.y));
+            u.y = Math.max(0, Math.min(600-u.h, u.y));
         });
-
-        balls.forEach((b, bi) => {
-            b.x += b.vx; b.y += b.vy;
-            if (b.y <= 0 || b.y >= 490) b.vy *= -1;
-
-            powerups.forEach((p, pi) => {
-                if (Math.hypot(b.x - p.x, b.y - p.y) < 35) {
-                    if (p.type === 'MULTI') spawnBall();
-                    if (p.type === 'EMP') units.filter(u => u.side !== (b.vx > 0 ? 'L' : 'R')).forEach(u => u.freeze = 120);
-                    powerups.splice(pi, 1);
-                }
-            });
-
-            units.forEach(u => {
-                if (b.x < u.x + u.w && b.x + b.size > u.x && b.y < u.y + u.h && b.y + b.size > u.y) {
-                    b.vx = (u.side === 'L' ? 1 : -1) * Math.abs(b.speed);
-                    b.vy = (b.y - (u.y + u.h/2)) * 0.35;
-                    b.speed = Math.min(b.speed + 0.3, 22);
-                    // Hit particles
-                    for(let i=0; i<5; i++) particles.push({x:b.x, y:b.y, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, life:1, color:u.color});
-                }
-            });
-
-            if (b.x < 0) { score.p2++; reset(); }
-            else if (b.x > 1200) { score.p1++; reset(); }
-        });
-
-        particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.04; if(p.life <= 0) particles.splice(i, 1); });
-    }
-
-    function reset() {
-        document.getElementById('s1').innerText = score.p1;
-        document.getElementById('s2').innerText = score.p2;
-        balls = []; spawnBall();
-    }
-
-    function draw() {
-        ctx.fillStyle = 'rgba(0, 8, 0, 0.3)';
-        ctx.fillRect(0, 0, 1200, 500);
-
-        // Grid lines
-        ctx.strokeStyle = '#010'; ctx.lineWidth = 1;
-        for(let i=0; i<1200; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,500); ctx.stroke(); }
-
-        powerups.forEach(p => {
-            ctx.shadowBlur = 15; ctx.shadowColor = '#fff';
-            ctx.fillStyle = '#fff'; ctx.fillRect(p.x, p.y, 20, 20);
-            ctx.shadowBlur = 0;
-        });
-
-        units.forEach(u => {
-            ctx.shadowBlur = TYPES[u.type].aura ? 30 : 10;
-            ctx.shadowColor = u.color;
-            ctx.fillStyle = u.freeze > 0 ? '#444' : u.color;
-            
-            if(TYPES[u.type].trail) {
-                ctx.strokeStyle = u.color;
-                ctx.strokeRect(u.x - 4, u.y - 4, u.w + 8, u.h + 8);
-            }
-
-            ctx.fillRect(u.x, u.y, u.w, u.h);
-        });
-
-        particles.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.globalAlpha = p.life;
-            ctx.fillRect(p.x, p.y, 3, 3);
-        });
-        ctx.globalAlpha = 1;
 
         balls.forEach(b => {
-            ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(b.x, b.y, b.size, b.size);
+            b.x += b.vx; b.y += b.vy;
+            if(b.y<=0 || b.y>=590) b.vy *= -1;
+            units.forEach(u => {
+                if(b.x < u.x+u.w && b.x+b.size > u.x && b.y < u.y+u.h && b.y+b.size > u.y) {
+                    b.vx = (u.side==='L'?1:-1) * Math.abs(b.speed);
+                    b.vy = (b.y - (u.y+u.h/2)) * 0.4;
+                    b.speed += 0.2;
+                }
+            });
+            if(b.x < 0) { score.p2++; reset(); }
+            if(b.x > 1200) { score.p1++; reset(); }
         });
-        ctx.shadowBlur = 0;
     }
 
-    function loop() {
-        if (!gameActive) return;
-        update(); draw();
-        requestAnimationFrame(loop);
+    function reset() { balls = []; spawnBall(); document.getElementById('s1').innerText = score.p1; document.getElementById('s2').innerText = score.p2; }
+
+    function draw() {
+        ctx.fillStyle = '#000'; ctx.fillRect(0,0,1200,600);
+        ctx.strokeStyle = 'rgba(0,255,0,0.1)'; ctx.strokeRect(600,0,1,600);
+        units.forEach(u => {
+            ctx.shadowBlur = 15; ctx.shadowColor = u.color; ctx.fillStyle = u.color;
+            ctx.fillRect(u.x, u.y, u.w, u.h);
+        });
+        balls.forEach(b => {
+            ctx.shadowBlur = 10; ctx.shadowColor = '#fff'; ctx.fillStyle = '#fff';
+            ctx.fillRect(b.x, b.y, b.size, b.size);
+        });
     }
+
+    function loop() { if(!gameActive) return; update(); draw(); requestAnimationFrame(loop); }
 </script>
 </body>
 </html>
