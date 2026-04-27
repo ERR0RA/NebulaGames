@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA OS | v17.0 ULTIMATE</title>
+    <title>NEBULA OS | v18.0 OMNI-REACH</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -11,7 +11,7 @@
     <style>
         :root {
             --primary: #00ff88; --primary-rgb: 0, 255, 136;
-            --bg: #010204; --glass: rgba(15, 20, 28, 0.85);
+            --bg: #010204; --glass: rgba(15, 20, 28, 0.9);
             --border: rgba(255, 255, 255, 0.1);
             --text-main: #f8fafc; --text-dim: #94a3b8;
         }
@@ -23,74 +23,52 @@
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; cursor: default; }
         body { background-color: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        /* --- DESKTOP LAYOUT --- */
-        .desktop { height: calc(100vh - 140px); padding: 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); grid-auto-rows: 100px; gap: 20px; overflow-y: auto; }
+        /* --- DESKTOP GRID --- */
+        .desktop { height: calc(100vh - 140px); padding: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); grid-auto-rows: 105px; gap: 15px; overflow-y: auto; }
         .app-node { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; padding: 10px; border-radius: 15px; text-align: center; }
-        .app-node:hover { background: rgba(255,255,255,0.05); transform: translateY(-3px); }
+        .app-node:hover { background: rgba(255,255,255,0.05); transform: scale(1.05); }
         .icon-box { width: 55px; height: 55px; border-radius: 16px; background: #0a0c10; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--primary); transition: 0.3s; }
         .app-node:hover .icon-box { border-color: var(--primary); box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.4); }
 
-        /* --- SIDEBAR WIDGETS --- */
-        .widgets { position: fixed; right: 20px; top: 80px; width: 220px; display: flex; flex-direction: column; gap: 15px; z-index: 5000; }
-        .widget-card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 15px; backdrop-filter: blur(20px); }
-        .stat-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 8px; overflow: hidden; }
-        .stat-fill { height: 100%; background: var(--primary); width: 45%; transition: 0.5s; }
-
-        /* --- WINDOW SYSTEM --- */
-        .os-window { position: absolute; background: var(--glass); border: 1px solid var(--border); border-radius: 24px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); backdrop-filter: blur(40px); display: flex; flex-direction: column; overflow: hidden; }
-        .win-bar { height: 45px; background: rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; cursor: move; }
+        /* --- WINDOWS --- */
+        .os-window { position: absolute; background: var(--glass); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); backdrop-filter: blur(40px); display: flex; flex-direction: column; overflow: hidden; }
+        .win-bar { height: 45px; background: rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; cursor: move; }
         .win-body { flex: 1; background: #000; position: relative; }
-        .win-dot { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+        .win-btn { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; margin-left: 8px; }
+
+        /* --- INTERNAL APPS UI --- */
+        .cmd-ui { padding: 20px; font-family: 'Fira Code'; font-size: 0.85rem; color: var(--primary); height: 100%; display: flex; flex-direction: column; }
+        .cmd-log { flex: 1; overflow-y: auto; margin-bottom: 10px; }
+        .cmd-input { background: transparent; border: none; color: #fff; outline: none; width: 100%; font-family: 'Fira Code'; }
 
         /* --- TASKBAR --- */
-        #footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); height: 70px; background: rgba(10, 15, 20, 0.9); border: 1px solid var(--border); border-radius: 25px; backdrop-filter: blur(30px); display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 10000; }
-        .task-btn { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: var(--primary); transition: 0.3s; cursor: pointer; }
-        .task-btn:hover { background: rgba(var(--primary-rgb), 0.15); transform: translateY(-5px); }
-
-        /* --- SEARCH --- */
-        #search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .search-container { width: 500px; background: var(--glass); border: 1px solid var(--primary); padding: 25px; border-radius: 24px; }
-        .search-input { width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--primary); color: white; font-size: 1.5rem; padding: 10px; outline: none; font-family: 'Fira Code'; }
+        #footer { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); height: 65px; background: rgba(10, 15, 20, 0.9); border: 1px solid var(--border); border-radius: 20px; backdrop-filter: blur(30px); display: flex; align-items: center; padding: 0 15px; gap: 8px; z-index: 10000; }
+        .task-btn { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--primary); transition: 0.2s; cursor: pointer; }
+        .task-btn:hover { background: rgba(var(--primary-rgb), 0.1); transform: translateY(-5px); }
     </style>
 </head>
 <body class="theme-cyber">
 
-    <div id="search-overlay" onclick="this.style.display='none'">
-        <div class="search-container" onclick="event.stopPropagation()">
-            <input type="text" class="search-input" placeholder="Search Neural Link..." oninput="Kernel.filterApps(this.value)">
-            <div id="search-results" style="margin-top: 20px; max-height: 300px; overflow-y: auto;"></div>
+    <nav style="height: 55px; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: space-between; padding: 0 25px; border-bottom: 1px solid var(--border); z-index: 20000;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <i data-lucide="layout" style="color:var(--primary)"></i>
+            <span style="font-weight:900; letter-spacing:1px; font-size:0.8rem;">NEBULA <span style="color:var(--primary)">v18</span></span>
         </div>
-    </div>
-
-    <nav style="height: 60px; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 1px solid var(--border); z-index: 20000;">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <i data-lucide="shield-check" style="color:var(--primary)"></i>
-            <span style="font-weight:900; letter-spacing:2px; font-size:0.9rem;">NEBULA <span style="color:var(--primary)">OS</span></span>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <input type="text" id="desktop-search" placeholder="Search Apps..." oninput="Kernel.searchDesktop(this.value)" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:white; padding:5px 12px; border-radius:8px; outline:none; font-size:0.7rem;">
+            <div id="clock" style="font-family:'Fira Code'; font-size:0.75rem;">00:00:00</div>
         </div>
-        <div id="os-clock" style="font-family:'Fira Code'; font-weight:600; font-size:0.85rem;">00:00:00</div>
     </nav>
-
-    <div class="widgets">
-        <div class="widget-card">
-            <div style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase;">Neural Load</div>
-            <div style="font-size:1.1rem; font-weight:800; margin-top:5px;" id="cpu-val">24%</div>
-            <div class="stat-bar"><div class="stat-fill" id="cpu-fill"></div></div>
-        </div>
-        <div class="widget-card">
-            <div style="font-size:0.6rem; color:var(--text-dim); text-transform:uppercase;">Core Temp</div>
-            <div style="font-size:1.1rem; font-weight:800; margin-top:5px; color:#ff4e00;">42°C</div>
-        </div>
-    </div>
 
     <main class="desktop" id="desktop-view"></main>
 
     <div id="window-layer"></div>
 
     <div id="footer">
-        <div class="task-btn" onclick="document.getElementById('search-overlay').style.display='flex'"><i data-lucide="search"></i></div>
-        <div class="task-btn" onclick="Kernel.launch('term')"><i data-lucide="terminal"></i></div>
-        <div style="width:1px; height:35px; background:var(--border); margin:0 5px;"></div>
-        <div id="active-tasks" style="display:flex; gap:8px;"></div>
+        <div class="task-btn" onclick="Kernel.launch('cmd')"><i data-lucide="terminal"></i></div>
+        <div class="task-btn" onclick="location.reload()"><i data-lucide="refresh-cw"></i></div>
+        <div style="width:1px; height:30px; background:var(--border); margin:0 5px;"></div>
+        <div id="running-apps" style="display:flex; gap:8px;"></div>
     </div>
 
     <script>
@@ -118,7 +96,7 @@
                 { id: "drive", n: "Overdrive", f: "overdrive.html", i: "gauge" },
                 { id: "trail", n: "Neon Trail", f: "neon-trail.html", i: "wind" },
                 { id: "basket", n: "Basket Ball", f: "basketball.html", i: "circle" },
-                { id: "term", n: "Terminal", f: "terminal.html", i: "terminal" },
+                { id: "cmd", n: "Command Line", f: "internal_cmd", i: "terminal" },
                 { id: "sys", n: "Sys Monitor", f: "monitor.html", i: "cpu" },
                 { id: "files", n: "Explorer", f: "files.html", i: "folder" },
                 { id: "note", n: "Notepad", f: "notes.html", i: "edit-3" },
@@ -126,24 +104,30 @@
             ],
 
             boot() {
+                this.renderDesktop(this.apps);
+                lucide.createIcons();
+                setInterval(() => {
+                    document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+                }, 1000);
+            },
+
+            renderDesktop(appArray) {
                 const dv = document.getElementById('desktop-view');
-                dv.innerHTML = this.apps.map(app => `
-                    <div class="app-node" onclick="Kernel.launch('${app.id}')">
+                dv.innerHTML = appArray.map(app => `
+                    <div class="app-node" onclick="Kernel.launch('${app.id}')" data-name="${app.n.toLowerCase()}">
                         <div class="icon-box"><i data-lucide="${app.i}"></i></div>
-                        <div style="font-size:0.65rem; font-weight:700;">${app.n}</div>
+                        <div style="font-size:0.6rem; font-weight:700;">${app.n}</div>
                     </div>
                 `).join('');
                 lucide.createIcons();
-                this.updateStats();
             },
 
-            updateStats() {
-                setInterval(() => {
-                    document.getElementById('os-clock').innerText = new Date().toLocaleTimeString();
-                    const load = Math.floor(Math.random() * 30) + 10;
-                    document.getElementById('cpu-val').innerText = load + '%';
-                    document.getElementById('cpu-fill').style.width = load + '%';
-                }, 1000);
+            searchDesktop(query) {
+                const nodes = document.querySelectorAll('.app-node');
+                nodes.forEach(node => {
+                    const match = node.getAttribute('data-name').includes(query.toLowerCase());
+                    node.style.display = match ? 'flex' : 'none';
+                });
             },
 
             launch(id) {
@@ -151,19 +135,51 @@
                 const app = this.apps.find(a => a.id === id);
                 
                 const winHtml = `
-                    <div class="os-window" id="win-${id}" style="width:800px; height:500px; left:150px; top:100px; z-index:${++this.zIndex}" onmousedown="Kernel.focus('win-${id}')">
+                    <div class="os-window" id="win-${id}" style="width:750px; height:480px; left:120px; top:80px; z-index:${++this.zIndex}" onmousedown="Kernel.focus('win-${id}')">
                         <div class="win-bar" onmousedown="Kernel.drag(event, 'win-${id}')">
                             <span style="font-size:0.7rem; font-weight:800; color:var(--primary);">${app.n.toUpperCase()}</span>
-                            <div class="win-dot" style="background:#ff5f57" onclick="Kernel.close('win-${id}')"></div>
+                            <div style="display:flex;">
+                                <div class="win-btn" style="background:#ffbc2e" onclick="Kernel.minimize('win-${id}')"></div>
+                                <div class="win-btn" style="background:#ff5f57" onclick="Kernel.close('win-${id}')"></div>
+                            </div>
                         </div>
-                        <div class="win-body"><iframe src="${app.f}" style="width:100%; height:100%; border:none;"></iframe></div>
+                        <div class="win-body">${this.getAppUI(app)}</div>
                     </div>`;
                 document.getElementById('window-layer').insertAdjacentHTML('beforeend', winHtml);
                 this.updateTaskbar();
             },
 
-            focus(id) { document.getElementById(id).style.zIndex = ++this.zIndex; },
-            close(id) { document.getElementById(id).remove(); this.updateTaskbar(); },
+            getAppUI(app) {
+                if(app.f === 'internal_cmd') {
+                    return `<div class="cmd-ui">
+                        <div class="cmd-log" id="cmd-log">NEBULA_OS READY. Type 'help' to start.</div>
+                        <div style="display:flex; gap:5px;"><span>></span><input class="cmd-input" onkeydown="Kernel.runCmd(event, this)"></div>
+                    </div>`;
+                }
+                return `<iframe src="${app.f}" style="width:100%; height:100%; border:none;"></iframe>`;
+            },
+
+            runCmd(e, input) {
+                if(e.key === 'Enter') {
+                    const cmd = input.value.toLowerCase().trim();
+                    const log = document.getElementById('cmd-log');
+                    const line = document.createElement('div');
+                    
+                    if(cmd === 'help') line.innerText = "COMMANDS: theme [lava/cyber/amethyst], cls, alert [msg], exit";
+                    else if(cmd.startsWith('theme ')) {
+                        const t = 'theme-' + cmd.split(' ')[1];
+                        document.body.className = t;
+                        line.innerText = "Applying theme: " + t;
+                    }
+                    else if(cmd === 'cls') { log.innerHTML = "SYSTEM CLEARED."; input.value = ""; return; }
+                    else if(cmd.startsWith('alert ')) { alert(cmd.replace('alert ', '')); line.innerText = "Alert sent."; }
+                    else line.innerText = "Unknown command: " + cmd;
+
+                    log.appendChild(line);
+                    input.value = "";
+                    log.scrollTop = log.scrollHeight;
+                }
+            },
 
             drag(e, id) {
                 const el = document.getElementById(id);
@@ -173,12 +189,16 @@
                 document.addEventListener('mouseup', () => document.removeEventListener('mousemove', move), {once:true});
             },
 
+            focus(id) { document.getElementById(id).style.zIndex = ++this.zIndex; },
+            close(id) { document.getElementById(id).remove(); this.updateTaskbar(); },
+            minimize(id) { document.getElementById(id).style.display = 'none'; },
+
             updateTaskbar() {
-                const list = document.getElementById('active-tasks');
+                const taskArea = document.getElementById('running-apps');
                 const wins = document.querySelectorAll('.os-window');
-                list.innerHTML = Array.from(wins).map(w => {
+                taskArea.innerHTML = Array.from(wins).map(w => {
                     const app = this.apps.find(a => a.id === w.id.replace('win-', ''));
-                    return `<div class="task-btn" onclick="Kernel.focus('${w.id}')"><i data-lucide="${app.i}"></i></div>`;
+                    return `<div class="task-btn" onclick="document.getElementById('${w.id}').style.display='flex'; Kernel.focus('${w.id}')"><i data-lucide="${app.i}"></i></div>`;
                 }).join('');
                 lucide.createIcons();
             }
