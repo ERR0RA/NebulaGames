@@ -3,69 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA OS | v10.0 MULTI-THEME</title>
+    <title>NEBULA OS | v10.5 ULTIMATE</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         :root {
-            --primary: #00ff88;
-            --primary-rgb: 0, 255, 136;
-            --bg: #020305;
-            --glass: rgba(10, 12, 16, 0.85);
+            --primary: #00ff88; --primary-rgb: 0, 255, 136;
+            --bg: #020305; --glass: rgba(10, 12, 16, 0.85);
             --border: rgba(255, 255, 255, 0.1);
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
+            --text-main: #f8fafc; --text-dim: #94a3b8;
         }
 
-        /* --- THEME PRESETS --- */
+        /* --- THEME ENGINE --- */
         body.theme-cyber { --primary: #00f2ff; --primary-rgb: 0, 242, 255; }
         body.theme-amethyst { --primary: #bf00ff; --primary-rgb: 191, 0, 255; }
         body.theme-crimson { --primary: #ff3333; --primary-rgb: 255, 51, 51; }
         body.theme-gold { --primary: #ffcc00; --primary-rgb: 255, 204, 0; }
-        body.theme-mono { --primary: #ffffff; --primary-rgb: 255, 255, 255; }
+        body.theme-lava { --primary: #ff4e00; --primary-rgb: 255, 78, 0; }
+        body.theme-midnight { --primary: #5271ff; --primary-rgb: 82, 113, 255; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background-color: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; flex-direction: column; transition: 0.3s; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; outline: none; }
+        body { background-color: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; flex-direction: column; }
 
-        .desktop-bg { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at center, rgba(var(--primary-rgb), 0.05), transparent 70%); }
+        .desktop-bg { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at center, rgba(var(--primary-rgb), 0.08), transparent 70%); }
 
         /* --- AUTH --- */
-        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
-        .auth-box { background: var(--glass); border: 1px solid var(--border); padding: 40px; border-radius: 30px; text-align: center; width: 350px; backdrop-filter: blur(20px); }
-        .auth-input { width: 100%; padding: 15px; border-radius: 12px; background: #000; border: 1px solid var(--border); color: white; margin-bottom: 12px; text-align: center; font-family: 'Fira Code'; }
-        .auth-btn { width: 100%; padding: 15px; border-radius: 12px; background: var(--primary); color: #000; font-weight: 800; border: none; cursor: pointer; }
+        #auth-screen { position: fixed; inset: 0; background: #000; z-index: 20000; display: flex; align-items: center; justify-content: center; }
+        .auth-box { background: var(--glass); border: 1px solid var(--border); padding: 40px; border-radius: 30px; text-align: center; width: 350px; backdrop-filter: blur(25px); }
+        .auth-input { width: 100%; padding: 15px; border-radius: 12px; background: #000; border: 1px solid var(--border); color: white; margin-bottom: 12px; text-align: center; font-family: 'Fira Code'; font-size: 1rem; }
+        .auth-btn { width: 100%; padding: 15px; border-radius: 12px; background: var(--primary); color: #000; font-weight: 800; border: none; cursor: pointer; transition: 0.3s; }
+        .auth-btn:hover { box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.4); transform: translateY(-2px); }
 
         /* --- NAV --- */
-        nav { height: 50px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 1000; }
-        .theme-sel { background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 5px; border-radius: 5px; font-size: 0.7rem; cursor: pointer; outline: none; }
-        .theme-sel option { background: #000; color: #fff; }
+        nav { height: 50px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 10000; }
+        .theme-sel { background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; cursor: pointer; font-family: 'Fira Code'; }
 
         /* --- GRID --- */
-        .main-stage { flex: 1; padding: 25px; position: relative; overflow-y: auto; }
-        .grid-engine { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
-        .app-icon { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; cursor: pointer; transition: 0.2s; border-radius: 15px; }
-        .app-icon:hover { background: rgba(255,255,255,0.05); transform: scale(1.05); }
-        .icon-visual { width: 55px; height: 55px; border-radius: 14px; background: #111; display: flex; align-items: center; justify-content: center; color: var(--primary); border: 1px solid var(--border); box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.1); }
-        .app-label { font-size: 0.75rem; text-align: center; }
+        .main-stage { flex: 1; padding: 40px; position: relative; overflow-y: auto; padding-bottom: 100px; }
+        .grid-engine { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 30px; max-width: 1400px; margin: 0 auto; }
+        .app-icon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 15px; cursor: pointer; transition: 0.2s; border-radius: 20px; text-align: center; }
+        .app-icon:hover { background: rgba(255,255,255,0.07); transform: translateY(-5px); }
+        .icon-visual { width: 60px; height: 60px; border-radius: 16px; background: #111; display: flex; align-items: center; justify-content: center; color: var(--primary); border: 1px solid var(--border); transition: 0.3s; }
+        .app-icon:hover .icon-visual { border-color: var(--primary); box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.2); }
+        .app-label { font-size: 0.75rem; font-weight: 600; color: var(--text-dim); }
 
         /* --- WINDOWS --- */
-        .os-window { position: absolute; min-width: 400px; min-height: 300px; background: var(--glass); border: 1px solid var(--border); border-radius: 15px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.6); backdrop-filter: blur(20px); overflow: hidden; }
-        .win-head { height: 40px; background: rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; cursor: grab; }
+        .os-window { position: absolute; min-width: 400px; min-height: 300px; background: var(--glass); border: 1px solid var(--border); border-radius: 18px; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,0.8); backdrop-filter: blur(30px); overflow: hidden; }
+        .win-head { height: 45px; background: rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; padding: 0 18px; cursor: grab; border-bottom: 1px solid var(--border); }
         .win-body { flex: 1; background: #000; position: relative; }
         iframe { width: 100%; height: 100%; border: none; }
-        .resizer { position: absolute; width: 15px; height: 15px; bottom: 0; right: 0; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, var(--primary) 50%); border-radius: 0 0 15px 0; }
+        .resizer { position: absolute; width: 15px; height: 15px; bottom: 0; right: 0; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, var(--primary) 50%); border-radius: 0 0 18px 0; }
+
+        /* --- TASKBAR --- */
+        #taskbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); height: 60px; background: rgba(10, 12, 16, 0.8); border: 1px solid var(--border); border-radius: 20px; backdrop-filter: blur(20px); display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 15000; }
+        .task-item { width: 40px; height: 40px; border-radius: 10px; background: #111; display: flex; align-items: center; justify-content: center; color: var(--primary); cursor: pointer; border: 1px solid var(--border); transition: 0.2s; }
+        .task-item:hover { transform: scale(1.1); background: #222; }
+
     </style>
 </head>
-<body class="theme-emerald">
+<body class="theme-cyber">
 
     <div id="auth-screen">
         <div class="auth-box">
-            <h2 style="letter-spacing: 2px; margin-bottom: 20px;">NEBULA_v10</h2>
-            <input type="text" id="user-input" class="auth-input" placeholder="USERNAME">
+            <i data-lucide="shield-check" style="width:50px; color:var(--primary); margin-bottom:15px;"></i>
+            <h2 style="letter-spacing: 3px; margin-bottom: 25px;">NEBULA SYSTEM</h2>
+            <input type="text" id="user-input" class="auth-input" placeholder="USERID">
             <input type="password" id="pin-input" class="auth-input" placeholder="PIN">
-            <button class="auth-btn" onclick="Auth.attemptLogin()">ACCESS</button>
+            <button class="auth-btn" onclick="Auth.attemptLogin()">INITIALIZE CORE</button>
         </div>
     </div>
 
@@ -73,19 +79,21 @@
 
     <nav>
         <div style="display:flex; align-items:center; gap:15px;">
-            <span style="font-weight:800; font-size:0.8rem; letter-spacing:1px;">NEBULA OS</span>
+            <i data-lucide="box" style="width:20px; color:var(--primary)"></i>
+            <span style="font-weight:800; font-size:0.9rem; letter-spacing:2px;">NEBULA<span style="color:var(--primary)">OS</span></span>
             <select class="theme-sel" onchange="System.setTheme(this.value)">
-                <option value="theme-emerald">Emerald</option>
-                <option value="theme-cyber">Cyber</option>
-                <option value="theme-amethyst">Amethyst</option>
-                <option value="theme-crimson">Crimson</option>
-                <option value="theme-gold">Gold</option>
-                <option value="theme-mono">Monochrome</option>
+                <option value="theme-cyber">Cyber Blue</option>
+                <option value="theme-emerald">Emerald Green</option>
+                <option value="theme-amethyst">Amethyst Purple</option>
+                <option value="theme-crimson">Crimson Red</option>
+                <option value="theme-gold">Golden Sun</option>
+                <option value="theme-lava">Volcanic Lava</option>
+                <option value="theme-midnight">Midnight Sky</option>
             </select>
         </div>
-        <div style="display:flex; gap:15px; align-items:center; font-family:'Fira Code'; font-size:0.75rem;">
-            <span id="user-display" style="color:var(--primary)"></span>
-            <span id="clock">00:00</span>
+        <div style="display:flex; gap:20px; align-items:center; font-family:'Fira Code'; font-size:0.75rem;">
+            <span id="user-display" style="opacity:0.6"></span>
+            <span id="clock" style="font-weight:bold;">00:00:00</span>
         </div>
     </nav>
 
@@ -94,43 +102,57 @@
         <div id="window-layer"></div>
     </main>
 
+    <div id="taskbar">
+        <div class="task-item" onclick="Kernel.minimizeAll()"><i data-lucide="layout"></i></div>
+        <div id="active-tasks" style="display:flex; gap:10px;"></div>
+    </div>
+
     <script>
         const Auth = {
             attemptLogin() {
-                const u = document.getElementById('user-input').value.toLowerCase().trim();
-                const p = document.getElementById('pin-input').value.trim();
+                const u = document.getElementById('user-input').value.trim();
+                const p = document.getElementById('pin-input').value;
                 if(u && p === "1234") {
                     document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('user-display').innerText = u.toUpperCase();
+                    document.getElementById('user-display').innerText = `ID: ${u.toUpperCase()}`;
                     Kernel.boot();
                 }
             }
         };
 
         const System = {
-            setTheme(cls) {
-                document.body.className = cls;
-            }
+            setTheme(cls) { document.body.className = cls; }
         };
 
         const Kernel = {
             zIndex: 100,
             apps: [
                 { id: "strike", n: "Cyber Strike", f: "Cyber-Strike.html", i: "zap" },
+                { id: "pong", n: "Neon Pong", f: "Neon-Pong.html", i: "activity" },
+                { id: "ai", n: "AI Core", f: "ai.html", i: "bot" },
+                { id: "drift", n: "Drift King", f: "drift.html", i: "navigation-2" },
+                { id: "snake", n: "Snake Pro", f: "snake.html", i: "trending-up" },
                 { id: "golf", n: "Neon Golf", f: "Neon-Golf.html", i: "target" },
                 { id: "hex", n: "Neon Hex", f: "Neon-Hex.html", i: "hexagon" },
-                { id: "pong", n: "Neon Pong", f: "Neon-Pong.html", i: "activity" },
                 { id: "slams", n: "Neon Slams", f: "Neon-Slams.html", i: "dribbble" },
                 { id: "slash", n: "Neon Slash", f: "Neon-Slash.html", i: "sword" },
-                { id: "ai", n: "AI Core", f: "ai.html", i: "bot" },
                 { id: "blast", n: "Block Blast", f: "blockblast.html", i: "grid" },
                 { id: "breaker", n: "Block Breaker", f: "blockbreaker.html", i: "layers" },
                 { id: "craft", n: "Block Craft", f: "blockcraft.html", i: "box" },
-                { id: "drift", n: "Drift King", f: "drift.html", i: "navigation-2" },
-                { id: "snake", n: "Snake Pro", f: "snake.html", i: "trending-up" },
+                { id: "cricket", n: "Cricket Pro", f: "cricket.html", i: "trophy" },
+                { id: "footy", n: "Football", f: "football.html", i: "award" },
+                { id: "mines", n: "Minesweeper", f: "minesweeper.html", i: "bomb" },
                 { id: "space", n: "Space Quest", f: "spaceadventure.html", i: "rocket" },
                 { id: "math", n: "Sparks Math", f: "sparksmaths.html", i: "divide" },
-                { id: "ttt", n: "Tic Tac Toe", f: "tictactoe.html", i: "x" }
+                { id: "ttt", n: "Tic Tac Toe", f: "tictactoe.html", i: "x" },
+                { id: "drive", n: "Overdrive", f: "overdrive.html", i: "gauge" },
+                { id: "trail", n: "Neon Trail", f: "neon-trail.html", i: "wind" },
+                { id: "basket", n: "Basket Ball", f: "basketball.html", i: "circle" },
+                { id: "term", n: "Terminal", f: "terminal.html", i: "terminal" },
+                { id: "sys", n: "Sys Monitor", f: "monitor.html", i: "cpu" },
+                { id: "files", n: "Explorer", f: "files.html", i: "folder" },
+                { id: "note", n: "Notepad", f: "notes.html", i: "edit-3" },
+                { id: "calc", n: "Calculator", f: "calc.html", i: "plus-square" }
             ],
 
             boot() {
@@ -142,26 +164,45 @@
                     </div>
                 `).join('');
                 lucide.createIcons();
-                setInterval(() => {
-                    document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                }, 1000);
+                this.updateClock();
+                setInterval(() => this.updateClock(), 1000);
+            },
+
+            updateClock() {
+                document.getElementById('clock').innerText = new Date().toLocaleTimeString();
             },
 
             launch(id) {
                 const app = this.apps.find(a => a.id === id);
                 const winId = `win-${id}`;
-                if(document.getElementById(winId)) return;
+                if(document.getElementById(winId)) return this.focus(winId);
 
                 const html = `
-                    <div class="os-window" id="${winId}" style="left:100px; top:100px; width:700px; height:450px; z-index:${++this.zIndex}" onmousedown="Kernel.focus('${winId}')">
+                    <div class="os-window" id="${winId}" style="left:120px; top:80px; width:800px; height:500px; z-index:${++this.zIndex}" onmousedown="Kernel.focus('${winId}')">
                         <div class="win-head" onmousedown="Kernel.drag(event, '${winId}')">
-                            <span style="font-size:0.7rem; font-weight:800; color:var(--primary)">${app.n.toUpperCase()}</span>
-                            <button onclick="document.getElementById('${winId}').remove()" style="background:#ff3333; border:none; width:10px; height:10px; border-radius:50%; cursor:pointer;"></button>
+                            <span style="font-size:0.75rem; font-weight:800; color:var(--primary); letter-spacing:1px;">${app.n.toUpperCase()}</span>
+                            <div style="display:flex; gap:8px;">
+                                <button onclick="Kernel.minimize('${winId}')" style="background:#febc2e; border:none; width:12px; height:12px; border-radius:50%; cursor:pointer;"></button>
+                                <button onclick="Kernel.close('${winId}', '${id}')" style="background:#ff3333; border:none; width:12px; height:12px; border-radius:50%; cursor:pointer;"></button>
+                            </div>
                         </div>
                         <div class="win-body"><iframe src="${app.f}"></iframe></div>
                         <div class="resizer" onmousedown="Kernel.resize(event, '${winId}')"></div>
                     </div>`;
                 document.getElementById('window-layer').insertAdjacentHTML('beforeend', html);
+                this.addTask(id, app.i);
+            },
+
+            addTask(id, icon) {
+                const bar = document.getElementById('active-tasks');
+                if(document.getElementById(`task-${id}`)) return;
+                bar.innerHTML += `<div class="task-item" id="task-${id}" onclick="Kernel.focus('win-${id}')"><i data-lucide="${icon}"></i></div>`;
+                lucide.createIcons();
+            },
+
+            close(winId, id) {
+                document.getElementById(winId).remove();
+                document.getElementById(`task-${id}`).remove();
             },
 
             focus(id) { document.getElementById(id).style.zIndex = ++this.zIndex; },
