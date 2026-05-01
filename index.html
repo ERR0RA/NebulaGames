@@ -2,209 +2,343 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA OS | v18.0 OMNI-REACH</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebula | Glass Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;800&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #00ff88; --primary-rgb: 0, 255, 136;
-            --bg: #010204; --glass: rgba(15, 20, 28, 0.9);
-            --border: rgba(255, 255, 255, 0.1);
-            --text-main: #f8fafc; --text-dim: #94a3b8;
+            --primary: #00ff88;
+            --primary-glow: rgba(0, 255, 136, 0.4);
+            --bg: #050608;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text: #ffffff;
         }
 
-        body.theme-cyber { --primary: #00f2ff; --primary-rgb: 0, 242, 255; }
-        body.theme-lava { --primary: #ff4e00; --primary-rgb: 255, 78, 0; }
-        body.theme-amethyst { --primary: #bf00ff; --primary-rgb: 191, 0, 255; }
+        [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.4); }
+        [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.4); }
+        [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.4); }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; cursor: default; }
-        body { background-color: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(0, 255, 136, 0.07) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(0, 217, 255, 0.07) 0%, transparent 40%);
+        }
 
-        /* --- DESKTOP GRID --- */
-        .desktop { height: calc(100vh - 140px); padding: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); grid-auto-rows: 105px; gap: 15px; overflow-y: auto; }
-        .app-node { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; padding: 10px; border-radius: 15px; text-align: center; }
-        .app-node:hover { background: rgba(255,255,255,0.05); transform: scale(1.05); }
-        .icon-box { width: 55px; height: 55px; border-radius: 16px; background: #0a0c10; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--primary); transition: 0.3s; }
-        .app-node:hover .icon-box { border-color: var(--primary); box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.4); }
+        .orb {
+            position: fixed;
+            width: 50vw; height: 50vw;
+            border-radius: 50%;
+            background: var(--primary);
+            filter: blur(140px);
+            opacity: 0.12;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .orb-1 { top: -20%; left: -10%; }
+        .orb-2 { bottom: -20%; right: -10%; background: #00d9ff; }
 
-        /* --- WINDOWS --- */
-        .os-window { position: absolute; background: var(--glass); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); backdrop-filter: blur(40px); display: flex; flex-direction: column; overflow: hidden; }
-        .win-bar { height: 45px; background: rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; cursor: move; }
-        .win-body { flex: 1; background: #000; position: relative; }
-        .win-btn { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; margin-left: 8px; }
+        header { padding: 80px 20px 40px; text-align: center; }
+        
+        h1 {
+            font-size: clamp(2.5rem, 10vw, 5rem);
+            font-weight: 800; margin: 0;
+            letter-spacing: -2px;
+            color: #ffffff;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
 
-        /* --- INTERNAL APPS UI --- */
-        .cmd-ui { padding: 20px; font-family: 'Fira Code'; font-size: 0.85rem; color: var(--primary); height: 100%; display: flex; flex-direction: column; }
-        .cmd-log { flex: 1; overflow-y: auto; margin-bottom: 10px; }
-        .cmd-input { background: transparent; border: none; color: #fff; outline: none; width: 100%; font-family: 'Fira Code'; }
+        /* --- SEARCH --- */
+        .search-wrap { width: 90%; max-width: 600px; margin-bottom: 50px; }
+        #moduleSearch {
+            width: 100%; 
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border);
+            padding: 20px 30px;
+            border-radius: 100px;
+            color: #fff;
+            font-size: 1.1rem;
+            outline: none;
+            backdrop-filter: blur(20px);
+            transition: 0.3s;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        #moduleSearch:focus { border-color: var(--primary); box-shadow: 0 0 30px var(--primary-glow); }
 
-        /* --- TASKBAR --- */
-        #footer { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); height: 65px; background: rgba(10, 15, 20, 0.9); border: 1px solid var(--border); border-radius: 20px; backdrop-filter: blur(30px); display: flex; align-items: center; padding: 0 15px; gap: 8px; z-index: 10000; }
-        .task-btn { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--primary); transition: 0.2s; cursor: pointer; }
-        .task-btn:hover { background: rgba(var(--primary-rgb), 0.1); transform: translateY(-5px); }
+        /* --- GRID --- */
+        .link-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px; width: 90%; max-width: 1200px;
+            padding-bottom: 120px;
+        }
+
+        .game-link {
+            position: relative;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.03);
+            height: 140px; /* Slightly taller for score */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(15px);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .game-link:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .game-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #ffffff;
+            text-align: center;
+            padding: 0 15px;
+        }
+
+        .high-score-tag {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-top: 8px;
+            font-family: 'Fira Code', monospace;
+            color: var(--primary);
+        }
+
+        .badge {
+            position: absolute;
+            top: 12px; right: 12px;
+            font-size: 0.6rem; font-weight: 800;
+            padding: 4px 10px; border-radius: 50px;
+            background: var(--primary); color: #000;
+            text-transform: uppercase;
+        }
+
+        /* --- ACCOUNT INTERFACE --- */
+        .top-right-nav { position: absolute; top: 30px; right: 30px; display: flex; gap: 10px; }
+        .acc-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+        .acc-btn:hover { background: var(--primary); color: #000; }
+        
+        .logout-btn { display: none; background: rgba(255,0,0,0.2); color: #ff4444; border: 1px solid rgba(255,0,0,0.3); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(12px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 32px;
+            width: 90%; max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            margin: 8px 0;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            color: #fff;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .login-btn {
+            width: 100%; padding: 15px; margin-top: 20px;
+            background: var(--primary);
+            border: none; border-radius: 15px;
+            font-weight: 800; cursor: pointer;
+        }
+
+        .bottom-controls {
+            position: fixed; bottom: 30px; 
+            display: flex; align-items: center; gap: 20px;
+            z-index: 1000;
+        }
+
+        .theme-panel, .support-btn {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+        }
+
+        .theme-panel { padding: 12px 24px; display: flex; gap: 15px; }
+        .support-btn { padding: 12px 28px; color: #fff; text-decoration: none; font-size: 0.8rem; font-weight: 700; transition: 0.3s; }
+        .t-btn { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.3); }
     </style>
 </head>
-<body class="theme-cyber">
+<body>
 
-    <nav style="height: 55px; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: space-between; padding: 0 25px; border-bottom: 1px solid var(--border); z-index: 20000;">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <i data-lucide="layout" style="color:var(--primary)"></i>
-            <span style="font-weight:900; letter-spacing:1px; font-size:0.8rem;">NEBULA <span style="color:var(--primary)">v18</span></span>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="top-right-nav">
+        <button id="userBtn" class="acc-btn" onclick="toggleModal()">JOIN NEBULA</button>
+        <button id="logoutBtn" class="acc-btn logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+
+    <header>
+        <h1>Nebula</h1>
+        <p style="opacity: 0.6; font-size: 0.8rem; letter-spacing: 4px; text-transform: uppercase;">Cloud Gaming</p>
+    </header>
+
+    <div class="search-wrap">
+        <input type="text" id="moduleSearch" placeholder="Search Games..." onkeyup="filterGames()">
+    </div>
+
+    <div id="stable-container" class="link-container"></div>
+
+    <div id="loginModal" class="modal-overlay">
+        <div class="login-card">
+            <button style="position:absolute; top:20px; right:20px; background:none; border:none; color:#fff; cursor:pointer;" onclick="toggleModal()">&times;</button>
+            <h2>Join Nebula</h2>
+            <p style="opacity:0.6; font-size:0.9rem;">Enter a username to save scores locally.</p>
+            <div class="input-group">
+                <input type="text" id="usernameInput" placeholder="Username">
+            </div>
+            <button class="login-btn" onclick="saveUser()">START GAMING</button>
         </div>
-        <div style="display:flex; gap:15px; align-items:center;">
-            <input type="text" id="desktop-search" placeholder="Search Apps..." oninput="Kernel.searchDesktop(this.value)" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:white; padding:5px 12px; border-radius:8px; outline:none; font-size:0.7rem;">
-            <div id="clock" style="font-family:'Fira Code'; font-size:0.75rem;">00:00:00</div>
+    </div>
+
+    <div class="bottom-controls">
+        <div class="theme-panel">
+            <div class="t-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
+            <div class="t-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
+            <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
+            <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
         </div>
-    </nav>
-
-    <main class="desktop" id="desktop-view"></main>
-
-    <div id="window-layer"></div>
-
-    <div id="footer">
-        <div class="task-btn" onclick="Kernel.launch('cmd')"><i data-lucide="terminal"></i></div>
-        <div class="task-btn" onclick="location.reload()"><i data-lucide="refresh-cw"></i></div>
-        <div style="width:1px; height:30px; background:var(--border); margin:0 5px;"></div>
-        <div id="running-apps" style="display:flex; gap:8px;"></div>
+        <a href="https://forms.office.com/..." target="_blank" class="support-btn">SUPPORT</a>
     </div>
 
     <script>
-        const Kernel = {
-            zIndex: 100,
-            apps: [
-                { id: "strike", n: "Cyber Strike", f: "Cyber-Strike.html", i: "zap" },
-                { id: "pong", n: "Neon Pong", f: "Neon-Pong.html", i: "activity" },
-                { id: "ai", n: "AI Core", f: "ai.html", i: "bot" },
-                { id: "drift", n: "Drift King", f: "drift.html", i: "navigation-2" },
-                { id: "snake", n: "Snake Pro", f: "snake.html", i: "trending-up" },
-                { id: "golf", n: "Neon Golf", f: "Neon-Golf.html", i: "target" },
-                { id: "hex", n: "Neon Hex", f: "Neon-Hex.html", i: "hexagon" },
-                { id: "slams", n: "Neon Slams", f: "Neon-Slams.html", i: "dribbble" },
-                { id: "slash", n: "Neon Slash", f: "Neon-Slash.html", i: "sword" },
-                { id: "blast", n: "Block Blast", f: "blockblast.html", i: "grid" },
-                { id: "breaker", n: "Block Breaker", f: "blockbreaker.html", i: "layers" },
-                { id: "craft", n: "Block Craft", f: "blockcraft.html", i: "box" },
-                { id: "cricket", n: "Cricket Pro", f: "cricket.html", i: "trophy" },
-                { id: "footy", n: "Football", f: "football.html", i: "award" },
-                { id: "mines", n: "Minesweeper", f: "minesweeper.html", i: "bomb" },
-                { id: "space", n: "Space Quest", f: "spaceadventure.html", i: "rocket" },
-                { id: "math", n: "Sparks Math", f: "sparksmaths.html", i: "divide" },
-                { id: "ttt", n: "Tic Tac Toe", f: "tictactoe.html", i: "x" },
-                { id: "drive", n: "Overdrive", f: "overdrive.html", i: "gauge" },
-                { id: "trail", n: "Neon Trail", f: "neon-trail.html", i: "wind" },
-                { id: "basket", n: "Basket Ball", f: "basketball.html", i: "circle" },
-                { id: "cmd", n: "Command Line", f: "internal_cmd", i: "terminal" },
-                { id: "sys", n: "Sys Monitor", f: "monitor.html", i: "cpu" },
-                { id: "files", n: "Explorer", f: "files.html", i: "folder" },
-                { id: "note", n: "Notepad", f: "notes.html", i: "edit-3" },
-                { id: "calc", n: "Calculator", f: "calc.html", i: "plus-square" }
-            ],
+        const games = [
+            { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "best" },
+            { name: "Blockcraft", url: "blockcraft.html", tag: "upd" },
+            { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
+            { name: "Neon Snake", url: "snake.html", tag: "best" },
+            { name: "Master Armory", url: "masterarmory.html", tag: "best" },
+            { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
+            { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
+            { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
+            { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
+            { name: "Neon Slamz", url: "Neon-Slams.html", tag: "" },
+            { name: "Neon Trail", url: "neon-trail.html", tag: "" },
+            { name: "Block Blast", url: "blockblast.html", tag: "" },
+            { name: "Neon Run", url: "ai.html", tag: "" },
+            { name: "Basketball", url: "basketball.html", tag: "" },
+            { name: "Football", url: "football.html", tag: "" },
+            { name: "Cricket", url: "cricket.html", tag: "" },
+            { name: "Crossy Roads", url: "crossyroads.html", tag: "" },
+            { name: "Drift", url: "drift.html", tag: "" },
+            { name: "Eggshell (EGGVP)", url: "eggshell.html", tag: "upd" },
+            { name: "Overdrive", url: "overdrive.html", tag: "" },
+            { name: "Pacman", url: "pacman.html", tag: "" },
+            { name: "Space Adventure", url: "spaceadventure.html", tag: "" },
+            { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
+            { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
+            { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
+        ];
 
-            boot() {
-                this.renderDesktop(this.apps);
-                lucide.createIcons();
-                setInterval(() => {
-                    document.getElementById('clock').innerText = new Date().toLocaleTimeString();
-                }, 1000);
-            },
+        function toggleModal() {
+            const modal = document.getElementById('loginModal');
+            modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+        }
 
-            renderDesktop(appArray) {
-                const dv = document.getElementById('desktop-view');
-                dv.innerHTML = appArray.map(app => `
-                    <div class="app-node" onclick="Kernel.launch('${app.id}')" data-name="${app.n.toLowerCase()}">
-                        <div class="icon-box"><i data-lucide="${app.i}"></i></div>
-                        <div style="font-size:0.6rem; font-weight:700;">${app.n}</div>
-                    </div>
-                `).join('');
-                lucide.createIcons();
-            },
-
-            searchDesktop(query) {
-                const nodes = document.querySelectorAll('.app-node');
-                nodes.forEach(node => {
-                    const match = node.getAttribute('data-name').includes(query.toLowerCase());
-                    node.style.display = match ? 'flex' : 'none';
-                });
-            },
-
-            launch(id) {
-                if(document.getElementById(`win-${id}`)) return this.focus(`win-${id}`);
-                const app = this.apps.find(a => a.id === id);
-                
-                const winHtml = `
-                    <div class="os-window" id="win-${id}" style="width:750px; height:480px; left:120px; top:80px; z-index:${++this.zIndex}" onmousedown="Kernel.focus('win-${id}')">
-                        <div class="win-bar" onmousedown="Kernel.drag(event, 'win-${id}')">
-                            <span style="font-size:0.7rem; font-weight:800; color:var(--primary);">${app.n.toUpperCase()}</span>
-                            <div style="display:flex;">
-                                <div class="win-btn" style="background:#ffbc2e" onclick="Kernel.minimize('win-${id}')"></div>
-                                <div class="win-btn" style="background:#ff5f57" onclick="Kernel.close('win-${id}')"></div>
-                            </div>
-                        </div>
-                        <div class="win-body">${this.getAppUI(app)}</div>
-                    </div>`;
-                document.getElementById('window-layer').insertAdjacentHTML('beforeend', winHtml);
-                this.updateTaskbar();
-            },
-
-            getAppUI(app) {
-                if(app.f === 'internal_cmd') {
-                    return `<div class="cmd-ui">
-                        <div class="cmd-log" id="cmd-log">NEBULA_OS READY. Type 'help' to start.</div>
-                        <div style="display:flex; gap:5px;"><span>></span><input class="cmd-input" onkeydown="Kernel.runCmd(event, this)"></div>
-                    </div>`;
-                }
-                return `<iframe src="${app.f}" style="width:100%; height:100%; border:none;"></iframe>`;
-            },
-
-            runCmd(e, input) {
-                if(e.key === 'Enter') {
-                    const cmd = input.value.toLowerCase().trim();
-                    const log = document.getElementById('cmd-log');
-                    const line = document.createElement('div');
-                    
-                    if(cmd === 'help') line.innerText = "COMMANDS: theme [lava/cyber/amethyst], cls, alert [msg], exit";
-                    else if(cmd.startsWith('theme ')) {
-                        const t = 'theme-' + cmd.split(' ')[1];
-                        document.body.className = t;
-                        line.innerText = "Applying theme: " + t;
-                    }
-                    else if(cmd === 'cls') { log.innerHTML = "SYSTEM CLEARED."; input.value = ""; return; }
-                    else if(cmd.startsWith('alert ')) { alert(cmd.replace('alert ', '')); line.innerText = "Alert sent."; }
-                    else line.innerText = "Unknown command: " + cmd;
-
-                    log.appendChild(line);
-                    input.value = "";
-                    log.scrollTop = log.scrollHeight;
-                }
-            },
-
-            drag(e, id) {
-                const el = document.getElementById(id);
-                let ox = e.clientX - el.offsetLeft, oy = e.clientY - el.offsetTop;
-                const move = (ev) => { el.style.left = ev.clientX - ox + 'px'; el.style.top = ev.clientY - oy + 'px'; };
-                document.addEventListener('mousemove', move);
-                document.addEventListener('mouseup', () => document.removeEventListener('mousemove', move), {once:true});
-            },
-
-            focus(id) { document.getElementById(id).style.zIndex = ++this.zIndex; },
-            close(id) { document.getElementById(id).remove(); this.updateTaskbar(); },
-            minimize(id) { document.getElementById(id).style.display = 'none'; },
-
-            updateTaskbar() {
-                const taskArea = document.getElementById('running-apps');
-                const wins = document.querySelectorAll('.os-window');
-                taskArea.innerHTML = Array.from(wins).map(w => {
-                    const app = this.apps.find(a => a.id === w.id.replace('win-', ''));
-                    return `<div class="task-btn" onclick="document.getElementById('${w.id}').style.display='flex'; Kernel.focus('${w.id}')"><i data-lucide="${app.i}"></i></div>`;
-                }).join('');
-                lucide.createIcons();
+        function saveUser() {
+            const user = document.getElementById('usernameInput').value;
+            if(user) {
+                localStorage.setItem('nebula_user', user);
+                checkUser();
+                toggleModal();
+                buildArcade(); // Refresh to show scores
             }
-        };
+        }
 
-        window.onload = () => Kernel.boot();
+        function logout() {
+            localStorage.removeItem('nebula_user');
+            location.reload();
+        }
+
+        function checkUser() {
+            const savedUser = localStorage.getItem('nebula_user');
+            const userBtn = document.getElementById('userBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            if(savedUser) {
+                userBtn.innerText = savedUser.toUpperCase();
+                userBtn.onclick = null;
+                logoutBtn.style.display = "block";
+            }
+        }
+
+        function buildArcade() {
+            const container = document.getElementById('stable-container');
+            const savedScores = JSON.parse(localStorage.getItem('nebula_scores')) || {};
+
+            container.innerHTML = games.map(game => {
+                const best = savedScores[game.name] ? `BEST: ${savedScores[game.name]}` : 'NO SCORE';
+                return `
+                    <a href="${game.url}" target="_blank" class="game-link" data-name="${game.name.toLowerCase()}">
+                        ${game.tag ? `<span class="badge">${game.tag}</span>` : ''}
+                        <span class="game-title">${game.name}</span>
+                        <span class="high-score-tag">${best}</span>
+                    </a>
+                `;
+            }).join('');
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            if(theme === 'default') document.documentElement.removeAttribute('data-theme');
+        }
+
+        function filterGames() {
+            const val = document.getElementById('moduleSearch').value.toLowerCase();
+            document.querySelectorAll('.game-link').forEach(el => {
+                el.style.display = el.dataset.name.includes(val) ? 'flex' : 'none';
+            });
+        }
+
+        buildArcade();
+        checkUser();
     </script>
 </body>
 </html>
