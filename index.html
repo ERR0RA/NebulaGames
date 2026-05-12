@@ -8,19 +8,22 @@
   <style>
     :root {
       --primary: #00ff88;
-      --primary-glow: rgba(0, 255, 136, 0.4);
+      --primary-glow: rgba(0, 255, 136, 0.45);
       --bg: #050608;
       --glass-border: rgba(255, 255, 255, 0.12);
       --text: #ffffff;
     }
 
-    [data-theme="cyber"] { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.4); }
-    [data-theme="ocean"] { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.4); }
-    [data-theme="amber"] { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.4); }
+    [data-theme="cyber"]  { --primary: #ff00ff; --primary-glow: rgba(255, 0, 255, 0.45); }
+    [data-theme="ocean"]  { --primary: #00d9ff; --primary-glow: rgba(0, 217, 255, 0.45); }
+    [data-theme="amber"]  { --primary: #ffaa00; --primary-glow: rgba(255, 170, 0, 0.45); }
+    [data-theme="crimson"]{ --primary: #ff3b3b; --primary-glow: rgba(255, 59, 59, 0.45); }
+    [data-theme="violet"] { --primary: #8b5cf6; --primary-glow: rgba(139, 92, 246, 0.45); }
+    [data-theme="lime"]   { --primary: #a3ff12; --primary-glow: rgba(163, 255, 18, 0.45); }
+    [data-theme="ice"]    { --primary: #7dd3fc; --primary-glow: rgba(125, 211, 252, 0.45); }
 
     body {
       font-family: "Plus Jakarta Sans", sans-serif;
-      background-color: var(--bg);
       color: var(--text);
       margin: 0;
       display: flex;
@@ -28,9 +31,18 @@
       align-items: center;
       min-height: 100vh;
       overflow-x: hidden;
+      transition: background 0.35s ease, background-color 0.35s ease;
+    }
+
+    body[data-bg="neon"] {
+      background-color: var(--bg);
       background-image:
-        radial-gradient(circle at 0% 0%, rgba(0, 255, 136, 0.07) 0%, transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(0, 217, 255, 0.07) 0%, transparent 40%);
+        radial-gradient(circle at 0% 0%, rgba(0, 255, 136, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(0, 217, 255, 0.08) 0%, transparent 40%);
+    }
+
+    body[data-bg="gradient"] {
+      background: linear-gradient(135deg, #090b11 0%, #0d1320 35%, #1a1030 65%, #120b1d 100%);
     }
 
     .orb {
@@ -49,8 +61,8 @@
 
     .top-right-nav {
       position: absolute;
-      top: 30px;
-      right: 30px;
+      top: 20px;
+      right: 20px;
       display: flex;
       gap: 10px;
     }
@@ -59,114 +71,129 @@
       background: rgba(255,255,255,0.05);
       border: 1px solid var(--glass-border);
       color: #fff;
-      padding: 10px 20px;
-      border-radius: 100px;
+      padding: 10px 16px;
+      border-radius: 999px;
       font-weight: 600;
       cursor: pointer;
       backdrop-filter: blur(10px);
-      transition: 0.3s;
+      transition: 0.25s;
     }
     .acc-btn:hover { background: var(--primary); color: #000; }
-    .logout-btn { display: none; background: rgba(255,0,0,0.2); color: #ff4444; border: 1px solid rgba(255,0,0,0.3); }
+    .logout-btn { display: none; }
 
-    header { padding: 80px 20px 40px; text-align: center; }
+    header { padding: 70px 20px 30px; text-align: center; }
 
     h1 {
-      font-size: clamp(2.5rem, 10vw, 5rem);
+      font-size: clamp(2.4rem, 10vw, 5rem);
       font-weight: 800;
       margin: 0;
-      letter-spacing: -1px;
+      letter-spacing: 0;
       text-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 
-    .search-wrap { width: 90%; max-width: 600px; margin-bottom: 50px; }
+    .sub {
+      opacity: 0.65;
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
+    .search-wrap { width: min(90%, 620px); margin: 8px 0 34px; }
 
     #moduleSearch {
       width: 100%;
+      box-sizing: border-box;
       background: rgba(0, 0, 0, 0.5);
       border: 1px solid var(--glass-border);
-      padding: 20px 30px;
-      border-radius: 100px;
+      padding: 16px 24px;
+      border-radius: 999px;
       color: #fff;
-      font-size: 1.1rem;
+      font-size: 1rem;
       outline: none;
       backdrop-filter: blur(20px);
-      transition: 0.3s;
+      transition: 0.25s;
       text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
     }
-
-    #moduleSearch:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 30px var(--primary-glow);
-    }
+    #moduleSearch:focus { border-color: var(--primary); box-shadow: 0 0 26px var(--primary-glow); }
 
     .link-container {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 20px;
-      width: 90%;
-      max-width: 1200px;
-      padding-bottom: 120px;
+      gap: 16px;
+      width: min(92%, 1200px);
+      padding-bottom: 140px;
     }
 
     .game-link {
       position: relative;
       text-decoration: none;
       background: rgba(255, 255, 255, 0.03);
-      height: 140px;
+      min-height: 130px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      border-radius: 20px;
+      border-radius: 14px;
       border: 1px solid var(--glass-border);
-      backdrop-filter: blur(15px);
-      transition: all 0.3s ease;
+      backdrop-filter: blur(14px);
+      transition: all 0.25s ease;
       overflow: hidden;
+      padding: 10px 12px;
     }
 
     .game-link:hover {
-      transform: translateY(-8px);
+      transform: translateY(-6px);
       background: rgba(255, 255, 255, 0.08);
       border-color: var(--primary);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      box-shadow: 0 18px 38px rgba(0,0,0,0.55);
     }
 
     .game-title {
-      font-weight: 600;
-      font-size: 1.1rem;
+      font-weight: 650;
+      font-size: 1rem;
       color: #ffffff;
       text-align: center;
-      padding: 0 15px;
+      line-height: 1.3;
     }
 
     .high-score-tag {
-      font-size: 0.7rem;
-      opacity: 0.6;
-      margin-top: 8px;
+      font-size: 0.68rem;
+      opacity: 0.75;
+      margin-top: 7px;
       font-family: "Fira Code", monospace;
       color: var(--primary);
     }
 
     .badge {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      font-size: 0.6rem;
+      top: 10px; right: 10px;
+      font-size: 0.62rem;
       font-weight: 800;
       padding: 4px 10px;
-      border-radius: 50px;
+      border-radius: 999px;
+      text-transform: uppercase;
       background: var(--primary);
       color: #000;
-      text-transform: uppercase;
+    }
+    .badge.updating {
+      background: #ff8a00;
+      color: #111;
+    }
+    .badge.best-updating {
+      background: linear-gradient(90deg, #00ff88, #ff8a00);
+      color: #111;
+    }
+    .badge.upd {
+      background: #7dd3fc;
+      color: #081018;
     }
 
     .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(12px);
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(10px);
       display: none;
       justify-content: center;
       align-items: center;
@@ -176,21 +203,20 @@
     .login-card {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--glass-border);
-      padding: 40px;
-      border-radius: 24px;
-      width: 90%;
-      max-width: 400px;
+      padding: 28px;
+      border-radius: 14px;
+      width: min(92%, 380px);
       text-align: center;
       position: relative;
     }
 
     .input-group input {
       width: 100%;
-      padding: 15px;
+      padding: 13px 14px;
       margin: 8px 0;
       background: rgba(0,0,0,0.4);
       border: 1px solid var(--glass-border);
-      border-radius: 12px;
+      border-radius: 10px;
       color: #fff;
       box-sizing: border-box;
       outline: none;
@@ -198,51 +224,74 @@
 
     .login-btn {
       width: 100%;
-      padding: 15px;
-      margin-top: 20px;
+      padding: 12px;
+      margin-top: 12px;
       background: var(--primary);
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       font-weight: 800;
       cursor: pointer;
+      color: #000;
     }
 
     .bottom-controls {
       position: fixed;
-      bottom: 30px;
+      bottom: 16px;
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 10px;
       z-index: 1000;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: min(95%, 1200px);
     }
 
-    .theme-panel, .support-btn {
-      background: rgba(0, 0, 0, 0.6);
+    .theme-panel, .support-btn, .bg-panel {
+      background: rgba(0, 0, 0, 0.62);
       backdrop-filter: blur(20px);
       border: 1px solid var(--glass-border);
-      border-radius: 100px;
+      border-radius: 999px;
     }
 
-    .theme-panel { padding: 12px 24px; display: flex; gap: 15px; }
+    .theme-panel { padding: 8px 12px; display: flex; gap: 8px; }
+    .bg-panel { padding: 7px; display: flex; gap: 7px; }
+
+    .bg-btn {
+      border: 1px solid var(--glass-border);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      border-radius: 999px;
+      padding: 7px 12px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .bg-btn.active { border-color: var(--primary); box-shadow: 0 0 12px var(--primary-glow); }
+
     .support-btn {
-      padding: 12px 28px;
+      padding: 10px 16px;
       color: #fff;
       text-decoration: none;
-      font-size: 0.8rem;
-      font-weight: 700;
-      transition: 0.3s;
+      font-size: 0.75rem;
+      font-weight: 800;
+      transition: 0.2s;
     }
+    .support-btn:hover { border-color: var(--primary); }
 
     .t-btn {
-      width: 18px;
-      height: 18px;
+      width: 16px; height: 16px;
       border-radius: 50%;
       cursor: pointer;
-      border: 2px solid rgba(255,255,255,0.3);
+      border: 2px solid rgba(255,255,255,0.35);
+    }
+
+    @media (max-width: 680px) {
+      .top-right-nav { position: static; margin-top: 12px; }
+      header { padding-top: 26px; }
     }
   </style>
 </head>
-<body>
+<body data-bg="neon">
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
 
@@ -253,7 +302,7 @@
 
   <header>
     <h1>Nebula</h1>
-    <p style="opacity:0.6;font-size:0.8rem;letter-spacing:4px;text-transform:uppercase;">Cloud Gaming</p>
+    <p class="sub">Cloud Gaming</p>
   </header>
 
   <div class="search-wrap">
@@ -264,9 +313,9 @@
 
   <div id="loginModal" class="modal-overlay">
     <div class="login-card">
-      <button style="position:absolute;top:20px;right:20px;background:none;border:none;color:#fff;cursor:pointer;" onclick="toggleModal()">&times;</button>
+      <button style="position:absolute;top:14px;right:14px;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;" onclick="toggleModal()">&times;</button>
       <h2>Join Nebula</h2>
-      <p style="opacity:0.6;font-size:0.9rem;">Enter a username to save scores locally.</p>
+      <p style="opacity:0.65;font-size:0.88rem;">Enter a username to save scores locally.</p>
       <div class="input-group">
         <input type="text" id="usernameInput" placeholder="Username" />
       </div>
@@ -276,42 +325,33 @@
 
   <div class="bottom-controls">
     <div class="theme-panel">
-      <div class="t-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
-      <div class="t-btn" style="background:#ff00ff" onclick="setTheme('cyber')"></div>
-      <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
-      <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+      <div class="t-btn" style="background:#00ff88" onclick="setTheme('default')" title="Default"></div>
+      <div class="t-btn" style="background:#ff00ff" onclick="setTheme('cyber')" title="Cyber"></div>
+      <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')" title="Ocean"></div>
+      <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')" title="Amber"></div>
+      <div class="t-btn" style="background:#ff3b3b" onclick="setTheme('crimson')" title="Crimson"></div>
+      <div class="t-btn" style="background:#8b5cf6" onclick="setTheme('violet')" title="Violet"></div>
+      <div class="t-btn" style="background:#a3ff12" onclick="setTheme('lime')" title="Lime"></div>
+      <div class="t-btn" style="background:#7dd3fc" onclick="setTheme('ice')" title="Ice"></div>
     </div>
-    <a href="https://forms.office.com/..." target="_blank" class="support-btn">SUPPORT</a>
+
+    <div class="bg-panel">
+      <button id="bgNeon" class="bg-btn" onclick="setBg('neon')">NEON</button>
+      <button id="bgGradient" class="bg-btn" onclick="setBg('gradient')">GRADIENT</button>
+    </div>
+
+    <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAN__4XhIPhUOE9XTUQ5QVIxT05ZVEZONUhXREZTVjgxRC4u" target="_blank" class="support-btn">SUPPORT</a>
   </div>
 
   <script>
     const games = [
       { name: "Neon Cyber Strike", url: "Cyber-Strike.html", tag: "best" },
-      { name: "Sparx AUTO SOLVER Readme", url: "Solver.html", tag: "best and Updating" },
-      { name: "Sparx AUTO SOLVER file", url: "Sparx%20Solver%20Fixed.zip", tag: "Updating" },
-       { name: "Sparx AUTO SOLVER file", url: "Sparx Solver Fixed.zip", tag: "Updating" },
+      { name: "Sparx AUTO SOLVER Readme", url: "Solver.html", tag: "best-updating" },
+      { name: "Sparx AUTO SOLVER file (encoded)", url: "Sparx%20Solver%20Fixed.zip", tag: "updating" },
+      { name: "Sparx AUTO SOLVER file (direct)", url: "Sparx Solver Fixed.zip", tag: "updating" },
       { name: "Blockcraft", url: "blockcraft.html", tag: "upd" },
       { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
-      { name: "Neon Snake", url: "snake.html", tag: "best" },
-      { name: "Master Armory", url: "masterarmory.html", tag: "best" },
-      { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
-      { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
-      { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
-      { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
-      { name: "Neon Slamz", url: "Neon-Slams.html", tag: "" },
-      { name: "Neon Trail", url: "neon-trail.html", tag: "" },
-      { name: "Block Blast", url: "blockblast.html", tag: "" },
-      { name: "Neon Run", url: "ai.html", tag: "" },
-      { name: "Basketball", url: "basketball.html", tag: "" },
-      { name: "Football", url: "football.html", tag: "" },
-      { name: "Cricket", url: "cricket.html", tag: "" },
-      { name: "Crossy Roads", url: "crossyroads.html", tag: "" },
-      { name: "Drift", url: "drift.html", tag: "" },
-      { name: "Overdrive", url: "overdrive.html", tag: "" },
-      { name: "Space Adventure", url: "spaceadventure.html", tag: "" },
-      { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
-      { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
-      { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
+      { name: "Neon Snake", url: "snake.html", tag: "best" }
     ];
 
     function toggleModal() {
@@ -337,7 +377,6 @@
       const savedUser = localStorage.getItem("nebula_user");
       const userBtn = document.getElementById("userBtn");
       const logoutBtn = document.getElementById("logoutBtn");
-
       if (savedUser) {
         userBtn.innerText = savedUser.toUpperCase();
         userBtn.onclick = null;
@@ -353,20 +392,12 @@
         const best = savedScores[game.name] ? `BEST: ${savedScores[game.name]}` : "NO SCORE";
         return `
           <a href="${game.url}" target="_blank" class="game-link" data-name="${game.name.toLowerCase()}">
-            ${game.tag ? `<span class="badge">${game.tag}</span>` : ""}
+            ${game.tag ? `<span class="badge ${game.tag}">${game.tag}</span>` : ""}
             <span class="game-title">${game.name}</span>
             <span class="high-score-tag">${best}</span>
           </a>
         `;
       }).join("");
-    }
-
-    function setTheme(theme) {
-      if (theme === "default") {
-        document.documentElement.removeAttribute("data-theme");
-      } else {
-        document.documentElement.setAttribute("data-theme", theme);
-      }
     }
 
     function filterGames() {
@@ -376,8 +407,36 @@
       });
     }
 
+    function setTheme(theme) {
+      if (theme === "default") {
+        document.documentElement.removeAttribute("data-theme");
+      } else {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+      localStorage.setItem("nebula_theme", theme);
+    }
+
+    function loadTheme() {
+      const saved = localStorage.getItem("nebula_theme") || "default";
+      setTheme(saved);
+    }
+
+    function setBg(mode) {
+      document.body.setAttribute("data-bg", mode);
+      localStorage.setItem("nebula_bg_mode", mode);
+      document.getElementById("bgNeon").classList.toggle("active", mode === "neon");
+      document.getElementById("bgGradient").classList.toggle("active", mode === "gradient");
+    }
+
+    function initBgMode() {
+      const saved = localStorage.getItem("nebula_bg_mode") || "neon";
+      setBg(saved);
+    }
+
     buildArcade();
     checkUser();
+    loadTheme();
+    initBgMode();
   </script>
 </body>
 </html>
