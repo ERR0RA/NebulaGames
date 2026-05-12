@@ -1,55 +1,46 @@
-<section id="download" style="background:#111;color:white;padding:40px;border-radius:20px;font-family:Arial,sans-serif;max-width:900px;margin:auto;">
-    <h1 style="font-size:42px;margin-bottom:10px;">Sparx Solver Fixed</h1>
-    <p style="font-size:18px;color:#ccc;">
-        Download the Chrome extension and set it up in minutes.
-    </p>
+<section id="download" style="background:#0d1117; color:#c9d1d9; padding:60px 20px; border: 1px solid #30363d; border-radius:12px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; max-width:850px; margin:40px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    
+    <div style="text-align:center; margin-bottom:40px;">
+        <h1 style="font-size:48px; color:#f0f6fc; margin-bottom:15px; letter-spacing:-1px;">Sparx Solver Fixed</h1>
+        <p style="font-size:20px; color:#8b949e;">Fast, reliable, and easy to set up Chrome extension.</p>
+        
+        <a href="downloads/sparx-solver-fixed.zip" download
+           style="display:inline-block; margin-top:25px; padding:18px 45px; background:#238636; color:#ffffff; text-decoration:none; border-radius:8px; font-size:20px; font-weight:600; transition: background 0.2s;">
+           Download ZIP Archive
+        </a>
+    </div>
 
-    <a href="downloads/Sparx Solver Fixed.zip" download
-       style="display:inline-block;margin-top:20px;padding:15px 30px;background:#4f46e5;color:white;text-decoration:none;border-radius:12px;font-size:18px;font-weight:bold;">
-       Download Extension
-    </a>
+    <hr style="border:0; border-top:1px solid #30363d; margin:40px 0;">
 
-    <div style="margin-top:40px;line-height:1.8;">
-        <h2>How To Install</h2>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:40px;">
+        <div>
+            <h2 style="color:#58a6ff; font-size:22px; margin-bottom:20px;">1. Installation</h2>
+            <ol style="padding-left:20px; line-height:1.8;">
+                <li>Extract the <code style="background:#161b22; padding:3px 6px; border-radius:4px;">.zip</code> file to a folder.</li>
+                <li>Navigate to <strong style="color:#f0f6fc;">chrome://extensions</strong> in your browser.</li>
+                <li>Enable <strong style="color:#f0f6fc;">Developer Mode</strong> (top right toggle).</li>
+                <li>Click <strong style="color:#f0f6fc;">Load unpacked</strong> and select the extracted folder.</li>
+            </ol>
+        </div>
 
-        <ol>
-            <li>Download the ZIP file using the button above.</li>
-            <li>Right click the ZIP file and press <strong>Extract All</strong> or <strong>Unzip</strong>.</li>
-            <li>Open Chrome and go to:
-                <br>
-                <a href="chrome://extensions" style="color:#8ab4ff;">chrome://extensions</a>
-            </li>
-            <li>Turn on <strong>Developer Mode</strong> in the top right.</li>
-            <li>Press <strong>Load unpacked</strong>.</li>
-            <li>Select the extracted extension folder.</li>
-            <li>The extension should now appear in Chrome.</li>
-        </ol>
+        <div>
+            <h2 style="color:#d2a8ff; font-size:22px; margin-bottom:20px;">2. API Key Setup</h2>
+            <p style="margin-bottom:15px; font-size:14px; color:#8b949e;">A Gemini API key is required to power the solver.</p>
+            <ol style="padding-left:20px; line-height:1.8;">
+                <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#58a6ff; text-decoration:none;">Google AI Studio</a>.</li>
+                <li>Generate a free API key.</li>
+                <li>Paste the key into the extension popup.</li>
+            </ol>
+        </div>
+    </div>
 
-        <h2>Gemini API Key Setup</h2>
-
-        <p>
-            This extension requires a Gemini API key to work.
-        </p>
-
-        <ol>
-            <li>Go to the Google AI Studio website:</li>
-            <li>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#8ab4ff;">
-                    https://aistudio.google.com/app/apikey
-                </a>
-            </li>
-            <li>Sign in with your Google account.</li>
-            <li>Create a new API key.</li>
-            <li>Copy the API key.</li>
-            <li>Paste it into the extension settings or popup when prompted.</li>
-        </ol>
-
-        <h2>Important</h2>
-
-        <ul>
-            <li>Keep your API key private.</li>
-            <li>Do not share your extracted extension folder publicly.</li>
-            <li>Works on Chromium browsers such as Chrome, Edge, Brave, and Opera.</li>
+    <div style="margin-top:40px; background:rgba(187, 128, 9, 0.1); border: 1px solid rgba(187, 128, 9, 0.4); padding:20px; border-radius:8px;">
+        <h3 style="color:#e3b341; margin-top:0; font-size:16px;">⚠️ Important Notes</h3>
+        <ul style="margin-bottom:0; font-size:14px; line-height:1.6;">
+            <li>Never share your API key with anyone else.</li>
+            <li>Supported browsers: Chrome, Brave, Edge, and Opera.</li>
+            <li>If the extension fails to load, ensure you selected the folder containing <code style="color:#79c0ff;">manifest.json</code>.</li>
         </ul>
     </div>
+
 </section>
