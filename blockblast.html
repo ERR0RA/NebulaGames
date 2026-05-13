@@ -2,71 +2,70 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEBULA VOXEL ENGINE | PRO</title>
+    <title>NEBULA | INFINITE BIOMES</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Inter', sans-serif; }
-        #ui {
-            position: absolute; top: 20px; left: 20px;
-            background: rgba(0,0,0,0.8); color: #00ff88; padding: 15px;
-            border-radius: 8px; pointer-events: none; border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
+        #game-ui { position: absolute; inset: 0; pointer-events: none; }
+        
+        /* Stats & Biome Indicator */
+        #top-bar {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: #00ff88; padding: 10px 30px;
+            border-radius: 50px; border: 1px solid #00ff88; font-weight: bold;
+            display: flex; gap: 20px; letter-spacing: 1px;
         }
-        #menu {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100; color: white; gap: 20px;
+
+        #inventory {
+            position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+            background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px;
+            color: white; border: 1px solid #333; pointer-events: auto;
         }
-        .btn {
-            background: #00ff88; color: black; border: none; padding: 12px 24px;
-            font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 1rem;
-        }
-        .btn-danger { background: #ff4444; color: white; }
-        input { padding: 10px; border-radius: 4px; border: none; width: 250px; }
-        #world-list { max-height: 300px; overflow-y: auto; width: 300px; margin: 20px 0; }
-        .world-item { 
-            display: flex; justify-content: space-between; padding: 10px; 
-            background: #222; margin-bottom: 5px; border-radius: 4px;
-        }
+
         #hotbar {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 10px;
+            display: flex; gap: 5px; pointer-events: auto; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 15px;
         }
-        .slot { width: 50px; height: 50px; border: 3px solid #444; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; text-align: center; }
-        .active { border-color: #00ff88; background: rgba(0,255,136,0.2); }
+        .slot {
+            width: 45px; height: 45px; border: 2px solid #555; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 9px; color: white;
+            transition: 0.2s;
+        }
+        .slot.active { border-color: #00ff88; background: rgba(0,255,136,0.3); transform: scale(1.1); }
+
         #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 20px; height: 20px;
-            border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%);
-            mix-blend-mode: difference; pointer-events: none;
+            position: absolute; top: 50%; left: 50%; width: 4px; height: 4px;
+            background: white; border-radius: 50%; transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px white;
         }
     </style>
 </head>
 <body>
 
-<div id="menu">
-    <h1>NEBULA VOXEL</h1>
-    <div style="display:flex; gap:10px;">
-        <input type="text" id="worldName" placeholder="World Name...">
-        <button class="btn" onclick="createNewWorld()">CREATE</button>
+<div id="game-ui">
+    <div id="top-bar">
+        <span id="biome-name">BIOME: LOADING...</span>
+        <span id="coord">X: 0 Z: 0</span>
     </div>
-    <div id="world-list"></div>
-    <p style="font-size: 0.8rem; opacity: 0.5;">Select a world to start</p>
-</div>
 
-<div id="ui">
-    <b>NEBULA v2.0 (Optimized)</b><br>
-    <span id="stats">Chunks: 0 | Blocks: 0</span><br>
-    <small>ESC to Menu | L-Click: Mine | Shift+Click: Build</small>
-</div>
+    <div id="inventory">
+        <b>RESOURCES</b>
+        <div id="inv-list" style="font-size: 12px; margin-top: 10px;"></div>
+    </div>
 
-<div id="hotbar">
-    <div id="s1" class="slot active">DIRT</div>
-    <div id="s2" class="slot">STONE</div>
-    <div id="s3" class="slot">WOOD</div>
-    <div id="s4" class="slot">LEAF</div>
-    <div id="s5" class="slot">GLASS</div>
-</div>
+    <div id="hotbar">
+        <div id="h0" class="slot active">GRASS</div>
+        <div id="h1" class="slot">DIRT</div>
+        <div id="h2" class="slot">STONE</div>
+        <div id="h3" class="slot">WOOD</div>
+        <div id="h4" class="slot">LEAVES</div>
+        <div id="h5" class="slot">SAND</div>
+        <div id="h6" class="slot">SNOW</div>
+        <div id="h7" class="slot">ICE</div>
+        <div id="h8" class="slot">MAGMA</div>
+    </div>
 
-<div id="crosshair"></div>
+    <div id="crosshair"></div>
+</div>
 
 <script type="importmap">
     { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
@@ -75,263 +74,232 @@
 <script type="module">
     import * as THREE from 'three';
 
-    // --- CONFIG & STATE ---
-    const CHUNK_SIZE = 16;
-    const RENDER_DIST = 3; 
-    const MAX_BLOCKS_PER_CHUNK = CHUNK_SIZE * CHUNK_SIZE * 20; 
+    // --- GAME DATA ---
+    const worldBlocks = JSON.parse(localStorage.getItem('nebula_infinite_world')) || {};
+    const inventory = { grass: 0, dirt: 0, stone: 0, wood: 0, leaf: 0, sand: 0, snow: 0, ice: 0, magma: 0 };
     
-    let currentWorld = null;
-    let worldData = {};
-    let activeChunks = new Map();
-    let currentBlock = 'dirt';
-    const blockTypes = ['dirt', 'stone', 'wood', 'leaf', 'glass'];
-    const blockColors = { dirt: 0x6b4c35, stone: 0x808080, wood: 0x4d2600, leaf: 0x228b22, glass: 0xadd8e6 };
+    const blockTypes = {
+        grass: { color: 0x4d904f, biome: 'PLAINS' },
+        dirt: { color: 0x6b4c35, biome: 'ALL' },
+        stone: { color: 0x7a7a7a, biome: 'ALL' },
+        wood: { color: 0x5d3a1a, biome: 'FOREST' },
+        leaf: { color: 0x2d5a27, biome: 'FOREST' },
+        sand: { color: 0xd2b48c, biome: 'DESERT' },
+        cactus: { color: 0x006400, biome: 'DESERT' },
+        snow: { color: 0xffffff, biome: 'ARCTIC' },
+        ice: { color: 0xa5f2f3, biome: 'ARCTIC' },
+        water: { color: 0x0077be, opacity: 0.6, transparent: true },
+        magma: { color: 0xff4500, emissive: 0xff0000, biome: 'VOLCANO' }
+    };
 
-    // --- THREE JS SETUP ---
+    // --- SCENE SETUP ---
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 20, 80);
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
 
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500);
-    const renderer = new THREE.WebGLRenderer({ antialias: false }); // Antialias off for performance
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    sunLight.position.set(50, 100, 50);
-    scene.add(sunLight);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+    sun.position.set(100, 200, 100);
+    scene.add(ambient, sun);
 
+    // --- BIOME & NOISE ENGINE ---
+    function getNoise(x, z, scale, intensity) {
+        return (Math.sin(x * scale) + Math.cos(z * scale)) * intensity;
+    }
+
+    function determineBiome(x, z) {
+        const humidity = getNoise(x, z, 0.01, 1);
+        const temp = getNoise(x + 500, z + 500, 0.01, 1);
+
+        if (temp > 0.6) return 'DESERT';
+        if (temp < -0.6) return 'ARCTIC';
+        if (humidity > 0.4) return 'FOREST';
+        if (humidity < -0.4) return 'VOLCANO';
+        return 'PLAINS';
+    }
+
+    // --- CHUNK GENERATION ---
+    const CHUNK_SIZE = 16;
+    const activeChunks = new Set();
+    const instancedMeshes = new Map();
     const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
 
-    // --- WORLD MANAGEMENT ---
-    window.createNewWorld = () => {
-        const name = document.getElementById('worldName').value.trim();
-        if(!name) return;
-        const worlds = JSON.parse(localStorage.getItem('nebula_worlds_list') || "[]");
-        if(!worlds.includes(name)) {
-            worlds.push(name);
-            localStorage.setItem('nebula_worlds_list', JSON.stringify(worlds));
-            localStorage.setItem(`nebula_world_${name}`, JSON.stringify({}));
+    function spawnStructure(x, y, z, type) {
+        if (type === 'TREE') {
+            for(let i=0; i<5; i++) worldBlocks[`${x},${y+i},${z}`] = 'wood';
+            for(let dx=-1; dx<=1; dx++) 
+                for(let dz=-1; dz<=1; dz++) 
+                    for(let dy=0; dy<2; dy++)
+                        worldBlocks[`${x+dx},${y+4+dy},${z+dz}`] = 'leaf';
         }
-        loadWorld(name);
-    };
-
-    window.deleteWorld = (name) => {
-        const worlds = JSON.parse(localStorage.getItem('nebula_worlds_list') || "[]").filter(w => w !== name);
-        localStorage.setItem('nebula_worlds_list', JSON.stringify(worlds));
-        localStorage.removeItem(`nebula_world_${name}`);
-        refreshWorldList();
-    };
-
-    function refreshWorldList() {
-        const list = document.getElementById('world-list');
-        const worlds = JSON.parse(localStorage.getItem('nebula_worlds_list') || "[]");
-        list.innerHTML = worlds.map(w => `
-            <div class="world-item">
-                <span style="cursor:pointer" onclick="loadWorld('${w}')">🌍 ${w}</span>
-                <span style="cursor:pointer; color:#ff4444" onclick="deleteWorld('${w}')">🗑️</span>
-            </div>
-        `).join('');
-    }
-
-    window.loadWorld = (name) => {
-        currentWorld = name;
-        worldData = JSON.parse(localStorage.getItem(`nebula_world_${name}`) || "{}");
-        document.getElementById('menu').style.display = 'none';
-        document.body.requestPointerLock();
-        // Clear existing
-        activeChunks.forEach(c => scene.remove(c.mesh));
-        activeChunks.clear();
-    };
-
-    // --- ENGINE ---
-    function getNoiseHeight(x, z) {
-        // More complex "Minecraft" noise
-        return Math.floor(
-            Math.sin(x * 0.05) * 4 + 
-            Math.cos(z * 0.05) * 4 + 
-            Math.sin(x * 0.2) * 2 + 10
-        );
-    }
-
-    function updateWorldStorage() {
-        if(currentWorld) {
-            localStorage.setItem(`nebula_world_${currentWorld}`, JSON.stringify(worldData));
+        if (type === 'CACTUS') {
+            for(let i=0; i<3; i++) worldBlocks[`${x},${y+i},${z}`] = 'cactus';
         }
     }
 
-    function createChunk(cx, cz) {
+    function generateChunk(cx, cz) {
         const key = `${cx},${cz}`;
         if (activeChunks.has(key)) return;
-
-        // Use InstancedMesh - this is the "No Lag" secret
-        const mesh = new THREE.InstancedMesh(cubeGeo, new THREE.MeshLambertMaterial({ vertexColors: false }), MAX_BLOCKS_PER_CHUNK);
-        const dummy = new THREE.Object3D();
-        let count = 0;
 
         for (let x = 0; x < CHUNK_SIZE; x++) {
             for (let z = 0; z < CHUNK_SIZE; z++) {
                 const wx = cx * CHUNK_SIZE + x;
                 const wz = cz * CHUNK_SIZE + z;
-                const h = getNoiseHeight(wx, wz);
+                const biome = determineBiome(wx, wz);
+                
+                let h = Math.floor(getNoise(wx, wz, 0.05, 5) + 10);
+                if (biome === 'VOLCANO') h += 5;
 
                 for (let y = 0; y <= h; y++) {
-                    const blockKey = `${wx},${y},${wz}`;
-                    if (worldData[blockKey] === "air") continue;
+                    const bKey = `${wx},${y},${wz}`;
+                    if (worldBlocks[bKey]) continue;
 
-                    const type = worldData[blockKey] || (y === h ? 'dirt' : y < h - 3 ? 'stone' : 'dirt');
-                    
-                    dummy.position.set(wx, y, wz);
-                    dummy.updateMatrix();
-                    mesh.setMatrixAt(count, dummy.matrix);
-                    mesh.setColorAt(count, new THREE.Color(blockColors[type]));
-                    count++;
+                    let type = 'stone';
+                    if (y === h) {
+                        if (biome === 'DESERT') type = 'sand';
+                        else if (biome === 'ARCTIC') type = 'snow';
+                        else if (biome === 'VOLCANO') type = (Math.random() > 0.8) ? 'magma' : 'stone';
+                        else type = 'grass';
+                    } else if (y > h - 3) {
+                        type = (biome === 'DESERT') ? 'sand' : 'dirt';
+                    }
+                    worldBlocks[bKey] = type;
+                }
+
+                // Random Decorations
+                if (Math.random() > 0.99) {
+                    if (biome === 'FOREST' || biome === 'PLAINS') spawnStructure(wx, h+1, wz, 'TREE');
+                    if (biome === 'DESERT') spawnStructure(wx, h+1, wz, 'CACTUS');
                 }
             }
         }
-        
-        mesh.count = count;
-        mesh.instanceMatrix.needsUpdate = true;
-        if(mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-        
-        scene.add(mesh);
-        activeChunks.set(key, { mesh, count });
+        activeChunks.add(key);
+        renderWorld();
     }
 
-    // --- CONTROLS ---
-    let move = { f: false, b: false, l: false, r: false, jump: false };
-    let vel = new THREE.Vector3();
+    function renderWorld() {
+        instancedMeshes.forEach(m => scene.remove(m));
+        instancedMeshes.clear();
+
+        const groups = {};
+        for (const [key, type] of Object.entries(worldBlocks)) {
+            if (type === 'air') continue;
+            if (!groups[type]) groups[type] = [];
+            groups[type].push(key.split(',').map(Number));
+        }
+
+        for (const [type, positions] of Object.entries(groups)) {
+            const data = blockTypes[type] || { color: 0xff00ff };
+            const mat = new THREE.MeshLambertMaterial({ 
+                color: data.color, 
+                transparent: !!data.transparent, 
+                opacity: data.opacity || 1 
+            });
+            const mesh = new THREE.InstancedMesh(cubeGeo, mat, positions.length);
+            const dummy = new THREE.Object3D();
+
+            positions.forEach((p, i) => {
+                dummy.position.set(p[0], p[1], p[2]);
+                dummy.updateMatrix();
+                mesh.setMatrixAt(i, dummy.matrix);
+            });
+            scene.add(mesh);
+            instancedMeshes.set(type, mesh);
+        }
+    }
+
+    // --- PLAYER & INPUT ---
+    let selectedSlot = 0;
+    const move = { f: 0, b: 0, l: 0, r: 0 };
     
     document.addEventListener('keydown', (e) => {
-        if (e.code === 'KeyW') move.f = true;
-        if (e.code === 'KeyS') move.b = true;
-        if (e.code === 'KeyA') move.l = true;
-        if (e.code === 'KeyD') move.r = true;
-        if (e.code === 'Space' && canJump) { vel.y = 5; canJump = false; }
-        if (e.code === 'Escape') document.getElementById('menu').style.display = 'flex';
-        
-        if (e.key >= 1 && e.key <= 5) {
+        if (e.key >= 1 && e.key <= 9) {
+            selectedSlot = e.key - 1;
             document.querySelectorAll('.slot').forEach(s => s.classList.remove('active'));
-            document.getElementById('s' + e.key).classList.add('active');
-            currentBlock = blockTypes[e.key - 1];
+            document.getElementById(`h${selectedSlot}`).classList.add('active');
+        }
+        if (e.code === 'KeyW') move.f = 1; if (e.code === 'KeyS') move.b = 1;
+        if (e.code === 'KeyA') move.l = 1; if (e.code === 'KeyD') move.r = 1;
+    });
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyW') move.f = 0; if (e.code === 'KeyS') move.b = 0;
+        if (e.code === 'KeyA') move.l = 0; if (e.code === 'KeyD') move.r = 0;
+    });
+
+    // Mining & Placing
+    document.addEventListener('mousedown', (e) => {
+        if (!document.pointerLockElement) { document.body.requestPointerLock(); return; }
+        
+        const ray = new THREE.Raycaster();
+        ray.setFromCamera(new THREE.Vector2(0, 0), camera);
+        const hits = ray.intersectObjects(Array.from(instancedMeshes.values()));
+
+        if (hits.length > 0) {
+            const hit = hits[0];
+            const matrix = new THREE.Matrix4();
+            hit.object.getMatrixAt(hit.instanceId, matrix);
+            const pos = new THREE.Vector3().setFromMatrixPosition(matrix);
+            
+            if (e.button === 0) { // Mine
+                const type = worldBlocks[`${pos.x},${pos.y},${pos.z}`];
+                if (inventory[type] !== undefined) inventory[type]++;
+                worldBlocks[`${pos.x},${pos.y},${pos.z}`] = 'air';
+                updateUI();
+            } else { // Place
+                const p = pos.add(hit.face.normal);
+                const type = Object.keys(blockTypes)[selectedSlot];
+                worldBlocks[`${Math.round(p.x)},${Math.round(p.y)},${Math.round(p.z)}`] = type;
+            }
+            localStorage.setItem('nebula_infinite_world', JSON.stringify(worldBlocks));
+            renderWorld();
         }
     });
 
-    document.addEventListener('keyup', (e) => {
-        if (e.code === 'KeyW') move.f = false;
-        if (e.code === 'KeyS') move.b = false;
-        if (e.code === 'KeyA') move.l = false;
-        if (e.code === 'KeyD') move.r = false;
-    });
+    function updateUI() {
+        document.getElementById('inv-list').innerHTML = Object.entries(inventory)
+            .filter(e => e[1] > 0)
+            .map(e => `<div>${e[0].toUpperCase()}: ${e[1]}</div>`).join('');
+    }
+
+    // --- LOOP ---
+    camera.position.set(0, 20, 0);
+    camera.rotation.order = 'YXZ';
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        const biome = determineBiome(camera.position.x, camera.position.z);
+        document.getElementById('biome-name').innerText = `BIOME: ${biome}`;
+        document.getElementById('coord').innerText = `X: ${Math.floor(camera.position.x)} Z: ${Math.floor(camera.position.z)}`;
+
+        // Simple Cam Movement
+        const speed = 0.2;
+        if (move.f) camera.translateZ(-speed);
+        if (move.b) camera.translateZ(speed);
+        if (move.l) camera.translateX(-speed);
+        if (move.r) camera.translateX(speed);
+        camera.position.y = 15; // Flight mode for easy exploration
+
+        const cx = Math.floor(camera.position.x / CHUNK_SIZE);
+        const cz = Math.floor(camera.position.z / CHUNK_SIZE);
+        for(let x=-1; x<=1; x++) for(let z=-1; z<=1; z++) generateChunk(cx+x, cz+z);
+
+        renderer.render(scene, camera);
+    }
 
     document.addEventListener('mousemove', (e) => {
         if (document.pointerLockElement) {
             camera.rotation.y -= e.movementX * 0.002;
             camera.rotation.x -= e.movementY * 0.002;
-            camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
         }
     });
 
-    // Simple building/mining logic for InstancedMesh
-    document.addEventListener('mousedown', (e) => {
-        if (!document.pointerLockElement || !currentWorld) return;
-        
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const chunkMeshes = Array.from(activeChunks.values()).map(c => c.mesh);
-        const intersects = raycaster.intersectObjects(chunkMeshes);
-
-        if (intersects.length > 0) {
-            const hit = intersects[0];
-            const matrix = new THREE.Matrix4();
-            hit.object.getMatrixAt(hit.instanceId, matrix);
-            const pos = new THREE.Vector3().setFromMatrixPosition(matrix);
-
-            if (e.shiftKey) { // BUILD
-                const b = pos.clone().add(hit.face.normal);
-                worldData[`${Math.round(b.x)},${Math.round(b.y)},${Math.round(b.z)}`] = currentBlock;
-            } else { // MINE
-                worldData[`${Math.round(pos.x)},${Math.round(pos.y)},${Math.round(pos.z)}`] = "air";
-            }
-            
-            updateWorldStorage();
-            // Force refresh of the hit chunk
-            const cx = Math.floor(pos.x / CHUNK_SIZE);
-            const cz = Math.floor(pos.z / CHUNK_SIZE);
-            const key = `${cx},${cz}`;
-            scene.remove(activeChunks.get(key).mesh);
-            activeChunks.delete(key);
-        }
-    });
-
-    // --- LOOP ---
-    let canJump = false;
-    camera.position.set(8, 25, 8);
-    camera.rotation.order = 'YXZ';
-
-    function animate() {
-        requestAnimationFrame(animate);
-        if(!currentWorld) return;
-
-        const delta = 0.016; // Fixed step for simplicity
-
-        // Physics
-        vel.y -= 15 * delta; // Gravity
-        camera.position.y += vel.y * delta;
-
-        const dir = new THREE.Vector3();
-        if(move.f) dir.z -= 1;
-        if(move.b) dir.z += 1;
-        if(move.l) dir.x -= 1;
-        if(move.r) dir.x += 1;
-        dir.applyQuaternion(camera.quaternion);
-        dir.y = 0;
-        dir.normalize();
-        
-        camera.position.addScaledVector(dir, 10 * delta);
-
-        // Simple Collision
-        const ground = getNoiseHeight(camera.position.x, camera.position.z) + 2;
-        if (camera.position.y < ground) {
-            camera.position.y = ground;
-            vel.y = 0;
-            canJump = true;
-        }
-
-        // Chunk Loader
-        const curCX = Math.floor(camera.position.x / CHUNK_SIZE);
-        const curCZ = Math.floor(camera.position.z / CHUNK_SIZE);
-        
-        for(let x = -RENDER_DIST; x <= RENDER_DIST; x++) {
-            for(let z = -RENDER_DIST; z <= RENDER_DIST; z++) {
-                createChunk(curCX + x, curCZ + z);
-            }
-        }
-
-        // Cleanup distant chunks to save RAM
-        activeChunks.forEach((data, key) => {
-            const [kx, kz] = key.split(',').map(Number);
-            if(Math.abs(kx - curCX) > RENDER_DIST + 1 || Math.abs(kz - curCZ) > RENDER_DIST + 1) {
-                scene.remove(data.mesh);
-                activeChunks.delete(key);
-            }
-        });
-
-        renderer.render(scene, camera);
-        document.getElementById('stats').innerText = `Chunks: ${activeChunks.size} | Pos: ${Math.floor(camera.position.x)}, ${Math.floor(camera.position.z)}`;
-    }
-
-    refreshWorldList();
     animate();
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
 </script>
 </body>
 </html>
