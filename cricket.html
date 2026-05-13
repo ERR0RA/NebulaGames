@@ -3,77 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRICKET PVP ULTIMATE</title>
+<title>Cricket PvP Ultra</title>
 
 <style>
+
 body{
   margin:0;
   overflow:hidden;
-  background:#070b14;
-  font-family:Arial;
+  font-family:system-ui;
+  background:radial-gradient(circle at top,#0b1220,#05060a);
   color:white;
 }
 
+/* CANVAS */
 canvas{
   display:block;
-  background:linear-gradient(to bottom,#87ceeb 0%,#87ceeb 40%,#2ecc71 40%,#1f8f45 100%);
+  margin:auto;
+  background:
+    radial-gradient(circle at center top,#1a2a4a,#0c1a2e 40%,#0a3b1f 41%,#06401f 100%);
+  box-shadow:0 0 60px rgba(0,255,140,0.15);
 }
 
+/* HUD */
 #ui{
   position:absolute;
-  top:10px;
+  top:15px;
   width:100%;
   display:flex;
-  justify-content:space-around;
-  font-size:20px;
-  font-weight:bold;
+  justify-content:center;
+  gap:20px;
+  z-index:10;
 }
 
 .panel{
-  background:rgba(0,0,0,0.5);
-  padding:10px 15px;
-  border-radius:10px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.15);
+  backdrop-filter:blur(14px);
+  padding:10px 18px;
+  border-radius:14px;
+  font-weight:600;
+  letter-spacing:1px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.4);
 }
 
+/* MESSAGE */
 #msg{
   position:absolute;
-  top:50%;
+  top:45%;
   left:50%;
   transform:translate(-50%,-50%);
-  font-size:60px;
+  font-size:64px;
+  font-weight:900;
   opacity:0;
-  transition:0.2s;
-  color:gold;
-  text-shadow:0 0 20px orange;
+  transition:0.25s;
+  text-shadow:0 0 30px rgba(255,200,0,0.6);
 }
 
+/* TIMING BAR */
 #bar{
   position:absolute;
   bottom:40px;
   left:50%;
   transform:translateX(-50%);
-  width:300px;
-  height:15px;
-  background:#222;
+  width:320px;
+  height:14px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.2);
   border-radius:999px;
   overflow:hidden;
-  border:2px solid white;
+  backdrop-filter:blur(10px);
 }
 
 #zone{
   position:absolute;
-  left:40%;
-  width:20%;
+  left:42%;
+  width:16%;
   height:100%;
-  background:#00ff88;
+  background:linear-gradient(90deg,#00ff88,#00c3ff);
+  box-shadow:0 0 15px rgba(0,255,150,0.5);
 }
 
 #marker{
   position:absolute;
-  width:8px;
+  width:6px;
   height:100%;
   background:white;
+  box-shadow:0 0 10px white;
 }
+
+/* BAT GLOW (visual only via canvas style) */
+
 </style>
 </head>
 
@@ -97,67 +116,70 @@ canvas{
 
 <script>
 
-const c = document.getElementById("c");
-const ctx = c.getContext("2d");
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
 
-c.width = innerWidth;
-c.height = innerHeight;
+c.width=innerWidth;
+c.height=innerHeight;
 
-let state = "P1";
+let state="P1";
 let p1=0,p2=0,wickets=3,target=0;
 
-let bat = {x:c.width/2,y:c.height-120};
-let ball = {x:0,y:0,vx:0,vy:0,active:false,curve:0,fire:false};
+let bat={x:c.width/2,y:c.height-140};
+let ball={x:0,y:0,vx:0,vy:0,active:false,curve:0,fire:false};
 
-let bowler = {aim:0};
+let bowler={aim:0};
 
-let marker = document.getElementById("marker");
 let pos=0,dir=1;
+let marker=document.getElementById("marker");
 
 let shake=0;
 
+/* UI TEXT */
 function msg(t){
   let m=document.getElementById("msg");
   m.innerText=t;
   m.style.opacity=1;
-  setTimeout(()=>m.style.opacity=0,800);
+  setTimeout(()=>m.style.opacity=0,700);
 }
 
+/* BOWL */
 function bowl(){
   if(ball.active) return;
 
   ball.x=c.width/2;
-  ball.y=120;
+  ball.y=140;
 
   ball.vx=bowler.aim;
-  ball.vy=7+Math.random()*4;
-  ball.curve=(Math.random()-0.5)*2;
+  ball.vy=7+Math.random()*3;
+  ball.curve=(Math.random()-0.5)*1.8;
 
   ball.active=true;
   ball.fire=false;
 }
 
+/* SWING */
 function swing(){
 
   if(!ball.active) return;
 
   let dist=Math.abs(ball.x-bat.x);
+  let timing=pos/320;
 
-  let timing=pos/300;
-  let perfect=timing>0.4 && timing<0.6;
+  let perfect=timing>0.42 && timing<0.58;
 
-  if(dist<80){
+  if(dist<85){
 
     let runs=1;
 
     if(perfect){
       runs=6;
       ball.fire=true;
-      shake=20;
+      shake=18;
       msg("SIX!");
     } else {
       runs=Math.random()>0.5?4:1;
-      msg(runs+" RUNS");
+      msg(runs+" RUN");
     }
 
     if(state==="P1"){
@@ -172,6 +194,7 @@ function swing(){
   }
 }
 
+/* OUT */
 function out(){
   wickets--;
   document.getElementById("wickets").innerText=wickets;
@@ -181,6 +204,7 @@ function out(){
   if(wickets<=0) next();
 }
 
+/* NEXT INNINGS */
 function next(){
 
   if(state==="P1"){
@@ -190,84 +214,118 @@ function next(){
     document.getElementById("target").innerText=target;
     msg("P2 CHASE");
   } else {
-    alert(p1>p2?"P1 WINS":"P2 WINS");
+    alert(p1>p2?"PLAYER 1 WINS":"PLAYER 2 WINS");
     location.reload();
   }
 }
 
+/* BALL UPDATE */
 function updateBall(){
 
   if(!ball.active) return;
 
   ball.x+=ball.vx+ball.curve;
   ball.y+=ball.vy;
+  ball.vy+=0.22;
 
-  ball.vy+=0.25;
-
-  if(ball.y>bat.y && Math.abs(ball.x-bat.x)<30){
+  if(ball.y>bat.y && Math.abs(ball.x-bat.x)<35){
     out();
   }
 
   if(ball.y>c.height){
     ball.active=false;
-    setTimeout(bowl,800);
+    setTimeout(bowl,700);
   }
 }
 
-function timingBar(){
+/* TIMING BAR */
+function timing(){
 
   pos+=4*dir;
-  if(pos>290)dir=-1;
+  if(pos>300)dir=-1;
   if(pos<0)dir=1;
 
   marker.style.left=pos+"px";
 }
 
+/* DRAW STADIUM */
+function drawBackground(){
+
+  // subtle glow grass
+  let g=ctx.createRadialGradient(
+    c.width/2,c.height,50,
+    c.width/2,c.height,600
+  );
+
+  g.addColorStop(0,"#0f5f2d");
+  g.addColorStop(1,"#06120a");
+
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,c.width,c.height);
+
+  // floodlight glow
+  ctx.fillStyle="rgba(255,255,255,0.03)";
+  ctx.beginPath();
+  ctx.arc(c.width/2,120,300,0,Math.PI*2);
+  ctx.fill();
+}
+
+/* DRAW */
 function draw(){
 
   if(shake>0){
-    shake*=0.9;
+    shake*=0.85;
     ctx.setTransform(1,0,0,1,(Math.random()-0.5)*shake,(Math.random()-0.5)*shake);
   } else ctx.setTransform(1,0,0,1,0,0);
 
-  ctx.clearRect(0,0,c.width,c.height);
+  drawBackground();
 
-  // bat
-  ctx.fillStyle="orange";
-  ctx.fillRect(bat.x-60,bat.y,120,15);
+  // pitch
+  ctx.fillStyle="rgba(210,180,120,0.9)";
+  ctx.fillRect(c.width/2-120,140,240,c.height);
+
+  // bat (smooth)
+  ctx.fillStyle="#ff8c00";
+  ctx.shadowBlur=20;
+  ctx.shadowColor="#ff6a00";
+  ctx.fillRect(bat.x-65,bat.y,130,16);
+  ctx.shadowBlur=0;
 
   // ball
   if(ball.active){
-    ctx.fillStyle=ball.fire?"#ff5500":"red";
+    ctx.fillStyle=ball.fire?"#ff4400":"#ff2d2d";
+    ctx.shadowBlur=25;
+    ctx.shadowColor=ball.fire?"orange":"red";
     ctx.beginPath();
     ctx.arc(ball.x,ball.y,10,0,Math.PI*2);
     ctx.fill();
+    ctx.shadowBlur=0;
   }
 
   updateBall();
-  timingBar();
+  timing();
 
   requestAnimationFrame(draw);
 }
 
+/* INPUT */
 window.addEventListener("mousemove",e=>{
   bat.x=e.clientX;
 });
 
 window.addEventListener("keydown",e=>{
-
   if(e.code==="Space") swing();
-
   if(e.key==="ArrowLeft") bowler.aim=-2;
   if(e.key==="ArrowRight") bowler.aim=2;
   if(e.key==="ArrowUp") bowl();
 });
 
-window.addEventListener("keyup",e=>{
+window.addEventListener("keyup",()=>{
   bowler.aim=0;
 });
 
-setTimeout(bowl,1000);
+/* START */
+setTimeout(bowl,900);
 draw();
 
 </script>
