@@ -3,216 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON-GRID | Fixed Collisions</title>
+    <title>NEON-GRID | Visibility Fixed</title>
     <style>
         body { 
-            background: #000; color: #0f0; font-family: 'Courier New', monospace; 
+            background: #111; color: #0f0; font-family: 'Courier New', monospace; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             height: 100vh; margin: 0; overflow: hidden;
         }
-        canvas { border: 4px solid #004400; box-shadow: 0 0 20px #004400; background: #050505; max-width: 90vw; }
+        canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; box-shadow: 0 0 20px #0f0; }
         #ui { text-align: center; width: 600px; margin-bottom: 10px; }
-        .setup-panel { background: rgba(0,20,0,0.9); padding: 15px; border: 1px solid #0f0; border-radius: 5px; display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
+        .setup-panel { background: #222; padding: 15px; border: 2px solid #0f0; display: flex; gap: 10px; justify-content: center; }
         .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; }
-        .meter-container { width: 30%; background: #111; border: 1px solid #333; height: 10px; position: relative; }
+        .meter-container { width: 30%; background: #000; border: 1px solid #0f0; height: 12px; }
         .fill { height: 100%; width: 100%; transition: width 0.1s; }
         #p1-fill { background: #0f0; } #p2-fill { background: #00f; } #p3-fill { background: #f00; }
-        #msg { position: absolute; font-size: 2.5rem; font-weight: bold; pointer-events: none; z-index: 10; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-        select, button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 8px; cursor: pointer; font-family: 'Courier New'; font-weight: bold; }
-        button:hover { background: #0f0; color: #000; }
-        .label-tag { font-size: 0.7rem; position: absolute; top: -14px; left: 0; width: 100%; text-align: center; color: #aaa; }
+        #msg { position: absolute; font-size: 3rem; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 2px 2px #000; }
+        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="ui">
-        <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
-        <div class="meters">
-            <div class="meter-container"><div class="label-tag">P1</div><div id="p1-fill" class="fill"></div></div>
-            <div class="meter-container" id="p2-ui"><div class="label-tag">P2</div><div id="p2-fill" class="fill"></div></div>
-            <div class="meter-container" id="bot-ui"><div class="label-tag">BOT</div><div id="p3-fill" class="fill"></div></div>
-        </div>
-        
-        <div class="setup-panel">
-            <select id="gameMode">
-                <option value="pve">Human vs Bot</option>
-                <option value="pvpve">Human + Human vs Bot</option>
-                <option value="pvp" selected>Human vs Human</option>
-            </select>
-            <select id="botType">
-                <option value="king">KING (Impossible)</option>
-                <option value="alpha">ALPHA (Hard)</option>
-                <option value="noob">NOOB (Easy)</option>
-            </select>
-            <button id="startBtn">START MATCH</button>
-        </div>
+<div id="ui">
+    <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
+    <div class="meters">
+        <div class="meter-container"><div id="p1-fill" class="fill"></div></div>
+        <div class="meter-container" id="p2-ui"><div id="p2-fill" class="fill"></div></div>
+        <div class="meter-container" id="bot-ui"><div id="p3-fill" class="fill"></div></div>
     </div>
+    <div class="setup-panel">
+        <select id="gameMode">
+            <option value="pve">1 Player vs Bot</option>
+            <option value="pvpve">2 Players vs Bot</option>
+            <option value="pvp">Human vs Human</option>
+        </select>
+        <select id="botType">
+            <option value="king">KING BOT</option>
+            <option value="noob">NOOB BOT</option>
+        </select>
+        <button id="startBtn">START</button>
+    </div>
+</div>
 
-    <div id="msg"></div>
-    <canvas id="game" width="700" height="450"></canvas>
+<div id="msg"></div>
+<canvas id="game" width="600" height="400"></canvas>
 
-    <script>
-        const canvas = document.getElementById('game');
-        const ctx = canvas.getContext('2d');
-        const msg = document.getElementById('msg');
-        const scoreUI = document.getElementById('score');
-        const startBtn = document.getElementById('startBtn');
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const UNIT = 5; // Larger unit for better visibility
+let grid, players, gameActive = false, score = {p1:0, p2:0, bot:0};
 
-        const UNIT = 4;
-        let score = { p1: 0, p2: 0, bot: 0 };
-        let grid, players, gameActive = false;
+function reset() {
+    const mode = document.getElementById('gameMode').value;
+    grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(false));
+    
+    players = [
+        { x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: true },
+        { x: 100, y: 300, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pve') },
+        { x: 500, y: 200, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp') }
+    ];
 
-        startBtn.onclick = () => { startBtn.blur(); initGame(); };
+    document.getElementById('p2-ui').style.display = players[1].active ? "block" : "none";
+    document.getElementById('bot-ui').style.display = players[2].active ? "block" : "none";
+    
+    document.getElementById('msg').innerText = "GET READY...";
+    gameActive = false;
+    setTimeout(() => { document.getElementById('msg').innerText = ""; gameActive = true; }, 1000);
+}
 
-        function initGame() {
-            const mode = document.getElementById('gameMode').value;
-            grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(false));
-            
-            players = [
-                { id: 'p1', x: 100, y: 225, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: true },
-                { id: 'p2', x: 600, y: 225, dx: -UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pve') },
-                { id: 'bot', x: 350, y: 50, dx: 0, dy: UNIT, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp') }
-            ];
+document.getElementById('startBtn').onclick = reset;
 
-            // Adjust positions for Human vs Human
-            if (mode === 'pvp') {
-                players[0].y = 225; players[0].x = 100; players[0].dx = UNIT;
-                players[1].y = 225; players[1].x = 600; players[1].dx = -UNIT;
-            } else if (mode === 'pvpve') {
-                players[0].y = 150; players[1].y = 300; players[2].x = 600; players[2].y = 225;
+window.onkeydown = e => {
+    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
+    const mode = document.getElementById('gameMode').value;
+
+    // P1 (WASD + Arrows in solo)
+    if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
+    if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
+    if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
+    if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
+    if (e.code === 'Space') players[0].isBoosting = true;
+
+    // P2 (Arrows)
+    if (players[1].active) {
+        if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
+        if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
+        if (e.key === 'ArrowLeft' && players[1].dx === 0) { players[1].dx = -UNIT; players[1].dy = 0; }
+        if (e.key === 'ArrowRight' && players[1].dx === 0) { players[1].dx = UNIT; players[1].dy = 0; }
+        if (e.key === 'Enter') players[1].isBoosting = true;
+    }
+};
+
+window.onkeyup = e => {
+    if (e.code === 'Space') players[0].isBoosting = false;
+    if (e.key === 'Enter') players[1].isBoosting = false;
+};
+
+function update() {
+    if (!gameActive) return;
+
+    players.forEach(p => {
+        if (!p.active || !p.alive) return;
+
+        let spd = (p.isBoosting && p.boost > 10) ? 2 : 1;
+        if (p.isBoosting) p.boost -= 2; else if (p.boost < 100) p.boost += 0.1;
+
+        for (let i = 0; i < spd; i++) {
+            p.x += p.dx;
+            p.y += p.dy;
+
+            // Collision check
+            if (p.x < 0 || p.x >= canvas.width || p.y < 0 || p.y >= canvas.height || grid[p.x][p.y]) {
+                p.alive = false;
+                checkWinner();
+                return;
             }
-
-            document.getElementById('p2-ui').style.opacity = players[1].active ? "1" : "0";
-            document.getElementById('bot-ui').style.opacity = players[2].active ? "1" : "0";
-
-            msg.innerText = "READY...";
-            gameActive = false;
-            
-            setTimeout(() => {
-                msg.innerText = "GO!";
-                setTimeout(() => { msg.innerText = ""; gameActive = true; }, 500);
-            }, 1000);
+            grid[p.x][p.y] = true;
+            p.trail.push({x: p.x, y: p.y});
         }
+    });
 
-        window.addEventListener('keydown', e => {
-            if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
-            const mode = document.getElementById('gameMode').value;
-
-            // P1
-            const p1Up = e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp');
-            const p1Down = e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown');
-            const p1Left = e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft');
-            const p1Right = e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight');
-
-            if (p1Up && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
-            if (p1Down && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
-            if (p1Left && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
-            if (p1Right && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
-            if (e.code === 'Space') players[0].isBoosting = true;
-
-            // P2
-            if (players[1].active) {
-                if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
-                if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
-                if (e.key === 'ArrowLeft' && players[1].dx === 0) { players[1].dx = -UNIT; players[1].dy = 0; }
-                if (e.key === 'ArrowRight' && players[1].dx === 0) { players[1].dx = UNIT; players[1].dy = 0; }
-                if (e.key === 'Enter') players[1].isBoosting = true;
-            }
-        });
-
-        window.addEventListener('keyup', e => {
-            if (e.code === 'Space') players[0].isBoosting = false;
-            if (e.key === 'Enter') players[1].isBoosting = false;
-        });
-
-        function updatePlayer(p) {
-            if (!p.active || !p.alive) return;
-            
-            let spd = (p.isBoosting && p.boost > 5) ? 2 : 1;
-            if (p.isBoosting) p.boost -= 2.0; 
-            else if (p.boost < 100) p.boost += 0.15;
-
-            // MOVE STEP BY STEP (The Phasing Fix)
-            for (let i = 0; i < spd; i++) {
-                for (let step = 0; step < UNIT; step++) {
-                    p.x += (p.dx / UNIT);
-                    p.y += (p.dy / UNIT);
-                    
-                    let rx = Math.round(p.x);
-                    let ry = Math.round(p.y);
-
-                    if (rx < 0 || rx >= canvas.width || ry < 0 || ry >= canvas.height || grid[rx][ry]) {
-                        p.alive = false;
-                        return;
-                    }
-                }
-                // Mark current full UNIT position on grid
-                grid[Math.round(p.x)][Math.round(p.y)] = true;
-                p.trail.push({x: Math.round(p.x), y: Math.round(p.y)});
-            }
+    // Simple Bot AI
+    const bot = players[2];
+    if (bot.active && bot.alive) {
+        if (grid[bot.x + bot.dx] && grid[bot.x + bot.dx][bot.y + bot.dy] || bot.x + bot.dx < 0 || bot.x + bot.dx >= canvas.width || bot.y + bot.dy < 0 || bot.y + bot.dy >= canvas.height) {
+            const possible = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}];
+            const choice = possible.find(d => !grid[bot.x + d.dx]?.[bot.y + d.dy]);
+            if (choice) { bot.dx = choice.dx; bot.dy = choice.dy; }
         }
+    }
 
-        function runAI() {
-            let p = players[2];
-            if (!p.active || !p.alive) return;
-            const type = document.getElementById('botType').value;
-            const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}];
-            const valid = dirs.filter(d => !(d.dx === -p.dx && d.dy === -p.dy));
-            
-            let best = null, maxSpace = -1;
-            valid.forEach(d => {
-                const nx = p.x + d.dx, ny = p.y + d.dy;
-                if (nx >= 0 && nx < canvas.width && ny >= 0 && ny < canvas.height && !grid[nx][ny]) {
-                    let s = 0, scan = (type === 'king') ? 15 : 6;
-                    for(let i=-scan; i<=scan; i+=UNIT) if(nx+i >=0 && nx+i < canvas.width && !grid[nx+i][ny]) s++;
-                    if (s > maxSpace) { maxSpace = s; best = d; }
-                }
-            });
-            if (best) { p.dx = best.dx; p.dy = best.dy; }
-        }
+    document.getElementById('p1-fill').style.width = players[0].boost + "%";
+    document.getElementById('p2-fill').style.width = players[1].boost + "%";
+    document.getElementById('p3-fill').style.width = players[2].boost + "%";
+}
 
-        function loop() {
-            if (gameActive) {
-                runAI();
-                players.forEach(updatePlayer);
-                
-                const mode = document.getElementById('gameMode').value;
-                if (mode === 'pvp') {
-                    if (!players[0].alive) endGame("PLAYER 2 WINS!", players[1].color, 'p2');
-                    else if (!players[1].alive) endGame("PLAYER 1 WINS!", players[0].color, 'p1');
-                } else {
-                    const humansAlive = (players[0].active && players[0].alive) || (players[1].active && players[1].alive);
-                    if (!humansAlive) endGame("BOT WINS!", "#f00", 'bot');
-                    else if (!players[2].alive) endGame("HUMANS WIN!", "#0ff", 'p1'); 
-                }
+function checkWinner() {
+    const mode = document.getElementById('gameMode').value;
+    const p1 = players[0], p2 = players[1], bot = players[2];
 
-                document.getElementById('p1-fill').style.width = players[0].boost + "%";
-                document.getElementById('p2-fill').style.width = players[1].boost + "%";
-                document.getElementById('p3-fill').style.width = players[2].boost + "%";
-            }
+    if (mode === 'pvp') {
+        if (!p1.alive) { score.p2++; endGame("P2 WINS!"); }
+        else if (!p2.alive) { score.p1++; endGame("P1 WINS!"); }
+    } else {
+        const humansAlive = p1.alive || (p2.active && p2.alive);
+        if (!humansAlive) { score.bot++; endGame("BOT WINS!"); }
+        else if (!bot.alive) { score.p1++; endGame("HUMANS WIN!"); }
+    }
+}
 
-            ctx.fillStyle = "rgba(0,0,0,0.2)";
-            ctx.fillRect(0,0,canvas.width,canvas.height);
-            players.forEach(p => {
-                if (!p.active || !p.alive) return;
-                ctx.fillStyle = p.color;
-                p.trail.forEach(t => ctx.fillRect(t.x, t.y, UNIT, UNIT));
-            });
-            requestAnimationFrame(loop);
-        }
+function endGame(txt) {
+    gameActive = false;
+    document.getElementById('msg').innerText = txt;
+    document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
+    setTimeout(reset, 2000);
+}
 
-        function endGame(t, c, winner) {
-            gameActive = false;
-            msg.innerText = t; msg.style.color = c;
-            if (winner === 'p1') score.p1++;
-            else if (winner === 'p2') score.p2++;
-            else if (winner === 'bot') score.bot++;
-            scoreUI.innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
-            setTimeout(initGame, 3000);
-        }
+function draw() {
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        loop();
-        initGame();
-    </script>
+    players.forEach(p => {
+        if (!p.active) return;
+        ctx.fillStyle = p.color;
+        p.trail.forEach(t => ctx.fillRect(t.x, t.y, UNIT, UNIT));
+        // Draw head
+        ctx.fillRect(p.x, p.y, UNIT, UNIT);
+    });
+    requestAnimationFrame(() => { update(); draw(); });
+}
+
+reset();
+draw();
+</script>
 </body>
 </html>
