@@ -3,56 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON-GRID | Turbo Bot</title>
+    <title>NEON-GRID | Fixed Focus</title>
     <style>
         body { 
             background: #000; color: #0f0; font-family: 'Courier New', monospace; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             height: 100vh; margin: 0; overflow: hidden; touch-action: none;
         }
-        
         canvas { 
             border: 4px solid #004400; box-shadow: 0 0 20px #004400; background: #050505;
-            max-width: 95vw; height: auto; touch-action: none;
+            max-width: 95vw; height: auto;
         }
-
-        #ui { margin-bottom: 10px; text-align: center; width: 600px; position: relative;}
-        h1 { font-size: 1.5rem; margin: 5px 0; letter-spacing: 4px; }
-        
+        #ui { margin-bottom: 10px; text-align: center; width: 600px; }
         .meters { display: flex; justify-content: space-between; width: 100%; margin-top: 5px; }
-        .meter-container { width: 45%; background: #111; border: 1px solid #333; height: 10px; position: relative; }
+        .meter-container { width: 45%; background: #111; border: 1px solid #333; height: 10px; }
         .fill { height: 100%; width: 100%; transition: width 0.1s; }
         #p1-fill { background: #0f0; box-shadow: 0 0 10px #0f0; }
         #p2-fill { background: #f00; box-shadow: 0 0 10px #f00; }
-
-        #msg { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 3rem; font-weight: bold; pointer-events: none; z-index: 10;
-        }
-
+        #msg { position: absolute; font-size: 3rem; font-weight: bold; pointer-events: none; z-index: 10; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         button.btn {
             background: #000; color: #0f0; border: 1px solid #0f0;
-            padding: 5px 15px; cursor: pointer; font-family: 'Courier New';
-            margin-top: 5px; font-weight: bold;
+            padding: 8px 20px; cursor: pointer; font-family: 'Courier New';
+            margin-top: 10px; font-weight: bold; outline: none;
         }
         .active-bot { color: #f00 !important; border-color: #f00 !important; }
-
-        .controls-hint { font-size: 0.7rem; color: #666; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div id="ui">
-        <h1>NEON_GRID_TURBO</h1>
         <div id="score">P1: 0 | P2: 0</div>
-        
         <div class="meters">
             <div class="meter-container"><div id="p1-fill" class="fill"></div></div>
             <div class="meter-container"><div id="p2-fill" class="fill"></div></div>
         </div>
-
         <button class="btn" id="botToggle">BOT: OFF</button>
-        <div class="controls-hint">P1: WASD + SPACE (Turbo) | P2: ARROWS + ENTER (Turbo)</div>
     </div>
 
     <div id="msg"></div>
@@ -66,16 +51,16 @@
         const botBtn = document.getElementById('botToggle');
 
         const UNIT = 4;
-        const TURBO_SPEED = 2; // Multiplier
+        const TURBO = 2;
         let score = { p1: 0, p2: 0 };
-        let grid = [];
-        let p1, p2, gameActive = true;
-        let botEnabled = false;
+        let grid, p1, p2, gameActive = false, botEnabled = false;
 
+        // THE FIX: Adding .blur() ensures the button never stays "active"
         botBtn.onclick = () => {
             botEnabled = !botEnabled;
-            botBtn.innerText = botEnabled ? "BOT: HARD AI" : "BOT: OFF";
+            botBtn.innerText = botEnabled ? "BOT: ACTIVE" : "BOT: OFF";
             botBtn.classList.toggle('active-bot');
+            botBtn.blur(); // THIS REMOVES THE "SPACE BAR SWITCHES MODE" BUG
             reset();
         };
 
@@ -88,6 +73,11 @@
         }
 
         window.addEventListener('keydown', e => {
+            // Block default browser actions for game keys
+            if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) {
+                e.preventDefault();
+            }
+
             if (e.key === 'w' && p1.dy === 0) { p1.dx = 0; p1.dy = -UNIT; }
             if (e.key === 's' && p1.dy === 0) { p1.dx = 0; p1.dy = UNIT; }
             if (e.key === 'a' && p1.dx === 0) { p1.dx = -UNIT; p1.dy = 0; }
@@ -113,132 +103,62 @@
             return grid[x][y];
         }
 
-        // --- HARD AI LOGIC ---
-        function runHardBot() {
-            const possible = [
-                {name: 'up', dx: 0, dy: -UNIT},
-                {name: 'down', dx: 0, dy: UNIT},
-                {name: 'left', dx: -UNIT, dy: 0},
-                {name: 'right', dx: UNIT, dy: 0}
-            ];
-
-            // 1. Don't pull a 180 into yourself
-            const validDirections = possible.filter(d => !(d.dx === -p2.dx && d.dy === -p2.dy));
-
-            // 2. Flood Fill "Look-Ahead" to find biggest area
-            let bestDir = null;
-            let maxSpace = -1;
-
-            validDirections.forEach(dir => {
-                const nx = p2.x + dir.dx;
-                const ny = p2.y + dir.dy;
-                
+        function runAI() {
+            const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}];
+            const valid = dirs.filter(d => !(d.dx === -p2.dx && d.dy === -p2.dy));
+            
+            let best = null, maxSpace = -1;
+            valid.forEach(d => {
+                const nx = p2.x + d.dx, ny = p2.y + d.dy;
                 if (!isHazard(nx, ny)) {
-                    let space = countAvailableSpace(nx, ny);
-                    if (space > maxSpace) {
-                        maxSpace = space;
-                        bestDir = dir;
-                    }
+                    let s = 0;
+                    for(let i=-8; i<=8; i+=4) for(let j=-8; j<=8; j+=4) if(!isHazard(nx+i, ny+j)) s++;
+                    if (s > maxSpace) { maxSpace = s; best = d; }
                 }
             });
-
-            if (bestDir) {
-                p2.dx = bestDir.dx;
-                p2.dy = bestDir.dy;
-            }
-
-            // 3. Strategic Boosting
-            // Boost if Player 1 is close and in front, or if there's a huge open space
-            const distToP1 = Math.abs(p2.x - p1.x) + Math.abs(p2.y - p1.y);
-            p2.isBoosting = (distToP1 < 50 || maxSpace > 100) && p2.boost > 20;
-        }
-
-        // Simplified space counting (Flood fill approximation)
-        function countAvailableSpace(startX, startY) {
-            let count = 0;
-            const step = UNIT * 2;
-            // Checks a 5x5 grid around the target to see how "boxed in" it is
-            for (let ox = -step; ox <= step; ox += UNIT) {
-                for (let oy = -step; oy <= step; oy += UNIT) {
-                    if (!isHazard(startX + ox, startY + oy)) count++;
-                }
-            }
-            return count;
+            if (best) { p2.dx = best.dx; p2.dy = best.dy; }
+            p2.isBoosting = (maxSpace > 20 && p2.boost > 10);
         }
 
         function updatePlayer(p) {
-            // Handle Boost
-            let currentSpeed = 1;
-            if (p.isBoosting && p.boost > 0) {
-                currentSpeed = TURBO_SPEED;
-                p.boost -= 1.5;
-            } else {
-                if (p.boost < 100) p.boost += 0.3;
-                p.isBoosting = false;
-            }
-
-            // Move the player based on speed iterations
-            for (let i = 0; i < currentSpeed; i++) {
-                p.x += p.dx;
-                p.y += p.dy;
-
-                if (isHazard(p.x, p.y)) return true; // Player died
-
+            let speed = (p.isBoosting && p.boost > 0) ? TURBO : 1;
+            if (p.isBoosting) p.boost -= 1.5; else if (p.boost < 100) p.boost += 0.4;
+            
+            for (let i = 0; i < speed; i++) {
+                p.x += p.dx; p.y += p.dy;
+                if (isHazard(p.x, p.y)) return true;
                 grid[p.x][p.y] = true;
                 p.trail.push({x: p.x, y: p.y});
             }
             return false;
         }
 
-        function update() {
-            if (!gameActive) return;
-
-            if (botEnabled) runHardBot();
-
-            let p1Dead = updatePlayer(p1);
-            let p2Dead = updatePlayer(p2);
-
-            // Update Meters
-            document.getElementById('p1-fill').style.width = p1.boost + "%";
-            document.getElementById('p2-fill').style.width = p2.boost + "%";
-
-            if (p1Dead && p2Dead) endGame("DRAW!", "#fff");
-            else if (p1Dead) { score.p2++; endGame("P2 WINS!", p2.color); }
-            else if (p2Dead) { score.p1++; endGame("P1 WINS!", p1.color); }
-        }
-
-        function draw() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+        function loop() {
+            if (gameActive) {
+                if (botEnabled) runAI();
+                if (updatePlayer(p1)) endGame("P2 WINS!", p2.color, 'p2');
+                else if (updatePlayer(p2)) endGame("P1 WINS!", p1.color, 'p1');
+                
+                document.getElementById('p1-fill').style.width = p1.boost + "%";
+                document.getElementById('p2-fill').style.width = p2.boost + "%";
+            }
+            
+            ctx.fillStyle = "rgba(0,0,0,0.2)";
+            ctx.fillRect(0,0,canvas.width,canvas.height);
             [p1, p2].forEach(p => {
                 ctx.fillStyle = p.color;
-                // Draw head with glow
-                ctx.shadowBlur = p.isBoosting ? 15 : 0;
-                ctx.shadowColor = p.color;
-                
-                p.trail.forEach((t, index) => {
-                    // Slight fade for older trail parts
-                    if (index === p.trail.length - 1) ctx.fillRect(t.x, t.y, UNIT, UNIT);
-                    else ctx.fillRect(t.x, t.y, UNIT, UNIT);
-                });
-                ctx.shadowBlur = 0;
+                p.trail.forEach(t => ctx.fillRect(t.x, t.y, UNIT, UNIT));
             });
+            requestAnimationFrame(loop);
         }
 
-        function endGame(text, color) {
+        function endGame(t, c, winner) {
             gameActive = false;
-            msg.innerText = text;
-            msg.style.color = color;
+            msg.innerText = t;
+            msg.style.color = c;
+            score[winner]++;
             scoreUI.innerText = `P1: ${score.p1} | P2: ${score.p2}`;
             setTimeout(reset, 2000);
-        }
-
-        function loop() {
-            update();
-            draw();
-            // Faster loop for better boost responsiveness
-            setTimeout(() => requestAnimationFrame(loop), 30);
         }
 
         reset();
