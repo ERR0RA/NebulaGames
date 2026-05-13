@@ -3,28 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2v2 PRO SQUAD: AI EDITION</title>
+    <title>2v2 PRO SQUAD: ULTIMATE AI</title>
     <style>
-        body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Arial Black', sans-serif; overflow: hidden; }
-        canvas { background: #27ae60; border: 5px solid #fff; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #hud { display: flex; justify-content: space-between; width: 800px; font-size: 40px; margin-bottom: 10px; }
-        .red { color: #ff4757; } .blue { color: #1e90ff; }
-        .controls { font-size: 13px; opacity: 0.7; margin-top: 10px; text-align: center; line-height: 1.4; }
+        body { margin: 0; background: #121212; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        canvas { background: #1b5e20; border: 4px solid #fff; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); cursor: none; }
+        #hud { display: flex; justify-content: space-between; width: 800px; font-size: 48px; font-weight: 900; margin-bottom: 15px; text-shadow: 2px 2px #000; }
+        .red { color: #ff4757; } .blue { color: #2e86de; }
+        .controls { font-size: 14px; opacity: 0.8; margin-top: 15px; text-align: center; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 20px; }
+        b { color: #f1c40f; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div class="red">RED: <span id="s1">0</span></div>
-    <div style="font-size: 16px; align-self: center; letter-spacing: 2px;">AI vs HUMAN 2v2</div>
-    <div class="blue">BLUE: <span id="s2">0</span></div>
+    <div class="red"><span id="s1">0</span></div>
+    <div style="font-size: 18px; align-self: center; letter-spacing: 4px; color: #aaa;">SQUAD 2v2</div>
+    <div class="blue"><span id="s2">0</span></div>
 </div>
 
 <canvas id="field"></canvas>
 
 <div class="controls">
-    <b>RED:</b> [WAD] Move/Jump | [S] Swap<br>
-    <b>BLUE:</b> [ARROWS] Move/Jump | [DOWN] Swap (Leave alone to let BOT play!)
+    <b>TEAM RED:</b> [WAD] Move/Jump | [S] Swap Player <br>
+    <b>TEAM BLUE:</b> [ARROWS] Move/Jump | [DOWN] Swap (AI takes over idle players)
 </div>
 
 <script>
@@ -32,10 +33,10 @@
     const ctx = canvas.getContext('2d');
     canvas.width = 800; canvas.height = 400;
 
-    const gravity = 0.5;
-    const friction = 0.98;
+    const gravity = 0.45;
+    const friction = 0.985;
     let score1 = 0, score2 = 0;
-    const ball = { x: 400, y: 200, vx: 0, vy: 0, r: 10 };
+    const ball = { x: 400, y: 200, vx: 0, vy: 0, r: 10, bounciness: 0.8 };
 
     class Player {
         constructor(x, y, color, team, id) {
@@ -43,58 +44,80 @@
             this.color = color; this.team = team; this.id = id;
             this.active = false; this.grounded = false;
             this.animTimer = 0;
-            this.w = 24; this.h = 50;
+            this.w = 26; this.h = 52;
+            this.accel = 0.7;
+            this.maxSpeed = 6;
         }
 
         update(isManual, controls) {
-            let isBot = !isManual && (this.team === 2); // Blue team is Bot if not controlled
-
             if (isManual) {
-                if (keys[controls.left]) { this.vx = -5.5; this.animTimer += 0.2; }
-                else if (keys[controls.right]) { this.vx = 5.5; this.animTimer += 0.2; }
-                else { this.vx *= 0.8; }
+                // Manual Control
+                if (keys[controls.left]) { this.vx -= this.accel; this.animTimer += 0.2; }
+                else if (keys[controls.right]) { this.vx += this.accel; this.animTimer += 0.2; }
+                else { this.vx *= 0.85; }
 
-                if (keys[controls.up] && this.grounded) { this.vy = -12; this.grounded = false; }
+                if (keys[controls.up] && this.grounded) { this.vy = -11.5; this.grounded = false; }
             } else {
-                // --- BOT / AI LOGIC ---
-                let targetX = ball.x;
-                // Defensive positioning: stay between ball and goal
-                if (this.team === 2) targetX = Math.max(ball.x, 600); 
-                
+                // --- PRO AI LOGIC ---
+                // Teammate AI: Calculates positioning based on ball and active player
+                let targetX;
+                if (this.id === 0) { // Aggressive Attacker AI
+                    targetX = ball.x + (this.team === 1 ? -30 : 30);
+                } else { // Tactical Defender AI
+                    targetX = (this.team === 1) ? Math.min(ball.x - 100, 200) : Math.max(ball.x + 100, 600);
+                }
+
                 let diff = targetX - (this.x + this.w/2);
-                if (Math.abs(diff) > 10) {
-                    this.vx = Math.sign(diff) * 4;
+                if (Math.abs(diff) > 5) {
+                    this.vx += Math.sign(diff) * 0.5;
                     this.animTimer += 0.15;
                 } else {
                     this.vx *= 0.8;
                 }
 
-                // Bot Jump Logic
-                if (ball.y < this.y - 20 && Math.abs(diff) < 50 && this.grounded) {
-                    this.vy = -11;
+                // AI Jump if ball is high and close
+                if (ball.y < this.y - 40 && Math.abs(ball.x - this.x) < 40 && this.grounded) {
+                    this.vy = -10;
                     this.grounded = false;
                 }
             }
 
+            // Apply Physics
+            this.vx = Math.max(-this.maxSpeed, Math.min(this.maxSpeed, this.vx));
             this.vy += gravity;
             this.x += this.vx;
             this.y += this.vy;
 
-            if (this.y + this.h > canvas.height) { this.y = canvas.height - this.h; this.vy = 0; this.grounded = true; }
-            if (this.x < 0) this.x = 0;
-            if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
+            // Bounds & Floor
+            if (this.y + this.h > canvas.height) { 
+                this.y = canvas.height - this.h; 
+                this.vy = 0; 
+                this.grounded = true; 
+            }
+            if (this.x < 0) { this.x = 0; this.vx *= -0.5; }
+            if (this.x + this.w > canvas.width) { this.x = canvas.width - this.w; this.vx *= -0.5; }
 
-            // Ball Collision
-            let cx = this.x + this.w/2, cy = this.y + this.h/2;
-            let dx = ball.x - cx, dy = ball.y - cy;
-            let d = Math.sqrt(dx*dx + dy*dy);
-            if (d < 35) {
+            // --- FIXED BALL COLLISION (Elastic Response) ---
+            let cx = this.x + this.w/2;
+            let cy = this.y + this.h/2;
+            let dx = ball.x - cx;
+            let dy = ball.y - cy;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            let minDist = 34; 
+
+            if (dist < minDist) {
                 let angle = Math.atan2(dy, dx);
-                let power = isManual ? 10 : 8;
-                ball.vx = Math.cos(angle) * power + this.vx;
-                ball.vy = Math.sin(angle) * power + this.vy;
-                ball.x = cx + Math.cos(angle) * 36;
-                ball.y = cy + Math.sin(angle) * 36;
+                let targetX = cx + Math.cos(angle) * minDist;
+                let targetY = cy + Math.sin(angle) * minDist;
+                
+                // Kick Power
+                let power = 9;
+                ball.vx = Math.cos(angle) * power + this.vx * 1.2;
+                ball.vy = Math.sin(angle) * power + this.vy * 0.8;
+                
+                // Prevent overlap
+                ball.x = targetX;
+                ball.y = targetY;
             }
         }
 
@@ -102,31 +125,39 @@
             ctx.save();
             ctx.translate(this.x + this.w/2, this.y);
 
-            // Shadow/Halo
-            ctx.beginPath();
-            ctx.ellipse(0, 52, 12, 4, 0, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(0,0,0,0.2)";
-            ctx.fill();
+            // Shadow
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.beginPath(); ctx.ellipse(0, 52, 14, 5, 0, 0, Math.PI*2); ctx.fill();
 
-            // Legs Animation
-            ctx.strokeStyle = "#222"; ctx.lineWidth = 5;
-            let swing = Math.sin(this.animTimer * 6) * 12;
-            ctx.beginPath(); ctx.moveTo(-3, 30); ctx.lineTo(-3 + swing, 50); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(3, 30); ctx.lineTo(3 - swing, 50); ctx.stroke();
+            // Legs
+            ctx.strokeStyle = "#1a1a1a"; ctx.lineWidth = 6;
+            let swing = Math.sin(this.animTimer * 8) * 14;
+            ctx.beginPath(); ctx.moveTo(-5, 30); ctx.lineTo(-5 + swing, 52); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(5, 30); ctx.lineTo(5 - swing, 52); ctx.stroke();
 
-            // Body (Jersey)
+            // Jersey
             ctx.fillStyle = this.color;
-            ctx.globalAlpha = this.active ? 1 : 0.6;
-            ctx.fillRect(-12, 5, 24, 30);
+            ctx.globalAlpha = this.active ? 1 : 0.5;
+            ctx.shadowBlur = this.active ? 15 : 0;
+            ctx.shadowColor = this.color;
+            ctx.fillRect(-13, 5, 26, 32);
             
+            // Player Number/ID
+            ctx.fillStyle = "white";
+            ctx.font = "bold 12px Arial";
+            ctx.fillText(this.id + 1, -4, 25);
+
             // Head
             ctx.fillStyle = "#ffdbac";
-            ctx.beginPath(); ctx.arc(0, -5, 11, 0, Math.PI*2); ctx.fill();
-            
-            // Marker
+            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.arc(0, -6, 12, 0, Math.PI*2); ctx.fill();
+
+            // Active Arrow
             if (this.active) {
-                ctx.fillStyle = "white";
-                ctx.beginPath(); ctx.moveTo(-5, -25); ctx.lineTo(5, -25); ctx.lineTo(0, -18); ctx.fill();
+                ctx.fillStyle = "#f1c40f";
+                ctx.beginPath();
+                ctx.moveTo(0, -28); ctx.lineTo(-6, -38); ctx.lineTo(6, -38);
+                ctx.fill();
             }
 
             ctx.restore();
@@ -134,36 +165,74 @@
         }
     }
 
-    const team1 = [new Player(200, 300, '#ff4757', 1, 0), new Player(100, 300, '#ff4757', 1, 1)];
-    const team2 = [new Player(600, 300, '#1e90ff', 2, 0), new Player(700, 300, '#1e90ff', 2, 1)];
-    let activeP1 = 0, activeP2 = 0, p2Controlled = false;
+    const team1 = [new Player(150, 300, '#ff4757', 1, 0), new Player(100, 300, '#ff4757', 1, 1)];
+    const team2 = [new Player(650, 300, '#2e86de', 2, 0), new Player(700, 300, '#2e86de', 2, 1)];
+    
+    let activeP1 = 0, activeP2 = 0;
+    let p1SwapLock = false, p2SwapLock = false;
 
     team1[0].active = true; team2[0].active = true;
 
     const keys = {};
-    window.onkeydown = e => {
-        keys[e.code] = true;
-        if (e.code.includes('Arrow')) p2Controlled = true; // Bot turns off if arrows pressed
-        if (e.code === 'KeyS') { team1[activeP1].active = false; activeP1 = (activeP1 + 1) % 2; team1[activeP1].active = true; }
-        if (e.code === 'ArrowDown') { team2[activeP2].active = false; activeP2 = (activeP2 + 1) % 2; team2[activeP2].active = true; }
+    window.onkeydown = e => { 
+        keys[e.code] = true; 
+        // P1 Swap
+        if (e.code === 'KeyS' && !p1SwapLock) {
+            team1[activeP1].active = false;
+            activeP1 = (activeP1 + 1) % 2;
+            team1[activeP1].active = true;
+            p1SwapLock = true;
+        }
+        // P2 Swap
+        if (e.code === 'ArrowDown' && !p2SwapLock) {
+            team2[activeP2].active = false;
+            activeP2 = (activeP2 + 1) % 2;
+            team2[activeP2].active = true;
+            p2SwapLock = true;
+        }
     };
-    window.onkeyup = e => keys[e.code] = false;
+    window.onkeyup = e => { 
+        keys[e.code] = false; 
+        if (e.code === 'KeyS') p1SwapLock = false;
+        if (e.code === 'ArrowDown') p2SwapLock = false;
+    };
 
-    function reset() { ball.x = 400; ball.y = 100; ball.vx = 0; ball.vy = 0; }
+    function goalScored(team) {
+        if (team === 1) score1++; else score2++;
+        ball.x = 400; ball.y = 150;
+        ball.vx = 0; ball.vy = 0;
+        // Celebration shake or logic can go here
+    }
 
     function loop() {
+        // Update Players
         team1.forEach((p, i) => p.update(i === activeP1, {up:'KeyW', left:'KeyA', right:'KeyD'}));
-        team2.forEach((p, i) => p.update(p2Controlled && i === activeP2, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight'}));
+        team2.forEach((p, i) => p.update(i === activeP2, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight'}));
 
-        ball.vy += gravity * 0.4; ball.vx *= friction;
-        ball.x += ball.vx; ball.y += ball.vy;
+        // Ball Physics
+        ball.vy += gravity * 0.5;
+        ball.vx *= friction;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
 
-        if (ball.x < 0 || ball.x > canvas.width) ball.vx *= -0.7;
-        if (ball.y > canvas.height - ball.r) { ball.y = canvas.height - ball.r; ball.vy *= -0.5; }
+        // Ball Wall Bounce
+        if (ball.x < ball.r || ball.x > canvas.width - ball.r) {
+            ball.vx *= -0.8;
+            ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+        }
+        if (ball.y < ball.r) {
+            ball.vy *= -0.8;
+            ball.y = ball.r;
+        }
+        if (ball.y > canvas.height - ball.r) {
+            ball.y = canvas.height - ball.r;
+            ball.vy *= -ball.bounciness;
+        }
 
-        if (ball.y > 220) {
-            if (ball.x < 20) { score2++; reset(); }
-            if (ball.x > 780) { score1++; reset(); }
+        // Scoring Logic
+        if (ball.y > 200) {
+            if (ball.x < 25) goalScored(2);
+            if (ball.x > 775) goalScored(1);
         }
 
         draw();
@@ -173,24 +242,27 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Field Lines
-        ctx.strokeStyle = "rgba(255,255,255,0.4)"; ctx.lineWidth = 3;
-        ctx.strokeRect(0,0,800,400);
-        ctx.beginPath(); ctx.moveTo(400,0); ctx.lineTo(400,400); ctx.stroke();
-        ctx.beginPath(); ctx.arc(400, 200, 60, 0, Math.PI*2); ctx.stroke();
+        // Field Markings
+        ctx.strokeStyle = "rgba(255,255,255,0.2)"; ctx.lineWidth = 4;
+        ctx.strokeRect(5, 5, 790, 390);
+        ctx.beginPath(); ctx.moveTo(400, 5); ctx.lineTo(400, 395); ctx.stroke();
+        ctx.beginPath(); ctx.arc(400, 200, 50, 0, Math.PI*2); ctx.stroke();
 
         // Goals
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 250, 15, 150);
-        ctx.fillRect(785, 250, 15, 150);
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.fillRect(0, 220, 15, 180); // Goal Left
+        ctx.fillRect(785, 220, 15, 180); // Goal Right
 
         team1.forEach(p => p.draw());
         team2.forEach(p => p.draw());
 
         // Ball
+        ctx.save();
+        ctx.shadowBlur = 10; ctx.shadowColor = "white";
         ctx.fillStyle = "white";
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
-        ctx.strokeStyle = "black"; ctx.stroke();
+        ctx.strokeStyle = "#333"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.restore();
 
         document.getElementById('s1').innerText = score1;
         document.getElementById('s2').innerText = score2;
