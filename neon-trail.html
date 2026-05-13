@@ -3,13 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON-GRID | XL Co-op Fix</title>
+    <title>NEON-GRID | XL Pro Bot</title>
     <style>
-        body { 
-            background: #000; color: #0f0; font-family: 'Courier New', monospace; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; margin: 0; overflow: hidden;
-        }
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
         canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; max-height: 75vh; box-shadow: 0 0 20px #0f0; }
         #ui { text-align: center; width: 800px; margin-bottom: 10px; }
         .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 10px; justify-content: center; }
@@ -19,7 +15,6 @@
         #p1-fill { background: #0f0; } #p2-fill { background: #00f; } #p3-fill { background: #f00; }
         #msg { position: absolute; font-size: 3rem; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 3px 3px #000; z-index: 100; }
         button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0f0; color: #000; }
     </style>
 </head>
 <body>
@@ -33,13 +28,9 @@
     </div>
     <div class="setup-panel">
         <select id="gameMode">
-            <option value="pvpve" selected>Human + Human vs Bot</option>
-            <option value="pve">1 Player vs Bot</option>
+            <option value="pvpve">2 Humans vs Bot</option>
+            <option value="pve">1 Human vs Bot</option>
             <option value="pvp">Human vs Human</option>
-        </select>
-        <select id="botType">
-            <option value="king">KING BOT</option>
-            <option value="alpha">ALPHA BOT</option>
         </select>
         <button id="startBtn">START MATCH</button>
     </div>
@@ -56,7 +47,6 @@ let grid, players, gameActive = false, score = {p1:0, p2:0, bot:0};
 
 function reset() {
     const mode = document.getElementById('gameMode').value;
-    // The grid now stores WHICH player owns the trail
     grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
     
     players = [
@@ -65,7 +55,7 @@ function reset() {
         { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot' }
     ];
 
-    if (mode === 'pvp') players[1].team = 'red'; // In PvP, humans are enemies
+    if (mode === 'pvp') players[1].team = 'red';
     
     document.getElementById('p2-ui').style.visibility = players[1].active ? "visible" : "hidden";
     document.getElementById('bot-ui').style.visibility = players[2].active ? "visible" : "hidden";
@@ -80,13 +70,11 @@ document.getElementById('startBtn').onclick = (e) => { e.target.blur(); reset();
 window.onkeydown = e => {
     if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
     const mode = document.getElementById('gameMode').value;
-    // P1
     if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
     if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
     if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
     if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
     if (e.code === 'Space') players[0].isBoosting = true;
-    // P2
     if (players[1].active) {
         if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
         if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
@@ -101,48 +89,55 @@ window.onkeyup = e => {
     if (e.key === 'Enter') players[1].isBoosting = false;
 };
 
+function checkCollision(x, y, selfId) {
+    if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
+    const hitId = grid[x][y];
+    if (hitId === null) return false;
+    // Friendly fire check for humans
+    if (players[selfId].team === 'human' && players[hitId].team === 'human') return false;
+    return true;
+}
+
 function update() {
     if (!gameActive) return;
+
+    // BOT AI RADAR UPGRADE
+    const bot = players[2];
+    if (bot.active && bot.alive) {
+        const checkAhead = (dx, dy, dist) => {
+            for(let i=1; i<=dist; i++) {
+                let nx = bot.x + dx*i, ny = bot.y + dy*i;
+                if (nx < 0 || nx >= canvas.width || ny < 0 || ny >= canvas.height || (grid[nx][ny] !== null && players[grid[nx][ny]].team !== 'bot')) return true;
+                // Check if any human head is in this path
+                if (players[0].alive && Math.abs(players[0].x - nx) < UNIT && Math.abs(players[0].y - ny) < UNIT) return true;
+                if (players[1].active && players[1].alive && Math.abs(players[1].x - nx) < UNIT && Math.abs(players[1].y - ny) < UNIT) return true;
+            }
+            return false;
+        };
+
+        if (checkAhead(bot.dx, bot.dy, 8)) {
+            const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}].filter(d => !(d.dx === -bot.dx && d.dy === -bot.dy));
+            let bestDir = null, maxDist = -1;
+            dirs.forEach(d => {
+                let dCount = 0;
+                while(dCount < 20 && !checkCollision(bot.x + d.dx*(dCount+1), bot.y + d.dy*(dCount+1), 2)) { dCount++; }
+                if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
+            });
+            if (bestDir) { bot.dx = bestDir.dx; bot.dy = bestDir.dy; }
+        }
+    }
 
     players.forEach(p => {
         if (!p.active || !p.alive) return;
         let spd = (p.isBoosting && p.boost > 10) ? 2 : 1;
         if (p.isBoosting) p.boost -= 2.5; else if (p.boost < 100) p.boost += 0.15;
-
         for (let i = 0; i < spd; i++) {
             p.x += p.dx; p.y += p.dy;
-            
-            // Wall Collision
-            if (p.x < 0 || p.x >= canvas.width || p.y < 0 || p.y >= canvas.height) { p.alive = false; checkWinner(); return; }
-
-            const hitOwnerId = grid[p.x][p.y];
-            if (hitOwnerId !== null) {
-                // TEAM CHECK: In Co-op, ignore collisions with teammate's trail
-                const hitOwner = players[hitOwnerId];
-                if (p.team !== hitOwner.team) {
-                    p.alive = false;
-                    checkWinner();
-                    return;
-                }
-            }
+            if (checkCollision(p.x, p.y, p.id)) { p.alive = false; checkWinner(); return; }
             grid[p.x][p.y] = p.id;
             p.trail.push({x: p.x, y: p.y});
         }
     });
-
-    // Bot AI
-    const bot = players[2];
-    if (bot.active && bot.alive) {
-        const hX = bot.x + bot.dx, hY = bot.y + bot.dy;
-        if (hX < 0 || hX >= canvas.width || hY < 0 || hY >= canvas.height || (grid[hX][hY] !== null && players[grid[hX][hY]].team !== 'bot')) {
-            const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}].filter(d => !(d.dx === -bot.dx && d.dy === -bot.dy));
-            const choice = dirs.find(d => {
-                const nx = bot.x + d.dx, ny = bot.y + d.dy;
-                return nx >= 0 && nx < canvas.width && ny >= 0 && ny < canvas.height && grid[nx][ny] === null;
-            });
-            if (choice) { bot.dx = choice.dx; bot.dy = choice.dy; }
-        }
-    }
 
     document.getElementById('p1-fill').style.width = players[0].boost + "%";
     document.getElementById('p2-fill').style.width = players[1].boost + "%";
@@ -185,7 +180,6 @@ function draw() {
     update();
     requestAnimationFrame(draw);
 }
-
 reset();
 draw();
 </script>
