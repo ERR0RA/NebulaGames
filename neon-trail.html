@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON-GRID | Visibility Fixed</title>
+    <title>NEON-GRID | XL Arena</title>
     <style>
         body { 
             background: #111; color: #0f0; font-family: 'Courier New', monospace; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             height: 100vh; margin: 0; overflow: hidden;
         }
-        canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; box-shadow: 0 0 20px #0f0; }
-        #ui { text-align: center; width: 600px; margin-bottom: 10px; }
+        /* Increased Canvas Size */
+        canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; max-height: 70vh; box-shadow: 0 0 20px #0f0; }
+        #ui { text-align: center; width: 800px; margin-bottom: 10px; }
         .setup-panel { background: #222; padding: 15px; border: 2px solid #0f0; display: flex; gap: 10px; justify-content: center; }
         .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; }
         .meter-container { width: 30%; background: #000; border: 1px solid #0f0; height: 12px; }
         .fill { height: 100%; width: 100%; transition: width 0.1s; }
         #p1-fill { background: #0f0; } #p2-fill { background: #00f; } #p3-fill { background: #f00; }
-        #msg { position: absolute; font-size: 3rem; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 2px 2px #000; }
-        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; }
+        #msg { position: absolute; font-size: 3rem; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 3px 3px #000; z-index: 10; }
+        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; outline: none; }
+        button:active { background: #0f0; color: #000; }
     </style>
 </head>
 <body>
@@ -40,51 +42,58 @@
             <option value="king">KING BOT</option>
             <option value="noob">NOOB BOT</option>
         </select>
-        <button id="startBtn">START</button>
+        <button id="startBtn">START MATCH</button>
     </div>
 </div>
 
 <div id="msg"></div>
-<canvas id="game" width="600" height="400"></canvas>
+<canvas id="game" width="800" height="600"></canvas>
 
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const UNIT = 5; // Larger unit for better visibility
+const UNIT = 5; 
 let grid, players, gameActive = false, score = {p1:0, p2:0, bot:0};
 
 function reset() {
     const mode = document.getElementById('gameMode').value;
+    // Grid now initializes to 800x600
     grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(false));
     
     players = [
-        { x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: true },
-        { x: 100, y: 300, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pve') },
-        { x: 500, y: 200, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp') }
+        { x: 100, y: 300, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: true },
+        { x: 100, y: 450, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pve') },
+        { x: 700, y: 300, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp') }
     ];
 
-    document.getElementById('p2-ui').style.display = players[1].active ? "block" : "none";
-    document.getElementById('bot-ui').style.display = players[2].active ? "block" : "none";
+    document.getElementById('p2-ui').style.visibility = players[1].active ? "visible" : "hidden";
+    document.getElementById('bot-ui').style.visibility = players[2].active ? "visible" : "hidden";
     
     document.getElementById('msg').innerText = "GET READY...";
     gameActive = false;
-    setTimeout(() => { document.getElementById('msg').innerText = ""; gameActive = true; }, 1000);
+    setTimeout(() => { 
+        document.getElementById('msg').innerText = ""; 
+        gameActive = true; 
+    }, 1000);
 }
 
-document.getElementById('startBtn').onclick = reset;
+document.getElementById('startBtn').onclick = (e) => {
+    e.target.blur(); // Ensures spacebar doesn't click button again
+    reset();
+};
 
 window.onkeydown = e => {
     if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
     const mode = document.getElementById('gameMode').value;
 
-    // P1 (WASD + Arrows in solo)
+    // P1 Controls
     if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
     if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
     if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
     if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
     if (e.code === 'Space') players[0].isBoosting = true;
 
-    // P2 (Arrows)
+    // P2 Controls
     if (players[1].active) {
         if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
         if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
@@ -106,7 +115,7 @@ function update() {
         if (!p.active || !p.alive) return;
 
         let spd = (p.isBoosting && p.boost > 10) ? 2 : 1;
-        if (p.isBoosting) p.boost -= 2; else if (p.boost < 100) p.boost += 0.1;
+        if (p.isBoosting) p.boost -= 2.5; else if (p.boost < 100) p.boost += 0.12;
 
         for (let i = 0; i < spd; i++) {
             p.x += p.dx;
@@ -123,12 +132,20 @@ function update() {
         }
     });
 
-    // Simple Bot AI
+    // Bot AI
     const bot = players[2];
     if (bot.active && bot.alive) {
-        if (grid[bot.x + bot.dx] && grid[bot.x + bot.dx][bot.y + bot.dy] || bot.x + bot.dx < 0 || bot.x + bot.dx >= canvas.width || bot.y + bot.dy < 0 || bot.y + bot.dy >= canvas.height) {
+        const headX = bot.x + bot.dx;
+        const headY = bot.y + bot.dy;
+        if (headX < 0 || headX >= canvas.width || headY < 0 || headY >= canvas.height || grid[headX][headY]) {
             const possible = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}];
-            const choice = possible.find(d => !grid[bot.x + d.dx]?.[bot.y + d.dy]);
+            // Filter out the direction it's coming from
+            const filtered = possible.filter(d => !(d.dx === -bot.dx && d.dy === -bot.dy));
+            const choice = filtered.find(d => {
+                const nx = bot.x + d.dx;
+                const ny = bot.y + d.dy;
+                return nx >= 0 && nx < canvas.width && ny >= 0 && ny < canvas.height && !grid[nx][ny];
+            });
             if (choice) { bot.dx = choice.dx; bot.dy = choice.dy; }
         }
     }
@@ -143,12 +160,12 @@ function checkWinner() {
     const p1 = players[0], p2 = players[1], bot = players[2];
 
     if (mode === 'pvp') {
-        if (!p1.alive) { score.p2++; endGame("P2 WINS!"); }
-        else if (!p2.alive) { score.p1++; endGame("P1 WINS!"); }
+        if (!p1.alive) { score.p2++; endGame("PLAYER 2 WINS!"); }
+        else if (!p2.alive) { score.p1++; endGame("PLAYER 1 WINS!"); }
     } else {
         const humansAlive = p1.alive || (p2.active && p2.alive);
         if (!humansAlive) { score.bot++; endGame("BOT WINS!"); }
-        else if (!bot.alive) { score.p1++; endGame("HUMANS WIN!"); }
+        else if (bot.active && !bot.alive) { score.p1++; endGame("HUMANS WIN!"); }
     }
 }
 
@@ -160,17 +177,25 @@ function endGame(txt) {
 }
 
 function draw() {
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.fillStyle = "rgba(0,0,0,0.2)"; // Faint trail effect
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     players.forEach(p => {
         if (!p.active) return;
         ctx.fillStyle = p.color;
+        // Draw the full trail
         p.trail.forEach(t => ctx.fillRect(t.x, t.y, UNIT, UNIT));
-        // Draw head
-        ctx.fillRect(p.x, p.y, UNIT, UNIT);
+        // Draw the head with a glow
+        if (p.alive) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
+            ctx.fillRect(p.x, p.y, UNIT, UNIT);
+            ctx.shadowBlur = 0;
+        }
     });
-    requestAnimationFrame(() => { update(); draw(); });
+    
+    update();
+    requestAnimationFrame(draw);
 }
 
 reset();
