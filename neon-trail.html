@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON-GRID | 2 Humans vs Bot</title>
+    <title>NEON-GRID | Multi-Mode</title>
     <style>
         body { 
             background: #000; color: #0f0; font-family: 'Courier New', monospace; 
@@ -12,15 +12,17 @@
         }
         canvas { border: 4px solid #004400; box-shadow: 0 0 20px #004400; background: #050505; max-width: 90vw; }
         #ui { text-align: center; width: 600px; margin-bottom: 10px; }
-        .setup-panel { background: rgba(0,20,0,0.9); padding: 10px; border: 1px solid #0f0; border-radius: 5px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        .meters { display: flex; justify-content: space-around; width: 100%; margin: 5px 0; }
-        .meter-container { width: 30%; background: #111; border: 1px solid #333; height: 8px; position: relative; }
+        .setup-panel { background: rgba(0,20,0,0.9); padding: 15px; border: 1px solid #0f0; border-radius: 5px; display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
+        .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; }
+        .meter-container { width: 30%; background: #111; border: 1px solid #333; height: 10px; position: relative; }
         .fill { height: 100%; width: 100%; transition: width 0.1s; }
-        #p1-fill { background: #0f0; } #p2-fill { background: #00f; } #p3-fill { background: #f00; }
+        #p1-fill { background: #0f0; box-shadow: 0 0 8px #0f0; } 
+        #p2-fill { background: #00f; box-shadow: 0 0 8px #00f; } 
+        #p3-fill { background: #f00; box-shadow: 0 0 8px #f00; }
         #msg { position: absolute; font-size: 2.5rem; font-weight: bold; pointer-events: none; z-index: 10; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-        select, button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px; cursor: pointer; font-family: 'Courier New'; font-weight: bold; }
+        select, button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 8px; cursor: pointer; font-family: 'Courier New'; font-weight: bold; }
         button:hover { background: #0f0; color: #000; }
-        .label-tag { font-size: 0.7rem; position: absolute; top: -12px; left: 0; width: 100%; text-align: center; }
+        .label-tag { font-size: 0.7rem; position: absolute; top: -14px; left: 0; width: 100%; text-align: center; color: #aaa; }
     </style>
 </head>
 <body>
@@ -28,21 +30,29 @@
     <div id="ui">
         <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
         <div class="meters">
-            <div class="meter-container"><div class="label-tag">P1</div><div id="p1-fill" class="fill"></div></div>
-            <div class="meter-container"><div class="label-tag">P2</div><div id="p2-fill" class="fill"></div></div>
-            <div class="meter-container"><div class="label-tag">BOT</div><div id="p3-fill" class="fill"></div></div>
+            <div class="meter-container"><div class="label-tag">P1 (GREEN)</div><div id="p1-fill" class="fill"></div></div>
+            <div class="meter-container" id="p2-meter"><div class="label-tag">P2 (BLUE)</div><div id="p2-fill" class="fill"></div></div>
+            <div class="meter-container" id="bot-meter"><div class="label-tag">BOT (RED)</div><div id="p3-fill" class="fill"></div></div>
         </div>
         
         <div class="setup-panel">
             <div>
-                <label>BOT:</label>
-                <select id="botType">
-                    <option value="king">KING (God Mode)</option>
-                    <option value="alpha">ALPHA (Strong)</option>
-                    <option value="noob">NOOB (Weak)</option>
+                <label>MODE:</label>
+                <select id="gameMode">
+                    <option value="pve">Human vs Bot</option>
+                    <option value="pvpve">Human + Human vs Bot</option>
+                    <option value="pvp">Human vs Human</option>
                 </select>
             </div>
-            <button id="startBtn">START 2vBOT BATTLE</button>
+            <div>
+                <label>BOT:</label>
+                <select id="botType">
+                    <option value="king">KING (Impossible)</option>
+                    <option value="alpha">ALPHA (Hard)</option>
+                    <option value="noob">NOOB (Easy)</option>
+                </select>
+            </div>
+            <button id="startBtn">START GAME</button>
         </div>
     </div>
 
@@ -63,12 +73,23 @@
         startBtn.onclick = () => { startBtn.blur(); reset(); };
 
         function reset() {
-            // Players array: 0=P1 (Green), 1=P2 (Blue), 2=Bot (Red)
+            const mode = document.getElementById('gameMode').value;
+            
+            // Player Configs
             players = [
-                { x: 100, y: 100, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, id: 'p1' },
-                { x: 100, y: 350, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, id: 'p2' },
-                { x: 600, y: 225, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, id: 'bot' }
+                { x: 100, y: 225, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, type: 'human' },
+                { x: 100, y: 350, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, type: 'human' },
+                { x: 600, y: 225, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, type: 'bot' }
             ];
+
+            // Hide/Show Meters based on mode
+            document.getElementById('p2-meter').style.opacity = (mode === 'pve') ? "0" : "1";
+            document.getElementById('bot-meter').style.opacity = (mode === 'pvp') ? "0" : "1";
+
+            // If Solo vs Bot, move P1 to center height
+            if(mode === 'pve') { players[0].y = 225; players[1].alive = false; }
+            if(mode === 'pvp') { players[2].alive = false; players[0].y = 100; players[1].y = 350; players[1].x = 600; players[1].dx = -UNIT;}
+
             grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(false));
             msg.innerText = "";
             gameActive = true;
@@ -76,25 +97,33 @@
 
         window.addEventListener('keydown', e => {
             if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
-            
-            // P1 (WASD)
-            if (e.key === 'w' && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
-            if (e.key === 's' && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
-            if (e.key === 'a' && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
-            if (e.key === 'd' && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
-            if (e.code === 'Space') players[0].isBoosting = true;
+            const mode = document.getElementById('gameMode').value;
 
-            // P2 (Arrows)
-            if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
-            if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
-            if (e.key === 'ArrowLeft' && players[1].dx === 0) { players[1].dx = -UNIT; players[1].dy = 0; }
-            if (e.key === 'ArrowRight' && players[1].dx === 0) { players[1].dx = UNIT; players[1].dy = 0; }
-            if (e.key === 'Enter') players[1].isBoosting = true;
+            // --- PLAYER 1 (WASD always, Arrows if Solo) ---
+            const p1Up = e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp');
+            const p1Down = e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown');
+            const p1Left = e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft');
+            const p1Right = e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight');
+
+            if (p1Up && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
+            if (p1Down && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
+            if (p1Left && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
+            if (p1Right && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
+            if (e.code === 'Space' || (mode === 'pve' && e.key === 'Enter')) players[0].isBoosting = true;
+
+            // --- PLAYER 2 (Arrows - Only if PvP or PvPvE) ---
+            if (mode !== 'pve' && players[1].alive) {
+                if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
+                if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
+                if (e.key === 'ArrowLeft' && players[1].dx === 0) { players[1].dx = -UNIT; players[1].dy = 0; }
+                if (e.key === 'ArrowRight' && players[1].dx === 0) { players[1].dx = UNIT; players[1].dy = 0; }
+                if (e.key === 'Enter') players[1].isBoosting = true;
+            }
         });
 
         window.addEventListener('keyup', e => {
-            if (e.code === 'Space') players[0].isBoosting = false;
-            if (e.key === 'Enter') players[1].isBoosting = false;
+            players[0].isBoosting = false;
+            players[1].isBoosting = false;
         });
 
         function isHazard(x, y) {
@@ -103,6 +132,7 @@
         }
 
         function runBotAI(p) {
+            if(!p.alive) return;
             const type = document.getElementById('botType').value;
             const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}];
             const valid = dirs.filter(d => !(d.dx === -p.dx && d.dy === -p.dy));
@@ -111,47 +141,44 @@
             valid.forEach(d => {
                 const nx = p.x + d.dx, ny = p.y + d.dy;
                 if (!isHazard(nx, ny)) {
-                    let s = 0;
-                    let scan = (type === 'king') ? 15 : 6;
+                    let s = 0, scan = (type === 'king') ? 15 : 6;
                     for(let i=-scan; i<=scan; i+=UNIT) if(!isHazard(nx+i, ny)) s++;
                     for(let i=-scan; i<=scan; i+=UNIT) if(!isHazard(nx, ny+i)) s++;
                     if (s > maxSpace) { maxSpace = s; best = d; }
                 }
             });
-
             if (best) { p.dx = best.dx; p.dy = best.dy; }
-            // King bot boosts if it feels trapped or wants to kill
-            p.isBoosting = (type === 'king' && maxSpace < 10 && p.boost > 20);
+            p.isBoosting = (type === 'king' && maxSpace < 12 && p.boost > 30);
         }
 
         function updatePlayer(p) {
             if (!p.alive) return;
-            
+            // BOOST NERF: Drain 3%, Regen 0.1%
             let speed = (p.isBoosting && p.boost > 10) ? 2 : 1;
-            if (p.isBoosting) p.boost -= 2.5; // High drain
-            else if (p.boost < 100) p.boost += 0.12; // Very slow recharge
+            if (p.isBoosting) p.boost -= 3.0; 
+            else if (p.boost < 100) p.boost += 0.1;
 
             for (let i = 0; i < speed; i++) {
                 p.x += p.dx; p.y += p.dy;
-                if (isHazard(p.x, p.y)) {
-                    p.alive = false;
-                    return;
-                }
+                if (isHazard(p.x, p.y)) { p.alive = false; return; }
                 grid[p.x][p.y] = true;
                 p.trail.push({x: p.x, y: p.y});
             }
         }
 
-        function checkGameStatus() {
-            const humansAlive = players[0].alive || players[1].alive;
-            const botAlive = players[2].alive;
-
-            if (!humansAlive && !botAlive) endGame("TOTAL ANNIHILATION!", "#fff");
-            else if (!humansAlive) { score.bot++; endGame("THE BOT REIGNS SUPREME!", "#f00"); }
-            else if (!botAlive) { 
-                if (players[0].alive) score.p1++;
-                if (players[1].alive) score.p2++;
-                endGame("HUMANS WIN!", "#0ff"); 
+        function checkStatus() {
+            const mode = document.getElementById('gameMode').value;
+            if (mode === 'pvp') {
+                if (!players[0].alive) endGame("PLAYER 2 WINS!", players[1].color, 'p2');
+                else if (!players[1].alive) endGame("PLAYER 1 WINS!", players[0].color, 'p1');
+            } else {
+                const humansAlive = players[0].alive || players[1].alive;
+                if (!humansAlive) { score.bot++; endGame("BOT WINS!", "#f00"); }
+                else if (!players[2].alive) { 
+                    score.p1 += players[0].alive ? 1 : 0;
+                    score.p2 += players[1].alive ? 1 : 0;
+                    endGame("HUMANS WIN!", "#0ff"); 
+                }
             }
         }
 
@@ -159,31 +186,27 @@
             if (gameActive) {
                 runBotAI(players[2]);
                 players.forEach(updatePlayer);
-                checkGameStatus();
-                
+                checkStatus();
                 document.getElementById('p1-fill').style.width = players[0].boost + "%";
                 document.getElementById('p2-fill').style.width = players[1].boost + "%";
                 document.getElementById('p3-fill').style.width = players[2].boost + "%";
             }
-            
             ctx.fillStyle = "rgba(0,0,0,0.2)";
             ctx.fillRect(0,0,canvas.width,canvas.height);
             players.forEach(p => {
                 if (!p.alive) return;
                 ctx.fillStyle = p.color;
-                ctx.shadowBlur = p.isBoosting ? 10 : 0;
-                ctx.shadowColor = p.color;
                 p.trail.forEach(t => ctx.fillRect(t.x, t.y, UNIT, UNIT));
-                ctx.shadowBlur = 0;
             });
             requestAnimationFrame(loop);
         }
 
-        function endGame(t, c) {
+        function endGame(t, c, winner) {
             gameActive = false;
             msg.innerText = t; msg.style.color = c;
+            if(winner) score[winner]++;
             scoreUI.innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
-            setTimeout(reset, 3000);
+            setTimeout(reset, 2500);
         }
 
         reset();
