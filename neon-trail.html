@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON-GRID | XL Pro Bot</title>
+    <title>NEON-GRID | Ultimate</title>
     <style>
         body { background: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
         canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; max-height: 75vh; box-shadow: 0 0 20px #0f0; }
@@ -15,6 +15,7 @@
         #p1-fill { background: #0f0; } #p2-fill { background: #00f; } #p3-fill { background: #f00; }
         #msg { position: absolute; font-size: 3rem; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 3px 3px #000; z-index: 100; }
         button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0f0; color: #000; }
     </style>
 </head>
 <body>
@@ -70,11 +71,13 @@ document.getElementById('startBtn').onclick = (e) => { e.target.blur(); reset();
 window.onkeydown = e => {
     if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
     const mode = document.getElementById('gameMode').value;
+    // P1
     if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
     if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
     if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
     if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
     if (e.code === 'Space') players[0].isBoosting = true;
+    // P2
     if (players[1].active) {
         if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
         if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
@@ -89,28 +92,31 @@ window.onkeyup = e => {
     if (e.key === 'Enter') players[1].isBoosting = false;
 };
 
-function checkCollision(x, y, selfId) {
+// --- CRITICAL CHANGE: Check if point belongs to ME vs MY TEAM ---
+function checkCollision(x, y, self) {
     if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
     const hitId = grid[x][y];
     if (hitId === null) return false;
-    // Friendly fire check for humans
-    if (players[selfId].team === 'human' && players[hitId].team === 'human') return false;
+    
+    const owner = players[hitId];
+    // Rule: You ALWAYS die if you hit yourself.
+    if (self.id === owner.id) return true;
+    // Rule: In Co-op, you don't die if you hit your teammate.
+    if (self.team === 'human' && owner.team === 'human') return false;
+    // Rule: Otherwise (enemy trail), you die.
     return true;
 }
 
 function update() {
     if (!gameActive) return;
 
-    // BOT AI RADAR UPGRADE
+    // BOT AI
     const bot = players[2];
     if (bot.active && bot.alive) {
         const checkAhead = (dx, dy, dist) => {
             for(let i=1; i<=dist; i++) {
                 let nx = bot.x + dx*i, ny = bot.y + dy*i;
-                if (nx < 0 || nx >= canvas.width || ny < 0 || ny >= canvas.height || (grid[nx][ny] !== null && players[grid[nx][ny]].team !== 'bot')) return true;
-                // Check if any human head is in this path
-                if (players[0].alive && Math.abs(players[0].x - nx) < UNIT && Math.abs(players[0].y - ny) < UNIT) return true;
-                if (players[1].active && players[1].alive && Math.abs(players[1].x - nx) < UNIT && Math.abs(players[1].y - ny) < UNIT) return true;
+                if (checkCollision(nx, ny, bot)) return true;
             }
             return false;
         };
@@ -120,7 +126,7 @@ function update() {
             let bestDir = null, maxDist = -1;
             dirs.forEach(d => {
                 let dCount = 0;
-                while(dCount < 20 && !checkCollision(bot.x + d.dx*(dCount+1), bot.y + d.dy*(dCount+1), 2)) { dCount++; }
+                while(dCount < 25 && !checkCollision(bot.x + d.dx*(dCount+1), bot.y + d.dy*(dCount+1), bot)) { dCount++; }
                 if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
             });
             if (bestDir) { bot.dx = bestDir.dx; bot.dy = bestDir.dy; }
@@ -133,7 +139,7 @@ function update() {
         if (p.isBoosting) p.boost -= 2.5; else if (p.boost < 100) p.boost += 0.15;
         for (let i = 0; i < spd; i++) {
             p.x += p.dx; p.y += p.dy;
-            if (checkCollision(p.x, p.y, p.id)) { p.alive = false; checkWinner(); return; }
+            if (checkCollision(p.x, p.y, p)) { p.alive = false; checkWinner(); return; }
             grid[p.x][p.y] = p.id;
             p.trail.push({x: p.x, y: p.y});
         }
@@ -148,7 +154,8 @@ function checkWinner() {
     const mode = document.getElementById('gameMode').value;
     const p1 = players[0], p2 = players[1], bot = players[2];
     if (mode === 'pvp') {
-        if (!p1.alive) { score.p2++; endGame("PLAYER 2 WINS!"); }
+        if (!p1.alive && !p2.alive) endGame("DRAW!");
+        else if (!p1.alive) { score.p2++; endGame("PLAYER 2 WINS!"); }
         else if (!p2.alive) { score.p1++; endGame("PLAYER 1 WINS!"); }
     } else {
         const humansAlive = p1.alive || (p2.active && p2.alive);
