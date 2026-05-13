@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><title>NEBULA B-BALL: SOLID FLOOR</title>
+    <meta charset="UTF-8">
+    <title>NEBULA B-BALL: PRO PHYSICS</title>
     <style>
-        body { margin: 0; background: #020205; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; color: white; font-family: sans-serif; }
-        canvas { background: #050510; border: 3px solid #333; box-shadow: 0 0 40px #000; }
-        #ui { position: absolute; top: 20px; display: flex; justify-content: space-between; width: 900px; pointer-events: none; }
+        body { margin: 0; background: #020205; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; color: white; font-family: 'Segoe UI', sans-serif; }
+        canvas { background: radial-gradient(circle, #0a0a20 0%, #050510 100%); border: 3px solid #1a1a3a; border-radius: 8px; box-shadow: 0 0 50px rgba(0, 210, 255, 0.1); }
+        #ui { position: absolute; top: 30px; display: flex; justify-content: space-between; width: 800px; pointer-events: none; }
+        .score { font-size: 60px; font-weight: bold; font-family: monospace; text-shadow: 0 0 20px currentColor; }
     </style>
 </head>
 <body>
-    <div id="ui"><div id="s1" style="font-size: 40px; color: #ff3e3e">0</div><div id="s2" style="font-size: 40px; color: #00d2ff">0</div></div>
+    <div id="ui">
+        <div id="s1" class="score" style="color: #ff3e3e">0</div>
+        <div id="s2" class="score" style="color: #00d2ff">0</div>
+    </div>
     <canvas id="court"></canvas>
 
 <script>
@@ -17,59 +22,106 @@
     const ctx = canvas.getContext('2d');
     canvas.width = 1000; canvas.height = 600;
 
-    const gravity = 0.5;
-    const friction = 0.98;
-    const FLOOR_Y = 560; // Fixed floor level
+    const gravity = 0.45;
+    const friction = 0.99;
+    const bounciness = 0.75;
+    const FLOOR_Y = 560;
 
     let score1 = 0, score2 = 0;
-    const ball = { x: 500, y: 100, vx: 5, vy: 0, r: 15 };
+    const ball = { 
+        x: 500, y: 100, vx: 0, vy: 0, r: 15, 
+        reset(dir) {
+            this.x = 500; this.y = 150; this.vx = dir * 5; this.vy = 0;
+        }
+    };
 
     class Human {
-        constructor(x, color, team) {
+        constructor(x, color, team, isPlayer) {
             this.x = x; this.y = 400; this.vx = 0; this.vy = 0;
-            this.w = 30; this.h = 80; this.color = color; this.team = team;
+            this.w = 35; this.h = 85; this.color = color; this.team = team;
+            this.isPlayer = isPlayer;
             this.grounded = false;
+            this.moveSpeed = 0.8;
+            this.maxSpeed = 8;
+            this.jumpForce = -14;
         }
-        update(isCtrl) {
-            if (isCtrl) {
-                const left = (this.team === 1) ? keys['KeyA'] : keys['ArrowLeft'];
-                const right = (this.team === 1) ? keys['KeyD'] : keys['ArrowRight'];
-                const jump = (this.team === 1) ? keys['KeyW'] : keys['ArrowUp'];
-                if (left) this.vx = -8; else if (right) this.vx = 8; else this.vx *= 0.8;
-                if (jump && this.grounded) { this.vy = -15; this.grounded = false; }
+
+        update() {
+            // --- MOVEMENT LOGIC ---
+            if (this.isPlayer) {
+                const left = keys['KeyA'] || keys['ArrowLeft'];
+                const right = keys['KeyD'] || keys['ArrowRight'];
+                const jump = keys['KeyW'] || keys['ArrowUp'] || keys['Space'];
+
+                if (left) this.vx -= this.moveSpeed;
+                else if (right) this.vx += this.moveSpeed;
+                else this.vx *= 0.85; // Faster deceleration
+
+                if (jump && this.grounded) {
+                    this.vy = this.jumpForce;
+                    this.grounded = false;
+                }
             } else {
-                this.vx += Math.sign(ball.x - this.x) * 0.5;
-                this.vx = Math.max(-6, Math.min(6, this.vx));
-                if (ball.y < this.y && Math.abs(this.x - ball.x) < 50 && this.grounded) this.vy = -12;
+                // AI Logic: Chase ball and jump if ball is overhead
+                let targetX = ball.x - this.w / 2;
+                let diff = targetX - this.x;
+                this.vx += Math.sign(diff) * 0.6;
+                if (Math.abs(ball.x - this.x) < 60 && ball.y < this.y - 50 && this.grounded) {
+                    this.vy = this.jumpForce;
+                }
             }
 
-            this.vy += gravity; this.x += this.vx; this.y += this.vy;
+            // Apply Physics
+            this.vx = Math.max(-this.maxSpeed, Math.min(this.maxSpeed, this.vx));
+            this.vy += gravity;
+            this.x += this.vx;
+            this.y += this.vy;
 
-            // --- PLAYER FLOOR CLAMP ---
+            // Bounds & Floor
             if (this.y + this.h > FLOOR_Y) {
                 this.y = FLOOR_Y - this.h;
                 this.vy = 0;
                 this.grounded = true;
             }
+            if (this.x < 0) this.x = 0;
+            if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
 
-            // Body-Ball Collision
+            // --- IMPROVED BALL INTERACTION ---
             let cx = Math.max(this.x, Math.min(ball.x, this.x + this.w));
             let cy = Math.max(this.y, Math.min(ball.y, this.y + this.h));
-            let dx = ball.x - cx, dy = ball.y - cy, dist = Math.sqrt(dx*dx + dy*dy);
+            let dx = ball.x - cx, dy = ball.y - cy;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
             if (dist < ball.r) {
-                let nx = dx/(dist||1), ny = dy/(dist||1);
-                ball.x += nx * (ball.r - dist); ball.y += ny * (ball.r - dist);
-                ball.vx = nx * 12 + this.vx; ball.vy = ny * 10 + this.vy;
+                // Direction of hit
+                let nx = dx / (dist || 1);
+                let ny = dy / (dist || 1);
+                
+                // Reposition ball outside player
+                ball.x = cx + nx * ball.r;
+                ball.y = cy + ny * ball.r;
+
+                // Transfer momentum + a "kick" factor
+                ball.vx = nx * 10 + this.vx;
+                ball.vy = ny * 10 + (this.vy < 0 ? this.vy : -2); // Upward boost on hit
             }
         }
+
         draw() {
             ctx.fillStyle = this.color;
+            ctx.shadowBlur = 15; ctx.shadowColor = this.color;
             ctx.fillRect(this.x, this.y, this.w, this.h);
+            ctx.shadowBlur = 0;
+            // Draw "Eyes" to show direction
+            ctx.fillStyle = "white";
+            let eyeX = this.vx >= 0 ? this.x + this.w - 10 : this.x + 5;
+            ctx.fillRect(eyeX, this.y + 15, 5, 5);
         }
     }
 
-    const t1 = [new Human(200, '#ff3e3e', 1)];
-    const t2 = [new Human(800, '#00d2ff', 2)];
+    const t1 = new Human(150, '#ff3e3e', 1, true);
+    const t2 = new Human(800, '#00d2ff', 2, false); // Change to 'true' for local PvP
+    
     const keys = {};
     window.onkeydown = e => keys[e.code] = true;
     window.onkeyup = e => keys[e.code] = false;
@@ -77,55 +129,73 @@
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw Background Islands
-        ctx.fillStyle = "#222";
-        ctx.fillRect(400, 300, 200, 20); // Center Island
-        
-        // Update Players
-        t1.forEach(p => p.update(true));
-        t2.forEach(p => p.update(false));
+        // Draw Court Elements
+        ctx.fillStyle = "#1a1a3a";
+        ctx.fillRect(400, 320, 200, 15); // Floating platform
 
-        // --- THE BALL PHYSICS & FLOOR FIX ---
+        t1.update();
+        t2.update();
+
+        // --- BALL PHYSICS ---
         ball.vy += gravity;
+        ball.vx *= friction;
         ball.x += ball.vx;
         ball.y += ball.vy;
 
-        // 1. FLOOR CLAMP (Prevent falling through)
+        // Bounce Walls
+        if (ball.x < ball.r || ball.x > canvas.width - ball.r) {
+            ball.vx *= -bounciness;
+            ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+        }
+        // Ceiling
+        if (ball.y < ball.r) {
+            ball.vy *= -bounciness;
+            ball.y = ball.r;
+        }
+        // Floor
         if (ball.y + ball.r > FLOOR_Y) {
-            ball.y = FLOOR_Y - ball.r; // Reset position to top of floor
-            ball.vy *= -0.7;           // Bounce
-            ball.vx *= friction;       // Roll friction
+            ball.y = FLOOR_Y - ball.r;
+            ball.vy *= -bounciness;
+            if (Math.abs(ball.vy) < 1) ball.vy = 0; // Stop jitter
         }
 
-        // 2. WALL/CEILING BOUNDS
-        if (ball.x < ball.r) { ball.x = ball.r; ball.vx *= -0.7; }
-        if (ball.x > canvas.width - ball.r) { ball.x = canvas.width - ball.r; ball.vx *= -0.7; }
-        if (ball.y < ball.r) { ball.y = ball.r; ball.vy *= -0.7; }
-
-        // 3. ISLAND COLLISION
-        if (ball.x > 400 && ball.x < 600 && ball.y + ball.r > 300 && ball.y - ball.r < 320) {
-            ball.vy *= -0.8;
-            ball.y = (ball.vy > 0) ? 300 - ball.r : 320 + ball.r;
+        // Platform Collision
+        if (ball.x > 400 && ball.x < 600 && ball.y + ball.r > 320 && ball.y - ball.r < 335) {
+            if (ball.vy > 0) { ball.y = 320 - ball.r; ball.vy *= -bounciness; }
+            else { ball.y = 335 + ball.r; ball.vy *= -bounciness; }
         }
 
-        // Draw Score Hoops
-        ctx.strokeStyle = "white"; ctx.strokeRect(0, 200, 50, 10); ctx.strokeRect(950, 200, 50, 10);
-        if (ball.y > 190 && ball.y < 210) {
-            if (ball.x < 50) { score2++; ball.x = 500; ball.y = 100; ball.vx = 5; }
-            if (ball.x > 950) { score1++; ball.x = 500; ball.y = 100; ball.vx = -5; }
-            document.getElementById('s1').innerText = score1;
-            document.getElementById('s2').innerText = score2;
+        // --- SCORING HOOPS ---
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#ff3e3e"; ctx.strokeRect(0, 250, 40, 5); // Goal 1
+        ctx.strokeStyle = "#00d2ff"; ctx.strokeRect(960, 250, 40, 5); // Goal 2
+
+        if (ball.y > 240 && ball.y < 260) {
+            if (ball.x < 40) { 
+                score2++; document.getElementById('s2').innerText = score2;
+                ball.reset(1);
+            }
+            if (ball.x > 960) { 
+                score1++; document.getElementById('s1').innerText = score1;
+                ball.reset(-1);
+            }
         }
 
         // Draw Floor
-        ctx.fillStyle = "#111";
+        ctx.fillStyle = "#0a0a1a";
         ctx.fillRect(0, FLOOR_Y, canvas.width, 40);
+        ctx.strokeStyle = "#333355";
+        ctx.strokeRect(0, FLOOR_Y, canvas.width, 1);
 
         // Draw Entities
-        t1.forEach(p => p.draw());
-        t2.forEach(p => p.draw());
+        t1.draw();
+        t2.draw();
+        
+        // Draw Ball (Glow effect)
+        ctx.shadowBlur = 20; ctx.shadowColor = "#ff8800";
         ctx.fillStyle = "#ff8800";
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
 
         requestAnimationFrame(loop);
     }
