@@ -3,42 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON-GRID | Bot Battle</title>
+    <title>NEON-GRID | Turbo Bot</title>
     <style>
         body { 
-            background: #000; 
-            color: #0f0; 
-            font-family: 'Courier New', monospace; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            margin: 0; 
-            overflow: hidden;
-            touch-action: none; /* Prevents pull-to-refresh on mobile */
+            background: #000; color: #0f0; font-family: 'Courier New', monospace; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; overflow: hidden; touch-action: none;
         }
         
         canvas { 
-            border: 4px solid #004400; 
-            box-shadow: 0 0 20px #004400;
-            background: #050505;
-            max-width: 95vw; /* Keeps canvas inside the screen width */
-            height: auto;    /* Maintains aspect ratio */
-            touch-action: none;
+            border: 4px solid #004400; box-shadow: 0 0 20px #004400; background: #050505;
+            max-width: 95vw; height: auto; touch-action: none;
         }
 
-        #ui { margin-bottom: 10px; text-align: center; }
-        h1 { font-size: 1.5rem; margin: 5px 0; }
-        .controls { color: #888; font-size: 0.8rem; margin-top: 10px; }
+        #ui { margin-bottom: 10px; text-align: center; width: 600px; position: relative;}
+        h1 { font-size: 1.5rem; margin: 5px 0; letter-spacing: 4px; }
         
+        .meters { display: flex; justify-content: space-between; width: 100%; margin-top: 5px; }
+        .meter-container { width: 45%; background: #111; border: 1px solid #333; height: 10px; position: relative; }
+        .fill { height: 100%; width: 100%; transition: width 0.1s; }
+        #p1-fill { background: #0f0; box-shadow: 0 0 10px #0f0; }
+        #p2-fill { background: #f00; box-shadow: 0 0 10px #f00; }
+
         #msg { 
-            position: absolute; 
-            font-size: 2rem; 
-            font-weight: bold; 
-            text-shadow: 0 0 10px #0f0; 
-            pointer-events: none; 
-            text-align: center;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 3rem; font-weight: bold; pointer-events: none; z-index: 10;
         }
 
         button.btn {
@@ -46,86 +35,28 @@
             padding: 5px 15px; cursor: pointer; font-family: 'Courier New';
             margin-top: 5px; font-weight: bold;
         }
-        button.btn:hover, button.btn:active { background: #0f0; color: #000; }
         .active-bot { color: #f00 !important; border-color: #f00 !important; }
 
-        /* Mobile Touch Controls */
-        #touch-controls {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 600px;
-            padding: 15px;
-            box-sizing: border-box;
-            margin-top: 10px;
-        }
-
-        .dpad {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: opacity 0.3s;
-        }
-
-        .dpad .row { display: flex; }
-
-        .dpad-btn {
-            width: 45px;
-            height: 45px;
-            margin: 3px;
-            background: rgba(0, 255, 0, 0.1);
-            border: 2px solid #0f0;
-            color: #0f0;
-            font-size: 1.2rem;
-            border-radius: 8px;
-            user-select: none;
-            touch-action: manipulation; /* Optimizes for fast tapping */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .dpad-btn:active { background: #0f0; color: #000; }
-
-        /* Player 2 styling */
-        #dpad-p2 .dpad-btn { border-color: #f00; color: #f00; background: rgba(255, 0, 0, 0.1); }
-        #dpad-p2 .dpad-btn:active { background: #f00; color: #000; }
-
-        @media (min-width: 768px) {
-            #touch-controls { display: none; } /* Hide touch controls on larger desktop screens */
-        }
+        .controls-hint { font-size: 0.7rem; color: #666; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div id="ui">
-        <h1>NEON_GRID_BATTLE</h1>
+        <h1>NEON_GRID_TURBO</h1>
         <div id="score">P1: 0 | P2: 0</div>
+        
+        <div class="meters">
+            <div class="meter-container"><div id="p1-fill" class="fill"></div></div>
+            <div class="meter-container"><div id="p2-fill" class="fill"></div></div>
+        </div>
+
         <button class="btn" id="botToggle">BOT: OFF</button>
-        <div class="controls" id="ctrl-text">P1: WASD | P2: ARROWS</div>
+        <div class="controls-hint">P1: WASD + SPACE (Turbo) | P2: ARROWS + ENTER (Turbo)</div>
     </div>
 
     <div id="msg"></div>
     <canvas id="game" width="600" height="400"></canvas>
-
-    <div id="touch-controls">
-        <div class="dpad" id="dpad-p1">
-            <div class="dpad-btn" onpointerdown="moveP1('up')">W</div>
-            <div class="row">
-                <div class="dpad-btn" onpointerdown="moveP1('left')">A</div>
-                <div class="dpad-btn" onpointerdown="moveP1('down')">S</div>
-                <div class="dpad-btn" onpointerdown="moveP1('right')">D</div>
-            </div>
-        </div>
-        <div class="dpad" id="dpad-p2">
-            <div class="dpad-btn" onpointerdown="moveP2('up')">↑</div>
-            <div class="row">
-                <div class="dpad-btn" onpointerdown="moveP2('left')">←</div>
-                <div class="dpad-btn" onpointerdown="moveP2('down')">↓</div>
-                <div class="dpad-btn" onpointerdown="moveP2('right')">→</div>
-            </div>
-        </div>
-    </div>
 
     <script>
         const canvas = document.getElementById('game');
@@ -135,6 +66,7 @@
         const botBtn = document.getElementById('botToggle');
 
         const UNIT = 4;
+        const TURBO_SPEED = 2; // Multiplier
         let score = { p1: 0, p2: 0 };
         let grid = [];
         let p1, p2, gameActive = true;
@@ -142,55 +74,38 @@
 
         botBtn.onclick = () => {
             botEnabled = !botEnabled;
-            botBtn.innerText = botEnabled ? "BOT: ACTIVE" : "BOT: OFF";
+            botBtn.innerText = botEnabled ? "BOT: HARD AI" : "BOT: OFF";
             botBtn.classList.toggle('active-bot');
-            document.getElementById('ctrl-text').innerText = botEnabled ? "P1: WASD | P2: AI CONTROL" : "P1: WASD | P2: ARROWS";
-            
-            // Dim and disable P2 controls when bot is active
-            const p2pad = document.getElementById('dpad-p2');
-            p2pad.style.opacity = botEnabled ? "0.3" : "1";
-            p2pad.style.pointerEvents = botEnabled ? "none" : "auto";
             reset();
         };
 
         function reset() {
-            p1 = { x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [] };
-            p2 = { x: 500, y: 200, dx: -UNIT, dy: 0, color: '#f00', trail: [] };
-            
+            p1 = { x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false };
+            p2 = { x: 500, y: 200, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false };
             grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(false));
             msg.innerText = "";
             gameActive = true;
         }
 
-        // Shared movement logic for Keyboard AND Touch Controls
-        window.moveP1 = function(dir) {
-            if (dir === 'up' && p1.dy === 0) { p1.dx = 0; p1.dy = -UNIT; }
-            if (dir === 'down' && p1.dy === 0) { p1.dx = 0; p1.dy = UNIT; }
-            if (dir === 'left' && p1.dx === 0) { p1.dx = -UNIT; p1.dy = 0; }
-            if (dir === 'right' && p1.dx === 0) { p1.dx = UNIT; p1.dy = 0; }
-        };
-
-        window.moveP2 = function(dir) {
-            if (botEnabled) return;
-            if (dir === 'up' && p2.dy === 0) { p2.dx = 0; p2.dy = -UNIT; }
-            if (dir === 'down' && p2.dy === 0) { p2.dx = 0; p2.dy = UNIT; }
-            if (dir === 'left' && p2.dx === 0) { p2.dx = -UNIT; p2.dy = 0; }
-            if (dir === 'right' && p2.dx === 0) { p2.dx = UNIT; p2.dy = 0; }
-        };
-
-        // Keyboard mappings
         window.addEventListener('keydown', e => {
-            // Player 1
-            if (e.key === 'w') moveP1('up');
-            if (e.key === 's') moveP1('down');
-            if (e.key === 'a') moveP1('left');
-            if (e.key === 'd') moveP1('right');
+            if (e.key === 'w' && p1.dy === 0) { p1.dx = 0; p1.dy = -UNIT; }
+            if (e.key === 's' && p1.dy === 0) { p1.dx = 0; p1.dy = UNIT; }
+            if (e.key === 'a' && p1.dx === 0) { p1.dx = -UNIT; p1.dy = 0; }
+            if (e.key === 'd' && p1.dx === 0) { p1.dx = UNIT; p1.dy = 0; }
+            if (e.code === 'Space') p1.isBoosting = true;
 
-            // Player 2
-            if (e.key === 'ArrowUp') moveP2('up');
-            if (e.key === 'ArrowDown') moveP2('down');
-            if (e.key === 'ArrowLeft') moveP2('left');
-            if (e.key === 'ArrowRight') moveP2('right');
+            if (!botEnabled) {
+                if (e.key === 'ArrowUp' && p2.dy === 0) { p2.dx = 0; p2.dy = -UNIT; }
+                if (e.key === 'ArrowDown' && p2.dy === 0) { p2.dx = 0; p2.dy = UNIT; }
+                if (e.key === 'ArrowLeft' && p2.dx === 0) { p2.dx = -UNIT; p2.dy = 0; }
+                if (e.key === 'ArrowRight' && p2.dx === 0) { p2.dx = UNIT; p2.dy = 0; }
+                if (e.key === 'Enter') p2.isBoosting = true;
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.code === 'Space') p1.isBoosting = false;
+            if (e.key === 'Enter') p2.isBoosting = false;
         });
 
         function isHazard(x, y) {
@@ -198,76 +113,123 @@
             return grid[x][y];
         }
 
-        function runBot() {
-            const nextX = p2.x + p2.dx;
-            const nextY = p2.y + p2.dy;
+        // --- HARD AI LOGIC ---
+        function runHardBot() {
+            const possible = [
+                {name: 'up', dx: 0, dy: -UNIT},
+                {name: 'down', dx: 0, dy: UNIT},
+                {name: 'left', dx: -UNIT, dy: 0},
+                {name: 'right', dx: UNIT, dy: 0}
+            ];
 
-            if (isHazard(nextX, nextY)) {
-                const possibleMoves = [
-                    {dx: UNIT, dy: 0}, {dx: -UNIT, dy: 0},
-                    {dx: 0, dy: UNIT}, {dx: 0, dy: -UNIT}
-                ];
+            // 1. Don't pull a 180 into yourself
+            const validDirections = possible.filter(d => !(d.dx === -p2.dx && d.dy === -p2.dy));
 
-                const safeMoves = possibleMoves.filter(m => {
-                    const isOpposite = (m.dx === -p2.dx && m.dy === -p2.dy);
-                    return !isOpposite && !isHazard(p2.x + m.dx, p2.y + m.dy);
-                });
+            // 2. Flood Fill "Look-Ahead" to find biggest area
+            let bestDir = null;
+            let maxSpace = -1;
 
-                if (safeMoves.length > 0) {
-                    const move = safeMoves[Math.floor(Math.random() * safeMoves.length)];
-                    p2.dx = move.dx;
-                    p2.dy = move.dy;
+            validDirections.forEach(dir => {
+                const nx = p2.x + dir.dx;
+                const ny = p2.y + dir.dy;
+                
+                if (!isHazard(nx, ny)) {
+                    let space = countAvailableSpace(nx, ny);
+                    if (space > maxSpace) {
+                        maxSpace = space;
+                        bestDir = dir;
+                    }
+                }
+            });
+
+            if (bestDir) {
+                p2.dx = bestDir.dx;
+                p2.dy = bestDir.dy;
+            }
+
+            // 3. Strategic Boosting
+            // Boost if Player 1 is close and in front, or if there's a huge open space
+            const distToP1 = Math.abs(p2.x - p1.x) + Math.abs(p2.y - p1.y);
+            p2.isBoosting = (distToP1 < 50 || maxSpace > 100) && p2.boost > 20;
+        }
+
+        // Simplified space counting (Flood fill approximation)
+        function countAvailableSpace(startX, startY) {
+            let count = 0;
+            const step = UNIT * 2;
+            // Checks a 5x5 grid around the target to see how "boxed in" it is
+            for (let ox = -step; ox <= step; ox += UNIT) {
+                for (let oy = -step; oy <= step; oy += UNIT) {
+                    if (!isHazard(startX + ox, startY + oy)) count++;
                 }
             }
+            return count;
+        }
+
+        function updatePlayer(p) {
+            // Handle Boost
+            let currentSpeed = 1;
+            if (p.isBoosting && p.boost > 0) {
+                currentSpeed = TURBO_SPEED;
+                p.boost -= 1.5;
+            } else {
+                if (p.boost < 100) p.boost += 0.3;
+                p.isBoosting = false;
+            }
+
+            // Move the player based on speed iterations
+            for (let i = 0; i < currentSpeed; i++) {
+                p.x += p.dx;
+                p.y += p.dy;
+
+                if (isHazard(p.x, p.y)) return true; // Player died
+
+                grid[p.x][p.y] = true;
+                p.trail.push({x: p.x, y: p.y});
+            }
+            return false;
         }
 
         function update() {
             if (!gameActive) return;
 
-            if (botEnabled) runBot();
+            if (botEnabled) runHardBot();
 
-            p1.x += p1.dx; p1.y += p1.dy;
-            p2.x += p2.dx; p2.y += p2.dy;
+            let p1Dead = updatePlayer(p1);
+            let p2Dead = updatePlayer(p2);
 
-            let p1Dead = isHazard(p1.x, p1.y);
-            let p2Dead = isHazard(p2.x, p2.y);
+            // Update Meters
+            document.getElementById('p1-fill').style.width = p1.boost + "%";
+            document.getElementById('p2-fill').style.width = p2.boost + "%";
 
-            if (p1Dead && p2Dead) {
-                endGame("DRAW!");
-            } else if (p1Dead) {
-                score.p2++;
-                endGame("P2 WINS!");
-            } else if (p2Dead) {
-                score.p1++;
-                endGame("P1 WINS!");
-            }
-
-            if (gameActive) {
-                grid[p1.x][p1.y] = true;
-                grid[p2.x][p2.y] = true;
-                p1.trail.push({x: p1.x, y: p1.y});
-                p2.trail.push({x: p2.x, y: p2.y});
-            }
+            if (p1Dead && p2Dead) endGame("DRAW!", "#fff");
+            else if (p1Dead) { score.p2++; endGame("P2 WINS!", p2.color); }
+            else if (p2Dead) { score.p1++; endGame("P1 WINS!", p1.color); }
         }
 
         function draw() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            p1.trail.forEach(t => {
-                ctx.fillStyle = p1.color;
-                ctx.fillRect(t.x, t.y, UNIT, UNIT);
-            });
-
-            p2.trail.forEach(t => {
-                ctx.fillStyle = p2.color;
-                ctx.fillRect(t.x, t.y, UNIT, UNIT);
+            [p1, p2].forEach(p => {
+                ctx.fillStyle = p.color;
+                // Draw head with glow
+                ctx.shadowBlur = p.isBoosting ? 15 : 0;
+                ctx.shadowColor = p.color;
+                
+                p.trail.forEach((t, index) => {
+                    // Slight fade for older trail parts
+                    if (index === p.trail.length - 1) ctx.fillRect(t.x, t.y, UNIT, UNIT);
+                    else ctx.fillRect(t.x, t.y, UNIT, UNIT);
+                });
+                ctx.shadowBlur = 0;
             });
         }
 
-        function endGame(text) {
+        function endGame(text, color) {
             gameActive = false;
             msg.innerText = text;
+            msg.style.color = color;
             scoreUI.innerText = `P1: ${score.p1} | P2: ${score.p2}`;
             setTimeout(reset, 2000);
         }
@@ -275,7 +237,8 @@
         function loop() {
             update();
             draw();
-            setTimeout(() => requestAnimationFrame(loop), 35);
+            // Faster loop for better boost responsiveness
+            setTimeout(() => requestAnimationFrame(loop), 30);
         }
 
         reset();
