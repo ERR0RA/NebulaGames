@@ -6,63 +6,272 @@
     <title>Year 8-9 Maths Mastery Revision Pro</title>
     <style>
         :root {
-            --primary: #4a90e2;
-            --secondary: #f39c12;
-            --success: #2ecc71;
-            --danger: #e74c3c;
-            --dark: #2c3e50;
-            --light: #ecf0f1;
-            --hint: #9b59b6;
+            --primary: #4a90e2; --secondary: #f39c12; --success: #2ecc71;
+            --danger: #e74c3c; --dark: #2c3e50; --light: #ecf0f1; --hint: #9b59b6;
         }
 
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f0f4f8;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8; color: var(--dark); margin: 0;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
         }
 
         #game-container {
-            background: white;
-            width: 95%;
-            max-width: 850px;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            text-align: center;
+            background: white; width: 90%; max-width: 800px; padding: 30px;
+            border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;
         }
 
         .hidden { display: none !important; }
 
         .menu-section {
-            margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            text-align: left;
+            margin: 20px 0; padding: 15px; border: 1px solid #ddd;
+            border-radius: 8px; text-align: left;
         }
 
         .topic-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px; margin-top: 10px;
         }
 
         .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-            margin: 5px;
+            padding: 12px 25px; border: none; border-radius: 5px;
+            cursor: pointer; font-weight: bold; transition: transform 0.2s; margin: 5px;
         }
 
-        .btn-start { background: var(--primary); color: white; width: 100%; }
+        .btn-start { background: var(--primary); color: white; width: 100%; margin-top: 20px; }
         .btn-submit { background: var(--success); color: white; }
         .btn-hint { background: var(--hint); color: white; }
-        .btn-next { background: var(--secondary
+        .btn-next { background: var(--secondary); color: white; }
+
+        #question-box {
+            font-size: 1.4rem; margin: 20px 0; padding: 30px;
+            background: #f9f9f9; border-radius: 10px; position: relative;
+            border-left: 5px solid var(--primary);
+        }
+
+        .calc-badge {
+            position: absolute; top: 10px; right: 10px; padding: 4px 8px;
+            border-radius: 4px; font-size: 0.7rem; font-weight: bold;
+        }
+
+        .calc-yes { background: #ffeaa7; color: #d63031; border: 1px solid #fab1a0; }
+        .calc-no { background: #dff9fb; color: #0984e3; border: 1px solid #81ecec; }
+
+        #hint-text { color: var(--hint); font-style: italic; margin-bottom: 15px; font-weight: 500; }
+
+        #answer-input {
+            padding: 12px; font-size: 1.2rem; width: 70%;
+            border: 2px solid #ddd; border-radius: 5px; margin-bottom: 15px;
+        }
+
+        .stats-bar {
+            display: flex; justify-content: space-between; font-size: 0.9rem;
+            color: #7f8c8d; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="setup-screen">
+        <h1>Maths Revision Pro</h1>
+        <p>Year 8-9 Specialized Revision | 2026 Curriculum</p>
+        
+        <div class="menu-section">
+            <h3>1. Select Topics</h3>
+            <div class="topic-grid" id="topic-list"></div>
+            <div style="margin-top:10px;">
+                <button class="btn" style="background:#eee; font-size:0.8rem;" onclick="selectAll(true)">Select All</button>
+                <button class="btn" style="background:#eee; font-size:0.8rem;" onclick="selectAll(false)">Clear All</button>
+            </div>
+        </div>
+
+        <div class="menu-section">
+            <h3>2. Difficulty</h3>
+            <div style="display:flex; justify-content:center; gap:20px;">
+                <label><input type="radio" name="diff" value="easy" checked> Easy</label>
+                <label><input type="radio" name="diff" value="medium"> Medium</label>
+                <label><input type="radio" name="diff" value="hard"> Hard</label>
+            </div>
+        </div>
+
+        <button class="btn btn-start" onclick="startGame()">START REVISION</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div class="stats-bar">
+            <span id="stat-topic">Topic: ---</span>
+            <span id="stat-score">Score: 0</span>
+            <span id="stat-count">Q: 0/0</span>
+        </div>
+        
+        <div id="question-box">
+            <div id="calc-indicator" class="calc-badge"></div>
+            <div id="question-text"></div>
+        </div>
+
+        <div id="hint-text" class="hidden"></div>
+        <input type="text" id="answer-input" placeholder="Type answer (e.g. 10 or x^2+1)" autocomplete="off">
+        <div id="feedback" style="margin-bottom: 15px; font-weight: bold;"></div>
+
+        <button id="hint-btn" class="btn btn-hint" onclick="showHint()">Get Hint</button>
+        <button id="submit-btn" class="btn btn-submit" onclick="checkAnswer()">Submit</button>
+        <button id="next-btn" class="btn btn-next hidden" onclick="nextQuestion()">Next</button>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <h2>Revision Complete!</h2>
+        <h1 id="final-score">0 / 0</h1>
+        <p id="performance-msg"></p>
+        <button class="btn btn-start" onclick="location.reload()">Restart New Session</button>
+    </div>
+</div>
+
+<script>
+    const questionBank = {
+        "Interest (Simple & Compound)": {
+            easy: [
+                { q: "Simple Interest: Calculate 5% of £400 for 1 year.", a: "20", h: "Divide by 100 then multiply by 5.", c: false },
+                { q: "Simple Interest: Find total value of £100 at 10% for 2 years.", a: "120", h: "Calculate 10% (£10), double it for 2 years, add to start.", c: false }
+            ],
+            medium: [
+                { q: "Compound Interest: £200 at 5% for 2 years. Total value?", a: "220.50", h: "Year 1 is £210. Now find 5% of £210 for Year 2.", c: true },
+                { q: "Simple Interest: £1500 at 2% for 5 years.", a: "150", h: "Interest = (P * R * T) / 100", c: true }
+            ],
+            hard: [
+                { q: "Compound Interest: £1000 at 3% for 4 years. (Total to 2dp)", a: "1125.51", h: "Use the formula: 1000 * (1.03)^4", c: true }
+            ]
+        },
+        "Algebra & Factorisation": {
+            easy: [
+                { q: "Solve: 3x + 1 = 10", a: "3", h: "Subtract 1, then divide by 3.", c: false },
+                { q: "Factorise: 5x + 10", a: "5(x+2)", h: "What is the highest common factor of 5 and 10?", c: false }
+            ],
+            medium: [
+                { q: "Solve: 4(x - 2) = 12", a: "5", h: "Divide by 4 first, then add 2.", c: false },
+                { q: "Factorise: x^2 + 3x", a: "x(x+3)", h: "Both terms have an 'x'. Pull it out front.", c: false }
+            ],
+            hard: [
+                { q: "Solve: 7x - 2 = 3x + 10", a: "3", h: "Get all x on one side: Subtract 3x from both sides first.", c: false },
+                { q: "Factorise: x^2 + 5x + 6", a: "(x+2)(x+3)", h: "Find two numbers that multiply to 6 and add to 5.", c: false }
+            ]
+        },
+        "Quadratic Graphs": {
+            easy: [
+                { q: "What is the name of the U-shaped curve of a quadratic?", a: "parabola", h: "It starts with 'P'.", c: false },
+                { q: "For y = x^2, find y when x = 3.", a: "9", h: "3 squared means 3 times 3.", c: false }
+            ],
+            medium: [
+                { q: "For y = x^2 + 2, find the coordinate when x = 4.", a: "(4,18)", h: "Square 4, add 2. Write as (x,y).", c: false },
+                { q: "Where does the graph y = x^2 - 9 cross the y-axis?", a: "-9", h: "The y-intercept is the value of y when x = 0.", c: false }
+            ],
+            hard: [
+                { q: "Find the turning point of y = (x - 2)^2 + 5", a: "(2,5)", h: "The turning point is (h, k) in the form (x-h)^2 + k.", c: false },
+                { q: "Calculate y when x = -3 for y = x^2 + 2x", a: "3", h: "(-3)^2 is 9. 2 * -3 is -6. 9 - 6 = ?", c: false }
+            ]
+        }
+    };
+
+    let currentPool = [];
+    let score = 0;
+    let currentQuestionIndex = 0;
+
+    const topicListDiv = document.getElementById('topic-list');
+    Object.keys(questionBank).forEach(topic => {
+        const div = document.createElement('div');
+        div.innerHTML = `<label><input type="checkbox" name="topic" value="${topic}" checked> ${topic}</label>`;
+        topicListDiv.appendChild(div);
+    });
+
+    function selectAll(val) { document.querySelectorAll('input[name="topic"]').forEach(cb => cb.checked = val); }
+
+    function startGame() {
+        const selectedTopics = Array.from(document.querySelectorAll('input[name="topic"]:checked')).map(cb => cb.value);
+        const diff = document.querySelector('input[name="diff"]:checked').value;
+        
+        currentPool = [];
+        selectedTopics.forEach(t => {
+            questionBank[t][diff].forEach(q => currentPool.push({...q, topic: t}));
+        });
+        currentPool.sort(() => Math.random() - 0.5);
+
+        if (currentPool.length === 0) return alert("Select at least one topic!");
+
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = currentPool[currentQuestionIndex];
+        document.getElementById('stat-topic').innerText = `Topic: ${q.topic}`;
+        document.getElementById('stat-count').innerText = `Q: ${currentQuestionIndex + 1}/${currentPool.length}`;
+        document.getElementById('question-text').innerText = q.q;
+        
+        const badge = document.getElementById('calc-indicator');
+        badge.innerText = q.c ? "CALCULATOR" : "NON-CALC";
+        badge.className = q.c ? "calc-badge calc-yes" : "calc-badge calc-no";
+
+        document.getElementById('hint-text').classList.add('hidden');
+        document.getElementById('hint-btn').classList.remove('hidden');
+        document.getElementById('answer-input').value = "";
+        document.getElementById('answer-input').disabled = false;
+        document.getElementById('feedback').innerText = "";
+        document.getElementById('submit-btn').classList.remove('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('answer-input').focus();
+    }
+
+    function showHint() {
+        const hText = document.getElementById('hint-text');
+        hText.innerText = "Hint: " + currentPool[currentQuestionIndex].h;
+        hText.classList.remove('hidden');
+        document.getElementById('hint-btn').classList.add('hidden');
+    }
+
+    function checkAnswer() {
+        const rawUser = document.getElementById('answer-input').value;
+        const user = rawUser.replace(/\s+/g, '').toLowerCase();
+        const correct = currentPool[currentQuestionIndex].a.replace(/\s+/g, '').toLowerCase();
+        const feedback = document.getElementById('feedback');
+
+        if (user === "") return;
+
+        if (user === correct) {
+            score++;
+            feedback.innerText = "Correct! Well done.";
+            feedback.style.color = "var(--success)";
+        } else {
+            feedback.innerText = "Incorrect. Correct answer: " + currentPool[currentQuestionIndex].a;
+            feedback.style.color = "var(--danger)";
+        }
+
+        document.getElementById('stat-score').innerText = "Score: " + score;
+        document.getElementById('answer-input').disabled = true;
+        document.getElementById('submit-btn').classList.add('hidden');
+        document.getElementById('next-btn').classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < currentPool.length) showQuestion();
+        else endGame();
+    }
+
+    function endGame() {
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('end-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = `${score} / ${currentPool.length}`;
+        const pct = (score / currentPool.length) * 100;
+        document.getElementById('performance-msg').innerText = pct >= 80 ? "Mastery achieved! 🌟" : "Good effort, keep practicing! 📚";
+    }
+
+    document.getElementById('answer-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            if (!document.getElementById('submit-btn').classList.contains('hidden')) checkAnswer();
+            else nextQuestion();
+        }
+    });
+</script>
+</body>
+</html>
