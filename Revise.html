@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year 8-9 Maths Mastery Revision</title>
+    <style>
+        /* ========================================
+           CSS STYLING - MODERN & RESPONSIVE
+           ========================================
+        */
+        :root {
+            --primary: #4a90e2;
+            --secondary: #f39c12;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: var(--dark);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #game-container {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 { color: var(--primary); margin-bottom: 10px; }
+        h2 { color: var(--dark); }
+
+        .hidden { display: none !important; }
+
+        /* Menu Styles */
+        .menu-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .topic-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .topic-item input { margin-right: 8px; }
+
+        .difficulty-select {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn:hover { transform: translateY(-2px); }
+        .btn-start { background: var(--primary); color: white; margin-top: 20px; width: 100%; }
+        .btn-submit { background: var(--success); color: white; margin-top: 15px; }
+        .btn-next { background: var(--secondary); color: white; margin-top: 15px; }
+        .btn-restart { background: var(--dark); color: white; }
+
+        /* Game Area */
+        #question-box {
+            font-size: 1.4rem;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-left: 5px solid var(--primary);
+        }
+
+        #answer-input {
+            padding: 10px;
+            font-size: 1.2rem;
+            width: 60%;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        #answer-input:focus { border-color: var(--primary); }
+
+        #feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .correct { color: var(--success); }
+        .incorrect { color: var(--danger); }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .topic-grid { grid-template-columns: 1fr; }
+            #answer-input { width: 100%; box-sizing: border-box; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="setup-screen">
+        <h1>Maths Revision Pro</h1>
+        <p>Targeted for Year 8 & 9 (2025-2026 Curriculum)</p>
+        
+        <div class="menu-section">
+            <h3>1. Select Topics</h3>
+            <div class="topic-grid" id="topic-list">
+                </div>
+            <div style="margin-top: 10px;">
+                <button class="btn" style="background:#eee; font-size:0.8rem;" onclick="selectAll(true)">Select All</button>
+                <button class="btn" style="background:#eee; font-size:0.8rem;" onclick="selectAll(false)">Clear All</button>
+            </div>
+        </div>
+
+        <div class="menu-section">
+            <h3>2. Difficulty</h3>
+            <div class="difficulty-select">
+                <label><input type="radio" name="diff" value="easy" checked> Easy</label>
+                <label><input type="radio" name="diff" value="medium"> Medium</label>
+                <label><input type="radio" name="diff" value="hard"> Hard</label>
+                <label><input type="radio" name="diff" value="mixed"> Mixed</label>
+            </div>
+        </div>
+
+        <button class="btn btn-start" onclick="startGame()">START REVISION</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div class="stats-bar">
+            <span id="stat-topic">Topic: ---</span>
+            <span id="stat-score">Score: 0</span>
+            <span id="stat-count">Question: 0/0</span>
+        </div>
+        
+        <div id="question-box">
+            Question text goes here...
+        </div>
+
+        <input type="text" id="answer-input" placeholder="Type your answer..." autocomplete="off">
+        
+        <div id="feedback"></div>
+
+        <button id="submit-btn" class="btn btn-submit" onclick="checkAnswer()">Submit Answer</button>
+        <button id="next-btn" class="btn btn-next hidden" onclick="nextQuestion()">Next Question</button>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <h2>Revision Complete!</h2>
+        <h1 id="final-score">0 / 0</h1>
+        <p id="performance-msg"></p>
+        <button class="btn btn-restart" onclick="location.reload()">Start New Session</button>
+    </div>
+</div>
+
+<script>
+    /* ========================================
+       DATA - COMPREHENSIVE QUESTION BANK
+       ========================================
+    */
+    const questionBank = {
+        "Rounding & Bounds": {
+            easy: [
+                { q: "Round 45.67 to the nearest whole number.", a: "46" },
+                { q: "Round 12,345 to the nearest 100.", a: "12300" },
+                { q: "Round 0.00782 to 1 significant figure.", a: "0.008" }
+            ],
+            medium: [
+                { q: "Find the upper bound of 15cm measured to the nearest cm.", a: "15.5" },
+                { q: "Round 0.04562 to 3 decimal places.", a: "0.046" },
+                { q: "Find the lower bound of 200g measured to the nearest 10g.", a: "195" }
+            ],
+            hard: [
+                { q: "A square has side 4cm (to 1sf). What is the upper bound of its area?", a: "20.25" },
+                { q: "Calculate the lower bound for speed if distance is 10m (to nearest m) and time is 2s (to nearest s).", a: "6.33" }
+            ]
+        },
+        "Manipulating Expressions": {
+            easy: [
+                { q: "Simplify: 3a + 5a - 2a", a: "6a" },
+                { q: "Expand: 3(x + 4)", a: "3x+12" },
+                { q: "Simplify: y * y * y", a: "y^3" }
+            ],
+            medium: [
+                { q: "Factorise completely: 6x + 12", a: "6(x+2)" },
+                { q: "Simplify: 2x + 3y + 5x - 7y", a: "7x-4y" },
+                { q: "Expand and simplify: 2(x+3) + 3(x-1)", a: "5x+3" }
+            ],
+            hard: [
+                { q: "Expand and simplify: (x + 3)(x + 5)", a: "x^2+8x+15" },
+                { q: "Factorise: x^2 + 5x + 6", a: "(x+2)(x+3)" },
+                { q: "Simplify: (12x^5) / (3x^2)", a: "4x^3" }
+            ]
+        },
+        "Powers & Standard Form": {
+            easy: [
+                { q: "What is 10 to the power of 4?", a: "10000" },
+                { q: "Write 5000 in standard form.", a: "5x10^3" },
+                { q: "Simplify: 2^3", a: "8" }
+            ],
+            medium: [
+                { q: "Write 0.00045 in standard form.", a: "4.5x10^-4" },
+                { q: "Calculate: (2 x 10^3) x (3 x 10^2)", a: "6x10^5" },
+                { q: "What is 5^-1 as a fraction?", a: "1/5" }
+            ],
+            hard: [
+                { q: "Simplify: (x^3)^4", a: "x^12" },
+                { q: "Calculate: (8 x 10^6) / (2 x 10^3)", a: "4x10^3" },
+                { q: "Solve: 2^x = 32. x = ?", a: "5" }
+            ]
+        },
+        "Solving & Rearranging Equations": {
+            easy: [
+                { q: "Solve: x + 7 = 15", a: "8" },
+                { q: "Solve: 3x = 21", a: "7" },
+                { q: "Solve: x/2 = 10", a: "20" }
+            ],
+            medium: [
+                { q: "Solve: 2x - 5 = 11", a: "8" },
+                { q: "Solve: 3(x + 2) = 18", a: "4" },
+                { q: "Rearrange y = x + c to make x the subject.", a: "x=y-c" }
+            ],
+            hard: [
+                { q: "Solve: 5x + 3 = 2x + 12", a: "3" },
+                { q: "Solve: (x/4) + 1 = 5", a: "16" },
+                { q: "Rearrange A = πr^2 to make r^2 the subject.", a: "r^2=A/π" }
+            ]
+        },
+        "Pythagoras & Coordinates": {
+            easy: [
+                { q: "What is the square of 12?", a: "144" },
+                { q: "In which quadrant is (-3, -5)?", a: "3" },
+                { q: "Find the distance between (0,0) and (0,5).", a: "5" }
+            ],
+            medium: [
+                { q: "Find the hypotenuse of a triangle with sides 3cm and 4cm.", a: "5" },
+                { q: "Find the midpoint of (2, 4) and (6, 10).", a: "(4,7)" },
+                { q: "A right triangle has hypotenuse 13 and one side 5. Find the other side.", a: "12" }
+            ],
+            hard: [
+                { q: "Find the distance between (1, 2) and (4, 6).", a: "5" },
+                { q: "Calculate the length of the diagonal of a square with side 10cm (to 1dp).", a: "14.1" }
+            ]
+        },
+        "Constructions & Loci": {
+            easy: [
+                { q: "What tool is used to draw circles?", a: "compass" },
+                { q: "The locus of points equidistant from a single point is a...", a: "circle" }
+            ],
+            medium: [
+                { q: "What do you call a line that divides an angle into two equal parts?", a: "bisector" },
+                { q: "A locus of points equidistant from two points A and B is the perpendicular...", a: "bisector" }
+            ],
+            hard: [
+                { q: "What is the locus of points exactly 3cm from a line segment?", a: "sausage shape" }
+            ]
+        },
+        "Percentages": {
+            easy: [
+                { q: "What is 50% of 80?", a: "40" },
+                { q: "Write 0.75 as a percentage.", a: "75%" },
+                { q: "What is 10% of £250?", a: "25" }
+            ],
+            medium: [
+                { q: "Increase £60 by 20%.", a: "72" },
+                { q: "A coat costing £80 is reduced by 15%. New price?", a: "68" },
+                { q: "Write 3/5 as a percentage.", a: "60%" }
+            ],
+            hard: [
+                { q: "A price increases from £40 to £50. Find the percentage increase.", a: "25%" },
+                { q: "Find 17.5% of £200.", a: "35" },
+                { q: "A price includes 20% VAT and is £120. Find the price without VAT.", a: "100" }
+            ]
+        },
+        "Ratio & Proportion": {
+            easy: [
+                { q: "Simplify the ratio 10:15", a: "2:3" },
+                { q: "Divide £20 in the ratio 1:3", a: "5,15" },
+                { q: "If 2 apples cost 40p, how much for 4 apples?", a: "80p" }
+            ],
+            medium: [
+                { q: "Divide 50g in the ratio 2:3:5", a: "10,15,25" },
+                { q: "x and y are in direct proportion. If x=2, y=10. Find y when x=5.", a: "25" },
+                { q: "Simplify 1.5 : 2.5", a: "3:5" }
+            ],
+            hard: [
+                { q: "In a class, the ratio of boys to girls is 3:4. There are 28 girls. Total students?", a: "49" },
+                { q: "A map scale is 1:50000. 2cm on the map is how many km?", a: "1" }
+            ]
+        },
+        "Experimental Probability": {
+            easy: [
+                { q: "Probability of a 'Head' on a fair coin?", a: "0.5" },
+                { q: "If P(win) = 0.3, what is P(lose)?", a: "0.7" }
+            ],
+            medium: [
+                { q: "A dice is rolled 60 times. It lands on '6' 12 times. What is the relative frequency?", a: "0.2" },
+                { q: "A bag has 3 red and 7 blue marbles. P(red)?", a: "0.3" }
+            ],
+            hard: [
+                { q: "The probability of a seed growing is 0.8. If 200 are planted, how many should grow?", a: "160" }
+            ]
+        },
+        "Similar Shapes": {
+            easy: [
+                { q: "Two shapes are similar if their angles are the...", a: "same" },
+                { q: "A square has side 2. A similar square has side 4. What is the scale factor?", a: "2" }
+            ],
+            medium: [
+                { q: "Shape A has area 10. Scale factor is 2. What is the area of Shape B?", a: "40" },
+                { q: "Triangle A has base 5. Similar Triangle B has base 15. If A height is 4, what is B height?", a: "12" }
+            ],
+            hard: [
+                { q: "The ratio of lengths is 1:3. What is the ratio of volumes?", a: "1:27" }
+            ]
+        },
+        "Circles, Arcs & Sectors": {
+            easy: [
+                { q: "Formula for area of a circle?", a: "πr^2" },
+                { q: "Diameter is 10cm. Find the radius.", a: "5" }
+            ],
+            medium: [
+                { q: "Find the circumference of a circle with radius 7cm (use π=22/7).", a: "44" },
+                { q: "Find the area of a circle with radius 10cm (to nearest whole number).", a: "314" }
+            ],
+            hard: [
+                { q: "Find the length of an arc with angle 90 and radius 4cm (leave in terms of π).", a: "2π" },
+                { q: "Area of a semi-circle with diameter 20cm (to 1dp).", a: "157.1" }
+            ]
+        },
+        "Sequences Linear & Non-Linear": {
+            easy: [
+                { q: "Next term in 2, 4, 6, 8...", a: "10" },
+                { q: "Next term in 1, 4, 9, 16...", a: "25" }
+            ],
+            medium: [
+                { q: "Find the nth term of 5, 8, 11, 14...", a: "3n+2" },
+                { q: "What is the 10th term of the sequence 2n - 1?", a: "19" }
+            ],
+            hard: [
+                { q: "Next term in 1, 3, 6, 10, 15...", a: "21" },
+                { q: "Is 100 a term in the sequence 3n + 1?", a: "yes" }
+            ]
+        },
+        "Graphs & Charts": {
+            easy: [
+                { q: "What chart uses pictures to represent data?", a: "pictogram" },
+                { q: "The middle value in a ordered list is the...", a: "median" }
+            ],
+            medium: [
+                { q: "Find the mean of 2, 4, 6, 8.", a: "5" },
+                { q: "In a pie chart, what angle represents 25%?", a: "90" }
+            ],
+            hard: [
+                { q: "A pie chart has a 60 degree sector for 'Red'. There are 36 items total. How many are Red?", a: "6" }
+            ]
+        },
+        "Functions & Graphs": {
+            easy: [
+                { q: "In y = mx + c, what does m represent?", a: "gradient" },
+                { q: "Find y when x=2 for the function y = 3x + 1.", a: "7" }
+            ],
+            medium: [
+                { q: "What is the gradient of y = 4 - 2x?", a: "-2" },
+                { q: "Find the y-intercept of y = 5x + 3.", a: "3" }
+            ],
+            hard: [
+                { q: "Find the gradient of a line through (0,0) and (2,8).", a: "4" },
+                { q: "Where do y=x+2 and y=2x meet? (x value)", a: "2" }
+            ]
+        }
+    };
+
+    /* ========================================
+       GAME LOGIC
+       ========================================
+    */
+
+    let currentPool = [];
+    let score = 0;
+    let totalAsked = 0;
+    let currentQuestionIndex = 0;
+
+    // Initialization: Populate topic checkboxes
+    const topicListDiv = document.getElementById('topic-list');
+    Object.keys(questionBank).forEach(topic => {
+        const div = document.createElement('div');
+        div.className = 'topic-item';
+        div.innerHTML = `<label><input type="checkbox" name="topic" value="${topic}" checked> ${topic}</label>`;
+        topicListDiv.appendChild(div);
+    });
+
+    function selectAll(val) {
+        document.querySelectorAll('input[name="topic"]').forEach(cb => cb.checked = val);
+    }
+
+    function startGame() {
+        const selectedTopics = Array.from(document.querySelectorAll('input[name="topic"]:checked')).map(cb => cb.value);
+        const difficulty = document.querySelector('input[name="diff"]:checked').value;
+
+        if (selectedTopics.length === 0) {
+            alert("Please select at least one topic!");
+            return;
+        }
+
+        // Build the question pool
+        currentPool = [];
+        selectedTopics.forEach(topic => {
+            if (difficulty === 'mixed') {
+                ['easy', 'medium', 'hard'].forEach(d => {
+                    questionBank[topic][d].forEach(q => currentPool.push({...q, topic}));
+                });
+            } else {
+                questionBank[topic][difficulty].forEach(q => currentPool.push({...q, topic}));
+            }
+        });
+
+        // Shuffle the pool to ensure variety and no repeats
+        currentPool.sort(() => Math.random() - 0.5);
+
+        if (currentPool.length === 0) {
+            alert("No questions found for this selection!");
+            return;
+        }
+
+        // UI Transition
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        
+        score = 0;
+        totalAsked = currentPool.length;
+        currentQuestionIndex = 0;
+        
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const qData = currentPool[currentQuestionIndex];
+        document.getElementById('stat-topic').innerText = `Topic: ${qData.topic}`;
+        document.getElementById('stat-score').innerText = `Score: ${score}`;
+        document.getElementById('stat-count').innerText = `Question: ${currentQuestionIndex + 1}/${totalAsked}`;
+        
+        document.getElementById('question-box').innerText = qData.q;
+        document.getElementById('answer-input').value = "";
+        document.getElementById('answer-input').disabled = false;
+        document.getElementById('feedback').innerText = "";
+        document.getElementById('submit-btn').classList.remove('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('answer-input').focus();
+    }
+
+    function checkAnswer() {
+        const userAnswer = document.getElementById('answer-input').value.trim().toLowerCase();
+        const correctAnswer = currentPool[currentQuestionIndex].a.toLowerCase();
+        const feedback = document.getElementById('feedback');
+
+        if (userAnswer === "") return;
+
+        if (userAnswer === correctAnswer) {
+            score++;
+            feedback.innerText = "Correct! Well done.";
+            feedback.className = "correct";
+        } else {
+            feedback.innerText = `Incorrect. The correct answer was: ${currentPool[currentQuestionIndex].a}`;
+            feedback.className = "incorrect";
+        }
+
+        document.getElementById('answer-input').disabled = true;
+        document.getElementById('submit-btn').classList.add('hidden');
+        document.getElementById('next-btn').classList.remove('hidden');
+        document.getElementById('stat-score').innerText = `Score: ${score}`;
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < currentPool.length) {
+            showQuestion();
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('end-screen').classList.remove('hidden');
+        
+        const finalPercent = (score / totalAsked) * 100;
+        document.getElementById('final-score').innerText = `${score} / ${totalAsked}`;
+        
+        let msg = "";
+        if (finalPercent === 100) msg = "Perfect score! You're a Maths Wizard! 🧙‍♂️";
+        else if (finalPercent >= 80) msg = "Excellent work! You've mastered these topics. 🌟";
+        else if (finalPercent >= 50) msg = "Good effort. A bit more practice and you'll be there! 👍";
+        else msg = "Keep studying! Review the topics you missed and try again. 📚";
+        
+        document.getElementById('performance-msg').innerText = msg;
+    }
+
+    // Allow Enter key to submit
+    document.getElementById('answer-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            if (!document.getElementById('submit-btn').classList.contains('hidden')) {
+                checkAnswer();
+            } else {
+                nextQuestion();
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
