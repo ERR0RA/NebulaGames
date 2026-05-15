@@ -24,7 +24,7 @@
 <div id="ui">
     <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
     <div class="meters">
-        <div class="meter-container"><div id="p1-fill" class="fill"></div></div>
+        <div class="meter-container" id="p1-ui"><div id="p1-fill" class="fill"></div></div>
         <div class="meter-container" id="p2-ui"><div id="p2-fill" class="fill"></div></div>
         <div class="meter-container" id="bot-ui"><div id="p3-fill" class="fill"></div></div>
     </div>
@@ -33,6 +33,7 @@
             <option value="pvpve">2 Humans vs Bot</option>
             <option value="pve">1 Human vs Bot</option>
             <option value="pvp">Human vs Human</option>
+            <option value="bvb">Bot vs Bot (Spectate)</option>
         </select>
         <label class="toggle-label">
             <input type="checkbox" id="usePowerUps" checked> ENABLE POWER-UPS
@@ -58,13 +59,23 @@ function reset() {
     powerupTimer = 0;
     
     players = [
-        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: true, team: 'human', ghost: 0, speedMult: 1 },
-        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pve'), team: 'human', ghost: 0, speedMult: 1 },
-        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: 1 }
+        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, speedMult: 1, isBot: false },
+        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, speedMult: 1, isBot: false },
+        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: 1, isBot: true }
     ];
+
+    // Special setup for Bot vs Bot
+    if (mode === 'bvb') {
+        players[0].active = true;
+        players[0].isBot = true; // Turn P1 into a bot
+        players[0].team = 'green_bot';
+        players[1].active = false;
+        players[2].active = true;
+    }
 
     if (mode === 'pvp') players[1].team = 'red';
     
+    document.getElementById('p1-ui').style.visibility = players[0].active ? "visible" : "hidden";
     document.getElementById('p2-ui').style.visibility = players[1].active ? "visible" : "hidden";
     document.getElementById('bot-ui').style.visibility = players[2].active ? "visible" : "hidden";
     
@@ -79,12 +90,14 @@ window.onkeydown = e => {
     if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
     const mode = document.getElementById('gameMode').value;
     
-    // P1 Controls
-    if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
-    if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
-    if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
-    if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
-    if (e.code === 'Space') players[0].isBoosting = true;
+    // P1 Controls (Only if not a bot)
+    if (players[0].active && !players[0].isBot) {
+        if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
+        if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
+        if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
+        if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
+        if (e.code === 'Space') players[0].isBoosting = true;
+    }
 
     // P2 Controls
     if (players[1].active) {
@@ -104,7 +117,6 @@ window.onkeyup = e => {
 function checkCollision(x, y, self) {
     if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
     
-    // Check for Power-up pickup
     for (let i = powerups.length - 1; i >= 0; i--) {
         const pu = powerups[i];
         if (Math.abs(x - pu.x) < 15 && Math.abs(y - pu.y) < 15) {
@@ -115,8 +127,6 @@ function checkCollision(x, y, self) {
 
     const hitId = grid[Math.floor(x)][Math.floor(y)];
     if (hitId === null) return false;
-    
-    // Ghost Mode Logic
     if (self.ghost > 0) return false;
 
     const owner = players[hitId];
@@ -126,7 +136,7 @@ function checkCollision(x, y, self) {
 }
 
 function applyPowerUp(player, type) {
-    if (type === 'ghost') player.ghost = 180; // ~3 seconds
+    if (type === 'ghost') player.ghost = 180;
     if (type === 'speed') {
         player.speedMult = 2;
         setTimeout(() => { player.speedMult = 1; }, 4000);
@@ -155,28 +165,29 @@ function update() {
         if (powerupTimer > 250) { spawnPowerUp(); powerupTimer = 0; }
     }
 
-    // BOT AI
-    const bot = players[2];
-    if (bot.active && bot.alive) {
-        const checkAhead = (dx, dy, dist) => {
-            for(let i=1; i<=dist; i++) {
-                let nx = bot.x + dx*i, ny = bot.y + dy*i;
-                if (checkCollision(nx, ny, bot)) return true;
-            }
-            return false;
-        };
+    // SHARED AI LOGIC
+    players.forEach(p => {
+        if (p.active && p.alive && p.isBot) {
+            const checkAhead = (dx, dy, dist) => {
+                for(let i=1; i<=dist; i++) {
+                    let nx = p.x + dx*i, ny = p.y + dy*i;
+                    if (checkCollision(nx, ny, p)) return true;
+                }
+                return false;
+            };
 
-        if (checkAhead(bot.dx, bot.dy, 8)) {
-            const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}].filter(d => !(d.dx === -bot.dx && d.dy === -bot.dy));
-            let bestDir = null, maxDist = -1;
-            dirs.forEach(d => {
-                let dCount = 0;
-                while(dCount < 25 && !checkCollision(bot.x + d.dx*(dCount+1), bot.y + d.dy*(dCount+1), bot)) { dCount++; }
-                if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
-            });
-            if (bestDir) { bot.dx = bestDir.dx; bot.dy = bestDir.dy; }
+            if (checkAhead(p.dx, p.dy, 8)) {
+                const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}].filter(d => !(d.dx === -p.dx && d.dy === -p.dy));
+                let bestDir = null, maxDist = -1;
+                dirs.forEach(d => {
+                    let dCount = 0;
+                    while(dCount < 25 && !checkCollision(p.x + d.dx*(dCount+1), p.y + d.dy*(dCount+1), p)) { dCount++; }
+                    if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
+                });
+                if (bestDir) { p.dx = bestDir.dx; p.dy = bestDir.dy; }
+            }
         }
-    }
+    });
 
     players.forEach(p => {
         if (!p.active || !p.alive) return;
@@ -204,10 +215,10 @@ function checkWinner() {
     const mode = document.getElementById('gameMode').value;
     const p1 = players[0], p2 = players[1], bot = players[2];
     
-    if (mode === 'pvp') {
-        if (!p1.alive && !p2.alive) endGame("DRAW!");
-        else if (!p1.alive) { score.p2++; endGame("PLAYER 2 WINS!"); }
-        else if (!p2.alive) { score.p1++; endGame("PLAYER 1 WINS!"); }
+    if (mode === 'pvp' || mode === 'bvb') {
+        if (!p1.alive && !bot.alive) endGame("DRAW!");
+        else if (!p1.alive) { score.bot++; endGame(mode === 'bvb' ? "RED BOT WINS!" : "PLAYER 2 WINS!"); }
+        else if (!bot.alive) { score.p1++; endGame(mode === 'bvb' ? "GREEN BOT WINS!" : "PLAYER 1 WINS!"); }
     } else {
         const humansAlive = p1.alive || (p2.active && p2.alive);
         if (!humansAlive) { score.bot++; endGame("BOT WINS!"); }
@@ -226,7 +237,6 @@ function draw() {
     ctx.fillStyle = "rgba(0,0,0,0.2)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw Power-ups
     powerups.forEach(pu => {
         ctx.fillStyle = pu.type === 'ghost' ? '#fff' : pu.type === 'speed' ? '#ff0' : '#0ff';
         ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
@@ -236,12 +246,10 @@ function draw() {
 
     players.forEach(p => {
         if (!p.active) return;
-        
         p.trail.forEach(t => {
-            ctx.fillStyle = t.isGhost ? '#333' : p.color; // Ghost trails are dimmer/grey
+            ctx.fillStyle = t.isGhost ? '#333' : p.color;
             ctx.fillRect(t.x, t.y, UNIT, UNIT);
         });
-
         if (p.alive) {
             ctx.fillStyle = p.ghost > 0 ? '#fff' : p.color;
             ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
