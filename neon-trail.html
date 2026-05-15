@@ -17,6 +17,7 @@
         button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; }
         button:hover { background: #0f0; color: #000; }
         .toggle-label { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
+        #score { margin-bottom: 5px; font-size: 1.2rem; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -64,13 +65,13 @@ function reset() {
         { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: 1, isBot: true }
     ];
 
-    // Special setup for Bot vs Bot
     if (mode === 'bvb') {
         players[0].active = true;
-        players[0].isBot = true; // Turn P1 into a bot
+        players[0].isBot = true; 
         players[0].team = 'green_bot';
         players[1].active = false;
         players[2].active = true;
+        players[2].team = 'red_bot';
     }
 
     if (mode === 'pvp') players[1].team = 'red';
@@ -90,7 +91,6 @@ window.onkeydown = e => {
     if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
     const mode = document.getElementById('gameMode').value;
     
-    // P1 Controls (Only if not a bot)
     if (players[0].active && !players[0].isBot) {
         if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
         if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
@@ -99,7 +99,6 @@ window.onkeydown = e => {
         if (e.code === 'Space') players[0].isBoosting = true;
     }
 
-    // P2 Controls
     if (players[1].active) {
         if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
         if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
@@ -165,7 +164,6 @@ function update() {
         if (powerupTimer > 250) { spawnPowerUp(); powerupTimer = 0; }
     }
 
-    // SHARED AI LOGIC
     players.forEach(p => {
         if (p.active && p.alive && p.isBot) {
             const checkAhead = (dx, dy, dist) => {
@@ -229,7 +227,14 @@ function checkWinner() {
 function endGame(txt) {
     gameActive = false;
     document.getElementById('msg').innerText = txt;
-    document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
+    
+    const mode = document.getElementById('gameMode').value;
+    if (mode === 'bvb') {
+        document.getElementById('score').innerText = `GREEN BOT: ${score.p1} | RED BOT: ${score.bot}`;
+    } else {
+        document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
+    }
+    
     setTimeout(reset, 2000);
 }
 
