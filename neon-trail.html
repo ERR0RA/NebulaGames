@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON-GRID | Ultimate</title>
+    <title>NEON-GRID | Power-Up Evolution</title>
     <style>
         body { background: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
         canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; max-height: 75vh; box-shadow: 0 0 20px #0f0; }
         #ui { text-align: center; width: 800px; margin-bottom: 10px; }
-        .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 10px; justify-content: center; }
+        .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 15px; justify-content: center; align-items: center; }
         .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; }
         .meter-container { width: 30%; background: #000; border: 1px solid #333; height: 12px; }
         .fill { height: 100%; width: 100%; transition: width 0.1s; }
@@ -16,6 +16,7 @@
         #msg { position: absolute; font-size: 3rem; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 3px 3px #000; z-index: 100; }
         button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; }
         button:hover { background: #0f0; color: #000; }
+        .toggle-label { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
     </style>
 </head>
 <body>
@@ -33,6 +34,9 @@
             <option value="pve">1 Human vs Bot</option>
             <option value="pvp">Human vs Human</option>
         </select>
+        <label class="toggle-label">
+            <input type="checkbox" id="usePowerUps" checked> ENABLE POWER-UPS
+        </label>
         <button id="startBtn">START MATCH</button>
     </div>
 </div>
@@ -44,16 +48,19 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const UNIT = 5;
-let grid, players, gameActive = false, score = {p1:0, p2:0, bot:0};
+let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0};
+let powerupTimer = 0;
 
 function reset() {
     const mode = document.getElementById('gameMode').value;
     grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
+    powerups = [];
+    powerupTimer = 0;
     
     players = [
-        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: true, team: 'human' },
-        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pve'), team: 'human' },
-        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot' }
+        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: true, team: 'human', ghost: 0, speedMult: 1 },
+        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pve'), team: 'human', ghost: 0, speedMult: 1 },
+        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: 1 }
     ];
 
     if (mode === 'pvp') players[1].team = 'red';
@@ -71,13 +78,15 @@ document.getElementById('startBtn').onclick = (e) => { e.target.blur(); reset();
 window.onkeydown = e => {
     if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
     const mode = document.getElementById('gameMode').value;
-    // P1
+    
+    // P1 Controls
     if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
     if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
     if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
     if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
     if (e.code === 'Space') players[0].isBoosting = true;
-    // P2
+
+    // P2 Controls
     if (players[1].active) {
         if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
         if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
@@ -92,23 +101,59 @@ window.onkeyup = e => {
     if (e.key === 'Enter') players[1].isBoosting = false;
 };
 
-// --- CRITICAL CHANGE: Check if point belongs to ME vs MY TEAM ---
 function checkCollision(x, y, self) {
     if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
-    const hitId = grid[x][y];
+    
+    // Check for Power-up pickup
+    for (let i = powerups.length - 1; i >= 0; i--) {
+        const pu = powerups[i];
+        if (Math.abs(x - pu.x) < 15 && Math.abs(y - pu.y) < 15) {
+            applyPowerUp(self, pu.type);
+            powerups.splice(i, 1);
+        }
+    }
+
+    const hitId = grid[Math.floor(x)][Math.floor(y)];
     if (hitId === null) return false;
     
+    // Ghost Mode Logic
+    if (self.ghost > 0) return false;
+
     const owner = players[hitId];
-    // Rule: You ALWAYS die if you hit yourself.
     if (self.id === owner.id) return true;
-    // Rule: In Co-op, you don't die if you hit your teammate.
     if (self.team === 'human' && owner.team === 'human') return false;
-    // Rule: Otherwise (enemy trail), you die.
     return true;
+}
+
+function applyPowerUp(player, type) {
+    if (type === 'ghost') player.ghost = 180; // ~3 seconds
+    if (type === 'speed') {
+        player.speedMult = 2;
+        setTimeout(() => { player.speedMult = 1; }, 4000);
+    }
+    if (type === 'clear') {
+        grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
+        players.forEach(p => p.trail = []);
+    }
+}
+
+function spawnPowerUp() {
+    const types = ['ghost', 'speed', 'clear'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    powerups.push({
+        x: Math.random() * (canvas.width - 60) + 30,
+        y: Math.random() * (canvas.height - 60) + 30,
+        type: type
+    });
 }
 
 function update() {
     if (!gameActive) return;
+
+    if (document.getElementById('usePowerUps').checked) {
+        powerupTimer++;
+        if (powerupTimer > 250) { spawnPowerUp(); powerupTimer = 0; }
+    }
 
     // BOT AI
     const bot = players[2];
@@ -135,13 +180,18 @@ function update() {
 
     players.forEach(p => {
         if (!p.active || !p.alive) return;
+        
+        if (p.ghost > 0) p.ghost--;
         let spd = (p.isBoosting && p.boost > 10) ? 2 : 1;
+        spd *= p.speedMult;
+
         if (p.isBoosting) p.boost -= 2.5; else if (p.boost < 100) p.boost += 0.15;
+        
         for (let i = 0; i < spd; i++) {
             p.x += p.dx; p.y += p.dy;
             if (checkCollision(p.x, p.y, p)) { p.alive = false; checkWinner(); return; }
-            grid[p.x][p.y] = p.id;
-            p.trail.push({x: p.x, y: p.y});
+            grid[Math.floor(p.x)][Math.floor(p.y)] = p.id;
+            p.trail.push({x: p.x, y: p.y, isGhost: p.ghost > 0});
         }
     });
 
@@ -153,6 +203,7 @@ function update() {
 function checkWinner() {
     const mode = document.getElementById('gameMode').value;
     const p1 = players[0], p2 = players[1], bot = players[2];
+    
     if (mode === 'pvp') {
         if (!p1.alive && !p2.alive) endGame("DRAW!");
         else if (!p1.alive) { score.p2++; endGame("PLAYER 2 WINS!"); }
@@ -174,12 +225,26 @@ function endGame(txt) {
 function draw() {
     ctx.fillStyle = "rgba(0,0,0,0.2)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw Power-ups
+    powerups.forEach(pu => {
+        ctx.fillStyle = pu.type === 'ghost' ? '#fff' : pu.type === 'speed' ? '#ff0' : '#0ff';
+        ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+        ctx.fillRect(pu.x, pu.y, 12, 12);
+        ctx.shadowBlur = 0;
+    });
+
     players.forEach(p => {
         if (!p.active) return;
-        ctx.fillStyle = p.color;
-        p.trail.forEach(t => ctx.fillRect(t.x, t.y, UNIT, UNIT));
+        
+        p.trail.forEach(t => {
+            ctx.fillStyle = t.isGhost ? '#333' : p.color; // Ghost trails are dimmer/grey
+            ctx.fillRect(t.x, t.y, UNIT, UNIT);
+        });
+
         if (p.alive) {
-            ctx.shadowBlur = 10; ctx.shadowColor = p.color;
+            ctx.fillStyle = p.ghost > 0 ? '#fff' : p.color;
+            ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
             ctx.fillRect(p.x, p.y, UNIT, UNIT);
             ctx.shadowBlur = 0;
         }
