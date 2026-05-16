@@ -5,19 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NEON-GRID | Power-Up Evolution</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; max-height: 75vh; box-shadow: 0 0 20px #0f0; }
-        #ui { text-align: center; width: 800px; margin-bottom: 10px; }
-        .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 15px; justify-content: center; align-items: center; }
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
+        canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; max-height: 60vh; box-shadow: 0 0 20px #0f0; touch-action: none; }
+        #ui { text-align: center; width: 800px; max-width: 95vw; margin-bottom: 10px; }
+        .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; }
         .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; }
         .meter-container { width: 30%; background: #000; border: 1px solid #333; height: 12px; }
         .fill { height: 100%; width: 100%; transition: width 0.1s; }
         #p1-fill { background: #0f0; } #p2-fill { background: #00f; } #p3-fill { background: #f00; }
-        #msg { position: absolute; font-size: 3rem; font-weight: bold; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 3px 3px #000; z-index: 100; }
-        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; }
+        #msg { position: absolute; font-size: 2.5rem; font-weight: bold; top: 40%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 3px 3px #000; z-index: 100; text-align: center; width: 100%; }
+        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; font-family: 'Courier New', monospace; }
         button:hover { background: #0f0; color: #000; }
         .toggle-label { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
-        #score { margin-bottom: 5px; font-size: 1.2rem; letter-spacing: 2px; }
+        #score { margin-bottom: 5px; font-size: 1rem; letter-spacing: 2px; }
+
+        /* Mobile Controls Styling */
+        #mobile-controls {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+        }
+        .ctrl-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #0f0;
+            color: #0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        .ctrl-btn:active { background: #0f0; color: #000; }
+        #btn-boost { grid-column: 3; background: rgba(255, 0, 0, 0.2); border-color: #f00; color: #f00; }
+        
+        @media (pointer: coarse) {
+            #mobile-controls { display: grid; }
+            .setup-panel { padding: 8px; font-size: 0.8rem; }
+            button, select { padding: 5px; }
+        }
     </style>
 </head>
 <body>
@@ -37,14 +70,23 @@
             <option value="bvb">Bot vs Bot (Spectate)</option>
         </select>
         <label class="toggle-label">
-            <input type="checkbox" id="usePowerUps" checked> ENABLE POWER-UPS
+            <input type="checkbox" id="usePowerUps" checked> POWER-UPS
         </label>
-        <button id="startBtn">START MATCH</button>
+        <button id="startBtn">START</button>
     </div>
 </div>
 
 <div id="msg"></div>
 <canvas id="game" width="800" height="600"></canvas>
+
+<div id="mobile-controls">
+    <div></div>
+    <div class="ctrl-btn" id="btn-up">▲</div>
+    <div class="ctrl-btn" id="btn-boost">B</div>
+    <div class="ctrl-btn" id="btn-left">◀</div>
+    <div class="ctrl-btn" id="btn-down">▼</div>
+    <div class="ctrl-btn" id="btn-right">▶</div>
+</div>
 
 <script>
 const canvas = document.getElementById('game');
@@ -86,6 +128,22 @@ function reset() {
 }
 
 document.getElementById('startBtn').onclick = (e) => { e.target.blur(); reset(); };
+
+// Mobile Control Listeners
+const mobileInput = (dir) => {
+    if (!players[0].active || players[0].isBot) return;
+    if (dir === 'up' && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
+    if (dir === 'down' && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
+    if (dir === 'left' && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
+    if (dir === 'right' && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
+};
+
+document.getElementById('btn-up').ontouchstart = (e) => { e.preventDefault(); mobileInput('up'); };
+document.getElementById('btn-down').ontouchstart = (e) => { e.preventDefault(); mobileInput('down'); };
+document.getElementById('btn-left').ontouchstart = (e) => { e.preventDefault(); mobileInput('left'); };
+document.getElementById('btn-right').ontouchstart = (e) => { e.preventDefault(); mobileInput('right'); };
+document.getElementById('btn-boost').ontouchstart = (e) => { e.preventDefault(); players[0].isBoosting = true; };
+document.getElementById('btn-boost').ontouchend = (e) => { e.preventDefault(); players[0].isBoosting = false; };
 
 window.onkeydown = e => {
     if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
