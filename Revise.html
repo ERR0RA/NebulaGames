@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revision Master 2026</title>
+    <title>WJEC Ultimate Revision Master 2026</title>
     <style>
         :root {
             --primary: #2d3436; --secondary: #0984e3; --success: #00b894;
@@ -76,7 +76,7 @@
         .calc-btn:hover { background: #b2bec3; color: #2d3436; }
         .calc-op { background: #0984e3; }
         .calc-eq { background: #00b894; grid-column: span 2; }
-        .calc-clear { background: #d63031; grid-column: span 2; }
+        .calc-clear { background: #d63031; grid-column: span 1; }
         
         .top-tools { display: flex; justify-content: space-between; margin-bottom: -10px; }
     </style>
@@ -89,7 +89,8 @@
         <input type="text" id="calc-display" disabled>
         <div class="calc-grid">
             <button class="calc-btn calc-clear" onclick="calcInput('C')">C</button>
-            <button class="calc-btn calc-clear" onclick="toggleCalc()">Close</button>
+            <button class="calc-btn calc-op" onclick="calcInput('PI')">π</button>
+            <button class="calc-btn calc-clear" style="grid-column: span 2;" onclick="toggleCalc()">Close</button>
             
             <button class="calc-btn" onclick="calcInput('7')">7</button>
             <button class="calc-btn" onclick="calcInput('8')">8</button>
@@ -114,7 +115,7 @@
     </div>
 
     <div id="setup-screen">
-        <h1 style="margin:0;">Ultimate Revision 2026</h1>
+        <h1 style="margin:0;">WJEC Ultimate Revision 2026</h1>
         <p>Complete topic coverage with smart answer parsing.</p>
         
         <div class="menu-section">
@@ -218,11 +219,11 @@
         "Circles & Sectors": {
             medium: () => {
                 const r = rng(3, 10);
-                return { q: `A circle has a radius of ${r}cm. Calculate the area to 1 decimal place.`, a: (Math.PI * r * r).toFixed(1), h: "Area = πr²", c: true };
+                return { q: `A circle has a radius of ${r}cm. Calculate the area to 1 decimal place. (Use the π button on the calculator).`, a: (Math.PI * r * r).toFixed(1), h: "Area = πr²", c: true };
             },
             hard: () => {
                 const d = rng(10, 20);
-                return { q: `A bicycle wheel has a diameter of ${d}cm. How far does it travel in one full rotation? (1 d.p.)`, a: (Math.PI * d).toFixed(1), h: "Distance = Circumference = πd", c: true };
+                return { q: `A bicycle wheel has a diameter of ${d}cm. How far does it travel in one full rotation? (1 d.p. Use the π button on the calculator).`, a: (Math.PI * d).toFixed(1), h: "Distance = Circumference = πd", c: true };
             }
         },
         "Similar Shapes": {
@@ -275,6 +276,7 @@
     function calcInput(val) {
         const display = document.getElementById('calc-display');
         if (val === 'C') { calcStr = ""; }
+        else if (val === 'PI') { calcStr += Math.PI; }
         else if (val === '=') {
             try { calcStr = eval(calcStr).toString(); } 
             catch(e) { calcStr = "Error"; }
@@ -350,7 +352,6 @@
             feedback.innerText = "CORRECT ✓";
             feedback.style.color = "var(--success)";
         } else {
-            // Show the correct answer back in a friendly format
             let displayAnswer = currentPool[currentQuestionIndex].a.replace(/\^2/g, '²');
             feedback.innerText = "INCORRECT. Expected: " + displayAnswer;
             feedback.style.color = "var(--danger)";
