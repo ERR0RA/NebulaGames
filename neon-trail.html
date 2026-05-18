@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=none">
     <title>NEON-GRID | Power-Up Evolution</title>
     <style>
         body { background: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
@@ -217,7 +217,6 @@ function update() {
 
     players.forEach(p => {
         if (p.active && p.alive && p.isBot) {
-            // Seek Power-ups
             let target = null;
             let minDist = 200; 
             powerups.forEach(pu => {
@@ -233,7 +232,6 @@ function update() {
                 return false;
             };
 
-            // Movement logic: steer toward target or avoid collision
             if (target && Math.random() < 0.1) {
                 if (Math.abs(p.x - target.x) > 10 && p.dy !== 0) {
                     let newDx = p.x < target.x ? UNIT : -UNIT;
@@ -257,7 +255,6 @@ function update() {
                 });
                 if (bestDir) { p.dx = bestDir.dx; p.dy = bestDir.dy; }
             }
-            // Smart Boosting
             p.isBoosting = (p.boost > 40 && !checkAhead(p.dx, p.dy, 50));
         }
     });
@@ -281,15 +278,23 @@ function update() {
     document.getElementById('p3-fill').style.width = players[2].boost + "%";
 }
 
+// FIXED WINNER CHECK LOGIC
 function checkWinner() {
     const mode = document.getElementById('gameMode').value;
     const p1 = players[0], p2 = players[1], bot = players[2];
-    if (mode === 'pvp' || mode === 'bvb') {
+
+    if (mode === 'pvp') {
+        if (!p1.alive && !p2.alive) endGame("DRAW!");
+        else if (!p1.alive) { score.p2++; endGame("PLAYER 2 WINS!"); }
+        else if (!p2.alive) { score.p1++; endGame("PLAYER 1 WINS!"); }
+    } 
+    else if (mode === 'bvb') {
         if (!p1.alive && !bot.alive) endGame("DRAW!");
-        else if (!p1.alive) { score.bot++; endGame(mode === 'bvb' ? "RED BOT WINS!" : "PLAYER 2 WINS!"); }
-        else if (!bot.alive) { score.p1++; endGame(mode === 'bvb' ? "GREEN BOT WINS!" : "PLAYER 1 WINS!"); }
-    } else {
-        const humansAlive = p1.alive || (p2.active && p2.alive);
+        else if (!p1.alive) { score.bot++; endGame("RED BOT WINS!"); }
+        else if (!bot.alive) { score.p1++; endGame("GREEN BOT WINS!"); }
+    } 
+    else {
+        const humansAlive = (p1.active && p1.alive) || (p2.active && p2.alive);
         if (!humansAlive) { score.bot++; endGame("BOT WINS!"); }
         else if (bot.active && !bot.alive) { score.p1++; endGame("HUMANS WIN!"); }
     }
