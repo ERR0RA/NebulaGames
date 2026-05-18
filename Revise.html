@@ -1,68 +1,57 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Year 8 Advanced Revision Master | 2026 Edition</title>
+    <title>Revision Master 2026</title>
     <style>
         :root {
             --primary: #2d3436; --secondary: #0984e3; --success: #00b894;
             --danger: #d63031; --light: #dfe6e9; --hint: #6c5ce7;
         }
-
         body {
             font-family: 'Segoe UI', sans-serif;
             background-color: #b2bec3; color: var(--primary); margin: 0;
             display: flex; justify-content: center; align-items: center; min-height: 100vh;
         }
-
         #game-container {
             background: white; width: 95%; max-width: 800px; padding: 30px;
             border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center;
         }
-
         .hidden { display: none !important; }
-
         .menu-section {
             margin: 15px 0; padding: 20px; border: 2px solid #eee;
             border-radius: 10px; text-align: left; background: #fdfdfd;
         }
-
         .topic-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 10px; margin-top: 10px;
         }
-
         .btn {
             padding: 14px 22px; border: none; border-radius: 8px;
             cursor: pointer; font-weight: bold; transition: 0.3s; margin: 5px;
         }
-
         .btn-start { background: var(--secondary); color: white; width: 100%; font-size: 1.2rem; }
         .btn-submit { background: var(--success); color: white; }
         .btn-hint { background: var(--hint); color: white; }
         .btn-next { background: var(--primary); color: white; }
-
         #question-box {
-            font-size: 1.3rem; margin: 25px 0; padding: 40px;
+            font-size: 1.2rem; margin: 25px 0; padding: 35px;
             background: #f1f2f6; border-radius: 15px; position: relative;
             border-left: 8px solid var(--secondary); line-height: 1.6;
             text-align: left;
         }
-
         .calc-badge {
             position: absolute; top: 15px; right: 15px; padding: 5px 12px;
             border-radius: 5px; font-size: 0.75rem; font-weight: 900;
         }
-
         .calc-yes { background: #ffeaa7; color: #d63031; border: 1px solid #fab1a0; }
         .calc-no { background: #dff9fb; color: #00cec9; border: 1px solid #81ecec; }
-
         #answer-input {
             padding: 15px; font-size: 1.3rem; width: 85%;
             border: 2px solid #ced4da; border-radius: 8px; margin-bottom: 20px;
         }
-
         .stats-bar {
             display: flex; justify-content: space-between; font-size: 0.95rem;
             color: #636e72; border-bottom: 2px solid #eee; padding-bottom: 12px; margin-bottom: 20px;
@@ -73,8 +62,8 @@
 
 <div id="game-container">
     <div id="setup-screen">
-        <h1 style="margin:0;">Assessment Revision 2026</h1>
-        <p>Comprehensive Maths Practice</p>
+        <h1 style="margin:0;">WJEC Revision 2026</h1>
+        <p>Advanced Topic Expansion & Styles</p>
         
         <div class="menu-section">
             <div style="display:flex; justify-content: space-between; align-items: center;">
@@ -88,7 +77,7 @@
             <h3>Difficulty</h3>
             <label><input type="radio" name="diff" value="easy"> Foundation</label> &nbsp;&nbsp;
             <label><input type="radio" name="diff" value="medium" checked> Intermediate</label> &nbsp;&nbsp;
-            <label><input type="radio" name="diff" value="hard"> Target Grade 7-9</label>
+            <label><input type="radio" name="diff" value="hard"> Higher</label>
         </div>
 
         <button class="btn btn-start" onclick="startGame()">START PRACTICE PAPER</button>
@@ -107,105 +96,81 @@
         </div>
 
         <div id="hint-text" class="hidden" style="color: var(--hint); margin-bottom: 15px; font-style: italic;"></div>
-        <input type="text" id="answer-input" placeholder="Type numerical answer or expression" autocomplete="off">
-        <div id="feedback" style="margin-bottom: 20px; font-weight: bold; font-size: 1.2rem;"></div>
+        <input type="text" id="answer-input" placeholder="Enter answer..." autocomplete="off">
+        <div id="feedback" style="margin-bottom: 20px; font-weight: bold; font-size: 1.1rem;"></div>
 
         <button id="hint-btn" class="btn btn-hint" onclick="showHint()">Need a Hint?</button>
-        <button id="submit-btn" class="btn btn-submit" onclick="checkAnswer()">Submit Answer</button>
-        <button id="next-btn" class="btn btn-next hidden" onclick="nextQuestion()">Next Question</button>
+        <button id="submit-btn" class="btn btn-submit" onclick="checkAnswer()">Submit</button>
+        <button id="next-btn" class="btn btn-next hidden" onclick="nextQuestion()">Next</button>
     </div>
 
     <div id="end-screen" class="hidden">
         <h2>Assessment Complete</h2>
         <h1 id="final-score" style="font-size: 3rem;">0 / 0</h1>
         <p id="performance-msg"></p>
-        <button class="btn btn-start" onclick="location.reload()">Restart Revision</button>
+        <button class="btn btn-start" onclick="location.reload()">New Session</button>
     </div>
 </div>
 
 <script>
     const questionBank = {
-        "Similar Shapes (Length & Area)": {
-            medium: [
-                { q: "A small map has an area of 40cm². A larger version is printed with a length scale factor of 2. What is the area of the large map in cm²?", a: "160", h: "Area SF is Length SF squared. Multiply the old area by 2².", c: false },
-                { q: "A photo is 10cm wide and 15cm high. It is enlarged so the new width is 30cm. What is the height of the enlarged photo?", a: "45", h: "Find the scale factor first (30 / 10).", c: false }
-            ],
-            hard: [
-                { q: "Two similar garden plots have areas of 20m² and 180m². If the smaller plot has a perimeter of 16m, what is the perimeter of the larger plot?", a: "48", h: "Find Area SF (180/20), square root it to get Length SF, then multiply the perimeter.", c: true }
-            ]
-        },
-        "Circles, Arcs & Sectors": {
-            medium: [
-                { q: "A windshield wiper of length 30cm sweeps through an angle of 120°. Calculate the area of glass cleaned. (Use π = 3.14)", a: "942", h: "(120/360) * 3.14 * 30²", c: true },
-                { q: "A circular running track has a diameter of 100m. How far does an athlete run if they complete exactly 2.5 laps? (Use π = 3.14)", a: "785", h: "Distance = 2.5 * (π * d).", c: true }
-            ],
-            hard: [
-                { q: "The minute hand of a clock is 12cm long. Calculate the distance the tip of the hand travels in 20 minutes. (Use π = 3.14)", a: "25.12", h: "20 mins is 1/3 of a circle. Find 1/3 of the circumference.", c: true }
-            ]
-        },
         "Factorization": {
-            easy: [{ q: "Factorize 4x + 12", a: "4(x+3)", h: "What is the biggest number that goes into 4 and 12?", c: false }],
+            easy: [
+                { q: "Factorize: 4x + 20", a: "4(x+5)", h: "Find HCF of 4 and 20.", c: false }
+            ],
             medium: [
-                { q: "Factorize 3x² + 6x", a: "3x(x+2)", h: "Find the highest common factor of both the numbers and the variables.", c: false },
-                { q: "Factorize y² - 7y", a: "y(y-7)", h: "Both terms share a 'y'. Take it outside the bracket.", c: false }
+                { q: "Factorize fully: 6y² + 12y", a: "6y(y+2)", h: "Take out the number AND the common letter.", c: false },
+                { q: "A rectangular garden has an area of (5x + 15). Factorize this to find its possible side lengths.", a: "5(x+3)", h: "Contextual: Factorize the expression to find length/width.", c: false }
             ],
             hard: [
-                { q: "Factorize x² + 5x + 6", a: "(x+2)(x+3)", h: "Find two numbers that multiply to 6 and add to 5.", c: false },
-                { q: "Factorize x² - 25", a: "(x+5)(x-5)", h: "This is a 'Difference of Two Squares'.", c: false }
+                { q: "Factorize: x² - 14x + 40", a: "(x-4)(x-10)", h: "Product is 40, Sum is -14.", c: false },
+                { q: "Factorize: 16a² - 25b²", a: "(4a+5b)(4a-5b)", h: "Style: Difference of two squares.", c: false }
             ]
         },
         "Expanding Brackets": {
-            easy: [{ q: "Expand 3(x + 5)", a: "3x+15", h: "Multiply the 3 by everything inside the bracket.", c: false }],
+            easy: [
+                { q: "Expand: 3(2x - 4)", a: "6x-12", h: "Multiply 3 by both 2x and -4.", c: false }
+            ],
             medium: [
-                { q: "Expand and simplify: 4(x + 3) + 2(x - 1)", a: "6x+10", h: "Expand both parts separately then collect like terms.", c: false },
-                { q: "Expand (x + 3)(x + 4)", a: "x²+7x+12", h: "Use FOIL: First, Outside, Inside, Last.", c: false }
+                { q: "Expand and simplify: 4(x + 2) - 3(x - 5)", a: "x+23", h: "Careful: -3 * -5 becomes +15.", c: false },
+                { q: "Expand: (x + 7)(x - 3)", a: "x²+4x-21", h: "Style: Double brackets (FOIL).", c: false }
             ],
             hard: [
-                { q: "Expand and simplify: (2x + 1)(x - 5)", a: "2x²-9x-5", h: "Multiply every term in the first bracket by every term in the second.", c: false }
+                { q: "The side of a square is (2x + 3). Write the area as a simplified quadratic expression.", a: "4x²+12x+9", h: "Style: Area problem. (2x+3)²", c: false }
             ]
         },
-        "Simple One-Step Equations": {
+        "Similar Shapes": {
+            medium: [
+                { q: "Two similar Welsh dragon flags have heights of 5cm and 15cm. The area of the small flag is 20cm². What is the area of the large flag?", a: "180", h: "Length SF is 3. Area SF is 3².", c: false },
+                { q: "A map scale is 1:2. The length of a road on the map is 10cm. What is the actual length?", a: "20", h: "Simple multiplier.", c: false }
+            ],
+            hard: [
+                { q: "Shape A has volume 50cm³. Shape B is mathematically similar with volume 400cm³. If A has surface area 30cm², find surface area of B.", a: "120", h: "Vol SF = 8, so Length SF = 2. Area SF = 4.", c: true }
+            ]
+        },
+        "One-Step Equations": {
             easy: [
-                { q: "Solve x + 7 = 15", a: "8", h: "Subtract 7 from both sides.", c: false },
-                { q: "Solve 4x = 24", a: "6", h: "Divide both sides by 4.", c: false }
+                { q: "Solve for y: y/5 = 10", a: "50", h: "Multiply both sides by 5.", c: false },
+                { q: "Solve for x: x + 1.2 = 3.5", a: "2.3", h: "Subtract 1.2.", c: false }
             ],
             medium: [
-                { q: "Solve x/3 = 12", a: "36", h: "Multiply both sides by 3.", c: false },
-                { q: "Solve 18 - x = 5", a: "13", h: "What do you subtract from 18 to get 5?", c: false }
+                { q: "A taxi firm charges £d per mile. A 12-mile trip costs £18. Solve 12d = 18 for d.", a: "1.5", h: "Style: Real-life speed/cost context.", c: true },
+                { q: "Solve for x: 7 - x = -2", a: "9", h: "Rearrange to make x positive.", c: false }
             ]
         },
         "Loci & Constructions": {
             medium: [
-                { q: "The locus of points exactly 3cm from a point P is a...", a: "circle", h: "Think about the shape formed by all points the same distance from a single dot.", c: false },
-                { q: "To find points equidistant from two points A and B, you must construct a perpendicular...", a: "bisector", h: "It's the line that cuts the segment AB in half at 90 degrees.", c: false }
+                { q: "A lighthouse beam reaches 10 miles. Describe the boundary of the light on the water.", a: "circle", h: "Fixed distance from a point.", c: false },
+                { q: "Find points same distance from two intersecting roads.", a: "angle bisector", h: "Style: Equidistant from two lines.", c: false }
             ],
             hard: [
-                { q: "The region within 5cm of a line segment AB of length 10cm forms a shape. Is the 'end' of this shape a semi-circle or a square?", a: "semi-circle", h: "Loci around a point (the ends of a line) are always curved.", c: false }
+                { q: "Points closer to town A than town B are found using which construction?", a: "perpendicular bisector", h: "Equidistant from two points.", c: false }
             ]
         },
-        "Functions & Quadratic Graphs": {
+        "Probability & WJEC Context": {
             medium: [
-                { q: "A ball's height is h = -t² + 6t. Find the height of the ball after 2 seconds.", a: "8", h: "Replace t with 2: -(2²) + 6(2).", c: false },
-                { q: "For the graph y = x² - 3, calculate the coordinate when x = -4.", a: "(-4,13)", h: "(-4)² - 3. Write as (x,y).", c: false }
-            ],
-            hard: [
-                { q: "A curve has the equation y = (x - 3)² + 5. What is the coordinate of the lowest point (turning point) on this graph?", a: "(3,5)", h: "In the form (x-a)² + b, the turning point is (a, b).", c: false }
-            ]
-        },
-        "Solving & Rearranging": {
-            medium: [
-                { q: "A rectangle has a length of (x+4) and a width of 5. If the total area is 45, solve for x.", a: "5", h: "5(x + 4) = 45. Divide by 5 then subtract 4.", c: false }
-            ],
-            hard: [
-                { q: "The formula for the area of a trapezoid is A = 0.5(a + b)h. Rearrange this formula to make 'h' the subject.", a: "2A/(a+b)", h: "Multiply by 2, then divide by (a+b).", c: false }
-            ]
-        },
-        "Experimental Probability": {
-            medium: [
-                { q: "A biased dice is rolled 200 times. It lands on '6' forty times. What is the relative frequency of rolling a 6?", a: "0.2", h: "40 divided by 200.", c: false }
-            ],
-            hard: [
-                { q: "The probability that a seed grows is 0.82. If a farmer plants 500 seeds, how many are expected NOT to grow?", a: "90", h: "P(not grow) = 0.18. Multiply 0.18 by 500.", c: true }
+                { q: "In a raffle of 200 tickets, the probability of winning a prize is 0.05. How many prizes are there?", a: "10", h: "Style: Expected frequency. 0.05 * 200.", c: true },
+                { q: "Relative frequency of a coin landing heads was 0.6 over 50 flips. How many heads were flipped?", a: "30", h: "0.6 * 50.", c: false }
             ]
         }
     };
@@ -218,7 +183,6 @@
     const topicListDiv = document.getElementById('topic-list');
     Object.keys(questionBank).forEach(topic => {
         const div = document.createElement('div');
-        div.className = 'topic-item';
         div.innerHTML = `<label><input type="checkbox" name="topic" value="${topic}" checked> ${topic}</label>`;
         topicListDiv.appendChild(div);
     });
@@ -245,12 +209,11 @@
             }
         });
 
-        if (currentPool.length === 0) return alert("No questions found for this combination! Try a different difficulty or more topics.");
+        if (currentPool.length === 0) return alert("Select more topics for this level!");
         
         shuffle(currentPool);
         score = 0;
         currentQuestionIndex = 0;
-        document.getElementById('stat-score').innerText = "Correct: 0";
         document.getElementById('setup-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
         showQuestion();
@@ -277,9 +240,8 @@
     }
 
     function showHint() {
-        const hText = document.getElementById('hint-text');
-        hText.innerText = "STRATEGY: " + currentPool[currentQuestionIndex].h;
-        hText.classList.remove('hidden');
+        document.getElementById('hint-text').innerText = "WJEC HINT: " + currentPool[currentQuestionIndex].h;
+        document.getElementById('hint-text').classList.remove('hidden');
         document.getElementById('hint-btn').classList.add('hidden');
     }
 
@@ -288,17 +250,14 @@
         const correct = currentPool[currentQuestionIndex].a.replace(/\s+/g, '').toLowerCase();
         const feedback = document.getElementById('feedback');
 
-        if (user === "") return;
-
         if (user === correct) {
             score++;
-            feedback.innerText = "CORRECT";
+            feedback.innerText = "CORRECT - Marks Awarded";
             feedback.style.color = "var(--success)";
         } else {
-            feedback.innerText = "INCORRECT. Expected: " + currentPool[currentQuestionIndex].a;
+            feedback.innerText = "INCORRECT. Scheme Answer: " + currentPool[currentQuestionIndex].a;
             feedback.style.color = "var(--danger)";
         }
-
         document.getElementById('stat-score').innerText = "Correct: " + score;
         document.getElementById('answer-input').disabled = true;
         document.getElementById('submit-btn').classList.add('hidden');
@@ -315,8 +274,6 @@
         document.getElementById('game-screen').classList.add('hidden');
         document.getElementById('end-screen').classList.remove('hidden');
         document.getElementById('final-score').innerText = `${score} / ${currentPool.length}`;
-        const pct = (score / currentPool.length) * 100;
-        document.getElementById('performance-msg').innerText = pct >= 80 ? "Top Set Performance! 🌟" : "Keep practicing! Review the formulas for those harder topics. 📚";
     }
 
     document.getElementById('answer-input').addEventListener('keypress', (e) => {
