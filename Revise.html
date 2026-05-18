@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revision Master 2026</title>
+    <title>WJEC Dynamic Revision 2026</title>
     <style>
         :root {
             --primary: #2d3436; --secondary: #0984e3; --success: #00b894;
@@ -62,8 +61,8 @@
 
 <div id="game-container">
     <div id="setup-screen">
-        <h1 style="margin:0;">WJEC Revision 2026</h1>
-        <p>Advanced Topic Expansion & Styles</p>
+        <h1 style="margin:0;">WJEC Dynamic Revision</h1>
+        <p>Questions generate new numbers every time.</p>
         
         <div class="menu-section">
             <div style="display:flex; justify-content: space-between; align-items: center;">
@@ -113,65 +112,71 @@
 </div>
 
 <script>
-    const questionBank = {
+    // Utility to get random int
+    const rng = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
+
+    // Dynamic Question Generators
+    const questionGenerators = {
         "Factorization": {
-            easy: [
-                { q: "Factorize: 4x + 20", a: "4(x+5)", h: "Find HCF of 4 and 20.", c: false }
-            ],
-            medium: [
-                { q: "Factorize fully: 6y² + 12y", a: "6y(y+2)", h: "Take out the number AND the common letter.", c: false },
-                { q: "A rectangular garden has an area of (5x + 15). Factorize this to find its possible side lengths.", a: "5(x+3)", h: "Contextual: Factorize the expression to find length/width.", c: false }
-            ],
-            hard: [
-                { q: "Factorize: x² - 14x + 40", a: "(x-4)(x-10)", h: "Product is 40, Sum is -14.", c: false },
-                { q: "Factorize: 16a² - 25b²", a: "(4a+5b)(4a-5b)", h: "Style: Difference of two squares.", c: false }
-            ]
+            easy: () => {
+                const a = rng(2, 8);
+                const b = a * rng(2, 6);
+                return { q: `Factorize: ${a}x + ${b}`, a: `${a}(x+${b/a})`, h: `Find the HCF of ${a} and ${b}.`, c: false };
+            },
+            medium: () => {
+                const a = rng(2, 10);
+                const b = a * rng(2, 5);
+                return { q: `Factorize fully: ${a}y² + ${b}y`, a: `${a}y(y+${b/a})`, h: "Take out the number and the letter 'y'.", c: false };
+            },
+            hard: () => {
+                const r1 = rng(1, 10);
+                const r2 = rng(1, 10);
+                const sum = r1 + r2;
+                const prod = r1 * r2;
+                return { q: `Factorize the quadratic: x² + ${sum}x + ${prod}`, a: `(x+${r1})(x+${r2})`, h: `Find two numbers that multiply to ${prod} and add to ${sum}.`, c: false };
+            }
+        },
+        "Worded Real-Life": {
+            medium: () => {
+                const books = rng(3, 8);
+                const cost = rng(5, 12) + 0.5;
+                const total = books * cost;
+                const paid = 100;
+                const change = paid - total;
+                return { q: `Mr. Jones buys ${books} identical books. He pays with a £100 note and receives £${change.toFixed(2)} change. What is the cost of ONE book?`, a: cost.toFixed(2), h: "Subtract change from £100, then divide by the number of books.", c: true };
+            },
+            hard: () => {
+                const dist = rng(120, 300);
+                const speed = rng(50, 70);
+                const time = (dist / speed).toFixed(1);
+                return { q: `A train travels ${dist} miles at an average speed of ${speed} mph. How many hours does the journey take? (1 decimal place)`, a: time, h: "Time = Distance / Speed", c: true };
+            }
         },
         "Expanding Brackets": {
-            easy: [
-                { q: "Expand: 3(2x - 4)", a: "6x-12", h: "Multiply 3 by both 2x and -4.", c: false }
-            ],
-            medium: [
-                { q: "Expand and simplify: 4(x + 2) - 3(x - 5)", a: "x+23", h: "Careful: -3 * -5 becomes +15.", c: false },
-                { q: "Expand: (x + 7)(x - 3)", a: "x²+4x-21", h: "Style: Double brackets (FOIL).", c: false }
-            ],
-            hard: [
-                { q: "The side of a square is (2x + 3). Write the area as a simplified quadratic expression.", a: "4x²+12x+9", h: "Style: Area problem. (2x+3)²", c: false }
-            ]
+            easy: () => {
+                const a = rng(2, 9);
+                const b = rng(1, 12);
+                return { q: `Expand: ${a}(x + ${b})`, a: `${a}x+${a*b}`, h: "Multiply the outside number by both inside terms.", c: false };
+            },
+            medium: () => {
+                const r1 = rng(2, 6);
+                const r2 = rng(2, 6);
+                return { q: `Expand and simplify: (x + ${r1})(x + ${r2})`, a: `x²+${r1+r2}x+${r1*r2}`, h: "Use FOIL (First, Outside, Inside, Last).", c: false };
+            }
         },
-        "Similar Shapes": {
-            medium: [
-                { q: "Two similar Welsh dragon flags have heights of 5cm and 15cm. The area of the small flag is 20cm². What is the area of the large flag?", a: "180", h: "Length SF is 3. Area SF is 3².", c: false },
-                { q: "A map scale is 1:2. The length of a road on the map is 10cm. What is the actual length?", a: "20", h: "Simple multiplier.", c: false }
-            ],
-            hard: [
-                { q: "Shape A has volume 50cm³. Shape B is mathematically similar with volume 400cm³. If A has surface area 30cm², find surface area of B.", a: "120", h: "Vol SF = 8, so Length SF = 2. Area SF = 4.", c: true }
-            ]
-        },
-        "One-Step Equations": {
-            easy: [
-                { q: "Solve for y: y/5 = 10", a: "50", h: "Multiply both sides by 5.", c: false },
-                { q: "Solve for x: x + 1.2 = 3.5", a: "2.3", h: "Subtract 1.2.", c: false }
-            ],
-            medium: [
-                { q: "A taxi firm charges £d per mile. A 12-mile trip costs £18. Solve 12d = 18 for d.", a: "1.5", h: "Style: Real-life speed/cost context.", c: true },
-                { q: "Solve for x: 7 - x = -2", a: "9", h: "Rearrange to make x positive.", c: false }
-            ]
-        },
-        "Loci & Constructions": {
-            medium: [
-                { q: "A lighthouse beam reaches 10 miles. Describe the boundary of the light on the water.", a: "circle", h: "Fixed distance from a point.", c: false },
-                { q: "Find points same distance from two intersecting roads.", a: "angle bisector", h: "Style: Equidistant from two lines.", c: false }
-            ],
-            hard: [
-                { q: "Points closer to town A than town B are found using which construction?", a: "perpendicular bisector", h: "Equidistant from two points.", c: false }
-            ]
-        },
-        "Probability & WJEC Context": {
-            medium: [
-                { q: "In a raffle of 200 tickets, the probability of winning a prize is 0.05. How many prizes are there?", a: "10", h: "Style: Expected frequency. 0.05 * 200.", c: true },
-                { q: "Relative frequency of a coin landing heads was 0.6 over 50 flips. How many heads were flipped?", a: "30", h: "0.6 * 50.", c: false }
-            ]
+        "Equations": {
+            easy: () => {
+                const a = rng(2, 12);
+                const ans = rng(2, 10);
+                return { q: `Solve for x: ${a}x = ${a*ans}`, a: ans.toString(), h: "Divide both sides by the number in front of x.", c: false };
+            },
+            medium: () => {
+                const a = rng(2, 5);
+                const b = rng(1, 10);
+                const x = rng(2, 8);
+                const rhs = a * x + b;
+                return { q: `Solve: ${a}x + ${b} = ${rhs}`, a: x.toString(), h: "Subtract the constant first, then divide.", c: false };
+            }
         }
     };
 
@@ -179,9 +184,9 @@
     let score = 0;
     let currentQuestionIndex = 0;
 
-    // Initialization
+    // Build Menu
     const topicListDiv = document.getElementById('topic-list');
-    Object.keys(questionBank).forEach(topic => {
+    Object.keys(questionGenerators).forEach(topic => {
         const div = document.createElement('div');
         div.innerHTML = `<label><input type="checkbox" name="topic" value="${topic}" checked> ${topic}</label>`;
         topicListDiv.appendChild(div);
@@ -191,27 +196,21 @@
         document.querySelectorAll('input[name="topic"]').forEach(cb => cb.checked = val);
     }
 
-    function shuffle(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-    }
-
     function startGame() {
         const selectedTopics = Array.from(document.querySelectorAll('input[name="topic"]:checked')).map(cb => cb.value);
         const diff = document.querySelector('input[name="diff"]:checked').value;
         
         currentPool = [];
-        selectedTopics.forEach(t => {
-            if (questionBank[t][diff]) {
-                questionBank[t][diff].forEach(q => currentPool.push({...q, topic: t}));
+        // Generate 10 random questions from selected categories
+        for(let i=0; i<10; i++) {
+            const topic = selectedTopics[rng(0, selectedTopics.length - 1)];
+            if (questionGenerators[topic][diff]) {
+                currentPool.push({ ...questionGenerators[topic][diff](), topic: topic });
             }
-        });
+        }
 
-        if (currentPool.length === 0) return alert("Select more topics for this level!");
+        if (currentPool.length === 0) return alert("Select more topics!");
         
-        shuffle(currentPool);
         score = 0;
         currentQuestionIndex = 0;
         document.getElementById('setup-screen').classList.add('hidden');
@@ -240,7 +239,7 @@
     }
 
     function showHint() {
-        document.getElementById('hint-text').innerText = "WJEC HINT: " + currentPool[currentQuestionIndex].h;
+        document.getElementById('hint-text').innerText = "HINT: " + currentPool[currentQuestionIndex].h;
         document.getElementById('hint-text').classList.remove('hidden');
         document.getElementById('hint-btn').classList.add('hidden');
     }
@@ -252,10 +251,10 @@
 
         if (user === correct) {
             score++;
-            feedback.innerText = "CORRECT - Marks Awarded";
+            feedback.innerText = "CORRECT";
             feedback.style.color = "var(--success)";
         } else {
-            feedback.innerText = "INCORRECT. Scheme Answer: " + currentPool[currentQuestionIndex].a;
+            feedback.innerText = "INCORRECT. Answer: " + currentPool[currentQuestionIndex].a;
             feedback.style.color = "var(--danger)";
         }
         document.getElementById('stat-score').innerText = "Correct: " + score;
