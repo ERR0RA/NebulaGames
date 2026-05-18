@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WJEC Dynamic Revision 2026</title>
+    <title>WJEC Master: Sequences & More 2026</title>
     <style>
         :root {
             --primary: #2d3436; --secondary: #0984e3; --success: #00b894;
@@ -61,8 +62,8 @@
 
 <div id="game-container">
     <div id="setup-screen">
-        <h1 style="margin:0;">WJEC Dynamic Revision</h1>
-        <p>Questions generate new numbers every time.</p>
+        <h1 style="margin:0;">WJEC Dynamic Revision 2026</h1>
+        <p>Dynamic Sequences & Algebraic Contexts</p>
         
         <div class="menu-section">
             <div style="display:flex; justify-content: space-between; align-items: center;">
@@ -95,7 +96,7 @@
         </div>
 
         <div id="hint-text" class="hidden" style="color: var(--hint); margin-bottom: 15px; font-style: italic;"></div>
-        <input type="text" id="answer-input" placeholder="Enter answer..." autocomplete="off">
+        <input type="text" id="answer-input" placeholder="Type answer (e.g. 2n+5 or 3)" autocomplete="off">
         <div id="feedback" style="margin-bottom: 20px; font-weight: bold; font-size: 1.1rem;"></div>
 
         <button id="hint-btn" class="btn btn-hint" onclick="showHint()">Need a Hint?</button>
@@ -106,76 +107,54 @@
     <div id="end-screen" class="hidden">
         <h2>Assessment Complete</h2>
         <h1 id="final-score" style="font-size: 3rem;">0 / 0</h1>
-        <p id="performance-msg"></p>
         <button class="btn btn-start" onclick="location.reload()">New Session</button>
     </div>
 </div>
 
 <script>
-    // Utility to get random int
     const rng = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
 
-    // Dynamic Question Generators
     const questionGenerators = {
-        "Factorization": {
+        "Sequences (Linear)": {
             easy: () => {
-                const a = rng(2, 8);
-                const b = a * rng(2, 6);
-                return { q: `Factorize: ${a}x + ${b}`, a: `${a}(x+${b/a})`, h: `Find the HCF of ${a} and ${b}.`, c: false };
-            },
+                const diff = rng(2, 6);
+                const start = rng(1, 10);
+                const seq = [start, start+diff, start+diff*2, start+diff*3];
+                return { q: `Find the n-th term of the sequence: ${seq.join(", ")}...`, a: `${diff}n${start-diff >= 0 ? '+' : ''}${start-diff == 0 ? '' : start-diff}`, h: "Find the difference between terms (the 'n' coefficient) then find the 'zero' term.", c: false };
+            }
+        },
+        "Sequences (Quadratic)": {
             medium: () => {
-                const a = rng(2, 10);
-                const b = a * rng(2, 5);
-                return { q: `Factorize fully: ${a}y² + ${b}y`, a: `${a}y(y+${b/a})`, h: "Take out the number and the letter 'y'.", c: false };
+                const a = 1; // Simplest case x^2
+                const b = rng(1, 4);
+                const c = rng(1, 5);
+                const f = (n) => a*(n**2) + b*n + c;
+                const seq = [f(1), f(2), f(3), f(4)];
+                return { q: `Find the n-th term for this quadratic sequence: ${seq.join(", ")}...`, a: `n^2+${b}n+${c}`, h: "Find the second difference. Divide it by 2 to get the n² coefficient. Then subtract n² from the sequence to find the linear part.", c: false };
             },
             hard: () => {
-                const r1 = rng(1, 10);
-                const r2 = rng(1, 10);
-                const sum = r1 + r2;
-                const prod = r1 * r2;
-                return { q: `Factorize the quadratic: x² + ${sum}x + ${prod}`, a: `(x+${r1})(x+${r2})`, h: `Find two numbers that multiply to ${prod} and add to ${sum}.`, c: false };
+                const a = rng(2, 3);
+                const b = rng(-2, 4);
+                const c = rng(1, 10);
+                const f = (n) => a*(n**2) + b*n + c;
+                const seq = [f(1), f(2), f(3), f(4)];
+                const op = b >= 0 ? `+${b}n` : `${b}n`;
+                return { q: `Find the n-th term for this advanced sequence: ${seq.join(", ")}...`, a: `${a}n^2${b==0 ? '' : op}${c >= 0 ? '+' : ''}${c}`, h: "2a = second difference. (3a+b) = first difference. (a+b+c) = first term.", c: false };
+            }
+        },
+        "Factorization": {
+            medium: () => {
+                const a = rng(2, 6);
+                const b = a * rng(2, 7);
+                return { q: `Factorize fully: ${a}x² - ${b}x`, a: `${a}x(x-${b/a})`, h: "Look for the highest common factor of the numbers and the variables.", c: false };
             }
         },
         "Worded Real-Life": {
             medium: () => {
-                const books = rng(3, 8);
-                const cost = rng(5, 12) + 0.5;
-                const total = books * cost;
-                const paid = 100;
-                const change = paid - total;
-                return { q: `Mr. Jones buys ${books} identical books. He pays with a £100 note and receives £${change.toFixed(2)} change. What is the cost of ONE book?`, a: cost.toFixed(2), h: "Subtract change from £100, then divide by the number of books.", c: true };
-            },
-            hard: () => {
-                const dist = rng(120, 300);
-                const speed = rng(50, 70);
-                const time = (dist / speed).toFixed(1);
-                return { q: `A train travels ${dist} miles at an average speed of ${speed} mph. How many hours does the journey take? (1 decimal place)`, a: time, h: "Time = Distance / Speed", c: true };
-            }
-        },
-        "Expanding Brackets": {
-            easy: () => {
-                const a = rng(2, 9);
-                const b = rng(1, 12);
-                return { q: `Expand: ${a}(x + ${b})`, a: `${a}x+${a*b}`, h: "Multiply the outside number by both inside terms.", c: false };
-            },
-            medium: () => {
-                const r1 = rng(2, 6);
-                const r2 = rng(2, 6);
-                return { q: `Expand and simplify: (x + ${r1})(x + ${r2})`, a: `x²+${r1+r2}x+${r1*r2}`, h: "Use FOIL (First, Outside, Inside, Last).", c: false };
-            }
-        },
-        "Equations": {
-            easy: () => {
-                const a = rng(2, 12);
-                const ans = rng(2, 10);
-                return { q: `Solve for x: ${a}x = ${a*ans}`, a: ans.toString(), h: "Divide both sides by the number in front of x.", c: false };
-            },
-            medium: () => {
-                const a = rng(2, 5);
-                const b = rng(1, 10);
-                const x = rng(2, 8);
-                const rhs = a * x + b;
-                return { q: `Solve: ${a}x + ${b} = ${rhs}`, a: x.toString(), h: "Subtract the constant first, then divide.", c: false };
+                const miles = rng(100, 250);
+                const gallons = rng(4, 10);
+                const mpg = (miles/gallons).toFixed(1);
+                return { q: `A car travels ${miles} miles using ${gallons} gallons of fuel. Calculate the fuel consumption in miles per gallon.`, a: mpg, h: "Divide miles by gallons.", c: true };
             }
         }
     };
@@ -184,7 +163,6 @@
     let score = 0;
     let currentQuestionIndex = 0;
 
-    // Build Menu
     const topicListDiv = document.getElementById('topic-list');
     Object.keys(questionGenerators).forEach(topic => {
         const div = document.createElement('div');
@@ -201,16 +179,12 @@
         const diff = document.querySelector('input[name="diff"]:checked').value;
         
         currentPool = [];
-        // Generate 10 random questions from selected categories
-        for(let i=0; i<10; i++) {
+        for(let i=0; i<8; i++) {
             const topic = selectedTopics[rng(0, selectedTopics.length - 1)];
-            if (questionGenerators[topic][diff]) {
-                currentPool.push({ ...questionGenerators[topic][diff](), topic: topic });
-            }
+            const level = questionGenerators[topic][diff] ? diff : Object.keys(questionGenerators[topic])[0];
+            currentPool.push({ ...questionGenerators[topic][level](), topic: topic });
         }
 
-        if (currentPool.length === 0) return alert("Select more topics!");
-        
         score = 0;
         currentQuestionIndex = 0;
         document.getElementById('setup-screen').classList.add('hidden');
@@ -223,11 +197,9 @@
         document.getElementById('stat-topic').innerText = q.topic;
         document.getElementById('stat-count').innerText = `Q: ${currentQuestionIndex + 1}/${currentPool.length}`;
         document.getElementById('question-text').innerText = q.q;
-        
         const badge = document.getElementById('calc-indicator');
         badge.innerText = q.c ? "CALCULATOR" : "NON-CALC";
         badge.className = q.c ? "calc-badge calc-yes" : "calc-badge calc-no";
-
         document.getElementById('hint-text').classList.add('hidden');
         document.getElementById('hint-btn').classList.remove('hidden');
         document.getElementById('answer-input').value = "";
@@ -239,7 +211,7 @@
     }
 
     function showHint() {
-        document.getElementById('hint-text').innerText = "HINT: " + currentPool[currentQuestionIndex].h;
+        document.getElementById('hint-text').innerText = "STRATEGY: " + currentPool[currentQuestionIndex].h;
         document.getElementById('hint-text').classList.remove('hidden');
         document.getElementById('hint-btn').classList.add('hidden');
     }
@@ -251,10 +223,10 @@
 
         if (user === correct) {
             score++;
-            feedback.innerText = "CORRECT";
+            feedback.innerText = "CORRECT!";
             feedback.style.color = "var(--success)";
         } else {
-            feedback.innerText = "INCORRECT. Answer: " + currentPool[currentQuestionIndex].a;
+            feedback.innerText = "WRONG. Answer: " + currentPool[currentQuestionIndex].a;
             feedback.style.color = "var(--danger)";
         }
         document.getElementById('stat-score').innerText = "Correct: " + score;
