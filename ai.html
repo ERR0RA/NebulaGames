@@ -7,273 +7,554 @@
         #container { display: flex; width: 100vw; height: 100vh; }
         canvas.view { width: 100%; height: 100%; image-rendering: pixelated; display: none; background: #000; }
         #p2Cam { border-left: 2px solid #002200; }
-        
-        #minimap { 
-            position: absolute; top: 15px; left: 15px; 
-            border: 1px solid #0f0; background: rgba(0,0,0,0.9); z-index: 30; 
+
+        #minimap {
+            position: absolute; top: 15px; left: 15px;
+            border: 1px solid #0f0; background: rgba(0,0,0,0.9); z-index: 30;
             display: none;
         }
 
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; z-index: 100; text-align: center;}
+        .overlay {
+            position: fixed; inset: 0; display: flex; justify-content: center; align-items: center;
+            background: #000; z-index: 100; text-align: center;
+        }
+
         .menu-box { border: 2px solid #0f0; padding: 30px; background: #050505; box-shadow: 0 0 15px #004400; }
         .btn { background: #0f0; color: #000; border: none; padding: 12px 25px; margin: 8px; cursor: pointer; font-weight: bold; width: 280px; display: block; font-family: monospace; }
         .btn:hover { background: #fff; }
-        
-        #timer-box { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #f00; color: #f00; font-weight: bold; display: none; z-index: 40; }
-        #hud { position: absolute; bottom: 15px; width: 100%; display: none; justify-content: space-around; pointer-events: none; z-index: 40; }
+
+        #timer-box {
+            position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8);
+            padding: 10px; border: 1px solid #f00; color: #f00; font-weight: bold;
+            display: none; z-index: 40;
+        }
+
+        #hud {
+            position: absolute; bottom: 15px; width: 100%; display: none;
+            justify-content: space-around; pointer-events: none; z-index: 40;
+        }
+
         .stats { background: rgba(0,0,0,0.8); padding: 5px 15px; border: 1px solid #0f0; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-    <div id="timer-box">EXTRACTION IN: <span id="clock">04:00</span></div>
-    
-    <div id="container">
-        <canvas id="p1Cam" class="view"></canvas>
-        <canvas id="p2Cam" class="view"></canvas>
-    </div>
-    
-    <canvas id="minimap" width="110" height="110"></canvas>
+<div id="timer-box">EXTRACTION IN: <span id="clock">04:00</span></div>
 
-    <div id="main-menu" class="overlay">
-        <div class="menu-box">
-            <h1>NEXUS_STABLE</h1>
-            <button class="btn" onclick="init('bot')">SOLO SURVIVAL (1 vs 3)</button>
-            <button class="btn" onclick="init('bot_tag')">SOLO TAG (RANDOM ROLES)</button>
-            <button class="btn" onclick="init('pvp')">PVP TAG (P1 vs P2)</button>
-            <button class="btn" onclick="init('5v2')">5 BOTS vs 2 PLAYERS</button>
-            <p id="mode-info" style="color:#00ff00; font-size: 0.7rem; margin-top:10px; font-weight:bold;">MOVEMENT PATCHED: P2 FIX APPLIED</p>
-        </div>
-    </div>
+<div id="container">
+    <canvas id="p1Cam" class="view"></canvas>
+    <canvas id="p2Cam" class="view"></canvas>
+</div>
 
-    <div id="hud">
-        <div class="stats">P1 HP: <span id="p1hp">100</span>%</div>
-        <div id="tagger-status" class="stats" style="color: #f00; font-weight: bold;">TAGGER: NONE</div>
-        <div id="p2-stats" class="stats" style="display:none">P2 HP: <span id="p2hp">100</span>%</div>
+<canvas id="minimap" width="110" height="110"></canvas>
+
+<div id="main-menu" class="overlay">
+    <div class="menu-box">
+        <h1>NEXUS_STABLE</h1>
+        <button class="btn" onclick="init('bot')">SOLO SURVIVAL (1 vs 3)</button>
+        <button class="btn" onclick="init('bot_tag')">SOLO TAG (RANDOM ROLES)</button>
+        <button class="btn" onclick="init('pvp')">PVP TAG (P1 vs P2)</button>
+        <button class="btn" onclick="init('5v2')">5 BOTS vs 2 PLAYERS</button>
+        <p style="color:#00ff00; font-size: 0.7rem; margin-top:10px; font-weight:bold;">P2 INPUT LOCK FIX APPLIED</p>
     </div>
+</div>
+
+<div id="hud">
+    <div class="stats">P1 HP: <span id="p1hp">100</span>%</div>
+    <div id="tagger-status" class="stats" style="color: #f00; font-weight: bold;">TAGGER: NONE</div>
+    <div id="p2-stats" class="stats" style="display:none">P2 HP: <span id="p2hp">100</span>%</div>
+</div>
 
 <script>
-    const p1c = document.getElementById('p1Cam'), ctx1 = p1c.getContext('2d');
-    const p2c = document.getElementById('p2Cam'), ctx2 = p2c.getContext('2d');
-    const mCtx = document.getElementById('minimap').getContext('2d');
+const p1c = document.getElementById('p1Cam');
+const ctx1 = p1c.getContext('2d');
+const p2c = document.getElementById('p2Cam');
+const ctx2 = p2c.getContext('2d');
+const mCtx = document.getElementById('minimap').getContext('2d');
 
-    const SIZE = 31; 
-    let world = [], active = false, gameMode = '';
-    let timeLeft = 240; 
-    const keys = {};
+const SIZE = 31;
+let world = [];
+let active = false;
+let gameMode = '';
+let timeLeft = 240;
+let timerId = null;
+let animationId = null;
 
-    let p1 = { x: 1.5, y: 1.5, dir: 0, hp: 100, role: 'runner' };
-    let p2 = { x: SIZE-1.5, y: SIZE-1.5, dir: Math.PI, hp: 100, role: 'runner' };
-    let bots = [];
+const keys = new Set();
 
-    window.onkeydown = e => keys[e.code] = true;
-    window.onkeyup = e => keys[e.code] = false;
+let p1 = { x: 1.5, y: 1.5, dir: 0, hp: 100, role: 'runner' };
+let p2 = { x: SIZE - 1.5, y: SIZE - 1.5, dir: Math.PI, hp: 100, role: 'runner' };
+let bots = [];
 
-    function generateMaze() {
-        world = Array(SIZE).fill().map(() => Array(SIZE).fill(1));
-        function walk(x, y) {
-            world[y][x] = 0;
-            let dirs = [[0,-2],[0,2],[-2,0],[2,0]].sort(()=>Math.random()-0.5);
-            for(let [dx,dy] of dirs) {
-                let nx=x+dx, ny=y+dy;
-                if(nx>0 && nx<SIZE && ny>0 && ny<SIZE && world[ny][nx]==1) {
-                    world[y+dy/2][x+dx/2]=0; walk(nx,ny);
-                }
+window.addEventListener('keydown', e => {
+    const k = normalizeKey(e);
+
+    if (k) {
+        keys.add(k);
+        e.preventDefault();
+    }
+}, { passive: false });
+
+window.addEventListener('keyup', e => {
+    const k = normalizeKey(e);
+
+    if (k) {
+        keys.delete(k);
+        e.preventDefault();
+    }
+}, { passive: false });
+
+window.addEventListener('blur', clearKeys);
+
+window.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearKeys();
+});
+
+window.addEventListener('resize', resize);
+
+function normalizeKey(e) {
+    if (e.key === 'ArrowUp') return 'P2_UP';
+    if (e.key === 'ArrowDown') return 'P2_DOWN';
+    if (e.key === 'ArrowLeft') return 'P2_LEFT';
+    if (e.key === 'ArrowRight') return 'P2_RIGHT';
+
+    if (e.code === 'KeyW') return 'P1_UP';
+    if (e.code === 'KeyS') return 'P1_DOWN';
+    if (e.code === 'KeyA') return 'P1_LEFT';
+    if (e.code === 'KeyD') return 'P1_RIGHT';
+
+    return null;
+}
+
+function clearKeys() {
+    keys.clear();
+}
+
+function generateMaze() {
+    world = Array(SIZE).fill().map(() => Array(SIZE).fill(1));
+
+    function walk(x, y) {
+        world[y][x] = 0;
+        let dirs = [[0,-2],[0,2],[-2,0],[2,0]].sort(() => Math.random() - 0.5);
+
+        for (let [dx, dy] of dirs) {
+            let nx = x + dx;
+            let ny = y + dy;
+
+            if (nx > 0 && nx < SIZE && ny > 0 && ny < SIZE && world[ny][nx] === 1) {
+                world[y + dy / 2][x + dx / 2] = 0;
+                walk(nx, ny);
             }
         }
-        walk(1,1);
     }
 
-    function getNextStep(bx, by, tx, ty) {
-        let sx = Math.floor(bx), sy = Math.floor(by);
-        let ex = Math.floor(tx), ey = Math.floor(ty);
-        if (sx === ex && sy === ey) return {x: tx, y: ty};
-        let q = [[sx, sy]], vis = new Set([sx+','+sy]), p = {};
-        while(q.length > 0) {
-            let [cx, cy] = q.shift();
-            if(cx === ex && cy === ey) break;
-            for(let [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
-                let nx = cx+dx, ny = cy+dy;
-                if(nx>=0 && nx<SIZE && ny>=0 && ny<SIZE && world[ny][nx]==0 && !vis.has(nx+','+ny)) {
-                    vis.add(nx+','+ny); p[nx+','+ny] = [cx, cy]; q.push([nx, ny]);
-                }
+    walk(1, 1);
+}
+
+function getNextStep(bx, by, tx, ty) {
+    let sx = Math.floor(bx);
+    let sy = Math.floor(by);
+    let ex = Math.floor(tx);
+    let ey = Math.floor(ty);
+
+    if (sx === ex && sy === ey) return { x: tx, y: ty };
+
+    let q = [[sx, sy]];
+    let vis = new Set([sx + ',' + sy]);
+    let parent = {};
+
+    while (q.length > 0) {
+        let [cx, cy] = q.shift();
+
+        if (cx === ex && cy === ey) break;
+
+        for (let [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+            let nx = cx + dx;
+            let ny = cy + dy;
+            let id = nx + ',' + ny;
+
+            if (
+                nx >= 0 && nx < SIZE &&
+                ny >= 0 && ny < SIZE &&
+                world[ny][nx] === 0 &&
+                !vis.has(id)
+            ) {
+                vis.add(id);
+                parent[id] = [cx, cy];
+                q.push([nx, ny]);
             }
         }
-        let path = [], curr = ex+','+ey;
-        while(p[curr]) { path.push(curr); curr = p[curr][0]+','+p[curr][1]; }
-        if(path.length === 0) return {x: bx, y: by};
-        let n = path.pop().split(',').map(Number);
-        return {x: n[0]+0.5, y: n[1]+0.5};
     }
 
-    function canMove(nx, ny) {
-        return world[Math.floor(ny)] && world[Math.floor(ny)][Math.floor(nx)] === 0;
+    let path = [];
+    let curr = ex + ',' + ey;
+
+    while (parent[curr]) {
+        path.push(curr);
+        curr = parent[curr][0] + ',' + parent[curr][1];
     }
 
-    function movePlayer(p, speed, rotSpeed, up, down, left, right, up2, down2, left2, right2) {
-        if(keys[left] || (left2 && keys[left2])) p.dir -= rotSpeed;
-        if(keys[right] || (right2 && keys[right2])) p.dir += rotSpeed;
-        
-        let moveX = 0, moveY = 0;
-        if(keys[up] || (up2 && keys[up2])) { moveX += Math.cos(p.dir) * speed; moveY += Math.sin(p.dir) * speed; }
-        if(keys[down] || (down2 && keys[down2])) { moveX -= Math.cos(p.dir) * speed; moveY -= Math.sin(p.dir) * speed; }
-        
-        // Solid wall detection with buffer
-        if(canMove(p.x + moveX * 2, p.y)) p.x += moveX;
-        if(canMove(p.x, p.y + moveY * 2)) p.y += moveY;
+    if (path.length === 0) return { x: bx, y: by };
+
+    let n = path.pop().split(',').map(Number);
+    return { x: n[0] + 0.5, y: n[1] + 0.5 };
+}
+
+function canMove(nx, ny) {
+    return world[Math.floor(ny)] && world[Math.floor(ny)][Math.floor(nx)] === 0;
+}
+
+function movePlayer(p, speed, rotSpeed, controls) {
+    const turningLeft = keys.has(controls.left);
+    const turningRight = keys.has(controls.right);
+    const movingForward = keys.has(controls.up);
+    const movingBackward = keys.has(controls.down);
+
+    if (!turningLeft && !turningRight && !movingForward && !movingBackward) {
+        return;
     }
 
-    function init(m) {
-        gameMode = m;
-        generateMaze();
-        active = true;
-        p1.hp = 100; p2.hp = 100;
-        document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('minimap').style.display = 'block';
-        document.getElementById('hud').style.display = 'flex';
-        document.getElementById('timer-box').style.display = 'block';
-        p1c.style.display = 'block';
-        
-        if(m === 'pvp') {
-            p1c.style.width = '50%'; p2c.style.display = 'block';
-            document.getElementById('p2-stats').style.display = 'block';
-            let p1isTagger = Math.random() > 0.5;
-            p1.role = p1isTagger ? 'tagger' : 'runner';
-            p2.role = p1isTagger ? 'runner' : 'tagger';
-            document.getElementById('tagger-status').innerText = `TAGGER: ${p1.role === 'tagger' ? 'P1' : 'P2'}`;
-        } else if (m === 'bot_tag') {
-            p1c.style.width = '100%'; p2c.style.display = 'none';
-            let botIsTagger = Math.random() > 0.5;
-            p1.role = botIsTagger ? 'runner' : 'tagger';
-            bots = [{x: SIZE-1.5, y: SIZE-1.5, s: 0.045, role: botIsTagger ? 'tagger' : 'runner'}];
-            document.getElementById('tagger-status').innerText = `TAGGER: ${botIsTagger ? 'ELITE BOT' : 'YOU (P1)'}`;
-        } else if(m === 'bot') {
-            p1c.style.width = '100%'; p2c.style.display = 'none';
-            bots = [{x: 15.5, y: 15.5, s: 0.022}, {x: 1.5, y: SIZE-1.5, s: 0.022}, {x: SIZE-1.5, y: 1.5, s: 0.022}];
-            document.getElementById('tagger-status').innerText = `TAGGER: ALL BOTS`;
-        } else if(m === '5v2') {
-            p1c.style.width = '50%'; p2c.style.display = 'block';
-            document.getElementById('p2-stats').style.display = 'block';
-            p1.role = 'runner'; p2.role = 'runner';
-            bots = [{x:15.5,y:15.5,s:0.022},{x:1.5,y:SIZE-1.5,s:0.022},{x:SIZE-1.5,y:1.5,s:0.022},{x:15.5,y:1.5,s:0.022},{x:1.5,y:15.5,s:0.022}];
-            document.getElementById('tagger-status').innerText = `TAGGER: BOTS`;
-        }
+    if (turningLeft) p.dir -= rotSpeed;
+    if (turningRight) p.dir += rotSpeed;
 
-        setInterval(() => {
-            if(!active) return;
-            timeLeft--;
-            let min = Math.floor(timeLeft/60), sec = timeLeft%60;
-            document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
-            if(timeLeft <= 0) { active = false; alert("TIME EXPIRED: YOU SURVIVED"); location.reload(); }
-        }, 1000);
+    let moveX = 0;
+    let moveY = 0;
 
-        resize(); loop();
+    if (movingForward) {
+        moveX += Math.cos(p.dir) * speed;
+        moveY += Math.sin(p.dir) * speed;
     }
 
-    function resize() {
-        p1c.width = p1c.clientWidth; p1c.height = p1c.clientHeight;
-        p2c.width = p2c.clientWidth; p2c.height = p2c.clientHeight;
+    if (movingBackward) {
+        moveX -= Math.cos(p.dir) * speed;
+        moveY -= Math.sin(p.dir) * speed;
     }
 
-    function render(ctx, p, canvas) {
-        const w = canvas.width, h = canvas.height;
-        ctx.fillStyle="#000"; ctx.fillRect(0,0,w,h/2);
-        ctx.fillStyle="#050505"; ctx.fillRect(0,h/2,w,h/2);
-        let zBuf = new Array(w).fill(30);
-        for(let i=0; i<w; i++) {
-            let camX = 2 * i / w - 1; 
-            let rayDirX = Math.cos(p.dir + camX * 0.6);
-            let rayDirY = Math.sin(p.dir + camX * 0.6);
-            let d = 0, hit = false, exactX, exactY;
-            while(!hit && d < 20) {
-                d += 0.02; exactX = p.x + rayDirX * d; exactY = p.y + rayDirY * d;
-                let tx = Math.floor(exactX), ty = Math.floor(exactY);
-                if(world[ty] && world[ty][tx]==1) hit = true;
-            }
-            let correctedD = d * Math.cos(camX * 0.6);
-            zBuf[i] = correctedD;
-            let wallH = h / correctedD;
-            ctx.fillStyle = "#004400"; 
-            ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
-            let fx = exactX % 1, fy = exactY % 1;
-            if (fx < 0.03 || fx > 0.97 || fy < 0.03 || fy > 0.97) {
-                ctx.fillStyle = "#006600"; ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
-            }
-        }
-        let targets = [...bots];
-        if(gameMode === 'pvp' || gameMode === '5v2') targets.push(p === p1 ? p2 : p1);
-        targets.forEach(t => {
-            let dx = t.x - p.x, dy = t.y - p.y, dist = Math.hypot(dx, dy);
-            let angle = Math.atan2(dy, dx) - p.dir;
-            while(angle < -Math.PI) angle += Math.PI*2; while(angle > Math.PI) angle -= Math.PI*2;
-            if(Math.abs(angle) < 0.8) {
-                let sx = (angle / 1.2 + 0.5) * w, sh = h / dist;
-                if(dist < zBuf[Math.floor(sx)]) {
-                    ctx.fillStyle = (t.role === 'tagger' || (t.s && !t.role)) ? "#f00" : "#0f0";
-                    ctx.fillRect(sx - sh/8, h/2 - sh/2, sh/4, sh);
-                }
-            }
-        });
+    const nextX = p.x + moveX;
+    const nextY = p.y + moveY;
+
+    if (canMove(nextX, p.y)) p.x = nextX;
+    if (canMove(p.x, nextY)) p.y = nextY;
+}
+
+function init(m) {
+    gameMode = m;
+    generateMaze();
+    clearKeys();
+
+    active = true;
+    timeLeft = 240;
+    bots = [];
+
+    p1 = { x: 1.5, y: 1.5, dir: 0, hp: 100, role: 'runner' };
+    p2 = { x: SIZE - 1.5, y: SIZE - 1.5, dir: Math.PI, hp: 100, role: 'runner' };
+
+    if (timerId) clearInterval(timerId);
+    if (animationId) cancelAnimationFrame(animationId);
+
+    document.getElementById('clock').innerText = '4:00';
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('minimap').style.display = 'block';
+    document.getElementById('hud').style.display = 'flex';
+    document.getElementById('timer-box').style.display = 'block';
+    document.getElementById('p2-stats').style.display = 'none';
+
+    p1c.style.display = 'block';
+    p2c.style.display = 'none';
+    p1c.style.width = '100%';
+
+    if (m === 'pvp') {
+        p1c.style.width = '50%';
+        p2c.style.display = 'block';
+        document.getElementById('p2-stats').style.display = 'block';
+
+        let p1isTagger = Math.random() > 0.5;
+        p1.role = p1isTagger ? 'tagger' : 'runner';
+        p2.role = p1isTagger ? 'runner' : 'tagger';
+
+        document.getElementById('tagger-status').innerText = `TAGGER: ${p1.role === 'tagger' ? 'P1' : 'P2'}`;
+    } else if (m === 'bot_tag') {
+        let botIsTagger = Math.random() > 0.5;
+
+        p1.role = botIsTagger ? 'runner' : 'tagger';
+        bots = [
+            { x: SIZE - 1.5, y: SIZE - 1.5, s: 0.045, role: botIsTagger ? 'tagger' : 'runner' }
+        ];
+
+        document.getElementById('tagger-status').innerText = `TAGGER: ${botIsTagger ? 'ELITE BOT' : 'YOU (P1)'}`;
+    } else if (m === 'bot') {
+        bots = [
+            { x: 15.5, y: 15.5, s: 0.022, role: 'tagger' },
+            { x: 1.5, y: SIZE - 1.5, s: 0.022, role: 'tagger' },
+            { x: SIZE - 1.5, y: 1.5, s: 0.022, role: 'tagger' }
+        ];
+
+        document.getElementById('tagger-status').innerText = 'TAGGER: ALL BOTS';
+    } else if (m === '5v2') {
+        p1c.style.width = '50%';
+        p2c.style.display = 'block';
+        document.getElementById('p2-stats').style.display = 'block';
+
+        p1.role = 'runner';
+        p2.role = 'runner';
+
+        bots = [
+            { x: 15.5, y: 15.5, s: 0.022, role: 'tagger' },
+            { x: 1.5, y: SIZE - 1.5, s: 0.022, role: 'tagger' },
+            { x: SIZE - 1.5, y: 1.5, s: 0.022, role: 'tagger' },
+            { x: 15.5, y: 1.5, s: 0.022, role: 'tagger' },
+            { x: 1.5, y: 15.5, s: 0.022, role: 'tagger' }
+        ];
+
+        document.getElementById('tagger-status').innerText = 'TAGGER: BOTS';
     }
 
-    function loop() {
-        if(!active) return;
-        
-        // P1 always has Dual Controls in Solo, WASD in Coop/PvP
-        if (gameMode.startsWith('bot')) {
-            movePlayer(p1, 0.05, 0.06, 'KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
-        } else {
-            movePlayer(p1, 0.05, 0.06, 'KeyW', 'KeyS', 'KeyA', 'KeyD');
-            // FIX: Explicitly passing P2 keys and preventing character sliding
-            movePlayer(p2, 0.05, 0.06, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
-        }
-        
-        bots.forEach(b => {
-            let target;
-            if(gameMode === 'bot_tag') {
-                target = p1; 
-                if(b.role === 'runner' && Math.hypot(p1.x-b.x, p1.y-b.y) < 0.5) { 
-                    active = false; alert("YOU TAGGED THE BOT! VICTORY"); location.reload(); 
-                }
-            } else {
-                let d1 = Math.hypot(p1.x-b.x, p1.y-b.y);
-                let d2 = (gameMode==='pvp' || gameMode==='5v2') ? Math.hypot(p2.x-b.x, p2.y-b.y) : 999;
-                target = d1 < d2 ? p1 : p2;
-            }
+    timerId = setInterval(() => {
+        if (!active) return;
 
-            if(Math.hypot(target.x-b.x, target.y-b.y) < 0.5) { 
-                if(b.role === 'tagger') { active = false; alert("TAGGED BY ELITE BOT!"); location.reload(); }
-                target.hp -= 0.5; 
-                if(target.hp <= 0) { active = false; alert("INTEGRITY LOST"); location.reload(); }
-            } else {
-                let next = getNextStep(b.x, b.y, target.x, target.y);
-                let dx = next.x-b.x, dy = next.y-b.y, dist = Math.hypot(dx,dy);
-                if(dist > 0.01) { b.x += (dx/dist)*b.s; b.y += (dy/dist)*b.s; }
-            }
-        });
+        timeLeft--;
 
-        if(gameMode === 'pvp' && Math.hypot(p1.x - p2.x, p1.y - p2.y) < 0.5) {
+        let min = Math.floor(timeLeft / 60);
+        let sec = timeLeft % 60;
+        document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0' + sec : sec}`;
+
+        if (timeLeft <= 0) {
             active = false;
-            let winner = p1.role === 'tagger' ? "P1" : "P2";
-            alert(`TAGGED! ${winner} WINS`); location.reload();
+            alert('TIME EXPIRED: YOU SURVIVED');
+            location.reload();
+        }
+    }, 1000);
+
+    resize();
+    loop();
+}
+
+function resize() {
+    p1c.width = p1c.clientWidth;
+    p1c.height = p1c.clientHeight;
+    p2c.width = p2c.clientWidth;
+    p2c.height = p2c.clientHeight;
+}
+
+function render(ctx, p, canvas) {
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h / 2);
+
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, h / 2, w, h / 2);
+
+    let zBuf = new Array(w).fill(30);
+
+    for (let i = 0; i < w; i++) {
+        let camX = 2 * i / w - 1;
+        let rayDirX = Math.cos(p.dir + camX * 0.6);
+        let rayDirY = Math.sin(p.dir + camX * 0.6);
+
+        let d = 0;
+        let hit = false;
+        let exactX = p.x;
+        let exactY = p.y;
+
+        while (!hit && d < 20) {
+            d += 0.02;
+            exactX = p.x + rayDirX * d;
+            exactY = p.y + rayDirY * d;
+
+            let tx = Math.floor(exactX);
+            let ty = Math.floor(exactY);
+
+            if (world[ty] && world[ty][tx] === 1) hit = true;
         }
 
-        render(ctx1, p1, p1c);
-        if(gameMode === 'pvp' || gameMode === '5v2') render(ctx2, p2, p2c);
-        
-        document.getElementById('p1hp').innerText = Math.floor(p1.hp);
-        if(document.getElementById('p2-stats').style.display !== 'none') {
-            document.getElementById('p2hp').innerText = Math.floor(p2.hp);
+        let correctedD = Math.max(0.001, d * Math.cos(camX * 0.6));
+        zBuf[i] = correctedD;
+
+        let wallH = h / correctedD;
+
+        ctx.fillStyle = '#004400';
+        ctx.fillRect(i, h / 2 - wallH / 2, 1, wallH);
+
+        let fx = exactX % 1;
+        let fy = exactY % 1;
+
+        if (fx < 0.03 || fx > 0.97 || fy < 0.03 || fy > 0.97) {
+            ctx.fillStyle = '#006600';
+            ctx.fillRect(i, h / 2 - wallH / 2, 1, wallH);
         }
-        
-        mCtx.clearRect(0,0,110,110);
-        let s = 110/SIZE;
-        for(let y=0; y<SIZE; y++) for(let x=0; x<SIZE; x++) if(world[y][x]) { mCtx.fillStyle="#002200"; mCtx.fillRect(x*s,y*s,s,s); }
-        mCtx.fillStyle="#00ff00"; mCtx.fillRect(p1.x*s-1.5, p1.y*s-1.5, 3, 3);
-        if(gameMode === 'pvp' || gameMode === '5v2') { mCtx.fillStyle=(p2.role==='tagger'?"#f00":"#0f0"); mCtx.fillRect(p2.x*s-1.5, p2.y*s-1.5, 3, 3); }
-        bots.forEach(b => { mCtx.fillStyle=(b.role==='runner'?"#0f0":"#f00"); mCtx.fillRect(b.x*s-1.5, b.y*s-1.5, 3, 3); });
-        requestAnimationFrame(loop);
     }
+
+    let targets = [...bots];
+
+    if (gameMode === 'pvp' || gameMode === '5v2') {
+        targets.push(p === p1 ? p2 : p1);
+    }
+
+    targets.forEach(t => {
+        let dx = t.x - p.x;
+        let dy = t.y - p.y;
+        let dist = Math.hypot(dx, dy);
+
+        if (dist < 0.001) return;
+
+        let angle = Math.atan2(dy, dx) - p.dir;
+
+        while (angle < -Math.PI) angle += Math.PI * 2;
+        while (angle > Math.PI) angle -= Math.PI * 2;
+
+        if (Math.abs(angle) < 0.8) {
+            let sx = (angle / 1.2 + 0.5) * w;
+            let sh = h / dist;
+            let ix = Math.floor(sx);
+
+            if (ix >= 0 && ix < zBuf.length && dist < zBuf[ix]) {
+                ctx.fillStyle = (t.role === 'tagger' || (t.s && !t.role)) ? '#f00' : '#0f0';
+                ctx.fillRect(sx - sh / 8, h / 2 - sh / 2, sh / 4, sh);
+            }
+        }
+    });
+}
+
+function updateBots() {
+    bots.forEach(b => {
+        let target;
+
+        if (gameMode === 'bot_tag') {
+            target = p1;
+
+            if (b.role === 'runner' && Math.hypot(p1.x - b.x, p1.y - b.y) < 0.5) {
+                active = false;
+                alert('YOU TAGGED THE BOT! VICTORY');
+                location.reload();
+            }
+        } else {
+            let d1 = Math.hypot(p1.x - b.x, p1.y - b.y);
+            let d2 = gameMode === '5v2' ? Math.hypot(p2.x - b.x, p2.y - b.y) : 999;
+            target = d1 < d2 ? p1 : p2;
+        }
+
+        if (Math.hypot(target.x - b.x, target.y - b.y) < 0.5) {
+            if (b.role === 'tagger') {
+                active = false;
+                alert('TAGGED BY ELITE BOT!');
+                location.reload();
+            }
+
+            target.hp -= 0.5;
+
+            if (target.hp <= 0) {
+                active = false;
+                alert('INTEGRITY LOST');
+                location.reload();
+            }
+        } else {
+            let next = getNextStep(b.x, b.y, target.x, target.y);
+            let dx = next.x - b.x;
+            let dy = next.y - b.y;
+            let dist = Math.hypot(dx, dy);
+
+            if (dist > 0.01) {
+                b.x += (dx / dist) * b.s;
+                b.y += (dy / dist) * b.s;
+            }
+        }
+    });
+}
+
+function updatePvpTag() {
+    if (gameMode === 'pvp' && Math.hypot(p1.x - p2.x, p1.y - p2.y) < 0.5) {
+        active = false;
+        let winner = p1.role === 'tagger' ? 'P1' : 'P2';
+        alert(`TAGGED! ${winner} WINS`);
+        location.reload();
+    }
+}
+
+function drawMinimap() {
+    mCtx.clearRect(0, 0, 110, 110);
+
+    let s = 110 / SIZE;
+
+    for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+            if (world[y][x]) {
+                mCtx.fillStyle = '#002200';
+                mCtx.fillRect(x * s, y * s, s, s);
+            }
+        }
+    }
+
+    mCtx.fillStyle = p1.role === 'tagger' ? '#f00' : '#00ff00';
+    mCtx.fillRect(p1.x * s - 1.5, p1.y * s - 1.5, 3, 3);
+
+    if (gameMode === 'pvp' || gameMode === '5v2') {
+        mCtx.fillStyle = p2.role === 'tagger' ? '#f00' : '#0f0';
+        mCtx.fillRect(p2.x * s - 1.5, p2.y * s - 1.5, 3, 3);
+    }
+
+    bots.forEach(b => {
+        mCtx.fillStyle = b.role === 'runner' ? '#0f0' : '#f00';
+        mCtx.fillRect(b.x * s - 1.5, b.y * s - 1.5, 3, 3);
+    });
+}
+
+function updateMovement() {
+    if (gameMode.startsWith('bot')) {
+        movePlayer(p1, 0.05, 0.06, {
+            up: 'P1_UP',
+            down: 'P1_DOWN',
+            left: 'P1_LEFT',
+            right: 'P1_RIGHT'
+        });
+
+        movePlayer(p1, 0.05, 0.06, {
+            up: 'P2_UP',
+            down: 'P2_DOWN',
+            left: 'P2_LEFT',
+            right: 'P2_RIGHT'
+        });
+    } else {
+        movePlayer(p1, 0.05, 0.06, {
+            up: 'P1_UP',
+            down: 'P1_DOWN',
+            left: 'P1_LEFT',
+            right: 'P1_RIGHT'
+        });
+
+        movePlayer(p2, 0.05, 0.06, {
+            up: 'P2_UP',
+            down: 'P2_DOWN',
+            left: 'P2_LEFT',
+            right: 'P2_RIGHT'
+        });
+    }
+}
+
+function loop() {
+    if (!active) return;
+
+    updateMovement();
+    updateBots();
+    updatePvpTag();
+
+    render(ctx1, p1, p1c);
+
+    if (gameMode === 'pvp' || gameMode === '5v2') {
+        render(ctx2, p2, p2c);
+    }
+
+    document.getElementById('p1hp').innerText = Math.floor(p1.hp);
+
+    if (document.getElementById('p2-stats').style.display !== 'none') {
+        document.getElementById('p2hp').innerText = Math.floor(p2.hp);
+    }
+
+    drawMinimap();
+
+    animationId = requestAnimationFrame(loop);
+}
 </script>
 </body>
 </html>
