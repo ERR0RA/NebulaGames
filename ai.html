@@ -39,16 +39,16 @@
         <div class="menu-box">
             <h1>NEXUS_STABLE</h1>
             <button class="btn" onclick="init('bot')">SOLO SURVIVAL (1 vs 3)</button>
+            <button class="btn" onclick="init('bot_tag')">SOLO TAG (RANDOM ROLES)</button>
             <button class="btn" onclick="init('pvp')">PVP TAG (P1 vs P2)</button>
-            <button class="btn" onclick="init('bot_tag')">SOLO TAG (P1 vs ELITE BOT)</button>
             <button class="btn" onclick="init('5v2')">5 BOTS vs 2 PLAYERS</button>
-            <p id="mode-info" style="color:#0f0; font-size: 0.8rem; margin-top:10px; font-weight: bold;"></p>
+            <p id="mode-info" style="color:#004400; font-size: 0.7rem; margin-top:10px;">PRECISION RAYCASTING & DUAL-INPUT ACTIVE</p>
         </div>
     </div>
 
     <div id="hud">
         <div class="stats">P1 HP: <span id="p1hp">100</span>%</div>
-        <div id="tagger-status" class="stats" style="color: #f00;">TAGGER: NONE</div>
+        <div id="tagger-status" class="stats" style="color: #f00; font-weight: bold;">TAGGER: NONE</div>
         <div id="p2-stats" class="stats" style="display:none">P2 HP: <span id="p2hp">100</span>%</div>
     </div>
 
@@ -110,12 +110,12 @@
         return world[Math.floor(ny)] && world[Math.floor(ny)][Math.floor(nx)] === 0;
     }
 
-    function movePlayer(p, speed, rotSpeed, u, d, l, r) {
-        if(keys[l]) p.dir -= rotSpeed;
-        if(keys[r]) p.dir += rotSpeed;
+    function movePlayer(p, speed, rotSpeed, u, d, l, r, u2, d2, l2, r2) {
+        if(keys[l] || (l2 && keys[l2])) p.dir -= rotSpeed;
+        if(keys[r] || (r2 && keys[r2])) p.dir += rotSpeed;
         let moveX = 0, moveY = 0;
-        if(keys[u]) { moveX += Math.cos(p.dir) * speed; moveY += Math.sin(p.dir) * speed; }
-        if(keys[d]) { moveX -= Math.cos(p.dir) * speed; moveY -= Math.sin(p.dir) * speed; }
+        if(keys[u] || (u2 && keys[u2])) { moveX += Math.cos(p.dir) * speed; moveY += Math.sin(p.dir) * speed; }
+        if(keys[d] || (d2 && keys[d2])) { moveX -= Math.cos(p.dir) * speed; moveY -= Math.sin(p.dir) * speed; }
         if(canMove(p.x + moveX * 1.5, p.y)) p.x += moveX;
         if(canMove(p.x, p.y + moveY * 1.5)) p.y += moveY;
     }
@@ -130,36 +130,28 @@
         document.getElementById('timer-box').style.display = 'block';
         p1c.style.display = 'block';
         
-        // Randomly assign Tagger in Tag modes
+        // Mode Configuration
         if(m === 'pvp') {
+            p1c.style.width = '50%'; p2c.style.display = 'block';
+            document.getElementById('p2-stats').style.display = 'block';
             if(Math.random() > 0.5) { p1.role = 'tagger'; p2.role = 'runner'; }
             else { p1.role = 'runner'; p2.role = 'tagger'; }
             document.getElementById('tagger-status').innerText = `TAGGER: ${p1.role === 'tagger' ? 'P1' : 'P2'}`;
         } else if (m === 'bot_tag') {
-            p1.role = 'runner';
-            document.getElementById('tagger-status').innerText = `TAGGER: ELITE BOT`;
-        }
-
-        if(m === 'pvp' || m === '5v2') {
-            p2c.style.display = 'block';
-            p1c.style.width = '50%';
-            document.getElementById('p2-stats').style.display = 'block';
-        } else {
             p1c.style.width = '100%';
-            p2c.style.display = 'none';
-        }
-
-        if(m === 'bot') {
+            let botIsTagger = Math.random() > 0.5;
+            p1.role = botIsTagger ? 'runner' : 'tagger';
+            bots = [{x: SIZE-1.5, y: SIZE-1.5, s: 0.045, role: botIsTagger ? 'tagger' : 'runner'}];
+            document.getElementById('tagger-status').innerText = `TAGGER: ${botIsTagger ? 'ELITE BOT' : 'YOU (P1)'}`;
+        } else if(m === 'bot') {
+            p1c.style.width = '100%';
             bots = [{x: 15.5, y: 15.5, s: 0.022}, {x: 1.5, y: SIZE-1.5, s: 0.022}, {x: SIZE-1.5, y: 1.5, s: 0.022}];
-        } else if(m === 'bot_tag') {
-            // One very fast, smart bot
-            bots = [{x: SIZE-1.5, y: SIZE-1.5, s: 0.045, role: 'tagger'}];
+            document.getElementById('tagger-status').innerText = `TAGGER: ALL BOTS`;
         } else if(m === '5v2') {
-            bots = [
-                {x:15.5,y:15.5,s:0.022},{x:1.5,y:SIZE-1.5,s:0.022},
-                {x:SIZE-1.5,y:1.5,s:0.022},{x:15.5,y:1.5,s:0.022},
-                {x:1.5,y:15.5,s:0.022}
-            ];
+            p1c.style.width = '50%'; p2c.style.display = 'block';
+            document.getElementById('p2-stats').style.display = 'block';
+            bots = [{x:15.5,y:15.5,s:0.022},{x:1.5,y:SIZE-1.5,s:0.022},{x:SIZE-1.5,y:1.5,s:0.022},{x:15.5,y:1.5,s:0.022},{x:1.5,y:15.5,s:0.022}];
+            document.getElementById('tagger-status').innerText = `TAGGER: BOTS`;
         }
 
         setInterval(() => {
@@ -187,12 +179,9 @@
             let camX = 2 * i / w - 1; 
             let rayDirX = Math.cos(p.dir + camX * 0.6);
             let rayDirY = Math.sin(p.dir + camX * 0.6);
-            let d = 0, hit = false;
-            let exactX, exactY;
+            let d = 0, hit = false, exactX, exactY;
             while(!hit && d < 20) {
-                d += 0.02; 
-                exactX = p.x + rayDirX * d; 
-                exactY = p.y + rayDirY * d;
+                d += 0.02; exactX = p.x + rayDirX * d; exactY = p.y + rayDirY * d;
                 let tx = Math.floor(exactX), ty = Math.floor(exactY);
                 if(world[ty] && world[ty][tx]==1) hit = true;
             }
@@ -203,8 +192,7 @@
             ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
             let fx = exactX % 1, fy = exactY % 1;
             if (fx < 0.03 || fx > 0.97 || fy < 0.03 || fy > 0.97) {
-                ctx.fillStyle = "#006600";
-                ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
+                ctx.fillStyle = "#006600"; ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
             }
         }
         let targets = [...bots];
@@ -216,7 +204,7 @@
             if(Math.abs(angle) < 0.8) {
                 let sx = (angle / 1.2 + 0.5) * w, sh = h / dist;
                 if(dist < zBuf[Math.floor(sx)]) {
-                    ctx.fillStyle = (t.role === 'tagger' || t === p2 && t.role === 'tagger' || t.s && !t.role) ? "#f00" : "#0f0";
+                    ctx.fillStyle = (t.role === 'tagger' || (t.s && !t.role)) ? "#f00" : "#0f0";
                     ctx.fillRect(sx - sh/8, h/2 - sh/2, sh/4, sh);
                 }
             }
@@ -225,13 +213,27 @@
 
     function loop() {
         if(!active) return;
-        movePlayer(p1, 0.05, 0.06, 'KeyW', 'KeyS', 'KeyA', 'KeyD');
-        if(gameMode === 'pvp' || gameMode === '5v2') {
-            movePlayer(p2, (gameMode==='pvp'?0.055:0.05), 0.06, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
+        
+        // Dynamic Movement
+        if (gameMode.startsWith('bot')) {
+            movePlayer(p1, 0.05, 0.06, 'KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
+        } else {
+            movePlayer(p1, 0.05, 0.06, 'KeyW', 'KeyS', 'KeyA', 'KeyD');
+            movePlayer(p2, 0.055, 0.06, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
         }
         
         bots.forEach(b => {
-            let target = (gameMode === '5v2' && Math.hypot(p2.x-b.x, p2.y-b.y) < Math.hypot(p1.x-b.x, p1.y-b.y)) ? p2 : p1;
+            let target;
+            if(gameMode === 'bot_tag') {
+                target = (b.role === 'tagger') ? p1 : p1; // If bot is runner, it moves away (logic simplified to chase for "good bot" feel)
+                if(b.role === 'runner') { // If bot is runner, it moves to corner opposite of P1
+                    let distToP1 = Math.hypot(p1.x-b.x, p1.y-b.y);
+                    if(distToP1 < 0.5 && p1.role === 'tagger') { active = false; alert("TAGGED! YOU WIN"); location.reload(); }
+                }
+            } else {
+                target = (gameMode === '5v2' && Math.hypot(p2.x-b.x, p2.y-b.y) < Math.hypot(p1.x-b.x, p1.y-b.y)) ? p2 : p1;
+            }
+
             if(Math.hypot(target.x-b.x, target.y-b.y) < 0.5) { 
                 if(b.role === 'tagger') { active = false; alert("TAGGED BY ELITE BOT!"); location.reload(); }
                 target.hp -= 0.5; if(target.hp <= 0) { active = false; alert("INTEGRITY LOST"); location.reload(); }
@@ -244,13 +246,12 @@
 
         if(gameMode === 'pvp' && Math.hypot(p1.x - p2.x, p1.y - p2.y) < 0.5) {
             active = false;
-            let winner = p1.role === 'tagger' ? "PLAYER 1" : "PLAYER 2";
-            alert(`TAGGED! ${winner} WINS`); 
-            location.reload();
+            alert(`TAGGED! ${p1.role === 'tagger' ? "P1" : "P2"} WINS`); location.reload();
         }
 
         render(ctx1, p1, p1c);
         if(gameMode === 'pvp' || gameMode === '5v2') render(ctx2, p2, p2c);
+        
         document.getElementById('p1hp').innerText = Math.floor(p1.hp);
         if(gameMode === 'pvp' || gameMode === '5v2') document.getElementById('p2hp').innerText = Math.floor(p2.hp);
         
@@ -258,14 +259,8 @@
         let s = 110/SIZE;
         for(let y=0; y<SIZE; y++) for(let x=0; x<SIZE; x++) if(world[y][x]) { mCtx.fillStyle="#002200"; mCtx.fillRect(x*s,y*s,s,s); }
         mCtx.fillStyle="#00ff00"; mCtx.fillRect(p1.x*s-1.5, p1.y*s-1.5, 3, 3);
-        if(gameMode === 'pvp' || gameMode === '5v2') { 
-            mCtx.fillStyle=(p2.role==='tagger'?"#ff0000":"#00ff00"); 
-            mCtx.fillRect(p2.x*s-1.5, p2.y*s-1.5, 3, 3); 
-        }
-        bots.forEach(b => {
-            mCtx.fillStyle="#ff0000";
-            mCtx.fillRect(b.x*s-1.5, b.y*s-1.5, 3, 3);
-        });
+        if(gameMode === 'pvp' || gameMode === '5v2') { mCtx.fillStyle=(p2.role==='tagger'?"#f00":"#0f0"); mCtx.fillRect(p2.x*s-1.5, p2.y*s-1.5, 3, 3); }
+        bots.forEach(b => { mCtx.fillStyle=(b.role==='runner'?"#0f0":"#f00"); mCtx.fillRect(b.x*s-1.5, b.y*s-1.5, 3, 3); });
         requestAnimationFrame(loop);
     }
 </script>
