@@ -7,11 +7,18 @@
         #container { display: flex; width: 100vw; height: 100vh; }
         canvas.view { width: 100%; height: 100%; image-rendering: pixelated; display: none; background: #000; }
         #p2Cam { border-left: 2px solid #002200; }
-        #minimap { position: absolute; top: 15px; left: 15px; border: 1px solid #0f0; background: rgba(0,0,0,0.9); z-index: 30; display: none; }
+        
+        #minimap { 
+            position: absolute; top: 15px; left: 15px; 
+            border: 1px solid #0f0; background: rgba(0,0,0,0.9); z-index: 30; 
+            display: none;
+        }
+
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #000; z-index: 100; text-align: center;}
         .menu-box { border: 2px solid #0f0; padding: 30px; background: #050505; box-shadow: 0 0 15px #004400; }
         .btn { background: #0f0; color: #000; border: none; padding: 12px 25px; margin: 8px; cursor: pointer; font-weight: bold; width: 280px; display: block; font-family: monospace; }
         .btn:hover { background: #fff; }
+        
         #timer-box { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #f00; color: #f00; font-weight: bold; display: none; z-index: 40; }
         #hud { position: absolute; bottom: 15px; width: 100%; display: none; justify-content: space-around; pointer-events: none; z-index: 40; }
         .stats { background: rgba(0,0,0,0.8); padding: 5px 15px; border: 1px solid #0f0; font-size: 0.8rem; }
@@ -20,16 +27,22 @@
 <body>
 
     <div id="timer-box">EXTRACTION IN: <span id="clock">04:00</span></div>
-    <div id="container"><canvas id="p1Cam" class="view"></canvas><canvas id="p2Cam" class="view"></canvas></div>
+    
+    <div id="container">
+        <canvas id="p1Cam" class="view"></canvas>
+        <canvas id="p2Cam" class="view"></canvas>
+    </div>
+    
     <canvas id="minimap" width="110" height="110"></canvas>
 
     <div id="main-menu" class="overlay">
         <div class="menu-box">
             <h1>NEXUS_STABLE</h1>
-            <button class="btn" onclick="init('bot')">SOLO SURVIVAL</button>
-            <button class="btn" onclick="init('bot_tag')">SOLO TAG (RANDOM)</button>
-            <button class="btn" onclick="init('pvp')">PVP TAG</button>
+            <button class="btn" onclick="init('bot')">SOLO SURVIVAL (1 vs 3)</button>
+            <button class="btn" onclick="init('bot_tag')">SOLO TAG (RANDOM ROLES)</button>
+            <button class="btn" onclick="init('pvp')">PVP TAG (P1 vs P2)</button>
             <button class="btn" onclick="init('5v2')">5 BOTS vs 2 PLAYERS</button>
+            <p id="mode-info" style="color:#00ff00; font-size: 0.7rem; margin-top:10px; font-weight:bold;">MOVEMENT PATCHED: P2 FIX APPLIED</p>
         </div>
     </div>
 
@@ -72,7 +85,8 @@
     }
 
     function getNextStep(bx, by, tx, ty) {
-        let sx = Math.floor(bx), sy = Math.floor(by), ex = Math.floor(tx), ey = Math.floor(ty);
+        let sx = Math.floor(bx), sy = Math.floor(by);
+        let ex = Math.floor(tx), ey = Math.floor(ty);
         if (sx === ex && sy === ey) return {x: tx, y: ty};
         let q = [[sx, sy]], vis = new Set([sx+','+sy]), p = {};
         while(q.length > 0) {
@@ -93,110 +107,173 @@
     }
 
     function canMove(nx, ny) {
-        // Strict boundary and wall check
         return world[Math.floor(ny)] && world[Math.floor(ny)][Math.floor(nx)] === 0;
     }
 
-    function movePlayer(p, speed, rotSpeed, u, d, l, r, u2, d2, l2, r2) {
-        // Rotation: Instant stop
-        if(keys[l] || (l2 && keys[l2])) p.dir -= rotSpeed;
-        if(keys[r] || (r2 && keys[r2])) p.dir += rotSpeed;
+    function movePlayer(p, speed, rotSpeed, up, down, left, right, up2, down2, left2, right2) {
+        if(keys[left] || (left2 && keys[left2])) p.dir -= rotSpeed;
+        if(keys[right] || (right2 && keys[right2])) p.dir += rotSpeed;
         
-        let mvX = 0, mvY = 0;
-        if(keys[u] || (u2 && keys[u2])) { mvX += Math.cos(p.dir) * speed; mvY += Math.sin(p.dir) * speed; }
-        if(keys[d] || (d2 && keys[d2])) { mvX -= Math.cos(p.dir) * speed; mvY -= Math.sin(p.dir) * speed; }
+        let moveX = 0, moveY = 0;
+        if(keys[up] || (up2 && keys[up2])) { moveX += Math.cos(p.dir) * speed; moveY += Math.sin(p.dir) * speed; }
+        if(keys[down] || (down2 && keys[down2])) { moveX -= Math.cos(p.dir) * speed; moveY -= Math.sin(p.dir) * speed; }
         
-        // Precise Axis-Independent Collision (Prevents "Drifting" into walls)
-        const buffer = 0.2;
-        if(canMove(p.x + mvX + (mvX > 0 ? buffer : -buffer), p.y)) p.x += mvX;
-        if(canMove(p.x, p.y + mvY + (mvY > 0 ? buffer : -buffer))) p.y += mvY;
+        // Solid wall detection with buffer
+        if(canMove(p.x + moveX * 2, p.y)) p.x += moveX;
+        if(canMove(p.x, p.y + moveY * 2)) p.y += moveY;
     }
 
     function init(m) {
-        gameMode = m; generateMaze(); active = true;
-        p1 = { x: 1.5, y: 1.5, dir: 0, hp: 100, role: 'runner' };
-        p2 = { x: SIZE-1.5, y: SIZE-1.5, dir: Math.PI, hp: 100, role: 'runner' };
+        gameMode = m;
+        generateMaze();
+        active = true;
+        p1.hp = 100; p2.hp = 100;
         document.getElementById('main-menu').style.display = 'none';
         document.getElementById('minimap').style.display = 'block';
         document.getElementById('hud').style.display = 'flex';
         document.getElementById('timer-box').style.display = 'block';
         p1c.style.display = 'block';
         
-        if (m === 'bot_tag') {
-            let botTagger = Math.random() > 0.5;
-            p1.role = botTagger ? 'runner' : 'tagger';
-            bots = [{x: SIZE-1.5, y: SIZE-1.5, s: 0.045, role: botTagger ? 'tagger' : 'runner'}];
-            document.getElementById('tagger-status').innerText = `TAGGER: ${botTagger ? 'ELITE BOT' : 'YOU'}`;
-        } else if(m === 'pvp' || m === '5v2') {
-            p2c.style.display = 'block'; p1c.style.width = '50%';
+        if(m === 'pvp') {
+            p1c.style.width = '50%'; p2c.style.display = 'block';
             document.getElementById('p2-stats').style.display = 'block';
-            if(m === 'pvp') {
-                let p1Tagger = Math.random() > 0.5;
-                p1.role = p1Tagger ? 'tagger' : 'runner'; p2.role = p1Tagger ? 'runner' : 'tagger';
-                document.getElementById('tagger-status').innerText = `TAGGER: ${p1Tagger ? 'P1' : 'P2'}`;
-            } else {
-                bots = [{x:15.5,y:15.5,s:0.022},{x:1.5,y:SIZE-1.5,s:0.022},{x:SIZE-1.5,y:1.5,s:0.022},{x:15.5,y:1.5,s:0.022},{x:1.5,y:15.5,s:0.022}];
-                document.getElementById('tagger-status').innerText = `TAGGER: BOTS`;
-            }
-        } else {
+            let p1isTagger = Math.random() > 0.5;
+            p1.role = p1isTagger ? 'tagger' : 'runner';
+            p2.role = p1isTagger ? 'runner' : 'tagger';
+            document.getElementById('tagger-status').innerText = `TAGGER: ${p1.role === 'tagger' ? 'P1' : 'P2'}`;
+        } else if (m === 'bot_tag') {
+            p1c.style.width = '100%'; p2c.style.display = 'none';
+            let botIsTagger = Math.random() > 0.5;
+            p1.role = botIsTagger ? 'runner' : 'tagger';
+            bots = [{x: SIZE-1.5, y: SIZE-1.5, s: 0.045, role: botIsTagger ? 'tagger' : 'runner'}];
+            document.getElementById('tagger-status').innerText = `TAGGER: ${botIsTagger ? 'ELITE BOT' : 'YOU (P1)'}`;
+        } else if(m === 'bot') {
             p1c.style.width = '100%'; p2c.style.display = 'none';
             bots = [{x: 15.5, y: 15.5, s: 0.022}, {x: 1.5, y: SIZE-1.5, s: 0.022}, {x: SIZE-1.5, y: 1.5, s: 0.022}];
+            document.getElementById('tagger-status').innerText = `TAGGER: ALL BOTS`;
+        } else if(m === '5v2') {
+            p1c.style.width = '50%'; p2c.style.display = 'block';
+            document.getElementById('p2-stats').style.display = 'block';
+            p1.role = 'runner'; p2.role = 'runner';
+            bots = [{x:15.5,y:15.5,s:0.022},{x:1.5,y:SIZE-1.5,s:0.022},{x:SIZE-1.5,y:1.5,s:0.022},{x:15.5,y:1.5,s:0.022},{x:1.5,y:15.5,s:0.022}];
+            document.getElementById('tagger-status').innerText = `TAGGER: BOTS`;
         }
+
+        setInterval(() => {
+            if(!active) return;
+            timeLeft--;
+            let min = Math.floor(timeLeft/60), sec = timeLeft%60;
+            document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
+            if(timeLeft <= 0) { active = false; alert("TIME EXPIRED: YOU SURVIVED"); location.reload(); }
+        }, 1000);
+
         resize(); loop();
+    }
+
+    function resize() {
+        p1c.width = p1c.clientWidth; p1c.height = p1c.clientHeight;
+        p2c.width = p2c.clientWidth; p2c.height = p2c.clientHeight;
     }
 
     function render(ctx, p, canvas) {
         const w = canvas.width, h = canvas.height;
-        ctx.fillStyle="#000"; ctx.fillRect(0,0,w,h/2); ctx.fillStyle="#050505"; ctx.fillRect(0,h/2,w,h/2);
+        ctx.fillStyle="#000"; ctx.fillRect(0,0,w,h/2);
+        ctx.fillStyle="#050505"; ctx.fillRect(0,h/2,w,h/2);
         let zBuf = new Array(w).fill(30);
         for(let i=0; i<w; i++) {
-            let cX = 2 * i / w - 1, rX = Math.cos(p.dir + cX * 0.6), rY = Math.sin(p.dir + cX * 0.6);
-            let d = 0, hit = false, eX, eY;
-            while(!hit && d < 20) { d += 0.02; eX = p.x + rX * d; eY = p.y + rY * d; if(world[Math.floor(eY)] && world[Math.floor(eY)][Math.floor(eX)]==1) hit = true; }
-            let dist = d * Math.cos(cX * 0.6); zBuf[i] = dist;
-            let wallH = h / dist; ctx.fillStyle = "#004400"; ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
-            if ((eX % 1 < 0.05 || eX % 1 > 0.95) || (eY % 1 < 0.05 || eY % 1 > 0.95)) { ctx.fillStyle = "#006600"; ctx.fillRect(i, h/2 - wallH/2, 1, wallH); }
+            let camX = 2 * i / w - 1; 
+            let rayDirX = Math.cos(p.dir + camX * 0.6);
+            let rayDirY = Math.sin(p.dir + camX * 0.6);
+            let d = 0, hit = false, exactX, exactY;
+            while(!hit && d < 20) {
+                d += 0.02; exactX = p.x + rayDirX * d; exactY = p.y + rayDirY * d;
+                let tx = Math.floor(exactX), ty = Math.floor(exactY);
+                if(world[ty] && world[ty][tx]==1) hit = true;
+            }
+            let correctedD = d * Math.cos(camX * 0.6);
+            zBuf[i] = correctedD;
+            let wallH = h / correctedD;
+            ctx.fillStyle = "#004400"; 
+            ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
+            let fx = exactX % 1, fy = exactY % 1;
+            if (fx < 0.03 || fx > 0.97 || fy < 0.03 || fy > 0.97) {
+                ctx.fillStyle = "#006600"; ctx.fillRect(i, h/2 - wallH/2, 1, wallH);
+            }
         }
-        let tgts = [...bots]; if(gameMode === 'pvp' || gameMode === '5v2') tgts.push(p === p1 ? p2 : p1);
-        tgts.forEach(t => {
-            let dx = t.x - p.x, dy = t.y - p.y, dist = Math.hypot(dx, dy), ang = Math.atan2(dy, dx) - p.dir;
-            while(ang < -Math.PI) ang += Math.PI*2; while(ang > Math.PI) ang -= Math.PI*2;
-            if(Math.abs(ang) < 0.8) {
-                let sx = (ang / 1.2 + 0.5) * w, sh = h / dist;
-                if(dist < zBuf[Math.floor(sx)]) { ctx.fillStyle = (t.role === 'tagger' || (t.s && !t.role)) ? "#f00" : "#0f0"; ctx.fillRect(sx - sh/8, h/2 - sh/2, sh/4, sh); }
+        let targets = [...bots];
+        if(gameMode === 'pvp' || gameMode === '5v2') targets.push(p === p1 ? p2 : p1);
+        targets.forEach(t => {
+            let dx = t.x - p.x, dy = t.y - p.y, dist = Math.hypot(dx, dy);
+            let angle = Math.atan2(dy, dx) - p.dir;
+            while(angle < -Math.PI) angle += Math.PI*2; while(angle > Math.PI) angle -= Math.PI*2;
+            if(Math.abs(angle) < 0.8) {
+                let sx = (angle / 1.2 + 0.5) * w, sh = h / dist;
+                if(dist < zBuf[Math.floor(sx)]) {
+                    ctx.fillStyle = (t.role === 'tagger' || (t.s && !t.role)) ? "#f00" : "#0f0";
+                    ctx.fillRect(sx - sh/8, h/2 - sh/2, sh/4, sh);
+                }
             }
         });
     }
 
     function loop() {
         if(!active) return;
-        if (gameMode.startsWith('bot')) movePlayer(p1, 0.05, 0.06, 'KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
-        else { movePlayer(p1, 0.05, 0.06, 'KeyW', 'KeyS', 'KeyA', 'KeyD'); movePlayer(p2, 0.05, 0.06, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'); }
+        
+        // P1 always has Dual Controls in Solo, WASD in Coop/PvP
+        if (gameMode.startsWith('bot')) {
+            movePlayer(p1, 0.05, 0.06, 'KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
+        } else {
+            movePlayer(p1, 0.05, 0.06, 'KeyW', 'KeyS', 'KeyA', 'KeyD');
+            // FIX: Explicitly passing P2 keys and preventing character sliding
+            movePlayer(p2, 0.05, 0.06, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
+        }
         
         bots.forEach(b => {
-            let target = (gameMode === '5v2' && Math.hypot(p2.x-b.x, p2.y-b.y) < Math.hypot(p1.x-b.x, p1.y-b.y)) ? p2 : p1;
-            if(Math.hypot(target.x-b.x, target.y-b.y) < 0.5) {
-                if(b.role === 'tagger') { active = false; alert("TAGGED!"); location.reload(); }
-                if(p1.role === 'tagger' && b.role === 'runner') { active = false; alert("YOU CAUGHT THE BOT!"); location.reload(); }
-                target.hp -= 0.5; if(target.hp <= 0) { active = false; alert("INTEGRITY LOST"); location.reload(); }
+            let target;
+            if(gameMode === 'bot_tag') {
+                target = p1; 
+                if(b.role === 'runner' && Math.hypot(p1.x-b.x, p1.y-b.y) < 0.5) { 
+                    active = false; alert("YOU TAGGED THE BOT! VICTORY"); location.reload(); 
+                }
             } else {
-                let n = getNextStep(b.x, b.y, target.x, target.y);
-                let dx = n.x-b.x, dy = n.y-b.y, d = Math.hypot(dx,dy);
-                if(d > 0.01) { b.x += (dx/d)*b.s; b.y += (dy/d)*b.s; }
+                let d1 = Math.hypot(p1.x-b.x, p1.y-b.y);
+                let d2 = (gameMode==='pvp' || gameMode==='5v2') ? Math.hypot(p2.x-b.x, p2.y-b.y) : 999;
+                target = d1 < d2 ? p1 : p2;
+            }
+
+            if(Math.hypot(target.x-b.x, target.y-b.y) < 0.5) { 
+                if(b.role === 'tagger') { active = false; alert("TAGGED BY ELITE BOT!"); location.reload(); }
+                target.hp -= 0.5; 
+                if(target.hp <= 0) { active = false; alert("INTEGRITY LOST"); location.reload(); }
+            } else {
+                let next = getNextStep(b.x, b.y, target.x, target.y);
+                let dx = next.x-b.x, dy = next.y-b.y, dist = Math.hypot(dx,dy);
+                if(dist > 0.01) { b.x += (dx/dist)*b.s; b.y += (dy/dist)*b.s; }
             }
         });
-        if(gameMode === 'pvp' && Math.hypot(p1.x - p2.x, p1.y - p2.y) < 0.5) { active = false; alert("TAGGED!"); location.reload(); }
-        render(ctx1, p1, p1c); if(gameMode === 'pvp' || gameMode === '5v2') render(ctx2, p2, p2c);
+
+        if(gameMode === 'pvp' && Math.hypot(p1.x - p2.x, p1.y - p2.y) < 0.5) {
+            active = false;
+            let winner = p1.role === 'tagger' ? "P1" : "P2";
+            alert(`TAGGED! ${winner} WINS`); location.reload();
+        }
+
+        render(ctx1, p1, p1c);
+        if(gameMode === 'pvp' || gameMode === '5v2') render(ctx2, p2, p2c);
+        
         document.getElementById('p1hp').innerText = Math.floor(p1.hp);
-        if(gameMode === 'pvp' || gameMode === '5v2') document.getElementById('p2hp').innerText = Math.floor(p2.hp);
-        mCtx.clearRect(0,0,110,110); let s = 110/SIZE;
+        if(document.getElementById('p2-stats').style.display !== 'none') {
+            document.getElementById('p2hp').innerText = Math.floor(p2.hp);
+        }
+        
+        mCtx.clearRect(0,0,110,110);
+        let s = 110/SIZE;
         for(let y=0; y<SIZE; y++) for(let x=0; x<SIZE; x++) if(world[y][x]) { mCtx.fillStyle="#002200"; mCtx.fillRect(x*s,y*s,s,s); }
-        mCtx.fillStyle="#0f0"; mCtx.fillRect(p1.x*s-1, p1.y*s-1, 2, 2);
-        if(p2c.style.display !== 'none') { mCtx.fillStyle=(p2.role==='tagger'?"#f00":"#0f0"); mCtx.fillRect(p2.x*s-1, p2.y*s-1, 2, 2); }
-        bots.forEach(b => { mCtx.fillStyle=(b.role==='runner'?"#0f0":"#f00"); mCtx.fillRect(b.x*s-1, b.y*s-1, 2, 2); });
+        mCtx.fillStyle="#00ff00"; mCtx.fillRect(p1.x*s-1.5, p1.y*s-1.5, 3, 3);
+        if(gameMode === 'pvp' || gameMode === '5v2') { mCtx.fillStyle=(p2.role==='tagger'?"#f00":"#0f0"); mCtx.fillRect(p2.x*s-1.5, p2.y*s-1.5, 3, 3); }
+        bots.forEach(b => { mCtx.fillStyle=(b.role==='runner'?"#0f0":"#f00"); mCtx.fillRect(b.x*s-1.5, b.y*s-1.5, 3, 3); });
         requestAnimationFrame(loop);
     }
-    function resize() { p1c.width = p1c.clientWidth; p1c.height = p1c.clientHeight; p2c.width = p2c.clientWidth; p2c.height = p2c.clientHeight; }
 </script>
 </body>
 </html>
