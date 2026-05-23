@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON_PONG | v4.0_OVERLOAD</title>
+    <title>NEON_PONG | v4.0_OPEN</title>
     <style>
         :root { 
             --neon: #0f0; --alpha: #0ff; --neon-p: #f0f; --king: #ff3333;
@@ -22,20 +22,6 @@
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
                         linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
             background-size: 100% 3px, 3px 100%; z-index: 100;
-        }
-
-        /* --- AUTH SCREEN --- */
-        #auth-screen {
-            position: fixed; inset: 0; background: #000; z-index: 1000;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .auth-box { 
-            border: 1px solid var(--neon); padding: 40px; width: 320px; 
-            text-align: center; box-shadow: 0 0 30px rgba(0,255,0,0.1);
-        }
-        input { 
-            width: 100%; padding: 12px; margin: 10px 0; background: #000; 
-            border: 1px solid #333; color: var(--neon); text-align: center;
         }
 
         /* --- GAME UI --- */
@@ -72,22 +58,11 @@
 </head>
 <body>
 
-    <div id="auth-screen">
-        <div class="auth-box">
-            <h2 style="letter-spacing: 5px;">NEBULA_LOGIN</h2>
-            <input type="text" id="user-in" placeholder="USERNAME">
-            <input type="password" id="pin-in" placeholder="PIN">
-            <button onclick="System.login()">ACCESS SYSTEM</button>
-            <div id="auth-err" style="color:red; font-size:10px; margin-top:10px;"></div>
-            <button onclick="System.register()" style="background:none; color:var(--alpha); margin-top:10px; font-size:10px; border:1px solid var(--alpha)">+ CREATE USER</button>
-        </div>
-    </div>
-
     <div id="ui">
         <span id="s1" style="color:var(--alpha)">0</span> : <span id="s2" style="color:var(--neon-p)">0</span>
     </div>
 
-    <div id="menu" class="menu" style="display:none;">
+    <div id="menu" class="menu">
         <h1>SYSTEM_OVERLOAD_v4</h1>
         <div class="config-grid">
             <div class="panel">
@@ -110,73 +85,24 @@
             </div>
         </div>
         <button onclick="Core.init()">INITIALIZE SYSTEM</button>
-        <div id="admin-trigger" style="margin-top:10px; color:#333; cursor:pointer;" onclick="System.toggleAdmin()">[ADMIN_TOOLS]</div>
+        <div id="admin-trigger" style="margin-top:10px; color:red; cursor:pointer;" onclick="System.toggleAdmin()">[ADMIN_TOOLS]</div>
     </div>
 
     <canvas id="pong" width="1200" height="600"></canvas>
 
     <div id="admin-panel">
-        <div style="color:red; font-weight:bold;">MASTER_REGISTRY</div>
-        <table class="admin-table" id="reg-data"></table>
+        <div style="color:red; font-weight:bold;">MASTER_REGISTRY (BYPASSED)</div>
+        <p>Login system disabled. All permissions active.</p>
     </div>
 
 <script>
-    const _K = "MTIzNA=="; // Base64 for 1234
-    
+    // Simplified System Object
     const System = {
-        currentUser: null,
-        registry: JSON.parse(localStorage.getItem('nebula_reg') || '{"admin":{"pin":"1234","role":"admin","banned":false}}'),
-
-        login() {
-            const u = document.getElementById('user-in').value.toLowerCase();
-            const p = document.getElementById('pin-in').value;
-            const err = document.getElementById('auth-err');
-            
-            if(this.registry[u]) {
-                if(this.registry[u].banned) return err.innerText = "ACCOUNT_SUSPENDED";
-                if(this.registry[u].pin === p) {
-                    this.currentUser = u;
-                    document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('menu').style.display = 'block';
-                    if(this.registry[u].role === 'admin') document.getElementById('admin-trigger').style.color = 'red';
-                } else err.innerText = "INVALID_PIN";
-            } else err.innerText = "USER_NOT_FOUND";
-        },
-
-        register() {
-            const u = prompt("Username:").toLowerCase();
-            const p = prompt("4-Digit PIN:");
-            if(u && p.length === 4) {
-                this.registry[u] = { pin: p, role: 'user', banned: false };
-                localStorage.setItem('nebula_reg', JSON.stringify(this.registry));
-                alert("Account Created.");
-            }
-        },
-
+        currentUser: 'admin',
+        
         toggleAdmin() {
-            if(this.registry[this.currentUser].role !== 'admin') return;
             const panel = document.getElementById('admin-panel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            this.refreshRegistry();
-        },
-
-        refreshRegistry() {
-            const table = document.getElementById('reg-data');
-            table.innerHTML = `<tr><td>USER</td><td>PIN</td><td>ACT</td></tr>`;
-            for(let u in this.registry) {
-                table.innerHTML += `<tr>
-                    <td>${u}</td>
-                    <td>${this.registry[u].pin}</td>
-                    <td><button onclick="System.ban('${u}')">${this.registry[u].banned?'UNBAN':'BAN'}</button></td>
-                </tr>`;
-            }
-        },
-
-        ban(u) {
-            if(u === 'admin') return;
-            this.registry[u].banned = !this.registry[u].banned;
-            localStorage.setItem('nebula_reg', JSON.stringify(this.registry));
-            this.refreshRegistry();
         }
     };
 
@@ -195,7 +121,7 @@
         PLAYER: { speed: 13, jitter: 0, color: '#fff', h: 80, predict: false }
     };
 
-    // Populate Menus (Allows duplicates)
+    // Populate Menus
     document.querySelectorAll('.bot-opt').forEach(sel => {
         Object.keys(BOT_TYPES).forEach(k => { if(k!=='KING') sel.add(new Option(k+(k==='PLAYER'?'_USER':'_BOT'), k)); });
         if(sel.id.includes('2')) { sel.prepend(new Option("--EMPTY--", "NONE")); sel.value = "NONE"; }
@@ -255,7 +181,6 @@
         predict(u, b) {
             if(!BOT_TYPES[u.type].predict) return b.y;
             if((u.side==='L' && b.vx>0) || (u.side==='R' && b.vx<0)) {
-                // Team Guard Positions
                 return u.id.includes('0') ? 200 : 400;
             }
             let tx = b.x, ty = b.y, tvy = b.vy;
@@ -268,7 +193,6 @@
 
         update() {
             frame++;
-            // Starfield
             if(frame % 3 === 0) particles.push({x:1200, y:Math.random()*600, vx:-2, vy:0, life:1, star:true});
 
             units.forEach(u => {
