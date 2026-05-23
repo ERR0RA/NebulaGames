@@ -46,6 +46,7 @@
       color: var(--text);
       cursor: none;
       transition: background .35s ease;
+      padding-bottom: 100px;
     }
 
     body::before {
@@ -396,6 +397,14 @@
     }
     .t-btn:hover { transform: scale(1.2); border-color: #fff; }
 
+    .credits {
+        text-align: center;
+        font-size: 0.8rem;
+        opacity: 0.5;
+        padding: 20px;
+        color: var(--muted);
+    }
+
     @media (max-width: 700px) {
       body { cursor: auto; }
       .cursor-dot, .cursor-ring { display: none; }
@@ -428,6 +437,8 @@
   </div>
 
   <div id="gameGrid" class="link-container"></div>
+
+  <p class="credits">These games are made using humans and AI. ALL rights reserved to DC, ERR0R, and AK.</p>
 
   <div id="loginModal" class="modal-overlay">
     <div class="login-card">
@@ -489,7 +500,6 @@
       { name: "Turbo Horizon", url: "turbohorizon.html", tag: "" },
       { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
     ];
-<p>These games, are made using humans and AI. ALL rights are reserved to mainly DC or ERR0R,and AK.</p>
 
     const glitchWords = ["NEBULA", "PLAY", "CLOUD", "SYNC", "VOID", "ARCADE", "SIGNAL", "GLITCH", "ONLINE", "LEVEL"];
 
