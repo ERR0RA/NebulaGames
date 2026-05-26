@@ -1,169 +1,258 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>NEON_SLAMS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CORE CRASH: Physics Arena</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        canvas { border: 2px solid #004400; background: radial-gradient(circle, #050505 0%, #000 70%); border-radius: 50%; box-shadow: 0 0 30px #002200; }
-        #ui { margin-bottom: 20px; text-align: center; }
-        .controls { color: #555; font-size: 0.8rem; margin-top: 5px; }
-        #msg { position: absolute; font-size: 3rem; font-weight: bold; text-shadow: 0 0 20px #0f0; pointer-events: none; display: none; z-index: 10; }
-        .bot-toggle { margin-top: 10px; color: #f00; font-size: 0.9rem; cursor: pointer; }
-        input[type="checkbox"] { cursor: pointer; accent-color: #f00; }
+        body {
+            margin: 0; background: #08080a; color: #fff;
+            font-family: 'Courier New', Courier, monospace; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
+        }
+        #ui {
+            position: absolute; z-index: 10; text-align: center;
+            background: rgba(0,0,0,0.9); padding: 30px; border: 2px solid #333;
+        }
+        button {
+            display: block; width: 280px; margin: 10px auto; padding: 15px;
+            background: #111; color: #0f0; border: 1px solid #0f0;
+            cursor: pointer; font-weight: bold; text-transform: uppercase;
+        }
+        button:hover { background: #0f0; color: #000; box-shadow: 0 0 20px #0f0; }
+        canvas { background: #000; touch-action: none; display: none; }
+        .stats { position: absolute; top: 10px; font-size: 1.2rem; color: #0f0; pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div id="ui">
-        <h1>NEON_SLAMS</h1>
-        <div id="score">P1: 0 | P2: 0</div>
-        <div class="controls">P1: [W] | P2: [UP]</div>
-        <div class="bot-toggle">
-            <input type="checkbox" id="botActive"> ENABLE P2_BOT
-        </div>
+        <h1 style="color: #0f0; text-shadow: 0 0 10px #0f0;">CORE CRASH</h1>
+        <button onclick="start('P_VS_B')">1 Player vs Bot</button>
+        <button onclick="start('P_VS_P')">Player vs Player (Local)</button>
+        <button onclick="start('2P_VS_B')">2 Player Co-op vs Bot</button>
+        <button onclick="start('B_VS_B')">Spectate: Bot vs Bot</button>
     </div>
 
-    <div id="msg">WINNER!</div>
-    <canvas id="arena" width="500" height="500"></canvas>
+    <div id="hud" class="stats"></div>
+    <canvas id="game"></canvas>
 
 <script>
-    const canvas = document.getElementById('arena');
+    const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const scoreUI = document.getElementById('score');
-    const msg = document.getElementById('msg');
-    const botCheckbox = document.getElementById('botActive');
+    const ui = document.getElementById('ui');
+    const hud = document.getElementById('hud');
 
-    let score = { p1: 0, p2: 0 };
-    let p1, p2, gameActive = true;
-    const friction = 0.97;
-    const arenaRadius = 240;
-    const centerX = 250;
-    const centerY = 250;
+    let mode = '';
+    let arenaRadius = 350;
+    let players = [];
+    let particles = [];
+    let shake = 0;
+    const keys = {};
 
-    // Bot specific variables
-    let botTargetCharge = 10;
+    window.onkeydown = e => keys[e.code] = true;
+    window.onkeyup = e => keys[e.code] = false;
 
-    function reset() {
-        p1 = { x: 180, y: 250, vx: 0, vy: 0, radius: 20, color: '#0f0', charge: 0, charging: false };
-        p2 = { x: 320, y: 250, vx: 0, vy: 0, radius: 20, color: '#f00', charge: 0, charging: false };
-        msg.style.display = 'none';
-        gameActive = true;
-        botTargetCharge = 5 + Math.random() * 10;
+    function start(m) {
+        mode = m;
+        ui.style.display = 'none';
+        canvas.style.display = 'block';
+        resize();
+        spawn();
+        loop();
     }
 
-    window.addEventListener('keydown', e => {
-        if (e.code === 'KeyW') p1.charging = true;
-        if (e.code === 'ArrowUp' && !botCheckbox.checked) p2.charging = true;
-    });
-
-    window.addEventListener('keyup', e => {
-        if (e.code === 'KeyW') { launch(p1, p2); p1.charging = false; }
-        if (e.code === 'ArrowUp' && !botCheckbox.checked) { launch(p2, p1); p2.charging = false; }
-    });
-
-    function launch(p, target) {
-        let dx = target.x - p.x;
-        let dy = target.y - p.y;
-        let dist = Math.hypot(dx, dy);
-        let power = Math.min(p.charge, 15);
-        p.vx = (dx / dist) * power;
-        p.vy = (dy / dist) * power;
-        p.charge = 0;
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        arenaRadius = Math.min(canvas.width, canvas.height) * 0.45;
     }
 
-    function update() {
-        if (!gameActive) return;
+    class Orb {
+        constructor(x, y, color, type, id) {
+            this.x = x; this.y = y; this.r = 25;
+            this.vx = 0; this.vy = 0;
+            this.color = color; this.type = type; this.id = id;
+            this.alive = true;
+            this.speed = 0.6;
+            this.friction = 0.96;
+        }
 
-        // Bot Logic
-        if (botCheckbox.checked) {
-            // Bot starts charging if not moving fast and P1 is in the arena
-            if (Math.hypot(p2.vx, p2.vy) < 0.5) {
-                p2.charging = true;
+        update() {
+            if (!this.alive) return;
+
+            // Control Logic
+            if (this.type === 'mouse') {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist > 5) {
+                    this.vx += (dx / dist) * this.speed;
+                    this.vy += (dy / dist) * this.speed;
+                }
+            } else if (this.type === 'keys') {
+                if (keys['ArrowUp'] || keys['KeyW']) this.vy -= this.speed;
+                if (keys['ArrowDown'] || keys['KeyS']) this.vy += this.speed;
+                if (keys['ArrowLeft'] || keys['KeyA']) this.vx -= this.speed;
+                if (keys['ArrowRight'] || keys['KeyD']) this.vx += this.speed;
+            } else if (this.type === 'bot') {
+                // Bot targets the nearest alive opponent
+                let target = players.find(p => p !== this && p.alive);
+                if (target) {
+                    let dx = target.x - this.x;
+                    let dy = target.y - this.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    this.vx += (dx / dist) * (this.speed * 0.8);
+                    this.vy += (dy / dist) * (this.speed * 0.8);
+                }
             }
-            
-            // Bot launches once it hits its random target charge
-            if (p2.charge >= botTargetCharge) {
-                launch(p2, p1);
-                p2.charging = false;
-                botTargetCharge = 5 + Math.random() * 10; // Reset next target power
+
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // Check if out of arena
+            let distFromCenter = Math.sqrt((this.x - canvas.width/2)**2 + (this.y - canvas.height/2)**2);
+            if (distFromCenter > arenaRadius) {
+                this.alive = false;
+                createExplosion(this.x, this.y, this.color);
+                checkGameOver();
             }
         }
 
-        [p1, p2].forEach(p => {
-            if (p.charging) p.charge += 0.4;
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vx *= friction;
-            p.vy *= friction;
+        draw() {
+            if (!this.alive) return;
+            ctx.shadowBlur = 15; ctx.shadowColor = this.color;
+            ctx.fillStyle = this.color;
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.fill();
+            
+            // Directional Eye
+            ctx.fillStyle = "#fff";
+            let angle = Math.atan2(this.vy, this.vx);
+            ctx.beginPath();
+            ctx.arc(this.x + Math.cos(angle)*10, this.y + Math.sin(angle)*10, 5, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
 
-            // Arena Out Check
-            let distFromCenter = Math.hypot(p.x - centerX, p.y - centerY);
-            if (distFromCenter > arenaRadius) {
-                gameActive = false;
-                if (p === p1) score.p2++; else score.p1++;
-                showWin(p === p1 ? "PLAYER 2" : "PLAYER 1");
-            }
-        });
+    const mouse = { x: 0, y: 0 };
+    canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    canvas.addEventListener('touchmove', e => { 
+        mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; 
+        e.preventDefault(); 
+    }, {passive: false});
 
-        // Circle Collision
+    function spawn() {
+        players = [];
+        const cx = canvas.width/2;
+        const cy = canvas.height/2;
+
+        if (mode === 'P_VS_B') {
+            players.push(new Orb(cx - 100, cy, '#0f0', 'mouse', 'P1'));
+            players.push(new Orb(cx + 100, cy, '#f00', 'bot', 'CPU'));
+        } else if (mode === 'P_VS_P') {
+            players.push(new Orb(cx - 100, cy, '#0f0', 'mouse', 'P1'));
+            players.push(new Orb(cx + 100, cy, '#0af', 'keys', 'P2'));
+        } else if (mode === '2P_VS_B') {
+            players.push(new Orb(cx - 100, cy + 50, '#0f0', 'mouse', 'P1'));
+            players.push(new Orb(cx - 100, cy - 50, '#0af', 'keys', 'P2'));
+            players.push(new Orb(cx + 150, cy, '#f00', 'bot', 'BOSS'));
+            players[2].r = 40; // Boss is bigger
+            players[2].speed = 1.1;
+        } else {
+            players.push(new Orb(cx - 100, cy, '#0f0', 'bot', 'CPU 1'));
+            players.push(new Orb(cx + 100, cy, '#f00', 'bot', 'CPU 2'));
+        }
+    }
+
+    function createExplosion(x, y, color) {
+        for(let i=0; i<20; i++) {
+            particles.push({
+                x, y, 
+                vx: (Math.random()-0.5)*10, 
+                vy: (Math.random()-0.5)*10, 
+                life: 1, color
+            });
+        }
+        shake = 20;
+    }
+
+    function resolveCollision(p1, p2) {
         let dx = p2.x - p1.x;
         let dy = p2.y - p1.y;
-        let dist = Math.hypot(dx, dy);
-        if (dist < p1.radius + p2.radius) {
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < p1.r + p2.r) {
             let angle = Math.atan2(dy, dx);
-            let force = 2.5; 
-            p1.vx -= Math.cos(angle) * force;
-            p1.vy -= Math.sin(angle) * force;
-            p2.vx += Math.cos(angle) * force;
-            p2.vy += Math.sin(angle) * force;
+            let force = 1.5;
+            
+            // Push them apart (Anti-phasing)
+            let overlap = (p1.r + p2.r) - dist;
+            p1.x -= Math.cos(angle) * (overlap/2);
+            p1.y -= Math.sin(angle) * (overlap/2);
+            p2.x += Math.cos(angle) * (overlap/2);
+            p2.y += Math.sin(angle) * (overlap/2);
+
+            // Transfer velocity
+            let v1 = Math.sqrt(p1.vx**2 + p1.vy**2);
+            let v2 = Math.sqrt(p2.vx**2 + p2.vy**2);
+            
+            p1.vx -= Math.cos(angle) * (v2 + force);
+            p1.vy -= Math.sin(angle) * (v2 + force);
+            p2.vx += Math.cos(angle) * (v1 + force);
+            p2.vy += Math.sin(angle) * (v1 + force);
+            
+            shake = (v1 + v2) * 2;
         }
     }
 
-    function showWin(txt) {
-        msg.innerText = txt + " SLAM!";
-        msg.style.display = 'block';
-        scoreUI.innerText = `P1: ${score.p1} | P2: ${score.p2}`;
-        setTimeout(reset, 2000);
-    }
+    function loop() {
+        // Arena Shrink
+        if (arenaRadius > 100) arenaRadius -= 0.05;
 
-    function draw() {
-        ctx.clearRect(0, 0, 500, 500);
+        // Screenshake
+        ctx.setTransform(1, 0, 0, 1, (Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+        shake *= 0.9;
 
-        // Arena Border
-        ctx.strokeStyle = '#004400';
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, arenaRadius, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.fillStyle = '#08080a';
+        ctx.fillRect(-100, -100, canvas.width+200, canvas.height+200);
 
-        [p1, p2].forEach(p => {
-            // Charge Meter
-            if (p.charging) {
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius + 5, 0, Math.min((p.charge / 15), 1) * Math.PI * 2);
-                ctx.stroke();
+        // Draw Arena
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height/2, arenaRadius, 0, Math.PI*2); ctx.stroke();
+        ctx.strokeStyle = '#0f0'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height/2, arenaRadius + 5, 0, Math.PI*2); ctx.stroke();
+
+        // Particles
+        particles.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+            ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+            ctx.fillRect(p.x, p.y, 4, 4);
+            if (p.life <= 0) particles.splice(i, 1);
+        });
+        ctx.globalAlpha = 1;
+
+        // Players
+        for (let i = 0; i < players.length; i++) {
+            for (let j = i + 1; j < players.length; j++) {
+                if (players[i].alive && players[j].alive) resolveCollision(players[i], players[j]);
             }
+        }
 
-            // Player
-            ctx.fillStyle = p.color;
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = p.color;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        });
+        players.forEach(p => { p.update(); p.draw(); });
 
-        requestAnimationFrame(() => {
-            update();
-            draw();
-        });
+        requestAnimationFrame(loop);
     }
 
-    reset();
-    draw();
+    function checkGameOver() {
+        let alive = players.filter(p => p.alive);
+        if (alive.length <= 1) {
+            setTimeout(() => {
+                alert(alive.length === 1 ? alive[0].id + " WINS!" : "DRAW!");
+                location.reload();
+            }, 500);
+        }
+    }
 </script>
 </body>
 </html>
