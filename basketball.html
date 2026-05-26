@@ -3,21 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA B-BALL: PRO EDITION</title>
+    <title>NEBULA B-BALL: MULTIVERSE</title>
     <style>
         body { margin: 0; background: #020205; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; color: white; font-family: 'Arial Black', sans-serif; }
-        canvas { border: 4px solid #1a1a3a; border-radius: 12px; box-shadow: 0 0 100px rgba(0, 210, 255, 0.2); }
-        #ui { position: absolute; top: 30px; display: flex; justify-content: space-between; width: 800px; pointer-events: none; z-index: 10; }
+        canvas { border: 4px solid #1a1a3a; border-radius: 12px; box-shadow: 0 0 100px rgba(0, 210, 255, 0.2); display: none; }
+        #ui { position: absolute; top: 30px; display: none; justify-content: space-between; width: 800px; pointer-events: none; z-index: 10; }
         .score { font-size: 80px; font-weight: 900; text-shadow: 0 0 30px currentColor; font-style: italic; }
-        #msg { position: absolute; top: 40%; width: 100%; text-align: center; font-size: 100px; color: #fff; text-shadow: 0 0 50px #0ff; display: none; pointer-events: none; }
+        #msg { position: absolute; top: 40%; width: 100%; text-align: center; font-size: 100px; color: #fff; text-shadow: 0 0 50px #0ff; display: none; pointer-events: none; z-index: 20; }
+        
+        /* Menu Styles */
+        #menu { position: absolute; text-align: center; background: rgba(10, 10, 30, 0.9); padding: 40px; border: 2px solid #00d2ff; border-radius: 20px; box-shadow: 0 0 50px #00d2ff55; z-index: 30; }
+        h1 { margin-top: 0; color: #00d2ff; letter-spacing: 5px; }
+        .btn { display: block; width: 300px; padding: 15px; margin: 10px auto; background: transparent; border: 2px solid #fff; color: #fff; font-family: 'Arial Black'; cursor: pointer; transition: 0.3s; border-radius: 5px; }
+        .btn:hover { background: #fff; color: #000; transform: scale(1.05); }
+        .controls { font-size: 12px; color: #888; margin-top: 20px; line-height: 1.5; }
     </style>
 </head>
 <body>
+    <div id="menu">
+        <h1>NEBULA B-BALL</h1>
+        <button class="btn" onclick="startGame('P1_VS_BOT')">1 PLAYER (VS BOT)</button>
+        <button class="btn" onclick="startGame('P1_VS_P2')">2 PLAYERS (LOCAL)</button>
+        <button class="btn" onclick="startGame('BOT_VS_BOT')">BOT VS BOT (SPECTATE)</button>
+        <div class="controls">
+            P1: WASD / ARROWS<br>
+            P2: IJKL (Local 2P Mode)
+        </div>
+    </div>
+
     <div id="ui">
         <div id="s1" class="score" style="color: #ff3e3e">0</div>
         <div id="s2" class="score" style="color: #00d2ff">0</div>
     </div>
-    <div id="msg">SLAM DUNK!</div>
+    <div id="msg">GOAL!</div>
     <canvas id="court"></canvas>
 
 <script>
@@ -25,6 +43,7 @@
     const ctx = canvas.getContext('2d');
     canvas.width = 1000; canvas.height = 600;
 
+    let gameActive = false;
     let screenShake = 0;
     const particles = [];
     const stars = Array.from({length: 100}, () => ({x: Math.random()*1000, y: Math.random()*600, s: Math.random()*2}));
@@ -35,6 +54,7 @@
     const FLOOR_Y = 540;
 
     let score1 = 0, score2 = 0;
+    const keys = {};
 
     const ball = { 
         x: 500, y: 150, vx: 5, vy: 0, r: 14, trail: [],
@@ -45,10 +65,10 @@
     };
 
     class Player {
-        constructor(x, color, team, isPlayer) {
+        constructor(x, color, team, controlType) {
             this.x = x; this.y = 400; this.vx = 0; this.vy = 0;
             this.w = 45; this.h = 90; this.color = color; this.team = team;
-            this.isPlayer = isPlayer;
+            this.controlType = controlType; // 'p1', 'p2', or 'bot'
             this.grounded = false;
             this.moveSpeed = 1.3;
             this.maxSpeed = 9;
@@ -57,20 +77,30 @@
         }
 
         update() {
-            if (this.isPlayer) {
-                const left = keys['KeyA'] || keys['ArrowLeft'];
-                const right = keys['KeyD'] || keys['ArrowRight'];
-                const jump = keys['KeyW'] || keys['ArrowUp'] || keys['Space'];
+            let left, right, jump;
 
+            if (this.controlType === 'p1') {
+                left = keys['KeyA'] || keys['ArrowLeft'];
+                right = keys['KeyD'] || keys['ArrowRight'];
+                jump = keys['KeyW'] || keys['ArrowUp'] || keys['Space'];
+            } else if (this.controlType === 'p2') {
+                left = keys['KeyJ'];
+                right = keys['KeyL'];
+                jump = keys['KeyI'];
+            } else if (this.controlType === 'bot') {
+                // AI Logic
+                let targetX = ball.x - (this.team === 1 ? -40 : 40); 
+                this.vx += Math.sign(targetX - this.x) * 0.75;
+                if (Math.abs(ball.x - this.x) < 100 && ball.y < this.y - 20 && this.grounded) {
+                    this.vy = this.jumpForce;
+                }
+            }
+
+            if (this.controlType !== 'bot') {
                 if (left) this.vx -= this.moveSpeed;
                 else if (right) this.vx += this.moveSpeed;
                 else this.vx *= 0.82;
-
                 if (jump && this.grounded) { this.vy = this.jumpForce; this.grounded = false; screenShake = 4; }
-            } else {
-                let targetX = ball.x - (this.team === 1 ? -40 : 40); 
-                this.vx += Math.sign(targetX - this.x) * 0.75;
-                if (Math.abs(ball.x - this.x) < 100 && ball.y < this.y - 20 && this.grounded) this.vy = this.jumpForce;
             }
 
             this.vx = Math.max(-this.maxSpeed, Math.min(this.maxSpeed, this.vx));
@@ -101,41 +131,45 @@
         draw() {
             ctx.save();
             ctx.translate(this.x + this.w/2, this.y + this.h/2);
-            ctx.rotate(this.vx * 0.03); // Lean into movement
-
-            // Shadow/Glow
+            ctx.rotate(this.vx * 0.03);
             ctx.shadowBlur = 20; ctx.shadowColor = this.color;
-
-            // Body (Jersey)
             ctx.fillStyle = this.color;
-            ctx.fillRect(-this.w/2, -15, this.w, 40);
-
-            // Head
-            ctx.fillStyle = "#ffdbac"; // Skin tone
-            ctx.beginPath();
-            ctx.arc(0, -35, 18, 0, Math.PI*2);
-            ctx.fill();
-
-            // Legs (Animating)
+            ctx.fillRect(-this.w/2, -15, this.w, 40); // Body
+            ctx.fillStyle = "#ffdbac";
+            ctx.beginPath(); ctx.arc(0, -35, 18, 0, Math.PI*2); ctx.fill(); // Head
             ctx.fillStyle = "#222";
-            let legMove = this.grounded ? Math.sin(this.animTimer) * 15 : 10;
-            ctx.fillRect(-this.w/2, 25, 15, 20 + (this.grounded ? 0 : -10)); // Left Leg
-            ctx.fillRect(this.w/2 - 15, 25, 15, 20 + (this.grounded ? 0 : -10)); // Right Leg
-
-            // Team Number
+            ctx.fillRect(-this.w/2, 25, 15, 20); // Legs
+            ctx.fillRect(this.w/2 - 15, 25, 15, 20);
             ctx.fillStyle = "white";
-            ctx.font = "bold 15px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(this.team, 0, 10);
-
+            ctx.font = "bold 15px Arial"; ctx.textAlign = "center";
+            ctx.fillText(this.controlType.toUpperCase(), 0, 10);
             ctx.restore();
             ctx.shadowBlur = 0;
         }
     }
 
-    const t1 = new Player(150, '#ff3e3e', 1, true);
-    const t2 = new Player(800, '#00d2ff', 2, false);
-    const keys = {};
+    let t1, t2;
+
+    function startGame(mode) {
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('ui').style.display = 'flex';
+        canvas.style.display = 'block';
+        
+        if (mode === 'P1_VS_BOT') {
+            t1 = new Player(150, '#ff3e3e', 1, 'p1');
+            t2 = new Player(800, '#00d2ff', 2, 'bot');
+        } else if (mode === 'P1_VS_P2') {
+            t1 = new Player(150, '#ff3e3e', 1, 'p1');
+            t2 = new Player(800, '#00d2ff', 2, 'p2');
+        } else if (mode === 'BOT_VS_BOT') {
+            t1 = new Player(150, '#ff3e3e', 1, 'bot');
+            t2 = new Player(800, '#00d2ff', 2, 'bot');
+        }
+        
+        gameActive = true;
+        loop();
+    }
+
     window.onkeydown = e => keys[e.code] = true;
     window.onkeyup = e => keys[e.code] = false;
 
@@ -149,39 +183,23 @@
     }
 
     function drawBackground() {
-        // Deep Space Gradient
         let grad = ctx.createRadialGradient(500, 300, 50, 500, 300, 600);
-        grad.addColorStop(0, "#0a0a25");
-        grad.addColorStop(1, "#020205");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Stars
-        ctx.fillStyle = "white";
-        stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
-
-        // Floor (Neon Grid)
-        ctx.fillStyle = "#050510";
-        ctx.fillRect(0, FLOOR_Y, canvas.width, 60);
-        ctx.strokeStyle = "#4444ff";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, FLOOR_Y); ctx.lineTo(canvas.width, FLOOR_Y);
-        ctx.stroke();
-        
-        // Grid lines for depth
+        grad.addColorStop(0, "#0a0a25"); grad.addColorStop(1, "#020205");
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white"; stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
+        ctx.fillStyle = "#050510"; ctx.fillRect(0, FLOOR_Y, canvas.width, 60);
+        ctx.strokeStyle = "#4444ff"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, FLOOR_Y); ctx.lineTo(canvas.width, FLOOR_Y); ctx.stroke();
         ctx.globalAlpha = 0.2;
         for(let i=0; i<canvas.width; i+=50) {
-            ctx.beginPath();
-            ctx.moveTo(i, FLOOR_Y);
-            ctx.lineTo(i + (i-500)*0.5, canvas.height);
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(i, FLOOR_Y); ctx.lineTo(i + (i-500)*0.5, canvas.height); ctx.stroke();
         }
         ctx.globalAlpha = 1;
     }
 
     function loop() {
-        // Shake
+        if (!gameActive) return;
+
         let sx = (Math.random()-0.5)*screenShake;
         let sy = (Math.random()-0.5)*screenShake;
         ctx.setTransform(1, 0, 0, 1, sx, sy);
@@ -190,10 +208,8 @@
         drawBackground();
 
         // Platform
-        ctx.fillStyle = "rgba(255,255,255,0.1)";
-        ctx.strokeStyle = "#4deeea";
-        ctx.strokeRect(400, 320, 200, 10);
-        ctx.fillRect(400, 320, 200, 10);
+        ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.strokeStyle = "#4deeea";
+        ctx.strokeRect(400, 320, 200, 10); ctx.fillRect(400, 320, 200, 10);
 
         t1.update(); t2.update();
 
@@ -208,11 +224,9 @@
         // Ball Physics
         ball.vy += gravity; ball.vx *= friction;
         ball.x += ball.vx; ball.y += ball.vy;
-
         if (ball.x < ball.r || ball.x > canvas.width - ball.r) { ball.vx *= -bounciness; ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r; }
         if (ball.y < ball.r) { ball.vy *= -bounciness; ball.y = ball.r; }
         if (ball.y + ball.r > FLOOR_Y) { ball.y = FLOOR_Y - ball.r; ball.vy *= -bounciness; }
-
         if (ball.x > 400 && ball.x < 600 && ball.y + ball.r > 320 && ball.y - ball.r < 335) {
             ball.y = ball.vy > 0 ? 320 - ball.r : 335 + ball.r;
             ball.vy *= -bounciness;
@@ -222,13 +236,11 @@
         ctx.lineWidth = 6;
         ctx.strokeStyle = "#ff3e3e"; ctx.strokeRect(0, 250, 45, 8);
         ctx.strokeStyle = "#00d2ff"; ctx.strokeRect(955, 250, 45, 8);
-
         if (ball.y > 240 && ball.y < 265) {
             if (ball.x < 50) { score2++; resetRound('s2', score2, 1); }
             if (ball.x > 950) { score1++; resetRound('s1', score1, -1); }
         }
 
-        // Particles
         particles.forEach((p, i) => {
             p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
             ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
@@ -238,10 +250,7 @@
         ctx.globalAlpha = 1;
 
         t1.draw(); t2.draw();
-
-        // Ball
-        ctx.shadowBlur = 25; ctx.shadowColor = "#ffaa00";
-        ctx.fillStyle = "#ffaa00";
+        ctx.shadowBlur = 25; ctx.shadowColor = "#ffaa00"; ctx.fillStyle = "#ffaa00";
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
         ctx.shadowBlur = 0;
 
@@ -256,8 +265,6 @@
         msg.style.display = 'block';
         setTimeout(() => { msg.style.display = 'none'; ball.reset(dir); }, 1000);
     }
-
-    loop();
 </script>
 </body>
 </html>
