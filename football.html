@@ -3,48 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEON SQUAD 2v2: ULTIMATE</title>
-    <style>
-        :root { --red: #ff0055; --blue: #00d4ff; --gold: #f1c40f; }
-        body { margin: 0; background: #0a0a0c; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; }
-        canvas { background: radial-gradient(circle, #1a1a2e 0%, #0f0f1a 100%); border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; box-shadow: 0 0 50px rgba(0,0,0,0.8); cursor: none; }
-        
-        #ui-layer { position: absolute; width: 800px; height: 400px; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        #menu { pointer-events: all; background: rgba(0,0,0,0.9); padding: 30px; border-radius: 20px; border: 2px solid var(--gold); text-align: center; box-shadow: 0 0 30px rgba(241, 196, 15, 0.2); }
-        h1 { margin: 0 0 20px 0; font-size: 32px; letter-spacing: 5px; color: var(--gold); text-shadow: 0 0 10px var(--gold); }
-        
-        .mode-btn { display: block; width: 250px; padding: 12px; margin: 10px auto; background: transparent; border: 1px solid white; color: white; font-family: 'Orbitron', sans-serif; cursor: pointer; transition: 0.3s; border-radius: 5px; }
-        .mode-btn:hover { background: white; color: black; box-shadow: 0 0 20px white; }
-
-        #hud { position: absolute; top: -70px; display: flex; justify-content: space-between; width: 100%; font-size: 48px; font-weight: 900; pointer-events: none; }
-        .score { text-shadow: 0 0 20px currentColor; }
-        
-        .controls-hint { position: absolute; bottom: -60px; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 2px; }
-    </style>
+    <title>NEON SQUAD 2v2: OVERDRIVE</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --red: #ff4757; --blue: #2e86de; --neon: #00ff9f; }
+        body { margin: 0; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; }
+        
+        #game-container { position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        canvas { background: radial-gradient(circle, #1a1a2e 0%, #0a0a12 100%); border: 2px solid rgba(255,255,255,0.1); }
+        
+        /* UI Overlay */
+        #menu-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; backdrop-filter: blur(5px); }
+        .mode-btn { background: transparent; border: 2px solid white; color: white; padding: 15px 40px; margin: 10px; font-family: 'Orbitron'; cursor: pointer; transition: 0.3s; width: 300px; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px; }
+        .mode-btn:hover { background: white; color: black; box-shadow: 0 0 20px white; }
+        
+        #hud { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-around; pointer-events: none; }
+        .score-box { font-size: 60px; font-weight: 900; text-shadow: 0 0 15px currentColor; }
+        
+        .controls { position: absolute; bottom: 10px; font-size: 10px; color: #666; letter-spacing: 1px; }
+    </style>
 </head>
 <body>
 
-<div style="position: relative;">
+<div id="game-container">
     <div id="hud">
-        <div class="score" style="color: var(--red)" id="s1">0</div>
-        <div class="score" style="color: var(--blue)" id="s2">0</div>
+        <div class="score-box" style="color: var(--red)" id="s1">0</div>
+        <div class="score-box" style="color: var(--blue)" id="s2">0</div>
+    </div>
+
+    <div id="menu-overlay">
+        <h1 style="color: var(--neon); letter-spacing: 10px; margin-bottom: 40px;">NEON SQUAD</h1>
+        <button class="mode-btn" onclick="initGame('PvAI')">1 Player (vs AI)</button>
+        <button class="mode-btn" onclick="initGame('PvP')">2 Player (1v1)</button>
+        <button class="mode-btn" onclick="initGame('Coop')">Co-op (vs AI)</button>
+        <button class="mode-btn" onclick="initGame('AI')">AI Spectate</button>
     </div>
 
     <canvas id="field"></canvas>
-
-    <div id="ui-layer">
-        <div id="menu">
-            <h1>NEON SQUAD</h1>
-            <button class="mode-btn" onclick="startGame('P_VS_AI')">PLAYER VS AI</button>
-            <button class="mode-btn" onclick="startGame('P_VS_P')">LOCAL 1 VS 1</button>
-            <button class="mode-btn" onclick="startGame('PVP_VS_AI')">CO-OP VS AI</button>
-            <button class="mode-btn" onclick="startGame('AI_VS_AI')">AI SPECTATE</button>
-        </div>
-    </div>
-    
-    <div class="controls-hint" id="hint">RED: WAD + S (Swap) | BLUE: ARROWS + DOWN (Swap)</div>
+    <div class="controls">RED: [WASD] [S-Swap] | BLUE: [ARROWS] [DOWN-Swap]</div>
 </div>
 
 <script>
@@ -52,69 +48,71 @@
     const ctx = canvas.getContext('2d');
     canvas.width = 800; canvas.height = 400;
 
-    const gravity = 0.5;
-    const friction = 0.99;
-    let score1 = 0, score2 = 0;
-    let gameMode = '';
-    let isRunning = false;
+    const G = 0.5;
+    const AIR_F = 0.99;
     let shake = 0;
+    let gameRunning = false;
+    let gameMode = 'PvAI'; // PvAI, PvP, Coop, AI
 
-    const ball = { x: 400, y: 200, vx: 0, vy: 0, r: 10, trail: [] };
+    const ball = { 
+        x: 400, y: 200, vx: 0, vy: 0, r: 10, 
+        trail: [], 
+        color: '#fff' 
+    };
 
     class Player {
         constructor(x, y, color, team, id) {
+            this.startX = x; this.startY = y;
             this.x = x; this.y = y; this.vx = 0; this.vy = 0;
             this.color = color; this.team = team; this.id = id;
             this.active = false; this.grounded = false;
-            this.w = 30; this.h = 50;
-            this.maxSpeed = 7;
+            this.w = 28; this.h = 50;
+        }
+
+        reset() {
+            this.x = this.startX; this.y = this.startY;
+            this.vx = 0; this.vy = 0;
         }
 
         update(isManual, controls) {
             if (isManual) {
                 if (keys[controls.left]) this.vx -= 0.8;
                 else if (keys[controls.right]) this.vx += 0.8;
-                else this.vx *= 0.8;
+                else this.vx *= 0.85;
+
                 if (keys[controls.up] && this.grounded) { this.vy = -12; this.grounded = false; }
             } else {
                 // Tactical AI
-                let targetX;
-                if (this.id === 0) { // Attacker logic
-                    targetX = ball.x + (this.team === 1 ? -20 : 20);
-                } else { // Defender logic
-                    targetX = (this.team === 1) ? Math.min(ball.x - 150, 150) : Math.max(ball.x + 150, 650);
-                }
-                
-                let dx = targetX - (this.x + this.w/2);
-                this.vx += Math.sign(dx) * 0.5;
-                if (Math.abs(dx) < 10) this.vx *= 0.7;
+                let targetX = (this.id === 0) ? ball.x : (this.team === 1 ? 150 : 650);
+                let diff = targetX - (this.x + this.w/2);
+                this.vx += Math.sign(diff) * 0.5;
+                this.vx *= 0.9;
 
-                // Jump logic
-                if (ball.y < this.y - 50 && Math.abs(ball.x - this.x) < 50 && this.grounded) {
-                    this.vy = -11; this.grounded = false;
+                if (ball.y < this.y && Math.abs(ball.x - this.x) < 50 && this.grounded) {
+                    this.vy = -10; this.grounded = false;
                 }
             }
 
-            this.vx = Math.max(-this.maxSpeed, Math.min(this.maxSpeed, this.vx));
-            this.vy += gravity;
+            this.vx = Math.max(-7, Math.min(7, this.vx));
+            this.vy += G;
             this.x += this.vx; this.y += this.vy;
 
+            // Collision
             if (this.y + this.h > canvas.height - 10) { 
                 this.y = canvas.height - this.h - 10; this.vy = 0; this.grounded = true; 
             }
             this.x = Math.max(0, Math.min(canvas.width - this.w, this.x));
 
-            // Collision with Ball
-            let cx = this.x + this.w/2;
-            let cy = this.y + this.h/2;
-            let dbx = ball.x - cx;
-            let dby = ball.y - cy;
-            let dist = Math.sqrt(dbx*dbx + dby*dby);
+            // Ball Kick
+            let dx = ball.x - (this.x + this.w/2);
+            let dy = ball.y - (this.y + this.h/2);
+            let dist = Math.sqrt(dx*dx + dy*dy);
             if (dist < 35) {
-                let angle = Math.atan2(dby, dbx);
-                ball.vx = Math.cos(angle) * 12 + this.vx;
-                ball.vy = Math.sin(angle) * 12 + this.vy;
-                shake = 5;
+                let angle = Math.atan2(dy, dx);
+                let force = 10;
+                ball.vx = Math.cos(angle) * force + this.vx;
+                ball.vy = Math.sin(angle) * force + this.vy;
+                shake = 4;
             }
         }
 
@@ -123,126 +121,134 @@
             ctx.shadowBlur = this.active ? 20 : 5;
             ctx.shadowColor = this.color;
             ctx.fillStyle = this.color;
-            ctx.globalAlpha = this.active ? 1.0 : 0.4;
+            ctx.globalAlpha = this.active ? 1 : 0.5;
             
-            // Draw Body
+            // Neon Body
             ctx.fillRect(this.x, this.y, this.w, this.h);
-            
-            // Draw "Visor"
             ctx.fillStyle = "white";
-            let visorX = (this.team === 1) ? this.x + 18 : this.x + 2;
-            ctx.fillRect(visorX, this.y + 10, 10, 5);
+            ctx.fillRect(this.x + (this.team === 1 ? 20 : 0), this.y + 10, 8, 5); // Eyes/Visor
             
             if (this.active) {
-                ctx.fillStyle = "white";
-                ctx.beginPath();
-                ctx.moveTo(this.x + this.w/2, this.y - 15);
-                ctx.lineTo(this.x + this.w/2 - 5, this.y - 25);
-                ctx.lineTo(this.x + this.w/2 + 5, this.y - 25);
-                ctx.fill();
+                ctx.strokeStyle = "white";
+                ctx.strokeRect(this.x - 2, this.y - 2, this.w + 4, this.h + 4);
             }
             ctx.restore();
         }
     }
 
-    let team1 = [new Player(100, 300, '#ff0055', 1, 0), new Player(50, 300, '#ff0055', 1, 1)];
-    let team2 = [new Player(700, 300, '#00d4ff', 2, 0), new Player(750, 300, '#00d4ff', 2, 1)];
-    let activeP1 = 0, activeP2 = 0;
+    const t1 = [new Player(150, 300, '#ff4757', 1, 0), new Player(100, 300, '#ff4757', 1, 1)];
+    const t2 = [new Player(650, 300, '#2e86de', 2, 0), new Player(700, 300, '#2e86de', 2, 1)];
+    let p1Score = 0, p2Score = 0;
+    let activeIdx1 = 0, activeIdx2 = 0;
     const keys = {};
 
-    function startGame(mode) {
+    function initGame(mode) {
         gameMode = mode;
-        score1 = 0; score2 = 0;
-        resetBall();
-        document.getElementById('menu').style.display = 'none';
-        isRunning = true;
+        p1Score = 0; p2Score = 0;
+        document.getElementById('menu-overlay').style.display = 'none';
+        gameRunning = true;
+        resetField();
     }
 
-    function resetBall() {
-        ball.x = 400; ball.y = 100; ball.vx = (Math.random() - 0.5) * 10; ball.vy = 0;
-        ball.trail = [];
+    function resetField() {
+        ball.x = 400; ball.y = 100; ball.vx = 0; ball.vy = 0;
+        t1.forEach(p => p.reset());
+        t2.forEach(p => p.reset());
     }
 
-    window.onkeydown = e => { 
-        keys[e.code] = true; 
-        if (e.code === 'KeyS') { team1[activeP1].active = false; activeP1 = (activeP1 + 1) % 2; team1[activeP1].active = true; }
-        if (e.code === 'ArrowDown') { team2[activeP2].active = false; activeP2 = (activeP2 + 1) % 2; team2[activeP2].active = true; }
+    window.onkeydown = e => {
+        keys[e.code] = true;
+        if (e.code === 'KeyS') { activeIdx1 = (activeIdx1 + 1) % 2; }
+        if (e.code === 'ArrowDown') { activeIdx2 = (activeIdx2 + 1) % 2; }
     };
     window.onkeyup = e => keys[e.code] = false;
 
     function loop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!gameRunning) return requestAnimationFrame(loop);
+
+        // Update
+        const t1_manual = (gameMode === 'PvP' || gameMode === 'PvAI' || gameMode === 'Coop');
+        const t2_manual = (gameMode === 'PvP');
+        const t2_coop_ai = (gameMode === 'Coop');
+
+        t1.forEach((p, i) => {
+            p.active = (t1_manual && i === activeIdx1);
+            p.update(p.active, {up:'KeyW', left:'KeyA', right:'KeyD'});
+        });
         
+        t2.forEach((p, i) => {
+            p.active = (t2_manual && i === activeIdx2);
+            // If coop, both blue are AI, if PvP only active is manual
+            p.update(p.active, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight'});
+        });
+
+        // Ball
+        ball.vy += G * 0.5;
+        ball.vx *= AIR_F;
+        ball.x += ball.vx; ball.y += ball.vy;
+
+        // Ball Trails
+        ball.trail.push({x: ball.x, y: ball.y});
+        if (ball.trail.length > 10) ball.trail.shift();
+
+        // Bounce
+        if (ball.y > canvas.height - ball.r - 10) { ball.y = canvas.height - ball.r - 10; ball.vy *= -0.7; }
+        if (ball.x < ball.r || ball.x > canvas.width - ball.r) {
+            if (ball.y > 200) { // Goal
+                if (ball.x < ball.r) { p2Score++; shake = 20; }
+                else { p1Score++; shake = 20; }
+                resetField();
+            } else {
+                ball.vx *= -0.8;
+                ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+            }
+        }
+
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    function draw() {
+        ctx.save();
         if (shake > 0) {
             ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2);
             shake *= 0.9;
         }
 
-        // Draw Field
-        ctx.strokeStyle = "rgba(255,255,255,0.05)";
-        ctx.lineWidth = 2;
-        for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
-        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Field
+        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+        ctx.strokeRect(5, 5, 790, 390);
+        ctx.beginPath(); ctx.moveTo(400, 5); ctx.lineTo(400, 395); ctx.stroke();
+
         // Goals
-        ctx.fillStyle = "rgba(255, 0, 85, 0.2)"; ctx.fillRect(0, 200, 10, 200);
-        ctx.fillStyle = "rgba(0, 212, 255, 0.2)"; ctx.fillRect(790, 200, 10, 200);
+        ctx.fillStyle = "var(--red)"; ctx.globalAlpha = 0.3;
+        ctx.fillRect(0, 220, 10, 180);
+        ctx.fillStyle = "var(--blue)";
+        ctx.fillRect(790, 220, 10, 180);
+        ctx.globalAlpha = 1;
 
-        if (isRunning) {
-            // Update Teams based on Mode
-            const p1Manual = (gameMode === 'P_VS_AI' || gameMode === 'P_VS_P' || gameMode === 'PVP_VS_AI');
-            const p2Manual = (gameMode === 'P_VS_P');
+        // Players
+        t1.forEach(p => p.draw());
+        t2.forEach(p => p.draw());
 
-            team1.forEach((p, i) => {
-                p.active = (p1Manual && i === activeP1);
-                p.update(p.active, {up:'KeyW', left:'KeyA', right:'KeyD'});
-                p.draw();
-            });
+        // Ball Trail
+        ball.trail.forEach((p, i) => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, ball.r * (i/10), 0, Math.PI*2);
+            ctx.fillStyle = `rgba(255,255,255,${i/20})`;
+            ctx.fill();
+        });
 
-            team2.forEach((p, i) => {
-                p.active = (p2Manual && i === activeP2);
-                // Special case for PVP Co-op: Blue team is AI
-                p.update(p.active, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight'});
-                p.draw();
-            });
+        // Ball
+        ctx.shadowBlur = 15; ctx.shadowColor = "white";
+        ctx.fillStyle = "white";
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
 
-            // Ball Logic
-            ball.vy += gravity * 0.6;
-            ball.vx *= friction;
-            ball.x += ball.vx; ball.y += ball.vy;
-            
-            // Trail
-            ball.trail.push({x: ball.x, y: ball.y});
-            if (ball.trail.length > 10) ball.trail.shift();
-            ball.trail.forEach((t, i) => {
-                ctx.beginPath(); ctx.arc(t.x, t.y, ball.r * (i/10), 0, Math.PI*2);
-                ctx.fillStyle = `rgba(255,255,255, ${i/20})`; ctx.fill();
-            });
-
-            // Wall Bounces
-            if (ball.x < ball.r || ball.x > canvas.width - ball.r) {
-                if (ball.y > 200) { // Goal area
-                    if (ball.x < ball.r) { score2++; resetBall(); shake = 15; }
-                    else { score1++; resetBall(); shake = 15; }
-                } else {
-                    ball.vx *= -0.7;
-                    ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
-                }
-            }
-            if (ball.y > canvas.height - ball.r - 10) { ball.vy *= -0.8; ball.y = canvas.height - ball.r - 10; }
-            if (ball.y < ball.r) { ball.vy *= -0.8; ball.y = ball.r; }
-
-            // Draw Ball
-            ctx.shadowBlur = 15; ctx.shadowColor = "white";
-            ctx.fillStyle = "white";
-            ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
-            ctx.shadowBlur = 0;
-        }
-
-        document.getElementById('s1').innerText = score1;
-        document.getElementById('s2').innerText = score2;
-        
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        requestAnimationFrame(loop);
+        document.getElementById('s1').innerText = p1Score;
+        document.getElementById('s2').innerText = p2Score;
     }
 
     loop();
