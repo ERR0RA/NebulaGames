@@ -2,12 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NEBULA B-BALL: PRO PHYSICS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEBULA B-BALL: PRO EDITION</title>
     <style>
-        body { margin: 0; background: #020205; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; color: white; font-family: 'Segoe UI', sans-serif; }
-        canvas { background: radial-gradient(circle, #0a0a20 0%, #050510 100%); border: 3px solid #1a1a3a; border-radius: 8px; box-shadow: 0 0 50px rgba(0, 210, 255, 0.1); }
-        #ui { position: absolute; top: 30px; display: flex; justify-content: space-between; width: 800px; pointer-events: none; }
-        .score { font-size: 60px; font-weight: bold; font-family: monospace; text-shadow: 0 0 20px currentColor; }
+        body { margin: 0; background: #020205; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; color: white; font-family: 'Arial Black', sans-serif; }
+        canvas { border: 4px solid #1a1a3a; border-radius: 12px; box-shadow: 0 0 100px rgba(0, 210, 255, 0.2); }
+        #ui { position: absolute; top: 30px; display: flex; justify-content: space-between; width: 800px; pointer-events: none; z-index: 10; }
+        .score { font-size: 80px; font-weight: 900; text-shadow: 0 0 30px currentColor; font-style: italic; }
+        #msg { position: absolute; top: 40%; width: 100%; text-align: center; font-size: 100px; color: #fff; text-shadow: 0 0 50px #0ff; display: none; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -15,6 +17,7 @@
         <div id="s1" class="score" style="color: #ff3e3e">0</div>
         <div id="s2" class="score" style="color: #00d2ff">0</div>
     </div>
+    <div id="msg">SLAM DUNK!</div>
     <canvas id="court"></canvas>
 
 <script>
@@ -22,32 +25,38 @@
     const ctx = canvas.getContext('2d');
     canvas.width = 1000; canvas.height = 600;
 
+    let screenShake = 0;
+    const particles = [];
+    const stars = Array.from({length: 100}, () => ({x: Math.random()*1000, y: Math.random()*600, s: Math.random()*2}));
+    
     const gravity = 0.45;
-    const friction = 0.99;
-    const bounciness = 0.75;
-    const FLOOR_Y = 560;
+    const friction = 0.98;
+    const bounciness = 0.8;
+    const FLOOR_Y = 540;
 
     let score1 = 0, score2 = 0;
+
     const ball = { 
-        x: 500, y: 100, vx: 0, vy: 0, r: 15, 
+        x: 500, y: 150, vx: 5, vy: 0, r: 14, trail: [],
         reset(dir) {
-            this.x = 500; this.y = 150; this.vx = dir * 5; this.vy = 0;
+            this.x = 500; this.y = 150; this.vx = dir * 7; this.vy = -5;
+            this.trail = [];
         }
     };
 
-    class Human {
+    class Player {
         constructor(x, color, team, isPlayer) {
             this.x = x; this.y = 400; this.vx = 0; this.vy = 0;
-            this.w = 35; this.h = 85; this.color = color; this.team = team;
+            this.w = 45; this.h = 90; this.color = color; this.team = team;
             this.isPlayer = isPlayer;
             this.grounded = false;
-            this.moveSpeed = 0.8;
-            this.maxSpeed = 8;
-            this.jumpForce = -14;
+            this.moveSpeed = 1.3;
+            this.maxSpeed = 9;
+            this.jumpForce = -15;
+            this.animTimer = 0;
         }
 
         update() {
-            // --- MOVEMENT LOGIC ---
             if (this.isPlayer) {
                 const left = keys['KeyA'] || keys['ArrowLeft'];
                 const right = keys['KeyD'] || keys['ArrowRight'];
@@ -55,150 +64,199 @@
 
                 if (left) this.vx -= this.moveSpeed;
                 else if (right) this.vx += this.moveSpeed;
-                else this.vx *= 0.85; // Faster deceleration
+                else this.vx *= 0.82;
 
-                if (jump && this.grounded) {
-                    this.vy = this.jumpForce;
-                    this.grounded = false;
-                }
+                if (jump && this.grounded) { this.vy = this.jumpForce; this.grounded = false; screenShake = 4; }
             } else {
-                // AI Logic: Chase ball and jump if ball is overhead
-                let targetX = ball.x - this.w / 2;
-                let diff = targetX - this.x;
-                this.vx += Math.sign(diff) * 0.6;
-                if (Math.abs(ball.x - this.x) < 60 && ball.y < this.y - 50 && this.grounded) {
-                    this.vy = this.jumpForce;
-                }
+                let targetX = ball.x - (this.team === 1 ? -40 : 40); 
+                this.vx += Math.sign(targetX - this.x) * 0.75;
+                if (Math.abs(ball.x - this.x) < 100 && ball.y < this.y - 20 && this.grounded) this.vy = this.jumpForce;
             }
 
-            // Apply Physics
             this.vx = Math.max(-this.maxSpeed, Math.min(this.maxSpeed, this.vx));
             this.vy += gravity;
-            this.x += this.vx;
-            this.y += this.vy;
+            this.x += this.vx; this.y += this.vy;
 
-            // Bounds & Floor
-            if (this.y + this.h > FLOOR_Y) {
-                this.y = FLOOR_Y - this.h;
-                this.vy = 0;
-                this.grounded = true;
-            }
-            if (this.x < 0) this.x = 0;
-            if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
+            if (this.y + this.h > FLOOR_Y) { this.y = FLOOR_Y - this.h; this.vy = 0; this.grounded = true; }
+            if (this.x < 0) this.x = 0; if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
 
-            // --- IMPROVED BALL INTERACTION ---
+            this.animTimer += Math.abs(this.vx) * 0.1;
+
+            // Ball Collision
             let cx = Math.max(this.x, Math.min(ball.x, this.x + this.w));
             let cy = Math.max(this.y, Math.min(ball.y, this.y + this.h));
             let dx = ball.x - cx, dy = ball.y - cy;
             let dist = Math.sqrt(dx*dx + dy*dy);
 
             if (dist < ball.r) {
-                // Direction of hit
-                let nx = dx / (dist || 1);
-                let ny = dy / (dist || 1);
-                
-                // Reposition ball outside player
-                ball.x = cx + nx * ball.r;
-                ball.y = cy + ny * ball.r;
-
-                // Transfer momentum + a "kick" factor
-                ball.vx = nx * 10 + this.vx;
-                ball.vy = ny * 10 + (this.vy < 0 ? this.vy : -2); // Upward boost on hit
+                let nx = dx / (dist || 1), ny = dy / (dist || 1);
+                ball.x = cx + nx * ball.r; ball.y = cy + ny * ball.r;
+                ball.vx = nx * 14 + this.vx;
+                ball.vy = ny * 14 + (this.vy < 0 ? this.vy : -4);
+                screenShake = 10;
+                spawnParticles(ball.x, ball.y, "#fff", 8);
             }
         }
 
         draw() {
+            ctx.save();
+            ctx.translate(this.x + this.w/2, this.y + this.h/2);
+            ctx.rotate(this.vx * 0.03); // Lean into movement
+
+            // Shadow/Glow
+            ctx.shadowBlur = 20; ctx.shadowColor = this.color;
+
+            // Body (Jersey)
             ctx.fillStyle = this.color;
-            ctx.shadowBlur = 15; ctx.shadowColor = this.color;
-            ctx.fillRect(this.x, this.y, this.w, this.h);
-            ctx.shadowBlur = 0;
-            // Draw "Eyes" to show direction
+            ctx.fillRect(-this.w/2, -15, this.w, 40);
+
+            // Head
+            ctx.fillStyle = "#ffdbac"; // Skin tone
+            ctx.beginPath();
+            ctx.arc(0, -35, 18, 0, Math.PI*2);
+            ctx.fill();
+
+            // Legs (Animating)
+            ctx.fillStyle = "#222";
+            let legMove = this.grounded ? Math.sin(this.animTimer) * 15 : 10;
+            ctx.fillRect(-this.w/2, 25, 15, 20 + (this.grounded ? 0 : -10)); // Left Leg
+            ctx.fillRect(this.w/2 - 15, 25, 15, 20 + (this.grounded ? 0 : -10)); // Right Leg
+
+            // Team Number
             ctx.fillStyle = "white";
-            let eyeX = this.vx >= 0 ? this.x + this.w - 10 : this.x + 5;
-            ctx.fillRect(eyeX, this.y + 15, 5, 5);
+            ctx.font = "bold 15px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(this.team, 0, 10);
+
+            ctx.restore();
+            ctx.shadowBlur = 0;
         }
     }
 
-    const t1 = new Human(150, '#ff3e3e', 1, true);
-    const t2 = new Human(800, '#00d2ff', 2, false); // Change to 'true' for local PvP
-    
+    const t1 = new Player(150, '#ff3e3e', 1, true);
+    const t2 = new Player(800, '#00d2ff', 2, false);
     const keys = {};
     window.onkeydown = e => keys[e.code] = true;
     window.onkeyup = e => keys[e.code] = false;
 
-    function loop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw Court Elements
-        ctx.fillStyle = "#1a1a3a";
-        ctx.fillRect(400, 320, 200, 15); // Floating platform
-
-        t1.update();
-        t2.update();
-
-        // --- BALL PHYSICS ---
-        ball.vy += gravity;
-        ball.vx *= friction;
-        ball.x += ball.vx;
-        ball.y += ball.vy;
-
-        // Bounce Walls
-        if (ball.x < ball.r || ball.x > canvas.width - ball.r) {
-            ball.vx *= -bounciness;
-            ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+    function spawnParticles(x, y, color, count = 12) {
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x, y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
+                alpha: 1, color, r: Math.random()*3+1
+            });
         }
-        // Ceiling
-        if (ball.y < ball.r) {
-            ball.vy *= -bounciness;
-            ball.y = ball.r;
-        }
-        // Floor
-        if (ball.y + ball.r > FLOOR_Y) {
-            ball.y = FLOOR_Y - ball.r;
-            ball.vy *= -bounciness;
-            if (Math.abs(ball.vy) < 1) ball.vy = 0; // Stop jitter
-        }
+    }
 
-        // Platform Collision
-        if (ball.x > 400 && ball.x < 600 && ball.y + ball.r > 320 && ball.y - ball.r < 335) {
-            if (ball.vy > 0) { ball.y = 320 - ball.r; ball.vy *= -bounciness; }
-            else { ball.y = 335 + ball.r; ball.vy *= -bounciness; }
-        }
+    function drawBackground() {
+        // Deep Space Gradient
+        let grad = ctx.createRadialGradient(500, 300, 50, 500, 300, 600);
+        grad.addColorStop(0, "#0a0a25");
+        grad.addColorStop(1, "#020205");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // --- SCORING HOOPS ---
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "#ff3e3e"; ctx.strokeRect(0, 250, 40, 5); // Goal 1
-        ctx.strokeStyle = "#00d2ff"; ctx.strokeRect(960, 250, 40, 5); // Goal 2
+        // Stars
+        ctx.fillStyle = "white";
+        stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
 
-        if (ball.y > 240 && ball.y < 260) {
-            if (ball.x < 40) { 
-                score2++; document.getElementById('s2').innerText = score2;
-                ball.reset(1);
-            }
-            if (ball.x > 960) { 
-                score1++; document.getElementById('s1').innerText = score1;
-                ball.reset(-1);
-            }
-        }
-
-        // Draw Floor
-        ctx.fillStyle = "#0a0a1a";
-        ctx.fillRect(0, FLOOR_Y, canvas.width, 40);
-        ctx.strokeStyle = "#333355";
-        ctx.strokeRect(0, FLOOR_Y, canvas.width, 1);
-
-        // Draw Entities
-        t1.draw();
-        t2.draw();
+        // Floor (Neon Grid)
+        ctx.fillStyle = "#050510";
+        ctx.fillRect(0, FLOOR_Y, canvas.width, 60);
+        ctx.strokeStyle = "#4444ff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, FLOOR_Y); ctx.lineTo(canvas.width, FLOOR_Y);
+        ctx.stroke();
         
-        // Draw Ball (Glow effect)
-        ctx.shadowBlur = 20; ctx.shadowColor = "#ff8800";
-        ctx.fillStyle = "#ff8800";
+        // Grid lines for depth
+        ctx.globalAlpha = 0.2;
+        for(let i=0; i<canvas.width; i+=50) {
+            ctx.beginPath();
+            ctx.moveTo(i, FLOOR_Y);
+            ctx.lineTo(i + (i-500)*0.5, canvas.height);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    function loop() {
+        // Shake
+        let sx = (Math.random()-0.5)*screenShake;
+        let sy = (Math.random()-0.5)*screenShake;
+        ctx.setTransform(1, 0, 0, 1, sx, sy);
+        screenShake *= 0.9;
+
+        drawBackground();
+
+        // Platform
+        ctx.fillStyle = "rgba(255,255,255,0.1)";
+        ctx.strokeStyle = "#4deeea";
+        ctx.strokeRect(400, 320, 200, 10);
+        ctx.fillRect(400, 320, 200, 10);
+
+        t1.update(); t2.update();
+
+        // Ball Trail
+        ball.trail.push({x: ball.x, y: ball.y});
+        if (ball.trail.length > 12) ball.trail.shift();
+        ball.trail.forEach((p, i) => {
+            ctx.beginPath(); ctx.arc(p.x, p.y, ball.r * (i/12), 0, Math.PI*2);
+            ctx.fillStyle = `rgba(255, 165, 0, ${i/20})`; ctx.fill();
+        });
+
+        // Ball Physics
+        ball.vy += gravity; ball.vx *= friction;
+        ball.x += ball.vx; ball.y += ball.vy;
+
+        if (ball.x < ball.r || ball.x > canvas.width - ball.r) { ball.vx *= -bounciness; ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r; }
+        if (ball.y < ball.r) { ball.vy *= -bounciness; ball.y = ball.r; }
+        if (ball.y + ball.r > FLOOR_Y) { ball.y = FLOOR_Y - ball.r; ball.vy *= -bounciness; }
+
+        if (ball.x > 400 && ball.x < 600 && ball.y + ball.r > 320 && ball.y - ball.r < 335) {
+            ball.y = ball.vy > 0 ? 320 - ball.r : 335 + ball.r;
+            ball.vy *= -bounciness;
+        }
+
+        // Hoops
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = "#ff3e3e"; ctx.strokeRect(0, 250, 45, 8);
+        ctx.strokeStyle = "#00d2ff"; ctx.strokeRect(955, 250, 45, 8);
+
+        if (ball.y > 240 && ball.y < 265) {
+            if (ball.x < 50) { score2++; resetRound('s2', score2, 1); }
+            if (ball.x > 950) { score1++; resetRound('s1', score1, -1); }
+        }
+
+        // Particles
+        particles.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
+            ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+            if (p.alpha <= 0) particles.splice(i, 1);
+        });
+        ctx.globalAlpha = 1;
+
+        t1.draw(); t2.draw();
+
+        // Ball
+        ctx.shadowBlur = 25; ctx.shadowColor = "#ffaa00";
+        ctx.fillStyle = "#ffaa00";
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
         ctx.shadowBlur = 0;
 
         requestAnimationFrame(loop);
     }
+
+    function resetRound(id, val, dir) {
+        document.getElementById(id).innerText = val;
+        screenShake = 40;
+        spawnParticles(ball.x, ball.y, "#0ff", 40);
+        const msg = document.getElementById('msg');
+        msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; ball.reset(dir); }, 1000);
+    }
+
     loop();
 </script>
 </body>
