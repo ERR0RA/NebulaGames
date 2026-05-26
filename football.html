@@ -3,44 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEON SQUAD 2v2: OVERDRIVE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <title>2v2 PRO SQUAD: ULTIMATE AI</title>
     <style>
-        :root { --red: #ff4757; --blue: #2e86de; --neon: #00ff9f; }
-        body { margin: 0; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; }
-        
-        #game-container { position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-        canvas { background: radial-gradient(circle, #1a1a2e 0%, #0a0a12 100%); border: 2px solid rgba(255,255,255,0.1); }
-        
-        /* UI Overlay */
-        #menu-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; backdrop-filter: blur(5px); }
-        .mode-btn { background: transparent; border: 2px solid white; color: white; padding: 15px 40px; margin: 10px; font-family: 'Orbitron'; cursor: pointer; transition: 0.3s; width: 300px; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px; }
-        .mode-btn:hover { background: white; color: black; box-shadow: 0 0 20px white; }
-        
-        #hud { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-around; pointer-events: none; }
-        .score-box { font-size: 60px; font-weight: 900; text-shadow: 0 0 15px currentColor; }
-        
-        .controls { position: absolute; bottom: 10px; font-size: 10px; color: #666; letter-spacing: 1px; }
+        body { margin: 0; background: #121212; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        canvas { background: #1b5e20; border: 4px solid #fff; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); cursor: none; }
+        #hud { display: flex; justify-content: space-between; width: 800px; font-size: 48px; font-weight: 900; margin-bottom: 15px; text-shadow: 2px 2px #000; }
+        .red { color: #ff4757; } .blue { color: #2e86de; }
+        .controls { font-size: 14px; opacity: 0.8; margin-top: 15px; text-align: center; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 20px; }
+        b { color: #f1c40f; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div id="hud">
-        <div class="score-box" style="color: var(--red)" id="s1">0</div>
-        <div class="score-box" style="color: var(--blue)" id="s2">0</div>
-    </div>
+<div id="hud">
+    <div class="red"><span id="s1">0</span></div>
+    <div style="font-size: 18px; align-self: center; letter-spacing: 4px; color: #aaa;">SQUAD 2v2</div>
+    <div class="blue"><span id="s2">0</span></div>
+</div>
 
-    <div id="menu-overlay">
-        <h1 style="color: var(--neon); letter-spacing: 10px; margin-bottom: 40px;">NEON SQUAD</h1>
-        <button class="mode-btn" onclick="initGame('PvAI')">1 Player (vs AI)</button>
-        <button class="mode-btn" onclick="initGame('PvP')">2 Player (1v1)</button>
-        <button class="mode-btn" onclick="initGame('Coop')">Co-op (vs AI)</button>
-        <button class="mode-btn" onclick="initGame('AI')">AI Spectate</button>
-    </div>
+<canvas id="field"></canvas>
 
-    <canvas id="field"></canvas>
-    <div class="controls">RED: [WASD] [S-Swap] | BLUE: [ARROWS] [DOWN-Swap]</div>
+<div class="controls">
+    <b>TEAM RED:</b> [WAD] Move/Jump | [S] Swap Player <br>
+    <b>TEAM BLUE:</b> [ARROWS] Move/Jump | [DOWN] Swap (AI takes over idle players)
 </div>
 
 <script>
@@ -48,160 +33,206 @@
     const ctx = canvas.getContext('2d');
     canvas.width = 800; canvas.height = 400;
 
-    const G = 0.5;
-    const AIR_F = 0.99;
-    let shake = 0;
-    let gameRunning = false;
-    let gameMode = 'PvAI'; // PvAI, PvP, Coop, AI
-
-    const ball = { 
-        x: 400, y: 200, vx: 0, vy: 0, r: 10, 
-        trail: [], 
-        color: '#fff' 
-    };
+    const gravity = 0.45;
+    const friction = 0.985;
+    let score1 = 0, score2 = 0;
+    const ball = { x: 400, y: 200, vx: 0, vy: 0, r: 10, bounciness: 0.8 };
 
     class Player {
         constructor(x, y, color, team, id) {
-            this.startX = x; this.startY = y;
             this.x = x; this.y = y; this.vx = 0; this.vy = 0;
             this.color = color; this.team = team; this.id = id;
             this.active = false; this.grounded = false;
-            this.w = 28; this.h = 50;
-        }
-
-        reset() {
-            this.x = this.startX; this.y = this.startY;
-            this.vx = 0; this.vy = 0;
+            this.animTimer = 0;
+            this.w = 26; this.h = 52;
+            this.accel = 0.7;
+            this.maxSpeed = 6;
         }
 
         update(isManual, controls) {
             if (isManual) {
-                if (keys[controls.left]) this.vx -= 0.8;
-                else if (keys[controls.right]) this.vx += 0.8;
-                else this.vx *= 0.85;
+                // Manual Control
+                if (keys[controls.left]) { this.vx -= this.accel; this.animTimer += 0.2; }
+                else if (keys[controls.right]) { this.vx += this.accel; this.animTimer += 0.2; }
+                else { this.vx *= 0.85; }
 
-                if (keys[controls.up] && this.grounded) { this.vy = -12; this.grounded = false; }
+                if (keys[controls.up] && this.grounded) { this.vy = -11.5; this.grounded = false; }
             } else {
-                // Tactical AI
-                let targetX = (this.id === 0) ? ball.x : (this.team === 1 ? 150 : 650);
-                let diff = targetX - (this.x + this.w/2);
-                this.vx += Math.sign(diff) * 0.5;
-                this.vx *= 0.9;
+                // --- PRO AI LOGIC ---
+                // Teammate AI: Calculates positioning based on ball and active player
+                let targetX;
+                if (this.id === 0) { // Aggressive Attacker AI
+                    targetX = ball.x + (this.team === 1 ? -30 : 30);
+                } else { // Tactical Defender AI
+                    targetX = (this.team === 1) ? Math.min(ball.x - 100, 200) : Math.max(ball.x + 100, 600);
+                }
 
-                if (ball.y < this.y && Math.abs(ball.x - this.x) < 50 && this.grounded) {
-                    this.vy = -10; this.grounded = false;
+                let diff = targetX - (this.x + this.w/2);
+                if (Math.abs(diff) > 5) {
+                    this.vx += Math.sign(diff) * 0.5;
+                    this.animTimer += 0.15;
+                } else {
+                    this.vx *= 0.8;
+                }
+
+                // AI Jump if ball is high and close
+                if (ball.y < this.y - 40 && Math.abs(ball.x - this.x) < 40 && this.grounded) {
+                    this.vy = -10;
+                    this.grounded = false;
                 }
             }
 
-            this.vx = Math.max(-7, Math.min(7, this.vx));
-            this.vy += G;
-            this.x += this.vx; this.y += this.vy;
+            // Apply Physics
+            this.vx = Math.max(-this.maxSpeed, Math.min(this.maxSpeed, this.vx));
+            this.vy += gravity;
+            this.x += this.vx;
+            this.y += this.vy;
 
-            // Collision
-            if (this.y + this.h > canvas.height - 10) { 
-                this.y = canvas.height - this.h - 10; this.vy = 0; this.grounded = true; 
+            // Bounds & Floor
+            if (this.y + this.h > canvas.height) { 
+                this.y = canvas.height - this.h; 
+                this.vy = 0; 
+                this.grounded = true; 
             }
-            this.x = Math.max(0, Math.min(canvas.width - this.w, this.x));
+            if (this.x < 0) { this.x = 0; this.vx *= -0.5; }
+            if (this.x + this.w > canvas.width) { this.x = canvas.width - this.w; this.vx *= -0.5; }
 
-            // Ball Kick
-            let dx = ball.x - (this.x + this.w/2);
-            let dy = ball.y - (this.y + this.h/2);
+            // --- FIXED BALL COLLISION (Elastic Response) ---
+            let cx = this.x + this.w/2;
+            let cy = this.y + this.h/2;
+            let dx = ball.x - cx;
+            let dy = ball.y - cy;
             let dist = Math.sqrt(dx*dx + dy*dy);
-            if (dist < 35) {
+            let minDist = 34; 
+
+            if (dist < minDist) {
                 let angle = Math.atan2(dy, dx);
-                let force = 10;
-                ball.vx = Math.cos(angle) * force + this.vx;
-                ball.vy = Math.sin(angle) * force + this.vy;
-                shake = 4;
+                let targetX = cx + Math.cos(angle) * minDist;
+                let targetY = cy + Math.sin(angle) * minDist;
+                
+                // Kick Power
+                let power = 9;
+                ball.vx = Math.cos(angle) * power + this.vx * 1.2;
+                ball.vy = Math.sin(angle) * power + this.vy * 0.8;
+                
+                // Prevent overlap
+                ball.x = targetX;
+                ball.y = targetY;
             }
         }
 
         draw() {
             ctx.save();
-            ctx.shadowBlur = this.active ? 20 : 5;
-            ctx.shadowColor = this.color;
+            ctx.translate(this.x + this.w/2, this.y);
+
+            // Shadow
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.beginPath(); ctx.ellipse(0, 52, 14, 5, 0, 0, Math.PI*2); ctx.fill();
+
+            // Legs
+            ctx.strokeStyle = "#1a1a1a"; ctx.lineWidth = 6;
+            let swing = Math.sin(this.animTimer * 8) * 14;
+            ctx.beginPath(); ctx.moveTo(-5, 30); ctx.lineTo(-5 + swing, 52); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(5, 30); ctx.lineTo(5 - swing, 52); ctx.stroke();
+
+            // Jersey
             ctx.fillStyle = this.color;
             ctx.globalAlpha = this.active ? 1 : 0.5;
+            ctx.shadowBlur = this.active ? 15 : 0;
+            ctx.shadowColor = this.color;
+            ctx.fillRect(-13, 5, 26, 32);
             
-            // Neon Body
-            ctx.fillRect(this.x, this.y, this.w, this.h);
+            // Player Number/ID
             ctx.fillStyle = "white";
-            ctx.fillRect(this.x + (this.team === 1 ? 20 : 0), this.y + 10, 8, 5); // Eyes/Visor
-            
+            ctx.font = "bold 12px Arial";
+            ctx.fillText(this.id + 1, -4, 25);
+
+            // Head
+            ctx.fillStyle = "#ffdbac";
+            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.arc(0, -6, 12, 0, Math.PI*2); ctx.fill();
+
+            // Active Arrow
             if (this.active) {
-                ctx.strokeStyle = "white";
-                ctx.strokeRect(this.x - 2, this.y - 2, this.w + 4, this.h + 4);
+                ctx.fillStyle = "#f1c40f";
+                ctx.beginPath();
+                ctx.moveTo(0, -28); ctx.lineTo(-6, -38); ctx.lineTo(6, -38);
+                ctx.fill();
             }
+
             ctx.restore();
+            ctx.globalAlpha = 1;
         }
     }
 
-    const t1 = [new Player(150, 300, '#ff4757', 1, 0), new Player(100, 300, '#ff4757', 1, 1)];
-    const t2 = [new Player(650, 300, '#2e86de', 2, 0), new Player(700, 300, '#2e86de', 2, 1)];
-    let p1Score = 0, p2Score = 0;
-    let activeIdx1 = 0, activeIdx2 = 0;
+    const team1 = [new Player(150, 300, '#ff4757', 1, 0), new Player(100, 300, '#ff4757', 1, 1)];
+    const team2 = [new Player(650, 300, '#2e86de', 2, 0), new Player(700, 300, '#2e86de', 2, 1)];
+    
+    let activeP1 = 0, activeP2 = 0;
+    let p1SwapLock = false, p2SwapLock = false;
+
+    team1[0].active = true; team2[0].active = true;
+
     const keys = {};
-
-    function initGame(mode) {
-        gameMode = mode;
-        p1Score = 0; p2Score = 0;
-        document.getElementById('menu-overlay').style.display = 'none';
-        gameRunning = true;
-        resetField();
-    }
-
-    function resetField() {
-        ball.x = 400; ball.y = 100; ball.vx = 0; ball.vy = 0;
-        t1.forEach(p => p.reset());
-        t2.forEach(p => p.reset());
-    }
-
-    window.onkeydown = e => {
-        keys[e.code] = true;
-        if (e.code === 'KeyS') { activeIdx1 = (activeIdx1 + 1) % 2; }
-        if (e.code === 'ArrowDown') { activeIdx2 = (activeIdx2 + 1) % 2; }
+    window.onkeydown = e => { 
+        keys[e.code] = true; 
+        // P1 Swap
+        if (e.code === 'KeyS' && !p1SwapLock) {
+            team1[activeP1].active = false;
+            activeP1 = (activeP1 + 1) % 2;
+            team1[activeP1].active = true;
+            p1SwapLock = true;
+        }
+        // P2 Swap
+        if (e.code === 'ArrowDown' && !p2SwapLock) {
+            team2[activeP2].active = false;
+            activeP2 = (activeP2 + 1) % 2;
+            team2[activeP2].active = true;
+            p2SwapLock = true;
+        }
     };
-    window.onkeyup = e => keys[e.code] = false;
+    window.onkeyup = e => { 
+        keys[e.code] = false; 
+        if (e.code === 'KeyS') p1SwapLock = false;
+        if (e.code === 'ArrowDown') p2SwapLock = false;
+    };
+
+    function goalScored(team) {
+        if (team === 1) score1++; else score2++;
+        ball.x = 400; ball.y = 150;
+        ball.vx = 0; ball.vy = 0;
+        // Celebration shake or logic can go here
+    }
 
     function loop() {
-        if (!gameRunning) return requestAnimationFrame(loop);
+        // Update Players
+        team1.forEach((p, i) => p.update(i === activeP1, {up:'KeyW', left:'KeyA', right:'KeyD'}));
+        team2.forEach((p, i) => p.update(i === activeP2, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight'}));
 
-        // Update
-        const t1_manual = (gameMode === 'PvP' || gameMode === 'PvAI' || gameMode === 'Coop');
-        const t2_manual = (gameMode === 'PvP');
-        const t2_coop_ai = (gameMode === 'Coop');
+        // Ball Physics
+        ball.vy += gravity * 0.5;
+        ball.vx *= friction;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
 
-        t1.forEach((p, i) => {
-            p.active = (t1_manual && i === activeIdx1);
-            p.update(p.active, {up:'KeyW', left:'KeyA', right:'KeyD'});
-        });
-        
-        t2.forEach((p, i) => {
-            p.active = (t2_manual && i === activeIdx2);
-            // If coop, both blue are AI, if PvP only active is manual
-            p.update(p.active, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight'});
-        });
-
-        // Ball
-        ball.vy += G * 0.5;
-        ball.vx *= AIR_F;
-        ball.x += ball.vx; ball.y += ball.vy;
-
-        // Ball Trails
-        ball.trail.push({x: ball.x, y: ball.y});
-        if (ball.trail.length > 10) ball.trail.shift();
-
-        // Bounce
-        if (ball.y > canvas.height - ball.r - 10) { ball.y = canvas.height - ball.r - 10; ball.vy *= -0.7; }
+        // Ball Wall Bounce
         if (ball.x < ball.r || ball.x > canvas.width - ball.r) {
-            if (ball.y > 200) { // Goal
-                if (ball.x < ball.r) { p2Score++; shake = 20; }
-                else { p1Score++; shake = 20; }
-                resetField();
-            } else {
-                ball.vx *= -0.8;
-                ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
-            }
+            ball.vx *= -0.8;
+            ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
+        }
+        if (ball.y < ball.r) {
+            ball.vy *= -0.8;
+            ball.y = ball.r;
+        }
+        if (ball.y > canvas.height - ball.r) {
+            ball.y = canvas.height - ball.r;
+            ball.vy *= -ball.bounciness;
+        }
+
+        // Scoring Logic
+        if (ball.y > 200) {
+            if (ball.x < 25) goalScored(2);
+            if (ball.x > 775) goalScored(1);
         }
 
         draw();
@@ -209,46 +240,32 @@
     }
 
     function draw() {
-        ctx.save();
-        if (shake > 0) {
-            ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2);
-            shake *= 0.9;
-        }
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Field
-        ctx.strokeStyle = "rgba(255,255,255,0.1)";
+        
+        // Field Markings
+        ctx.strokeStyle = "rgba(255,255,255,0.2)"; ctx.lineWidth = 4;
         ctx.strokeRect(5, 5, 790, 390);
         ctx.beginPath(); ctx.moveTo(400, 5); ctx.lineTo(400, 395); ctx.stroke();
+        ctx.beginPath(); ctx.arc(400, 200, 50, 0, Math.PI*2); ctx.stroke();
 
         // Goals
-        ctx.fillStyle = "var(--red)"; ctx.globalAlpha = 0.3;
-        ctx.fillRect(0, 220, 10, 180);
-        ctx.fillStyle = "var(--blue)";
-        ctx.fillRect(790, 220, 10, 180);
-        ctx.globalAlpha = 1;
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.fillRect(0, 220, 15, 180); // Goal Left
+        ctx.fillRect(785, 220, 15, 180); // Goal Right
 
-        // Players
-        t1.forEach(p => p.draw());
-        t2.forEach(p => p.draw());
-
-        // Ball Trail
-        ball.trail.forEach((p, i) => {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, ball.r * (i/10), 0, Math.PI*2);
-            ctx.fillStyle = `rgba(255,255,255,${i/20})`;
-            ctx.fill();
-        });
+        team1.forEach(p => p.draw());
+        team2.forEach(p => p.draw());
 
         // Ball
-        ctx.shadowBlur = 15; ctx.shadowColor = "white";
+        ctx.save();
+        ctx.shadowBlur = 10; ctx.shadowColor = "white";
         ctx.fillStyle = "white";
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "#333"; ctx.lineWidth = 2; ctx.stroke();
         ctx.restore();
 
-        document.getElementById('s1').innerText = p1Score;
-        document.getElementById('s2').innerText = p2Score;
+        document.getElementById('s1').innerText = score1;
+        document.getElementById('s2').innerText = score2;
     }
 
     loop();
