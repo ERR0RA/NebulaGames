@@ -1,6 +1,5 @@
-<img width="955" height="462" alt="image" src="https://github.com/user-attachments/assets/4cef17fc-1aff-4dbf-8dc2-5d42072ed1ea" />
-
-<P>DC</P>
-<P>The future of Nebula games has arrived, updated browser games and a new edited main menu. that tells you when games are inoperational.</P>
+<h1>Nebula Gaming</h1>
+<p>Nebula Gaming is an AI browser gaming service, where by clicking the link, you can play any game on the platform. It's managed and overseered by humans and updated nearly every week.
+<p>Link to whatsapp: https://chat.whatsapp.com/CNVOOoyQL7ZCRCcndD9phU</p>
 
 
