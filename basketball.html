@@ -1,4 +1,45 @@
-const canvas = document.getElementById('court');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEBULA B-BALL: MULTIVERSE</title>
+    <style>
+        body { margin: 0; background: #020205; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; color: white; font-family: 'Arial Black', sans-serif; }
+        canvas { border: 4px solid #1a1a3a; border-radius: 12px; box-shadow: 0 0 100px rgba(0, 210, 255, 0.2); display: none; }
+        #ui { position: absolute; top: 30px; display: none; justify-content: space-between; width: 800px; pointer-events: none; z-index: 10; }
+        .score { font-size: 80px; font-weight: 900; text-shadow: 0 0 30px currentColor; font-style: italic; }
+        #msg { position: absolute; top: 40%; width: 100%; text-align: center; font-size: 100px; color: #fff; text-shadow: 0 0 50px #0ff; display: none; pointer-events: none; z-index: 20; }
+        
+        /* Menu Styles */
+        #menu { position: absolute; text-align: center; background: rgba(10, 10, 30, 0.9); padding: 40px; border: 2px solid #00d2ff; border-radius: 20px; box-shadow: 0 0 50px #00d2ff55; z-index: 30; }
+        h1 { margin-top: 0; color: #00d2ff; letter-spacing: 5px; }
+        .btn { display: block; width: 300px; padding: 15px; margin: 10px auto; background: transparent; border: 2px solid #fff; color: #fff; font-family: 'Arial Black'; cursor: pointer; transition: 0.3s; border-radius: 5px; }
+        .btn:hover { background: #fff; color: #000; transform: scale(1.05); }
+        .controls { font-size: 12px; color: #888; margin-top: 20px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <h1>NEBULA B-BALL</h1>
+        <button class="btn" onclick="startGame('P1_VS_BOT')">1 PLAYER (VS BOT)</button>
+        <button class="btn" onclick="startGame('P1_VS_P2')">2 PLAYERS (LOCAL)</button>
+        <button class="btn" onclick="startGame('BOT_VS_BOT')">BOT VS BOT (SPECTATE)</button>
+        <div class="controls">
+            P1: WASD / ARROWS<br>
+            P2: IJKL (Local 2P Mode)
+        </div>
+    </div>
+
+    <div id="ui">
+        <div id="s1" class="score" style="color: #ff3e3e">0</div>
+        <div id="s2" class="score" style="color: #00d2ff">0</div>
+    </div>
+    <div id="msg">GOAL!</div>
+    <canvas id="court"></canvas>
+
+<script>
+    const canvas = document.getElementById('court');
     const ctx = canvas.getContext('2d');
     canvas.width = 1000; canvas.height = 600;
 
@@ -17,7 +58,7 @@ const canvas = document.getElementById('court');
 
     const ball = { 
         x: 500, y: 150, vx: 5, vy: 0, r: 14, trail: [],
-        holder: null, // Track who is holding the ball
+        holder: null, 
         reset(dir) {
             this.x = 500; this.y = 150; this.vx = dir * 7; this.vy = -5;
             this.trail = [];
@@ -34,7 +75,6 @@ const canvas = document.getElementById('court');
             this.moveSpeed = 1.3;
             this.maxSpeed = 9;
             this.jumpForce = -15;
-            this.animTimer = 0;
         }
 
         update() {
@@ -51,7 +91,7 @@ const canvas = document.getElementById('court');
             } else if (this.controlType === 'bot') {
                 let targetX = ball.x - (this.team === 1 ? -40 : 40); 
                 this.vx += Math.sign(targetX - this.x) * 0.75;
-                if (Math.abs(ball.x - this.x) < 100 && ball.y < this.y - 20 && this.grounded) {
+                if (Math.abs(ball.x - this.x) < 120 && ball.y < this.y && this.grounded) {
                     this.vy = this.jumpForce;
                 }
             }
@@ -70,7 +110,7 @@ const canvas = document.getElementById('court');
             if (this.y + this.h > FLOOR_Y) { this.y = FLOOR_Y - this.h; this.vy = 0; this.grounded = true; }
             if (this.x < 0) this.x = 0; if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
 
-            // Ball Collision & Grabbing
+            // Collision and Dunk Logic
             if (ball.holder === null) {
                 let cx = Math.max(this.x, Math.min(ball.x, this.x + this.w));
                 let cy = Math.max(this.y, Math.min(ball.y, this.y + this.h));
@@ -78,53 +118,48 @@ const canvas = document.getElementById('court');
                 let dist = Math.sqrt(dx*dx + dy*dy);
 
                 if (dist < ball.r + 5) {
-                    // If moving fast downwards or jumping high, grab the ball for a dunk
-                    if (!this.grounded && Math.abs(this.vy) > 2) {
-                        ball.holder = this;
+                    if (!this.grounded && this.vy < 0) {
+                        ball.holder = this; // Grab ball on upward jump
                     } else {
-                        // Regular bounce
                         let nx = dx / (dist || 1), ny = dy / (dist || 1);
-                        ball.vx = nx * 12 + this.vx;
-                        ball.vy = ny * 12 + (this.vy < 0 ? this.vy : -4);
+                        ball.vx = nx * 13 + this.vx;
+                        ball.vy = ny * 13 + (this.vy < 0 ? this.vy : -4);
                         spawnParticles(ball.x, ball.y, "#fff", 5);
                     }
                 }
             } else if (ball.holder === this) {
-                // Ball follows player
-                ball.x = this.x + this.w/2 + (this.team === 1 ? 20 : -20);
-                ball.y = this.y + 10;
+                ball.x = this.x + this.w/2 + (this.team === 1 ? 25 : -25);
+                ball.y = this.y - 10;
                 ball.vx = this.vx;
                 ball.vy = this.vy;
 
-                // Slam Dunk Detection
-                let nearHoop = (this.team === 1 && ball.x > 900 && ball.y < 300) || 
-                               (this.team === 2 && ball.x < 100 && ball.y < 300);
+                // Slam Dunk Detection (reaching opponent's hoop)
+                let nearHoop = (this.team === 1 && ball.x > 930 && ball.y < 300) || 
+                               (this.team === 2 && ball.x < 70 && ball.y < 300);
                 
                 if (nearHoop) {
                     this.performDunk();
                 }
 
-                // Release ball if grounded
+                // Drop ball if landing without dunking
                 if (this.grounded) ball.holder = null;
             }
         }
 
         performDunk() {
             const isTeam1 = this.team === 1;
-            if (isTeam1) { score1++; resetRound('s1', score1, -1, "SLAM DUNK!"); }
-            else { score2++; resetRound('s2', score2, 1, "SLAM DUNK!"); }
+            if (isTeam1) { score1++; resetRound('s1', score1, -1, "SLAM DUNK!!"); }
+            else { score2++; resetRound('s2', score2, 1, "SLAM DUNK!!"); }
             
-            screenShake = 30;
-            spawnParticles(ball.x, ball.y, this.color, 50);
+            screenShake = 40;
+            spawnParticles(ball.x, ball.y, this.color, 60);
             ball.holder = null;
         }
 
         draw() {
             ctx.save();
             ctx.translate(this.x + this.w/2, this.y + this.h/2);
-            
-            // Lean forward when running or dunking
-            let tilt = ball.holder === this ? (this.team === 1 ? 0.4 : -0.4) : this.vx * 0.03;
+            let tilt = ball.holder === this ? (this.team === 1 ? 0.5 : -0.5) : this.vx * 0.04;
             ctx.rotate(tilt);
             
             ctx.shadowBlur = 20; ctx.shadowColor = this.color;
@@ -197,13 +232,12 @@ const canvas = document.getElementById('court');
 
         drawBackground();
 
-        // Platform
+        // High Platform
         ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.strokeStyle = "#4deeea";
         ctx.strokeRect(400, 320, 200, 10); ctx.fillRect(400, 320, 200, 10);
 
         t1.update(); t2.update();
 
-        // Ball Physics (only if not held)
         if (!ball.holder) {
             ball.vy += gravity; ball.vx *= friction;
             ball.x += ball.vx; ball.y += ball.vy;
@@ -211,25 +245,24 @@ const canvas = document.getElementById('court');
             if (ball.y < ball.r) { ball.vy *= -bounciness; ball.y = ball.r; }
             if (ball.y + ball.r > FLOOR_Y) { ball.y = FLOOR_Y - ball.r; ball.vy *= -bounciness; }
             
-            // Platform bounce
             if (ball.x > 400 && ball.x < 600 && ball.y + ball.r > 320 && ball.y - ball.r < 335) {
                 ball.y = ball.vy > 0 ? 320 - ball.r : 335 + ball.r;
                 ball.vy *= -bounciness;
             }
 
-            // Normal Goal Detection
+            // Normal Scoring
             if (ball.y > 240 && ball.y < 265) {
                 if (ball.x < 50) { score2++; resetRound('s2', score2, 1, "GOAL!"); }
                 if (ball.x > 950) { score1++; resetRound('s1', score1, -1, "GOAL!"); }
             }
         }
 
-        // Ball Trail
+        // Trail
         ball.trail.push({x: ball.x, y: ball.y});
-        if (ball.trail.length > 12) ball.trail.shift();
+        if (ball.trail.length > 15) ball.trail.shift();
         ball.trail.forEach((p, i) => {
-            ctx.beginPath(); ctx.arc(p.x, p.y, ball.r * (i/12), 0, Math.PI*2);
-            ctx.fillStyle = ball.holder ? `rgba(0, 255, 255, ${i/20})` : `rgba(255, 165, 0, ${i/20})`; 
+            ctx.beginPath(); ctx.arc(p.x, p.y, ball.r * (i/15), 0, Math.PI*2);
+            ctx.fillStyle = ball.holder ? `rgba(0, 255, 255, ${i/25})` : `rgba(255, 165, 0, ${i/25})`; 
             ctx.fill();
         });
 
@@ -241,15 +274,14 @@ const canvas = document.getElementById('court');
         });
         ctx.globalAlpha = 1;
 
-        // Draw Hoops
+        // Hoops
         ctx.lineWidth = 6;
         ctx.strokeStyle = "#ff3e3e"; ctx.strokeRect(0, 250, 45, 8);
         ctx.strokeStyle = "#00d2ff"; ctx.strokeRect(955, 250, 45, 8);
 
         t1.draw(); t2.draw();
         
-        // Draw Ball
-        ctx.shadowBlur = ball.holder ? 40 : 25; 
+        ctx.shadowBlur = ball.holder ? 50 : 25; 
         ctx.shadowColor = ball.holder ? "#00ffff" : "#ffaa00"; 
         ctx.fillStyle = ball.holder ? "#00ffff" : "#ffaa00";
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
@@ -263,10 +295,13 @@ const canvas = document.getElementById('court');
         const msg = document.getElementById('msg');
         msg.innerText = text;
         msg.style.display = 'block';
-        gameActive = false; // Pause physics
+        gameActive = false; 
         setTimeout(() => { 
             msg.style.display = 'none'; 
             ball.reset(dir); 
             gameActive = true;
         }, 1200);
     }
+</script>
+</body>
+</html>
