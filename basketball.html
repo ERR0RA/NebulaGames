@@ -23,7 +23,7 @@
         <button class="btn" onclick="startGame('P1_VS_BOT')">1 PLAYER (VS BOT)</button>
         <button class="btn" onclick="startGame('P1_VS_P2')">2 PLAYERS (LOCAL)</button>
         <button class="btn" onclick="startGame('BOT_VS_BOT')">BOT VS BOT (SPECTATE)</button>
-        <div class="controls">P1: WASD / ARROWS | P2: IJKL</div>
+        <div class="controls">P1: WASD | P2: IJKL<br><b>TACKLE:</b> Run into the ball carrier at speed!</div>
     </div>
 
     <div id="ui">
@@ -72,31 +72,37 @@
             this.moveSpeed = 1.3;
             this.maxSpeed = 9;
             this.jumpForce = -15;
+            this.stunned = 0;
         }
 
-        update() {
+        update(opponent) {
+            if (this.stunned > 0) { this.stunned--; this.vx *= 0.9; }
+            
             let left = false, right = false, jump = false;
 
-            if (this.controlType === 'p1') {
-                left = keys['KeyA'] || keys['ArrowLeft'];
-                right = keys['KeyD'] || keys['ArrowRight'];
-                jump = keys['KeyW'] || keys['ArrowUp'] || keys['Space'];
-            } else if (this.controlType === 'p2') {
-                left = keys['KeyJ'];
-                right = keys['KeyL'];
-                jump = keys['KeyI'];
-            } else if (this.controlType === 'bot') {
-                let targetX = ball.x - (this.team === 1 ? -60 : 60); 
-                this.vx += Math.sign(targetX - this.x) * 0.7;
-                if (Math.abs(ball.x - this.x) < 150 && ball.y < this.y && this.grounded) jump = true;
-            }
+            if (this.stunned <= 0) {
+                if (this.controlType === 'p1') {
+                    left = keys['KeyA'] || keys['ArrowLeft'];
+                    right = keys['KeyD'] || keys['ArrowRight'];
+                    jump = keys['KeyW'] || keys['ArrowUp'] || keys['Space'];
+                } else if (this.controlType === 'p2') {
+                    left = keys['KeyJ'];
+                    right = keys['KeyL'];
+                    jump = keys['KeyI'];
+                } else if (this.controlType === 'bot') {
+                    // Bot logic: Chase ball or tackle player
+                    let targetX = (ball.holder === opponent) ? opponent.x : ball.x;
+                    this.vx += Math.sign(targetX - this.x) * 0.7;
+                    if (Math.abs(targetX - this.x) < 150 && (ball.y < this.y || opponent.y < this.y) && this.grounded) jump = true;
+                }
 
-            if (this.controlType !== 'bot') {
-                if (left) this.vx -= this.moveSpeed;
-                else if (right) this.vx += this.moveSpeed;
-                else this.vx *= 0.82;
+                if (this.controlType !== 'bot') {
+                    if (left) this.vx -= this.moveSpeed;
+                    else if (right) this.vx += this.moveSpeed;
+                    else this.vx *= 0.82;
+                }
+                if (jump && this.grounded) { this.vy = this.jumpForce; this.grounded = false; }
             }
-            if (jump && this.grounded) { this.vy = this.jumpForce; this.grounded = false; }
 
             this.vx = Math.max(-this.maxSpeed, Math.min(this.maxSpeed, this.vx));
             this.vy += gravity;
@@ -105,32 +111,48 @@
             if (this.y + this.h > FLOOR_Y) { this.y = FLOOR_Y - this.h; this.vy = 0; this.grounded = true; }
             if (this.x < 0) this.x = 0; if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
 
+            // Tackle Check
+            if (this !== ball.holder && ball.holder === opponent) {
+                if (Math.abs(this.x - opponent.x) < 40 && Math.abs(this.y - opponent.y) < 80) {
+                    if (Math.abs(this.vx) > 4) { // Only tackle if moving fast
+                        this.tackle(opponent);
+                    }
+                }
+            }
+
             // Ball Interaction
-            if (!scoringCooldown) {
+            if (!scoringCooldown && this.stunned <= 0) {
                 if (ball.holder === null) {
                     let cx = Math.max(this.x, Math.min(ball.x, this.x + this.w));
                     let cy = Math.max(this.y, Math.min(ball.y, this.y + this.h));
                     let dx = ball.x - cx, dy = ball.y - cy;
-                    let dist = Math.sqrt(dx*dx + dy*dy);
-
-                    if (dist < ball.r + 5) {
+                    if (Math.sqrt(dx*dx + dy*dy) < ball.r + 5) {
                         if (!this.grounded && this.vy < 0) ball.holder = this;
                         else {
-                            let nx = dx / (dist || 1), ny = dy / (dist || 1);
-                            ball.vx = nx * 14 + this.vx;
-                            ball.vy = ny * 12 + (this.vy < 0 ? this.vy : -4);
+                            ball.vx = (dx / 5) * 14 + this.vx;
+                            ball.vy = (dy / 5) * 12 + (this.vy < 0 ? this.vy : -4);
                             spawnParticles(ball.x, ball.y, "#fff", 5);
                         }
                     }
                 } else if (ball.holder === this) {
                     ball.x = this.x + this.w/2 + (this.team === 1 ? 25 : -25);
                     ball.y = this.y - 15;
-                    let nearHoop = (this.team === 1 && ball.x > 930 && ball.y < 300) || 
-                                   (this.team === 2 && ball.x < 70 && ball.y < 300);
-                    if (nearHoop) this.performDunk();
+                    if ((this.team === 1 && ball.x > 930 && ball.y < 300) || 
+                        (this.team === 2 && ball.x < 70 && ball.y < 300)) this.performDunk();
                     if (this.grounded) ball.holder = null;
                 }
             }
+        }
+
+        tackle(target) {
+            ball.holder = null;
+            ball.vx = this.vx * 1.5;
+            ball.vy = -8;
+            target.vx = this.vx * 1.2;
+            target.vy = -5;
+            target.stunned = 30;
+            screenShake = 25;
+            spawnParticles(target.x + 20, target.y + 40, "#ff0000", 20);
         }
 
         performDunk() {
@@ -147,6 +169,7 @@
             ctx.save();
             ctx.translate(this.x + this.w/2, this.y + this.h/2);
             ctx.rotate(ball.holder === this ? (this.team === 1 ? 0.4 : -0.4) : this.vx * 0.04);
+            if (this.stunned > 0) ctx.filter = "brightness(5) saturate(0)";
             ctx.shadowBlur = 15; ctx.shadowColor = this.color;
             ctx.fillStyle = this.color;
             ctx.fillRect(-this.w/2, -15, this.w, 40); 
@@ -190,7 +213,7 @@
         ctx.fillStyle = "white"; stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
         ctx.fillStyle = "#050510"; ctx.fillRect(0, FLOOR_Y, canvas.width, 60);
 
-        t1.update(); t2.update();
+        t1.update(t2); t2.update(t1);
 
         if (!ball.holder) {
             ball.vy += gravity; ball.vx *= friction;
@@ -209,7 +232,7 @@
             }
         }
 
-        // Visuals
+        // Trail & Particles
         ball.trail.push({x: ball.x, y: ball.y}); if (ball.trail.length > 15) ball.trail.shift();
         ball.trail.forEach((p, i) => {
             ctx.beginPath(); ctx.arc(p.x, p.y, ball.r * (i/15), 0, Math.PI*2);
