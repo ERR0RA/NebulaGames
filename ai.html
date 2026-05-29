@@ -49,15 +49,14 @@
 <div id="main-menu" class="overlay">
     <div class="menu-box">
         <h1>NEXUS_SINGLE_PLAYER</h1>
-        <button class="btn" onclick="init('bot')">SOLO SURVIVAL (1 vs 3)</button>
+        <button class="btn" onclick="init('bot')">SOLO SURVIVAL (MEGA BOT INBOUND)</button>
         <button class="btn" onclick="init('bot_tag')">SOLO TAG (RANDOM ROLES)</button>
-        <p style="color:#00ff00; font-size: 0.7rem; margin-top:10px; font-weight:bold;">MOVEMENT VELOCITY NORMALIZED</p>
+        <p style="color:#00ff00; font-size: 0.7rem; margin-top:10px; font-weight:bold;">SENSORS TUNED: NO HP / INSTANT TAG</p>
     </div>
 </div>
 
 <div id="hud">
-    <div class="stats">INTEGRITY: <span id="p1hp">100</span>%</div>
-    <div id="tagger-status" class="stats" style="color: #f00; font-weight: bold;">TAGGER: NONE</div>
+    <div id="tagger-status" class="stats" style="color: #f00; font-weight: bold;">STATUS: STANDBY</div>
 </div>
 
 <script>
@@ -70,12 +69,12 @@ let world = [];
 let active = false;
 let gameMode = '';
 let timeLeft = 240;
+let megaSpawned = false;
 let timerId = null;
 let animationId = null;
 
 const keys = new Set();
-
-let p1 = { x: 1.5, y: 1.5, dir: 0, hp: 100, role: 'runner' };
+let p1 = { x: 1.5, y: 1.5, dir: 0, role: 'runner' };
 let bots = [];
 
 window.addEventListener('keydown', e => {
@@ -83,10 +82,7 @@ window.addEventListener('keydown', e => {
     if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","KeyW","KeyS","KeyA","KeyD"].includes(e.code)) e.preventDefault();
 }, { passive: false });
 
-window.addEventListener('keyup', e => {
-    keys.delete(e.code);
-});
-
+window.addEventListener('keyup', e => keys.delete(e.code));
 function clearKeys() { keys.clear(); }
 window.addEventListener('blur', clearKeys);
 
@@ -127,39 +123,25 @@ function getNextStep(bx, by, tx, ty) {
     return { x: n[0] + 0.5, y: n[1] + 0.5 };
 }
 
-function canMove(nx, ny) {
-    return world[Math.floor(ny)] && world[Math.floor(ny)][Math.floor(nx)] === 0;
-}
+function canMove(nx, ny) { return world[Math.floor(ny)] && world[Math.floor(ny)][Math.floor(nx)] === 0; }
 
 function movePlayer(p, speed, rotSpeed) {
-    // Rotation logic
     if (keys.has('KeyA') || keys.has('ArrowLeft')) p.dir -= rotSpeed;
     if (keys.has('KeyD') || keys.has('ArrowRight')) p.dir += rotSpeed;
-
-    let moveX = 0;
-    let moveY = 0;
-
-    // Movement logic - uses else if to prevent velocity stacking/adding up
+    let moveX = 0, moveY = 0;
     if (keys.has('KeyW') || keys.has('ArrowUp')) {
-        moveX = Math.cos(p.dir) * speed;
-        moveY = Math.sin(p.dir) * speed;
+        moveX = Math.cos(p.dir) * speed; moveY = Math.sin(p.dir) * speed;
     } else if (keys.has('KeyS') || keys.has('ArrowDown')) {
-        moveX = -Math.cos(p.dir) * speed;
-        moveY = -Math.sin(p.dir) * speed;
+        moveX = -Math.cos(p.dir) * speed; moveY = -Math.sin(p.dir) * speed;
     }
-
     if (canMove(p.x + moveX, p.y)) p.x += moveX;
     if (canMove(p.x, p.y + moveY)) p.y += moveY;
 }
 
 function init(m) {
-    gameMode = m;
-    generateMaze();
-    clearKeys();
-    active = true;
-    timeLeft = 240;
-    bots = [];
-    p1 = { x: 1.5, y: 1.5, dir: 0, hp: 100, role: 'runner' };
+    gameMode = m; generateMaze(); clearKeys();
+    active = true; timeLeft = 240; megaSpawned = false; bots = [];
+    p1 = { x: 1.5, y: 1.5, dir: 0, role: 'runner' };
 
     if (timerId) clearInterval(timerId);
     if (animationId) cancelAnimationFrame(animationId);
@@ -172,33 +154,32 @@ function init(m) {
     if (m === 'bot_tag') {
         let botIsTagger = Math.random() > 0.5;
         p1.role = botIsTagger ? 'runner' : 'tagger';
-        bots = [{ x: SIZE - 1.5, y: SIZE - 1.5, s: 0.045, role: botIsTagger ? 'tagger' : 'runner' }];
+        bots = [{ x: SIZE - 1.5, y: SIZE - 1.5, s: 0.045, role: botIsTagger ? 'tagger' : 'runner', type: 'normal' }];
         document.getElementById('tagger-status').innerText = `TAGGER: ${botIsTagger ? 'ELITE BOT' : 'YOU'}`;
     } else if (m === 'bot') {
         bots = [
-            { x: 15.5, y: 15.5, s: 0.022, role: 'tagger' },
-            { x: 1.5, y: SIZE - 1.5, s: 0.022, role: 'tagger' },
-            { x: SIZE - 1.5, y: 1.5, s: 0.022, role: 'tagger' }
+            { x: 1.5, y: SIZE - 1.5, s: 0.025, role: 'tagger', type: 'normal' },
+            { x: SIZE - 1.5, y: 1.5, s: 0.025, role: 'tagger', type: 'normal' }
         ];
-        document.getElementById('tagger-status').innerText = 'TAGGER: ALL BOTS';
+        document.getElementById('tagger-status').innerText = 'TAGGER: SENTINELS';
     }
 
     timerId = setInterval(() => {
         if (!active) return;
         timeLeft--;
+        if (gameMode === 'bot' && timeLeft <= 90 && !megaSpawned) {
+            megaSpawned = true;
+            bots.push({ x: 15.5, y: 15.5, s: 0.048, role: 'tagger', type: 'mega' });
+            document.getElementById('tagger-status').innerText = 'WARNING: MEGA BOT ACTIVE';
+        }
         let min = Math.floor(timeLeft / 60), sec = timeLeft % 60;
         document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0' + sec : sec}`;
-        if (timeLeft <= 0) { active = false; alert('TIME EXPIRED: YOU SURVIVED'); location.reload(); }
+        if (timeLeft <= 0) { active = false; alert('EXTRACTION SUCCESSFUL: YOU SURVIVED'); location.reload(); }
     }, 1000);
-
-    resize();
-    loop();
+    resize(); loop();
 }
 
-function resize() {
-    p1c.width = window.innerWidth;
-    p1c.height = window.innerHeight;
-}
+function resize() { p1c.width = window.innerWidth; p1c.height = window.innerHeight; }
 window.addEventListener('resize', resize);
 
 function render(ctx, p, canvas) {
@@ -206,7 +187,6 @@ function render(ctx, p, canvas) {
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h / 2);
     ctx.fillStyle = '#050505'; ctx.fillRect(0, h / 2, w, h / 2);
     let zBuf = new Array(w).fill(30);
-
     for (let i = 0; i < w; i++) {
         let camX = 2 * i / w - 1;
         let rayDirX = Math.cos(p.dir + camX * 0.6), rayDirY = Math.sin(p.dir + camX * 0.6);
@@ -225,7 +205,6 @@ function render(ctx, p, canvas) {
             ctx.fillStyle = '#006600'; ctx.fillRect(i, h / 2 - wallH / 2, 1, wallH);
         }
     }
-
     bots.forEach(t => {
         let dx = t.x - p.x, dy = t.y - p.y, dist = Math.hypot(dx, dy);
         if (dist < 0.1) return;
@@ -235,8 +214,9 @@ function render(ctx, p, canvas) {
         if (Math.abs(angle) < 0.8) {
             let sx = (angle / 1.2 + 0.5) * w, sh = h / dist, ix = Math.floor(sx);
             if (ix >= 0 && ix < zBuf.length && dist < zBuf[ix]) {
-                ctx.fillStyle = (t.role === 'tagger') ? '#f00' : '#0f0';
-                ctx.fillRect(sx - sh / 8, h / 2 - sh / 2, sh / 4, sh);
+                ctx.fillStyle = (t.type === 'mega') ? '#ff0000' : (t.role === 'tagger' ? '#f55' : '#0f0');
+                let botWidth = (t.type === 'mega') ? sh / 2 : sh / 4;
+                ctx.fillRect(sx - botWidth / 2, h / 2 - sh / 2, botWidth, sh);
             }
         }
     });
@@ -244,19 +224,15 @@ function render(ctx, p, canvas) {
 
 function updateBots() {
     bots.forEach(b => {
-        let target = p1;
         let dist = Math.hypot(p1.x - b.x, p1.y - b.y);
-        
-        if (dist < 0.5) {
+        if (dist < 0.45) {
             if (b.role === 'tagger') {
-                active = false; alert('TAGGED BY ELITE BOT!'); location.reload();
+                active = false; alert(b.type === 'mega' ? 'CRUSHED BY MEGA BOT!' : 'TAGGED BY SENTINEL!'); location.reload();
             } else if (gameMode === 'bot_tag' && p1.role === 'tagger') {
                 active = false; alert('YOU TAGGED THE BOT! VICTORY'); location.reload();
             }
-            p1.hp -= 0.5;
-            if (p1.hp <= 0) { active = false; alert('INTEGRITY LOST'); location.reload(); }
         } else {
-            let next = getNextStep(b.x, b.y, target.x, target.y);
+            let next = getNextStep(b.x, b.y, p1.x, p1.y);
             let dx = next.x - b.x, dy = next.y - b.y, d = Math.hypot(dx, dy);
             if (d > 0.01) { b.x += (dx / d) * b.s; b.y += (dy / d) * b.s; }
         }
@@ -274,8 +250,9 @@ function drawMinimap() {
     mCtx.fillStyle = p1.role === 'tagger' ? '#f00' : '#00ff00';
     mCtx.fillRect(p1.x * s - 1.5, p1.y * s - 1.5, 3, 3);
     bots.forEach(b => {
-        mCtx.fillStyle = b.role === 'runner' ? '#0f0' : '#f00';
-        mCtx.fillRect(b.x * s - 1.5, b.y * s - 1.5, 3, 3);
+        mCtx.fillStyle = (b.type === 'mega') ? '#f00' : (b.role === 'runner' ? '#0f0' : '#f55');
+        let sz = (b.type === 'mega') ? 5 : 3;
+        mCtx.fillRect(b.x * s - sz/2, b.y * s - sz/2, sz, sz);
     });
 }
 
@@ -284,7 +261,6 @@ function loop() {
     movePlayer(p1, 0.05, 0.06);
     updateBots();
     render(ctx1, p1, p1c);
-    document.getElementById('p1hp').innerText = Math.floor(p1.hp);
     drawMinimap();
     animationId = requestAnimationFrame(loop);
 }
