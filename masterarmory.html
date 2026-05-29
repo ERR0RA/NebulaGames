@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ARMS | 3D ARENA</title>
+    <title>NEXUS ARMS | LARGE ARENA</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; user-select: none; touch-action: none; }
@@ -21,13 +21,14 @@
         .win-counter { font-size: 1.2rem; color: #00f2ff; margin-bottom: 5px; font-weight: 900; }
 
         #msg-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; font-weight: 900; color: #fff; z-index: 150; pointer-events: none; text-shadow: 0 0 20px #00f2ff; display: none; text-align: center; }
+        #control-hint { position: absolute; bottom: 10px; width: 100%; text-align: center; color: #444; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
 <div id="lobby">
-    <h1 style="color: #00f2ff; text-shadow: 0 0 20px #00f2ff; margin-bottom: 5px;">NEXUS ARMS: 3D</h1>
-    <div id="total-stats" style="font-size: 0.8rem; color: #ff0055; margin-bottom: 20px;">ARENA BATTLE INITIALIZED</div>
+    <h1 style="color: #00f2ff; text-shadow: 0 0 20px #00f2ff; margin-bottom: 5px;">NEXUS ARMS: EXPANDED</h1>
+    <div style="font-size: 0.8rem; color: #ff0055; margin-bottom: 20px;">LARGE SCALE TACTICAL COMBAT</div>
     
     <div class="setup-grid">
         <div class="player-setup">
@@ -51,10 +52,11 @@
             </select>
         </div>
     </div>
-    <button id="start-btn">ENTER ARENA</button>
+    <button id="start-btn">INITIALIZE ARENA</button>
 </div>
 
 <div id="msg-overlay">K.O.</div>
+<div id="control-hint">P1: WASD + F | P2: ARROWS + ENTER | SHIFT to Block</div>
 
 <div id="ui">
     <div class="bar-container">
@@ -73,36 +75,36 @@
     import * as THREE from 'three';
 
     const WEAPONS = {
-        katana:      { dmg: 15, speed: 0.18, range: 2.8, cd: 500, scale: [0.06, 2.5, 0.08], color: 0x00f2ff },
-        executioner: { dmg: 35, speed: 0.07, range: 3.5, cd: 1300, scale: [0.3, 3.2, 0.12], color: 0xff0055 },
-        rapier:      { dmg: 10, speed: 0.3, range: 4.0, cd: 300, scale: [0.03, 3.8, 0.03], color: 0xffffff }
+        katana:      { dmg: 15, speed: 0.18, range: 3.2, cd: 500, scale: [0.06, 2.5, 0.08], color: 0x00f2ff },
+        executioner: { dmg: 35, speed: 0.07, range: 4.2, cd: 1300, scale: [0.3, 3.2, 0.12], color: 0xff0055 },
+        rapier:      { dmg: 10, speed: 0.3, range: 4.5, cd: 300, scale: [0.03, 3.8, 0.03], color: 0xffffff }
     };
 
     let sessionWins = { p1: 0, p2: 0 };
     let roundActive = false, isBot = false, isHitStop = false;
-    const ARENA_RADIUS = 12;
+    const ARENA_RADIUS = 22; // BIGGER MAP
+    const MOVE_SPEED = 0.07; // SLOWER MOVEMENT
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x020205);
-    scene.fog = new THREE.Fog(0x020205, 10, 50);
+    scene.background = new THREE.Color(0x010103);
+    scene.fog = new THREE.Fog(0x010103, 15, 60);
 
-    const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    // Lights
-    const ambient = new THREE.AmbientLight(0xffffff, 0.4); scene.add(ambient);
-    const spotlight = new THREE.PointLight(0x00f2ff, 2, 50); spotlight.position.set(0, 15, 0); scene.add(spotlight);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.3); scene.add(ambient);
+    const light = new THREE.PointLight(0x00f2ff, 1.5, 100); light.position.set(0, 20, 10); scene.add(light);
 
-    // 3D Arena Map
-    const arenaGeo = new THREE.CylinderGeometry(ARENA_RADIUS, ARENA_RADIUS + 2, 1, 32);
-    const arenaMat = new THREE.MeshStandardMaterial({color: 0x111115, roughness: 0.2, metalness: 0.8});
+    // Bigger Map
+    const arenaGeo = new THREE.CylinderGeometry(ARENA_RADIUS, ARENA_RADIUS + 3, 2, 64);
+    const arenaMat = new THREE.MeshStandardMaterial({color: 0x050508, roughness: 0.5, metalness: 0.5});
     const arena = new THREE.Mesh(arenaGeo, arenaMat);
-    arena.position.y = -0.5; arena.receiveShadow = true; scene.add(arena);
+    arena.position.y = -1; arena.receiveShadow = true; scene.add(arena);
     
-    const grid = new THREE.GridHelper(ARENA_RADIUS * 2, 20, 0x00f2ff, 0x222222);
+    const grid = new THREE.GridHelper(ARENA_RADIUS * 2.2, 40, 0x00f2ff, 0x111111);
     grid.position.y = 0.01; scene.add(grid);
 
     class Fighter {
@@ -121,43 +123,32 @@
         }
         init(wepKey, color) {
             this.group.clear(); this.wep = WEAPONS[wepKey];
-            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 1), new THREE.MeshStandardMaterial({color: color, emissive: color, emissiveIntensity: 0.2}));
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 1), new THREE.MeshStandardMaterial({color: color}));
             body.position.y = 1; body.castShadow = true; this.group.add(body);
-            
             this.pivot = new THREE.Group(); this.pivot.position.set(0, 1.2, 0);
-            const blade = new THREE.Mesh(new THREE.BoxGeometry(...this.wep.scale), new THREE.MeshStandardMaterial({color: this.wep.color, emissive: this.wep.color, emissiveIntensity: 1}));
+            const blade = new THREE.Mesh(new THREE.BoxGeometry(...this.wep.scale), new THREE.MeshStandardMaterial({color: this.wep.color, emissive: this.wep.color, emissiveIntensity: 2}));
             blade.position.y = this.wep.scale[1]/2; this.pivot.add(blade);
             this.group.add(this.pivot);
         }
         update(targetPos) {
             if (this.stunned > 0) {
                 this.stunned -= 0.016;
-                this.group.children[0].material.emissive.setHex(0xffaa00);
                 return;
             }
-            this.group.children[0].material.emissive.setHex(this.isBlocking ? 0x00f2ff : 0x000000);
-
-            // Look at opponent
             this.group.lookAt(targetPos.x, 0, targetPos.z);
-
-            // Attack animation
             if (this.atkPhase > 0) {
                 this.atkPhase -= this.wep.speed;
                 this.pivot.rotation.x = Math.sin(this.atkPhase * Math.PI) * -2.5;
             } else { this.pivot.rotation.x = this.isBlocking ? -1.2 : -0.5; }
 
-            // Physics
             this.vel.y -= 0.015;
             this.group.position.add(this.vel);
             if (this.group.position.y <= 0) { this.group.position.y = 0; this.vel.y = 0; this.isJumping = false; }
-            this.vel.x *= 0.85; this.vel.z *= 0.85;
+            this.vel.x *= 0.9; this.vel.z *= 0.9; // Friction
 
-            // Bounds check
-            const distCenter = Math.sqrt(this.group.position.x**2 + this.group.position.z**2);
+            const distCenter = this.group.position.length();
             if (distCenter > ARENA_RADIUS) {
-                const angle = Math.atan2(this.group.position.z, this.group.position.x);
-                this.group.position.x = Math.cos(angle) * ARENA_RADIUS;
-                this.group.position.z = Math.sin(angle) * ARENA_RADIUS;
+                this.group.position.normalize().multiplyScalar(ARENA_RADIUS);
             }
         }
         tryAtk() {
@@ -168,8 +159,8 @@
         }
     }
 
-    const p1 = new Fighter(-6, 0, 1);
-    const p2 = new Fighter(6, 0, 2);
+    const p1 = new Fighter(-12, 0, 1);
+    const p2 = new Fighter(12, 0, 2);
     const keys = {}; window.onkeydown = (e) => keys[e.code] = true; window.onkeyup = (e) => keys[e.code] = false;
 
     window.toggleP2Wep = () => {
@@ -187,31 +178,29 @@
     };
 
     function handleInput() {
-        const speed = 0.15;
-        // P1 3D Controls
+        // P1 Controls
         if (p1.stunned <= 0) {
-            if (keys['KeyW']) p1.vel.z -= speed; if (keys['KeyS']) p1.vel.z += speed;
-            if (keys['KeyA']) p1.vel.x -= speed; if (keys['KeyD']) p1.vel.x += speed;
-            if (keys['Space'] && !p1.isJumping) { p1.vel.y = 0.32; p1.isJumping = true; }
-            p1.isBlocking = keys['KeyShiftLeft'] || keys['KeyE'];
-            if (keys['KeyF'] || keys['KeyQ']) p1.atkPhase <= 0 && p1.tryAtk();
+            if (keys['KeyW']) p1.vel.z -= MOVE_SPEED; if (keys['KeyS']) p1.vel.z += MOVE_SPEED;
+            if (keys['KeyA']) p1.vel.x -= MOVE_SPEED; if (keys['KeyD']) p1.vel.x += MOVE_SPEED;
+            if (keys['Space'] && !p1.isJumping) { p1.vel.y = 0.3; p1.isJumping = true; }
+            p1.isBlocking = keys['ShiftLeft'];
+            if (keys['KeyF']) p1.atkPhase <= 0 && p1.tryAtk();
         }
-
-        // P2 Controls (Bot or Local)
+        // P2 Controls
         if (isBot) {
             if (p2.stunned <= 0) {
-                const d = p2.group.position.distanceTo(p1.group.position);
-                if (d > p2.wep.range) {
+                const dist = p2.group.position.distanceTo(p1.group.position);
+                if (dist > p2.wep.range) {
                     const dir = new THREE.Vector3().subVectors(p1.group.position, p2.group.position).normalize();
-                    p2.vel.add(dir.multiplyScalar(0.02));
-                } else if (Math.random() > 0.97) p2.tryAtk();
+                    p2.vel.add(dir.multiplyScalar(0.015));
+                } else if (Math.random() > 0.98) p2.tryAtk();
             }
         } else if (p2.stunned <= 0) {
-            if (keys['ArrowUp']) p2.vel.z -= speed; if (keys['ArrowDown']) p2.vel.z += speed;
-            if (keys['ArrowLeft']) p2.vel.x -= speed; if (keys['ArrowRight']) p2.vel.x += speed;
-            if (keys['Numpad0'] && !p2.isJumping) { p2.vel.y = 0.32; p2.isJumping = true; }
-            p2.isBlocking = keys['NumpadControl'] || keys['Slash'];
-            if (keys['Enter'] || keys['Period']) p2.atkPhase <= 0 && p2.tryAtk();
+            if (keys['ArrowUp']) p2.vel.z -= MOVE_SPEED; if (keys['ArrowDown']) p2.vel.z += MOVE_SPEED;
+            if (keys['ArrowLeft']) p2.vel.x -= MOVE_SPEED; if (keys['ArrowRight']) p2.vel.x += MOVE_SPEED;
+            if (keys['Numpad0'] && !p2.isJumping) { p2.vel.y = 0.3; p2.isJumping = true; }
+            p2.isBlocking = keys['ShiftRight'];
+            if (keys['Enter']) p2.atkPhase <= 0 && p2.tryAtk();
         }
     }
 
@@ -225,12 +214,10 @@
             [p1, p2].forEach((atk, i) => {
                 const def = i === 0 ? p2 : p1;
                 if (atk.atkPhase > 0.4 && atk.atkPhase < 0.7 && !atk.hitMark && dist < atk.wep.range) {
-                    if (def.isBlocking) {
-                        def.hp -= atk.wep.dmg * 0.1;
-                    } else {
+                    if (!def.isBlocking) {
                         def.hp -= atk.wep.dmg;
-                        isHitStop = true; setTimeout(() => isHitStop = false, 60);
-                    }
+                        isHitStop = true; setTimeout(() => isHitStop = false, 50);
+                    } else { def.hp -= atk.wep.dmg * 0.1; }
                     atk.hitMark = true;
                 }
             });
@@ -244,7 +231,6 @@
             const winner = p1.hp <= 0 ? "p2" : "p1";
             sessionWins[winner]++;
             document.getElementById(`wins-${winner}`).innerText = `${winner.toUpperCase()} WINS: ${sessionWins[winner]}`;
-            document.getElementById('msg-overlay').innerText = winner.toUpperCase() + " K.O.";
             document.getElementById('msg-overlay').style.display = 'block';
             setTimeout(() => {
                 p1.reset(); p2.reset();
@@ -253,9 +239,8 @@
             }, 2000);
         }
 
-        // 3D Camera Focus
         const mid = new THREE.Vector3().addVectors(p1.group.position, p2.group.position).multiplyScalar(0.5);
-        camera.position.lerp(new THREE.Vector3(mid.x, 8, mid.z + 15), 0.1);
+        camera.position.lerp(new THREE.Vector3(mid.x, 12, mid.z + 25), 0.05); // Zoomed out for bigger map
         camera.lookAt(mid.x, 1, mid.z);
 
         renderer.render(scene, camera);
