@@ -30,7 +30,7 @@
 
         #hud {
             position: absolute; bottom: 15px; width: 100%; display: none;
-            justify-content: center; pointer-events: none; z-index: 40; gap: 20px;
+            配送 justify-content: center; pointer-events: none; z-index: 40; gap: 20px;
         }
 
         .stats { background: rgba(0,0,0,0.8); padding: 5px 15px; border: 1px solid #0f0; font-size: 0.8rem; }
@@ -49,14 +49,16 @@
 <div id="main-menu" class="overlay">
     <div class="menu-box">
         <h1>NEXUS_SINGLE_PLAYER</h1>
-        <button class="btn" onclick="init('bot')">SOLO SURVIVAL (MEGA BOT INBOUND)</button>
+        <button class="btn" onclick="init('bot')">SOLO SURVIVAL (1v2 SENTINELS)</button>
         <button class="btn" onclick="init('bot_tag')">SOLO TAG (RANDOM ROLES)</button>
+        <p id="best-display" style="color:#0f0; font-size: 0.8rem; margin: 10px 0;">BEST SURVIVAL: 0s</p>
         <p style="color:#00ff00; font-size: 0.7rem; margin-top:10px; font-weight:bold;">SENSORS TUNED: NO HP / INSTANT TAG</p>
     </div>
 </div>
 
 <div id="hud">
     <div id="tagger-status" class="stats" style="color: #f00; font-weight: bold;">STATUS: STANDBY</div>
+    <div id="record-status" class="stats" style="color: #0f0;">BEST: 0s</div>
 </div>
 
 <script>
@@ -65,13 +67,19 @@ const ctx1 = p1c.getContext('2d');
 const mCtx = document.getElementById('minimap').getContext('2d');
 
 const SIZE = 31;
+const START_TIME = 240;
 let world = [];
 let active = false;
 let gameMode = '';
-let timeLeft = 240;
+let timeLeft = START_TIME;
 let megaSpawned = false;
 let timerId = null;
 let animationId = null;
+
+// High Score Setup
+let bestSurvival = localStorage.getItem('nexus_best_survival') || 0;
+document.getElementById('best-display').innerText = `BEST SURVIVAL: ${bestSurvival}s`;
+document.getElementById('record-status').innerText = `BEST: ${bestSurvival}s`;
 
 const keys = new Set();
 let p1 = { x: 1.5, y: 1.5, dir: 0, role: 'runner' };
@@ -138,9 +146,29 @@ function movePlayer(p, speed, rotSpeed) {
     if (canMove(p.x, p.y + moveY)) p.y += moveY;
 }
 
+function checkSurvivalRecord() {
+    if (gameMode === 'bot') {
+        let survived = START_TIME - timeLeft;
+        if (survived > bestSurvival) {
+            bestSurvival = survived;
+            localStorage.setItem('nexus_best_survival', bestSurvival);
+            return true;
+        }
+    }
+    return false;
+}
+
+function endGame(msg) {
+    active = false;
+    let isNewRecord = checkSurvivalRecord();
+    let finalMsg = isNewRecord ? msg + "\nNEW SURVIVAL RECORD: " + bestSurvival + "s" : msg;
+    alert(finalMsg);
+    location.reload();
+}
+
 function init(m) {
     gameMode = m; generateMaze(); clearKeys();
-    active = true; timeLeft = 240; megaSpawned = false; bots = [];
+    active = true; timeLeft = START_TIME; megaSpawned = false; bots = [];
     p1 = { x: 1.5, y: 1.5, dir: 0, role: 'runner' };
 
     if (timerId) clearInterval(timerId);
@@ -150,6 +178,9 @@ function init(m) {
     document.getElementById('minimap').style.display = 'block';
     document.getElementById('hud').style.display = 'flex';
     document.getElementById('timer-box').style.display = 'block';
+    
+    // Hide record if not in survival mode
+    document.getElementById('record-status').style.display = (m === 'bot') ? 'block' : 'none';
 
     if (m === 'bot_tag') {
         let botIsTagger = Math.random() > 0.5;
@@ -174,7 +205,7 @@ function init(m) {
         }
         let min = Math.floor(timeLeft / 60), sec = timeLeft % 60;
         document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0' + sec : sec}`;
-        if (timeLeft <= 0) { active = false; alert('EXTRACTION SUCCESSFUL: YOU SURVIVED'); location.reload(); }
+        if (timeLeft <= 0) { endGame('EXTRACTION SUCCESSFUL: YOU SURVIVED'); }
     }, 1000);
     resize(); loop();
 }
@@ -227,9 +258,9 @@ function updateBots() {
         let dist = Math.hypot(p1.x - b.x, p1.y - b.y);
         if (dist < 0.45) {
             if (b.role === 'tagger') {
-                active = false; alert(b.type === 'mega' ? 'CRUSHED BY MEGA BOT!' : 'TAGGED BY SENTINEL!'); location.reload();
+                endGame(b.type === 'mega' ? 'CRUSHED BY MEGA BOT!' : 'TAGGED BY SENTINEL!');
             } else if (gameMode === 'bot_tag' && p1.role === 'tagger') {
-                active = false; alert('YOU TAGGED THE BOT! VICTORY'); location.reload();
+                endGame('YOU TAGGED THE BOT! VICTORY');
             }
         } else {
             let next = getNextStep(b.x, b.y, p1.x, p1.y);
