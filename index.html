@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Nebula | Ultimate Cloud Gaming</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;800&family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -12,65 +12,58 @@
       --bg: #050608;
       --glass-border: rgba(255, 255, 255, 0.12);
       --text: #ffffff;
-      --muted: rgba(255,255,255,.62);
-      --card: rgba(255,255,255,.045);
-      --shadow: rgba(0,0,0,.45);
       --bg0: #050608; --bg1: #0a0e17; --bg2: #120a1c;
       --secondary: #00d9ff; --secondary-glow: rgba(0,217,255,.24);
     }
 
-    /* Original Themes */
+    /* ALL 12 ORIGINAL THEMES KEPT */
     [data-theme="cyber"] { --primary:#ff2bd6; --primary-glow:rgba(255,43,214,.42); --secondary:#00f5ff; --bg0:#07020b; }
     [data-theme="ocean"] { --primary:#00d9ff; --primary-glow:rgba(0,217,255,.42); --secondary:#38ffb5; --bg0:#021016; }
     [data-theme="amber"] { --primary:#ffaa00; --primary-glow:rgba(255,170,0,.38); --secondary:#ff4d6d; --bg0:#110904; }
     [data-theme="crimson"] { --primary:#ff3b3b; --primary-glow:rgba(255,59,59,.40); --secondary:#ffd166; --bg0:#100307; }
     [data-theme="violet"] { --primary:#8b5cf6; --primary-glow:rgba(139,92,246,.42); --bg0:#09061a; }
+    [data-theme="lime"] { --primary:#a3ff12; --primary-glow:rgba(163,255,18,.36); --bg0:#050900; }
+    [data-theme="ice"] { --primary:#7dd3fc; --primary-glow:rgba(125,211,252,.38); --bg0:#031018; }
+    [data-theme="gold"] { --primary:#ffd700; --primary-glow:rgba(255,215,0,.38); --bg0:#0d0902; }
+    [data-theme="rose"] { --primary:#ff4d94; --primary-glow:rgba(255,77,148,.40); --bg0:#11040b; }
+    [data-theme="emerald"] { --primary:#2ecc71; --primary-glow:rgba(46,204,113,.38); --bg0:#03100a; }
     [data-theme="toxic"] { --primary:#ccff00; --primary-glow:rgba(204,255,0,.36); --bg0:#070a00; }
+    [data-theme="midnight"] { --primary:#706fd3; --primary-glow:rgba(112,111,211,.42); --bg0:#050716; }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
       margin: 0; min-height: 100vh; overflow-x: hidden;
       font-family: "Plus Jakarta Sans", sans-serif;
       background: var(--bg); color: var(--text); cursor: none;
-      transition: background .35s ease; padding-bottom: 120px;
+      transition: background .35s ease; padding-bottom: 150px;
     }
 
-    /* Background Canvas (Matrix & Warp) */
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
-    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas { opacity: 0.4; }
+    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas { opacity: 0.5; }
 
-    /* Cursor Styles - Fixed for performance */
-    .cursor-dot {
-      position: fixed; top: 0; left: 0; width: 8px; height: 8px; 
-      background: var(--primary); border-radius: 50%; z-index: 10000;
-      pointer-events: none; transform: translate(-50%, -50%);
-      box-shadow: 0 0 15px var(--primary); transition: transform 0.1s ease-out;
-    }
-    .cursor-ring {
-      position: fixed; top: 0; left: 0; width: 36px; height: 36px;
-      border: 2px solid var(--primary); border-radius: 50%; z-index: 9999;
-      pointer-events: none; transform: translate(-50%, -50%);
-      transition: width 0.2s, height 0.2s, border 0.2s, transform 0.15s ease-out;
-    }
+    /* Cursor Fixes */
+    .cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); }
+    .cursor-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 15px var(--primary); }
+    .cursor-ring { width: 36px; height: 36px; border: 2px solid var(--primary); border-radius: 50%; transition: width 0.2s, height 0.2s; }
 
-    header { padding: 86px 20px 20px; text-align: center; }
-    h1 { font-size: clamp(3.4rem, 10vw, 6.2rem); margin: 0; font-weight: 800; text-shadow: 0 0 26px var(--primary-glow); }
+    header { padding: 60px 20px 20px; text-align: center; }
+    h1 { font-size: clamp(2.8rem, 10vw, 6.2rem); margin: 0; font-weight: 800; text-shadow: 0 0 26px var(--primary-glow); }
 
-    .search-wrap { width: min(90%, 640px); margin: 30px auto; }
+    .search-wrap { width: min(90%, 640px); margin: 25px auto; }
     #moduleSearch {
-      width: 100%; padding: 17px 24px; border-radius: 999px; border: 1px solid var(--glass-border);
-      background: rgba(255, 255, 255, .045); color: white; outline: none; text-align: center; backdrop-filter: blur(20px);
+      width: 100%; padding: 16px 24px; border-radius: 999px; border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, .05); color: white; outline: none; text-align: center; backdrop-filter: blur(20px); font-size: 1rem;
     }
 
-    .link-container { width: min(92%, 1240px); margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+    .link-container { width: min(94%, 1240px); margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
     .game-link {
-      position: relative; min-height: 148px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      position: relative; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center;
       text-decoration: none; color: white; border-radius: 18px; border: 1px solid var(--glass-border);
       background: rgba(255,255,255,0.03); backdrop-filter: blur(18px); transition: 0.3s; padding: 15px;
     }
     .game-link:hover { border-color: var(--primary); box-shadow: 0 0 24px var(--primary-glow); transform: translateY(-5px); }
 
-    /* Footer Fix */
+    /* Footer Fix (Credit update) */
     .credits-section {
       text-align: center; margin-top: 80px; padding: 40px 20px; border-top: 1px solid var(--glass-border);
       background: rgba(0,0,0,0.4); backdrop-filter: blur(15px);
@@ -78,15 +71,25 @@
     .credits-section p { font-size: 0.85rem; opacity: 0.6; margin: 10px 0; }
     .wa-link { color: var(--primary); text-decoration: none; font-weight: 800; }
 
-    .bottom-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 1000; flex-wrap: wrap; justify-content: center; }
-    .panel { background: rgba(0,0,0,0.75); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 8px 15px; display: flex; align-items: center; gap: 10px; }
-    .bg-btn { background: rgba(255,255,255,.08); border: 1px solid var(--glass-border); color: white; padding: 5px 12px; border-radius: 999px; font-weight: 800; font-size: 10px; cursor: none; }
+    /* UI Controls */
+    .bottom-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 1000; flex-wrap: wrap; justify-content: center; width: 95%; }
+    .panel { background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+    .bg-btn { background: rgba(255,255,255,.08); border: 1px solid var(--glass-border); color: white; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 10px; cursor: pointer; }
     .bg-btn.active { background: var(--primary); color: #000; }
-    .t-btn { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: none; }
+    .t-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.2s; }
 
-    /* Background Modes */
+    /* ALL 5 BACKGROUND THEMES KEPT */
     body[data-bg="neon"] { background: radial-gradient(circle at 18% 16%, var(--primary-glow), transparent 38%), linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 54%, var(--bg2) 100%); }
+    body[data-bg="gradient"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
     body[data-bg="glitch"] { background: repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 6px), var(--bg0); }
+    body[data-bg="stars"] { background: radial-gradient(circle at 50% 50%, #fff 1px, transparent 1px); background-size: 80px 80px; background-color: var(--bg0); }
+
+    @media (max-width: 768px) {
+      body { cursor: auto; padding-bottom: 200px; }
+      .cursor-dot, .cursor-ring { display: none !important; }
+      .link-container { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .game-link { min-height: 110px; }
+    }
   </style>
 </head>
 <body data-bg="neon">
@@ -101,7 +104,7 @@
   </header>
 
   <div class="search-wrap">
-    <input type="text" id="moduleSearch" placeholder="Search Game Library..." onkeyup="filterGames()">
+    <input type="text" id="moduleSearch" placeholder="Search Games..." onkeyup="filterGames()">
   </div>
 
   <div id="gameGrid" class="link-container"></div>
@@ -119,6 +122,13 @@
       <div class="t-btn" style="background:#ff2bd6" onclick="setTheme('cyber')"></div>
       <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
       <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+      <div class="t-btn" style="background:#ff3b3b" onclick="setTheme('crimson')"></div>
+      <div class="t-btn" style="background:#8b5cf6" onclick="setTheme('violet')"></div>
+      <div class="t-btn" style="background:#a3ff12" onclick="setTheme('lime')"></div>
+      <div class="t-btn" style="background:#7dd3fc" onclick="setTheme('ice')"></div>
+      <div class="t-btn" style="background:#ffd700" onclick="setTheme('gold')"></div>
+      <div class="t-btn" style="background:#ff4d94" onclick="setTheme('rose')"></div>
+      <div class="t-btn" style="background:#2ecc71" onclick="setTheme('emerald')"></div>
       <div class="t-btn" style="background:#ccff00" onclick="setTheme('toxic')"></div>
     </div>
     <div class="panel">
@@ -126,6 +136,7 @@
       <button class="bg-btn" onclick="setBg('glitch')">GLITCH</button>
       <button class="bg-btn" onclick="setBg('matrix')">MATRIX</button>
       <button class="bg-btn" onclick="setBg('warp')">WARP</button>
+      <button class="bg-btn" onclick="setBg('stars')">STARS</button>
     </div>
   </div>
 
@@ -150,20 +161,17 @@
       { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
     ];
 
-    // Smooth Mouse Fix
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const dot = document.querySelector(".cursor-dot");
     const ring = document.querySelector(".cursor-ring");
-    document.addEventListener("mousemove", (e) => {
-      const x = e.clientX;
-      const y = e.clientY;
-      // Using requestAnimationFrame style positioning
-      dot.style.left = `${x}px`;
-      dot.style.top = `${y}px`;
-      ring.style.left = `${x}px`;
-      ring.style.top = `${y}px`;
-    });
 
-    // Canvas Visuals
+    if (!isTouch) {
+      document.addEventListener("mousemove", (e) => {
+        dot.style.left = ring.style.left = `${e.clientX}px`;
+        dot.style.top = ring.style.top = `${e.clientY}px`;
+      });
+    }
+
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
     let width, height, columns, drops, stars = [];
@@ -173,11 +181,10 @@
       height = canvas.height = window.innerHeight;
       columns = Math.floor(width / 20);
       drops = Array(columns).fill(1);
-      stars = Array.from({length: 200}, () => ({
+      stars = Array.from({length: 150}, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
-        z: Math.random() * width,
-        o: Math.random()
+        z: Math.random() * width
       }));
     }
 
@@ -199,13 +206,13 @@
         ctx.fillRect(0, 0, width, height);
         ctx.fillStyle = 'white';
         stars.forEach(s => {
-          s.z -= 10;
+          s.z -= 15;
           if (s.z <= 0) s.z = width;
-          const x = (s.x - width / 2) * (width / s.z) + width / 2;
-          const y = (s.y - height / 2) * (width / s.z) + height / 2;
-          const size = (1 - s.z / width) * 3;
+          const x = (s.x - width/2) * (width/s.z) + width/2;
+          const y = (s.y - height/2) * (width/s.z) + height/2;
+          const size = (1 - s.z/width) * 4;
           ctx.beginPath();
-          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.arc(x, y, size, 0, Math.PI*2);
           ctx.fill();
         });
       }
@@ -233,19 +240,12 @@
     resize();
     draw();
 
-    // Populate Grid
     document.getElementById("gameGrid").innerHTML = games.map(g => `
       <a href="${g.url}" class="game-link" target="_blank">
-        ${g.tag ? `<span style="position:absolute;top:10px;right:10px;font-size:10px;background:var(--primary);color:black;padding:2px 8px;border-radius:10px;font-weight:800">${g.tag}</span>` : ''}
+        ${g.tag ? `<span style="position:absolute;top:10px;right:10px;font-size:9px;background:var(--primary);color:black;padding:2px 8px;border-radius:10px;font-weight:800">${g.tag}</span>` : ''}
         <span style="font-weight:800">${g.name}</span>
       </a>
     `).join('');
-
-    // Cursor hover effects
-    document.querySelectorAll('a, button, .t-btn').forEach(el => {
-      el.onmouseenter = () => { ring.style.width = '55px'; ring.style.height = '55px'; };
-      el.onmouseleave = () => { ring.style.width = '36px'; ring.style.height = '36px'; };
-    });
   </script>
 </body>
 </html>
