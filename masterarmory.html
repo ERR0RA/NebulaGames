@@ -19,8 +19,10 @@
         .hp-fill { height: 100%; width: 100%; background: #00f2ff; transition: width 0.2s ease-out; }
         .hp-fill.p2 { background: #ff0055; }
         .status-text { font-size: 0.7rem; color: #fff; margin-top: 5px; letter-spacing: 1px; }
+        .win-counter { font-size: 1.2rem; color: #00f2ff; margin-bottom: 5px; font-weight: 900; }
 
-        #msg-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; font-weight: 900; color: #fff; z-index: 150; pointer-events: none; text-shadow: 0 0 20px #00f2ff; display: none; }
+        #msg-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; font-weight: 900; color: #fff; z-index: 150; pointer-events: none; text-shadow: 0 0 20px #00f2ff; display: none; text-align: center; }
+        #msg-overlay span { font-size: 20px; display: block; color: #ff0055; margin-top: 10px; }
         
         #control-hint { position: absolute; bottom: 20px; width: 100%; color: rgba(255,255,255,0.4); text-align: center; font-size: 0.7rem; z-index: 5; }
     </style>
@@ -28,11 +30,12 @@
 <body>
 
 <div id="lobby">
-    <h1 style="color: #00f2ff; text-shadow: 0 0 20px #00f2ff;">NEXUS ARMS</h1>
-    <p style="margin-bottom: 30px; opacity: 0.7;">PARRY / JUMP / SURVIVE</p>
+    <h1 style="color: #00f2ff; text-shadow: 0 0 20px #00f2ff; margin-bottom: 5px;">NEXUS ARMS</h1>
+    <div id="total-stats" style="font-size: 0.8rem; color: #ff0055; margin-bottom: 20px;">LIFE-TIME VICTORIES: P1 [<span id="glob-p1">0</span>] - P2 [<span id="glob-p2">0</span>]</div>
+    
     <div class="setup-grid">
         <div class="player-setup">
-            <h3 style="color:#00f2ff; margin-top:0;">FIGHTER 1 (WASD)</h3>
+            <h3 style="color:#00f2ff; margin-top:0;">FIGHTER 1</h3>
             <select id="p1-wep">
                 <option value="katana">KATANA (Swift)</option>
                 <option value="executioner">EXECUTIONER (Heavy)</option>
@@ -40,26 +43,33 @@
             </select>
         </div>
         <div class="player-setup">
-            <h3 style="color:#ff0055; margin-top:0;">MODE</h3>
-            <select id="game-mode">
-                <option value="bot">AI CHALLENGE (WASD or Arrows)</option>
-                <option value="pvp">LOCAL PVP (P2 uses Arrows)</option>
+            <h3 style="color:#ff0055; margin-top:0;">FIGHTER 2</h3>
+            <select id="game-mode" onchange="toggleP2Wep()">
+                <option value="bot">AI CHALLENGE</option>
+                <option value="pvp">LOCAL PVP</option>
+            </select>
+            <select id="p2-wep" style="border-color: #ff005544; display:none;">
+                <option value="katana">KATANA (Swift)</option>
+                <option value="executioner">EXECUTIONER (Heavy)</option>
+                <option value="rapier">RAPIER (Long)</option>
             </select>
         </div>
     </div>
-    <button id="start-btn">INITIALIZE</button>
+    <button id="start-btn">INITIALIZE BATTLE</button>
 </div>
 
-<div id="msg-overlay">K.O.</div>
+<div id="msg-overlay">K.O.<br><span id="sub-msg">RE-SYNCING COMBATANTS...</span></div>
 
 <div id="ui">
     <div class="bar-container">
+        <div id="wins-p1" class="win-counter">WINS: 0</div>
         <div class="bar-bg"><div id="hp1" class="hp-fill"></div></div>
-        <div id="st1" class="status-text">P1: SYSTEMS NOMINAL</div>
+        <div id="st1" class="status-text">P1: NOMINAL</div>
     </div>
     <div class="bar-container" style="text-align:right">
+        <div id="wins-p2" class="win-counter">WINS: 0</div>
         <div class="bar-bg"><div id="hp2" class="hp-fill p2"></div></div>
-        <div id="st2" class="status-text">P2: TARGET ACQUIRED</div>
+        <div id="st2" class="status-text">P2: SEARCHING</div>
     </div>
 </div>
 
@@ -74,6 +84,21 @@
         katana:      { dmg: 16, speed: 0.2, range: 2.5, cd: 550, scale: [0.06, 2.5, 0.08], color: 0x00f2ff },
         executioner: { dmg: 40, speed: 0.08, range: 3.2, cd: 1400, scale: [0.3, 3.2, 0.12], color: 0xff0055 },
         rapier:      { dmg: 12, speed: 0.35, range: 3.8, cd: 350, scale: [0.03, 3.8, 0.03], color: 0xffffff }
+    };
+
+    // Points Logic
+    let sessionWins = { p1: 0, p2: 0 };
+    let globalWins = JSON.parse(localStorage.getItem('nexus_wins')) || { p1: 0, p2: 0 };
+    updateGlobalDisplay();
+
+    function updateGlobalDisplay() {
+        document.getElementById('glob-p1').innerText = globalWins.p1;
+        document.getElementById('glob-p2').innerText = globalWins.p2;
+    }
+
+    window.toggleP2Wep = () => {
+        const mode = document.getElementById('game-mode').value;
+        document.getElementById('p2-wep').style.display = (mode === 'pvp') ? 'block' : 'none';
     };
 
     let roundActive = false, isBot = false, isHitStop = false, laserActive = false;
@@ -95,12 +120,18 @@
     laser.position.set(0, 0.5, 0); laser.visible = false; scene.add(laser);
 
     class Fighter {
-        constructor(x, id) {
-            this.id = id; this.hp = 100; this.atkPhase = 0; this.hitMark = false;
-            this.lastAtk = 0; this.group = new THREE.Group(); this.group.position.x = x;
-            this.vel = new THREE.Vector3(); this.isBlocking = false; this.stunned = 0;
-            this.isJumping = false; 
+        constructor(startX, id) {
+            this.id = id; this.startX = startX;
+            this.group = new THREE.Group();
+            this.vel = new THREE.Vector3();
             scene.add(this.group);
+            this.reset();
+        }
+        reset() {
+            this.hp = 100; this.atkPhase = 0; this.hitMark = false;
+            this.lastAtk = 0; this.stunned = 0; this.isBlocking = false;
+            this.isJumping = false; this.group.position.set(this.startX, 0, 0);
+            this.vel.set(0,0,0);
         }
         init(wepKey, color) {
             this.group.clear(); this.wep = WEAPONS[wepKey];
@@ -118,12 +149,10 @@
                 return;
             }
             this.group.children[0].material.emissive.setHex(this.isBlocking ? 0x00f2ff : 0x000000);
-            
             if (this.atkPhase > 0) {
                 this.atkPhase -= this.wep.speed;
                 this.pivot.rotation.z = Math.sin(this.atkPhase * Math.PI) * 3;
             } else { this.pivot.rotation.z = THREE.MathUtils.lerp(this.pivot.rotation.z, this.isBlocking ? 1.5 : 0, 0.2); }
-
             this.vel.y -= 0.015;
             this.group.position.add(this.vel);
             if (this.group.position.y <= 0) { this.group.position.y = 0; this.vel.y = 0; this.isJumping = false; }
@@ -144,27 +173,29 @@
     document.getElementById('start-btn').onclick = () => {
         isBot = document.getElementById('game-mode').value === 'bot';
         p1.init(document.getElementById('p1-wep').value, 0x00f2ff);
-        p2.init('katana', 0xff0055);
+        const p2WepKey = isBot ? 'katana' : document.getElementById('p2-wep').value;
+        p2.init(p2WepKey, 0xff0055);
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('ui').style.visibility = 'visible';
         roundActive = true; animate();
     };
 
+    function resetRound() {
+        p1.reset(); p2.reset();
+        laserTimer = 0; laserActive = false; laser.visible = false;
+        document.getElementById('msg-overlay').style.display = 'none';
+        roundActive = true;
+    }
+
     function handleInput() {
         if (p1.stunned <= 0) {
-            // P1 Left/Right
             if (keys['KeyA'] || (isBot && keys['ArrowLeft'])) p1.vel.x = -0.15;
             if (keys['KeyD'] || (isBot && keys['ArrowRight'])) p1.vel.x = 0.15;
-            // P1 Jump
             if ((keys['KeyW'] || (isBot && keys['ArrowUp'])) && !p1.isJumping) { p1.vel.y = 0.35; p1.isJumping = true; }
-            // P1 Block
             p1.isBlocking = keys['KeyS'] || (isBot && keys['ArrowDown']);
-            // P1 Attack
             if (keys['Space'] || keys['KeyF'] || (isBot && keys['Enter'])) p1.atkPhase <= 0 && p1.tryAtk();
         }
-
         if (isBot) {
-            // AI Logic for P2
             if (p2.stunned <= 0) {
                 const d = p2.group.position.x - p1.group.position.x;
                 if (Math.abs(d) > p2.wep.range) p2.vel.x = d > 0 ? -0.1 : 0.1;
@@ -172,7 +203,6 @@
                 if (laserActive && Math.abs(laser.position.x - p2.group.position.x) < 3 && !p2.isJumping) { p2.vel.y = 0.35; p2.isJumping = true; }
             }
         } else {
-            // Local PvP Logic for P2
             if (p2.stunned <= 0) {
                 if (keys['ArrowLeft']) p2.vel.x = -0.15;
                 if (keys['ArrowRight']) p2.vel.x = 0.15;
@@ -186,7 +216,8 @@
     let shake = 0, laserTimer = 0;
 
     function animate() {
-        if (!roundActive || isHitStop) return;
+        if (!roundActive) return;
+        if (isHitStop) return requestAnimationFrame(animate);
         requestAnimationFrame(animate);
         handleInput();
         p1.update(); p2.update();
@@ -195,8 +226,8 @@
         if (laserTimer > 400) {
             laserActive = true; laser.visible = true;
             laser.position.x = 30 - (laserTimer - 400) * 0.5;
-            if (Math.abs(p1.group.position.x - laser.position.x) < 0.5 && p1.group.position.y < 1) { p1.hp -= 0.5; shake = 0.2; }
-            if (Math.abs(p2.group.position.x - laser.position.x) < 0.5 && p2.group.position.y < 1) { p2.hp -= 0.5; shake = 0.2; }
+            if (Math.abs(p1.group.position.x - laser.position.x) < 0.5 && p1.group.position.y < 1) p1.hp -= 0.5;
+            if (Math.abs(p2.group.position.x - laser.position.x) < 0.5 && p2.group.position.y < 1) p2.hp -= 0.5;
             if (laserTimer > 600) { laserTimer = 0; laserActive = false; laser.visible = false; }
         }
 
@@ -208,7 +239,6 @@
                     const perfect = Date.now() - def.lastAtk < 120;
                     if (perfect) { atk.stunned = 1.2; shake = 0.4; }
                     def.hp -= atk.wep.dmg * 0.15;
-                    def.vel.x = (atk.group.position.x < def.group.position.x ? 1 : -1) * 0.12;
                 } else {
                     def.hp -= atk.wep.dmg;
                     def.vel.x = (atk.group.position.x < def.group.position.x ? 1 : -1) * 0.4;
@@ -221,14 +251,19 @@
 
         document.getElementById('hp1').style.width = Math.max(0, p1.hp) + '%';
         document.getElementById('hp2').style.width = Math.max(0, p2.hp) + '%';
-        document.getElementById('st1').innerText = p1.stunned > 0 ? "P1: STUNNED" : (p1.isBlocking ? "P1: BLOCKING" : "P1: NOMINAL");
-        document.getElementById('st2').innerText = p2.stunned > 0 ? "P2: STUNNED" : (p2.isBlocking ? "P2: BLOCKING" : "P2: NOMINAL");
-
-        if (p1.hp <= 0 || p2.hp <= 0) { 
-            roundActive = false; 
-            document.getElementById('msg-overlay').innerText = p1.hp <= 0 ? "P2 WINS" : "P1 WINS";
-            document.getElementById('msg-overlay').style.display = 'block'; 
-            setTimeout(() => location.reload(), 3000); 
+        
+        if ((p1.hp <= 0 || p2.hp <= 0) && roundActive) {
+            roundActive = false;
+            const winner = p1.hp <= 0 ? "p2" : "p1";
+            sessionWins[winner]++;
+            globalWins[winner]++;
+            localStorage.setItem('nexus_wins', JSON.stringify(globalWins));
+            
+            document.getElementById(`wins-${winner}`).innerText = `WINS: ${sessionWins[winner]}`;
+            document.getElementById('msg-overlay').firstChild.textContent = (winner === 'p1' ? "P1 VICTORIOUS" : "P2 VICTORIOUS");
+            document.getElementById('msg-overlay').style.display = 'block';
+            
+            setTimeout(resetRound, 2000);
         }
 
         camera.position.lerp(new THREE.Vector3((p1.group.position.x + p2.group.position.x)/2, 4, 12), 0.1);
