@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ARMS | LARGE ARENA</title>
+    <title>NEXUS ARMS | TACTICAL SLOW</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; user-select: none; touch-action: none; }
@@ -21,50 +21,37 @@
         .win-counter { font-size: 1.2rem; color: #00f2ff; margin-bottom: 5px; font-weight: 900; }
 
         #msg-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; font-weight: 900; color: #fff; z-index: 150; pointer-events: none; text-shadow: 0 0 20px #00f2ff; display: none; text-align: center; }
-        #control-hint { position: absolute; bottom: 10px; width: 100%; text-align: center; color: #444; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
 <div id="lobby">
-    <h1 style="color: #00f2ff; text-shadow: 0 0 20px #00f2ff; margin-bottom: 5px;">NEXUS ARMS: EXPANDED</h1>
-    <div style="font-size: 0.8rem; color: #ff0055; margin-bottom: 20px;">LARGE SCALE TACTICAL COMBAT</div>
+    <h1 style="color: #00f2ff; text-shadow: 0 0 20px #00f2ff; margin-bottom: 5px;">NEXUS ARMS</h1>
+    <p style="color: #666; font-size: 0.8rem;">HEAVYWEIGHT TACTICAL MODE</p>
     
     <div class="setup-grid">
         <div class="player-setup">
             <h3 style="color:#00f2ff; margin-top:0;">P1 (WASD)</h3>
-            <select id="p1-wep">
-                <option value="katana">KATANA</option>
-                <option value="executioner">EXECUTIONER</option>
-                <option value="rapier">RAPIER</option>
-            </select>
+            <select id="p1-wep"><option value="katana">KATANA</option><option value="executioner">EXECUTIONER</option><option value="rapier">RAPIER</option></select>
         </div>
         <div class="player-setup">
-            <h3 style="color:#ff0055; margin-top:0;">MODE</h3>
-            <select id="game-mode" onchange="toggleP2Wep()">
-                <option value="bot">AI BOT</option>
-                <option value="pvp">LOCAL PVP</option>
-            </select>
-            <select id="p2-wep" style="display:none; border-color:#ff0055;">
-                <option value="katana">KATANA</option>
-                <option value="executioner">EXECUTIONER</option>
-                <option value="rapier">RAPIER</option>
-            </select>
+            <h3 style="color:#ff0055; margin-top:0;">FIGHTER 2</h3>
+            <select id="game-mode" onchange="toggleP2Wep()"><option value="bot">AI BOT</option><option value="pvp">LOCAL PVP</option></select>
+            <select id="p2-wep" style="display:none; border-color:#ff0055;"><option value="katana">KATANA</option><option value="executioner">EXECUTIONER</option><option value="rapier">RAPIER</option></select>
         </div>
     </div>
-    <button id="start-btn">INITIALIZE ARENA</button>
+    <button id="start-btn">INITIALIZE</button>
 </div>
 
 <div id="msg-overlay">K.O.</div>
-<div id="control-hint">P1: WASD + F | P2: ARROWS + ENTER | SHIFT to Block</div>
 
 <div id="ui">
     <div class="bar-container">
-        <div id="wins-p1" class="win-counter">P1 WINS: 0</div>
+        <div id="wins-p1" class="win-counter">P1: 0</div>
         <div class="bar-bg"><div id="hp1" class="hp-fill"></div></div>
     </div>
     <div class="bar-container" style="text-align:right">
-        <div id="wins-p2" class="win-counter">P2 WINS: 0</div>
+        <div id="wins-p2" class="win-counter">P2: 0</div>
         <div class="bar-bg"><div id="hp2" class="hp-fill p2"></div></div>
     </div>
 </div>
@@ -75,37 +62,35 @@
     import * as THREE from 'three';
 
     const WEAPONS = {
-        katana:      { dmg: 15, speed: 0.18, range: 3.2, cd: 500, scale: [0.06, 2.5, 0.08], color: 0x00f2ff },
-        executioner: { dmg: 35, speed: 0.07, range: 4.2, cd: 1300, scale: [0.3, 3.2, 0.12], color: 0xff0055 },
-        rapier:      { dmg: 10, speed: 0.3, range: 4.5, cd: 300, scale: [0.03, 3.8, 0.03], color: 0xffffff }
+        katana:      { dmg: 15, speed: 0.18, range: 3.5, cd: 600, scale: [0.06, 2.5, 0.08], color: 0x00f2ff },
+        executioner: { dmg: 35, speed: 0.07, range: 4.5, cd: 1400, scale: [0.3, 3.2, 0.12], color: 0xff0055 },
+        rapier:      { dmg: 10, speed: 0.3, range: 4.8, cd: 400, scale: [0.03, 3.8, 0.03], color: 0xffffff }
     };
 
     let sessionWins = { p1: 0, p2: 0 };
     let roundActive = false, isBot = false, isHitStop = false;
-    const ARENA_RADIUS = 22; // BIGGER MAP
-    const MOVE_SPEED = 0.07; // SLOWER MOVEMENT
+    
+    // --- MOVEMENT TUNING ---
+    const ARENA_RADIUS = 25; 
+    const ACCEL = 0.025;      // MUCH slower takeoff
+    const FRICTION = 0.82;   // Characters stop very quickly
+    // -----------------------
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x010103);
-    scene.fog = new THREE.Fog(0x010103, 15, 60);
-
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.3); scene.add(ambient);
-    const light = new THREE.PointLight(0x00f2ff, 1.5, 100); light.position.set(0, 20, 10); scene.add(light);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+    const light = new THREE.PointLight(0x00f2ff, 2, 100); light.position.set(0, 20, 10); scene.add(light);
 
-    // Bigger Map
-    const arenaGeo = new THREE.CylinderGeometry(ARENA_RADIUS, ARENA_RADIUS + 3, 2, 64);
-    const arenaMat = new THREE.MeshStandardMaterial({color: 0x050508, roughness: 0.5, metalness: 0.5});
-    const arena = new THREE.Mesh(arenaGeo, arenaMat);
-    arena.position.y = -1; arena.receiveShadow = true; scene.add(arena);
-    
-    const grid = new THREE.GridHelper(ARENA_RADIUS * 2.2, 40, 0x00f2ff, 0x111111);
-    grid.position.y = 0.01; scene.add(grid);
+    // Arena
+    const arenaGeo = new THREE.CylinderGeometry(ARENA_RADIUS, ARENA_RADIUS, 1, 64);
+    const arena = new THREE.Mesh(arenaGeo, new THREE.MeshStandardMaterial({color: 0x08080a}));
+    arena.position.y = -0.5; scene.add(arena);
+    scene.add(new THREE.GridHelper(ARENA_RADIUS * 2, 30, 0x00f2ff, 0x111111));
 
     class Fighter {
         constructor(startX, startZ, id) {
@@ -118,49 +103,45 @@
         reset() {
             this.hp = 100; this.atkPhase = 0; this.hitMark = false;
             this.lastAtk = 0; this.stunned = 0; this.isBlocking = false;
-            this.isJumping = false; this.group.position.set(this.startX, 0, this.startZ);
+            this.group.position.set(this.startX, 0, this.startZ);
             this.vel.set(0,0,0);
         }
         init(wepKey, color) {
             this.group.clear(); this.wep = WEAPONS[wepKey];
             const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 1), new THREE.MeshStandardMaterial({color: color}));
-            body.position.y = 1; body.castShadow = true; this.group.add(body);
+            body.position.y = 1; this.group.add(body);
             this.pivot = new THREE.Group(); this.pivot.position.set(0, 1.2, 0);
             const blade = new THREE.Mesh(new THREE.BoxGeometry(...this.wep.scale), new THREE.MeshStandardMaterial({color: this.wep.color, emissive: this.wep.color, emissiveIntensity: 2}));
             blade.position.y = this.wep.scale[1]/2; this.pivot.add(blade);
             this.group.add(this.pivot);
         }
         update(targetPos) {
-            if (this.stunned > 0) {
-                this.stunned -= 0.016;
-                return;
-            }
-            this.group.lookAt(targetPos.x, 0, targetPos.z);
+            if (this.stunned > 0) { this.stunned -= 0.016; return; }
+            
+            // Smoother rotation toward opponent
+            const lookPos = new THREE.Vector3(targetPos.x, 0, targetPos.z);
+            const targetRotation = new THREE.Matrix4().lookAt(this.group.position, lookPos, THREE.Object3D.DEFAULT_UP);
+            this.group.quaternion.slerp(new THREE.Quaternion().setFromRotationMatrix(targetRotation), 0.1);
+
             if (this.atkPhase > 0) {
                 this.atkPhase -= this.wep.speed;
                 this.pivot.rotation.x = Math.sin(this.atkPhase * Math.PI) * -2.5;
             } else { this.pivot.rotation.x = this.isBlocking ? -1.2 : -0.5; }
 
-            this.vel.y -= 0.015;
+            // Apply Velocity & Friction
             this.group.position.add(this.vel);
-            if (this.group.position.y <= 0) { this.group.position.y = 0; this.vel.y = 0; this.isJumping = false; }
-            this.vel.x *= 0.9; this.vel.z *= 0.9; // Friction
+            this.vel.x *= FRICTION;
+            this.vel.z *= FRICTION;
 
-            const distCenter = this.group.position.length();
-            if (distCenter > ARENA_RADIUS) {
+            // Arena Bounds
+            if (this.group.position.length() > ARENA_RADIUS) {
                 this.group.position.normalize().multiplyScalar(ARENA_RADIUS);
-            }
-        }
-        tryAtk() {
-            const now = Date.now();
-            if (now - this.lastAtk > this.wep.cd && !this.isBlocking) {
-                this.atkPhase = 1; this.hitMark = false; this.lastAtk = now;
             }
         }
     }
 
-    const p1 = new Fighter(-12, 0, 1);
-    const p2 = new Fighter(12, 0, 2);
+    const p1 = new Fighter(-10, 0, 1);
+    const p2 = new Fighter(10, 0, 2);
     const keys = {}; window.onkeydown = (e) => keys[e.code] = true; window.onkeyup = (e) => keys[e.code] = false;
 
     window.toggleP2Wep = () => {
@@ -178,34 +159,36 @@
     };
 
     function handleInput() {
-        // P1 Controls
         if (p1.stunned <= 0) {
-            if (keys['KeyW']) p1.vel.z -= MOVE_SPEED; if (keys['KeyS']) p1.vel.z += MOVE_SPEED;
-            if (keys['KeyA']) p1.vel.x -= MOVE_SPEED; if (keys['KeyD']) p1.vel.x += MOVE_SPEED;
-            if (keys['Space'] && !p1.isJumping) { p1.vel.y = 0.3; p1.isJumping = true; }
+            if (keys['KeyW']) p1.vel.z -= ACCEL; if (keys['KeyS']) p1.vel.z += ACCEL;
+            if (keys['KeyA']) p1.vel.x -= ACCEL; if (keys['KeyD']) p1.vel.x += ACCEL;
             p1.isBlocking = keys['ShiftLeft'];
-            if (keys['KeyF']) p1.atkPhase <= 0 && p1.tryAtk();
+            if (keys['KeyF']) (p1.atkPhase <= 0) && p1.tryAtk();
         }
-        // P2 Controls
         if (isBot) {
-            if (p2.stunned <= 0) {
-                const dist = p2.group.position.distanceTo(p1.group.position);
-                if (dist > p2.wep.range) {
-                    const dir = new THREE.Vector3().subVectors(p1.group.position, p2.group.position).normalize();
-                    p2.vel.add(dir.multiplyScalar(0.015));
-                } else if (Math.random() > 0.98) p2.tryAtk();
-            }
+            const dist = p2.group.position.distanceTo(p1.group.position);
+            if (dist > p2.wep.range) {
+                const dir = new THREE.Vector3().subVectors(p1.group.position, p2.group.position).normalize();
+                p2.vel.add(dir.multiplyScalar(ACCEL * 0.6));
+            } else if (Math.random() > 0.98) p2.tryAtk();
         } else if (p2.stunned <= 0) {
-            if (keys['ArrowUp']) p2.vel.z -= MOVE_SPEED; if (keys['ArrowDown']) p2.vel.z += MOVE_SPEED;
-            if (keys['ArrowLeft']) p2.vel.x -= MOVE_SPEED; if (keys['ArrowRight']) p2.vel.x += MOVE_SPEED;
-            if (keys['Numpad0'] && !p2.isJumping) { p2.vel.y = 0.3; p2.isJumping = true; }
+            if (keys['ArrowUp']) p2.vel.z -= ACCEL; if (keys['ArrowDown']) p2.vel.z += ACCEL;
+            if (keys['ArrowLeft']) p2.vel.x -= ACCEL; if (keys['ArrowRight']) p2.vel.x += ACCEL;
             p2.isBlocking = keys['ShiftRight'];
-            if (keys['Enter']) p2.atkPhase <= 0 && p2.tryAtk();
+            if (keys['Enter']) (p2.atkPhase <= 0) && p2.tryAtk();
+        }
+    }
+
+    Fighter.prototype.tryAtk = function() {
+        const now = Date.now();
+        if (now - this.lastAtk > this.wep.cd && !this.isBlocking) {
+            this.atkPhase = 1; this.hitMark = false; this.lastAtk = now;
         }
     }
 
     function animate() {
         if (!roundActive) return;
+        requestAnimationFrame(animate);
         if (!isHitStop) {
             handleInput();
             p1.update(p2.group.position); p2.update(p1.group.position);
@@ -216,8 +199,8 @@
                 if (atk.atkPhase > 0.4 && atk.atkPhase < 0.7 && !atk.hitMark && dist < atk.wep.range) {
                     if (!def.isBlocking) {
                         def.hp -= atk.wep.dmg;
-                        isHitStop = true; setTimeout(() => isHitStop = false, 50);
-                    } else { def.hp -= atk.wep.dmg * 0.1; }
+                        isHitStop = true; setTimeout(() => isHitStop = false, 100);
+                    } else { def.hp -= atk.wep.dmg * 0.2; }
                     atk.hitMark = true;
                 }
             });
@@ -230,7 +213,7 @@
             roundActive = false;
             const winner = p1.hp <= 0 ? "p2" : "p1";
             sessionWins[winner]++;
-            document.getElementById(`wins-${winner}`).innerText = `${winner.toUpperCase()} WINS: ${sessionWins[winner]}`;
+            document.getElementById(`wins-${winner}`).innerText = `${winner.toUpperCase()}: ${sessionWins[winner]}`;
             document.getElementById('msg-overlay').style.display = 'block';
             setTimeout(() => {
                 p1.reset(); p2.reset();
@@ -240,11 +223,9 @@
         }
 
         const mid = new THREE.Vector3().addVectors(p1.group.position, p2.group.position).multiplyScalar(0.5);
-        camera.position.lerp(new THREE.Vector3(mid.x, 12, mid.z + 25), 0.05); // Zoomed out for bigger map
+        camera.position.lerp(new THREE.Vector3(mid.x, 15, mid.z + 28), 0.05);
         camera.lookAt(mid.x, 1, mid.z);
-
         renderer.render(scene, camera);
-        requestAnimationFrame(animate);
     }
 </script>
 </body>
