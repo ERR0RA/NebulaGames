@@ -19,19 +19,13 @@
       --secondary: #00d9ff; --secondary-glow: rgba(0,217,255,.24);
     }
 
-    /* ALL ORIGINAL COLOR THEMES RESTORED */
-    [data-theme="cyber"] { --primary:#ff2bd6; --primary-glow:rgba(255,43,214,.42); --secondary:#00f5ff; --secondary-glow:rgba(0,245,255,.22); --bg0:#07020b; --bg1:#14051d; --bg2:#05131b; }
-    [data-theme="ocean"] { --primary:#00d9ff; --primary-glow:rgba(0,217,255,.42); --secondary:#38ffb5; --secondary-glow:rgba(56,255,181,.22); --bg0:#021016; --bg1:#06263a; --bg2:#03141f; }
-    [data-theme="amber"] { --primary:#ffaa00; --primary-glow:rgba(255,170,0,.38); --secondary:#ff4d6d; --secondary-glow:rgba(255,77,109,.18); --bg0:#110904; --bg1:#241304; --bg2:#170b14; }
-    [data-theme="crimson"] { --primary:#ff3b3b; --primary-glow:rgba(255,59,59,.40); --secondary:#ffd166; --secondary-glow:rgba(255,209,102,.18); --bg0:#100307; --bg1:#240612; --bg2:#09050c; }
-    [data-theme="violet"] { --primary:#8b5cf6; --primary-glow:rgba(139,92,246,.42); --secondary:#00f5ff; --secondary-glow:rgba(0,245,255,.18); --bg0:#09061a; --bg1:#171033; --bg2:#06101a; }
-    [data-theme="lime"] { --primary:#a3ff12; --primary-glow:rgba(163,255,18,.36); --secondary:#00ff88; --secondary-glow:rgba(0,255,136,.18); --bg0:#050900; --bg1:#101d04; --bg2:#031208; }
-    [data-theme="ice"] { --primary:#7dd3fc; --primary-glow:rgba(125,211,252,.38); --secondary:#c4b5fd; --secondary-glow:rgba(196,181,253,.18); --bg0:#031018; --bg1:#0b2230; --bg2:#0a1020; }
-    [data-theme="gold"] { --primary:#ffd700; --primary-glow:rgba(255,215,0,.38); --secondary:#00d9ff; --secondary-glow:rgba(0,217,255,.16); --bg0:#0d0902; --bg1:#211806; --bg2:#0b0c13; }
-    [data-theme="rose"] { --primary:#ff4d94; --primary-glow:rgba(255,77,148,.40); --secondary:#ffd166; --secondary-glow:rgba(255,209,102,.16); --bg0:#11040b; --bg1:#240a16; --bg2:#0d0712; }
-    [data-theme="emerald"] { --primary:#2ecc71; --primary-glow:rgba(46,204,113,.38); --secondary:#00d9ff; --secondary-glow:rgba(0,217,255,.18); --bg0:#03100a; --bg1:#082313; --bg2:#021018; }
-    [data-theme="toxic"] { --primary:#ccff00; --primary-glow:rgba(204,255,0,.36); --secondary:#ff2bd6; --secondary-glow:rgba(255,43,214,.16); --bg0:#070a00; --bg1:#171f02; --bg2:#100514; }
-    [data-theme="midnight"] { --primary:#706fd3; --primary-glow:rgba(112,111,211,.42); --secondary:#7dd3fc; --secondary-glow:rgba(125,211,252,.16); --bg0:#050716; --bg1:#0d1030; --bg2:#060814; }
+    /* Original Themes */
+    [data-theme="cyber"] { --primary:#ff2bd6; --primary-glow:rgba(255,43,214,.42); --secondary:#00f5ff; --bg0:#07020b; }
+    [data-theme="ocean"] { --primary:#00d9ff; --primary-glow:rgba(0,217,255,.42); --secondary:#38ffb5; --bg0:#021016; }
+    [data-theme="amber"] { --primary:#ffaa00; --primary-glow:rgba(255,170,0,.38); --secondary:#ff4d6d; --bg0:#110904; }
+    [data-theme="crimson"] { --primary:#ff3b3b; --primary-glow:rgba(255,59,59,.40); --secondary:#ffd166; --bg0:#100307; }
+    [data-theme="violet"] { --primary:#8b5cf6; --primary-glow:rgba(139,92,246,.42); --bg0:#09061a; }
+    [data-theme="toxic"] { --primary:#ccff00; --primary-glow:rgba(204,255,0,.36); --bg0:#070a00; }
 
     * { box-sizing: border-box; }
     body {
@@ -41,34 +35,23 @@
       transition: background .35s ease; padding-bottom: 120px;
     }
 
-    /* Matrix Logic */
-    #matrixCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
-    body[data-bg="matrix"] #matrixCanvas { opacity: 0.35; }
+    /* Background Canvas (Matrix & Warp) */
+    #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
+    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas { opacity: 0.4; }
 
-    /* GLITCH MODE IMPROVEMENTS */
-    @keyframes glitch-anim {
-      0% { text-shadow: 2px 0 red, -2px 0 blue; transform: translate(0); }
-      20% { text-shadow: -2px 0 red, 2px 0 blue; transform: translate(-1px, 1px); }
-      40% { text-shadow: 2px 0 blue, -2px 0 red; transform: translate(1px, -1px); }
-      60% { text-shadow: -2px 0 blue, 2px 0 red; transform: translate(-1px, -1px); }
-      100% { text-shadow: 2px 0 red, -2px 0 blue; transform: translate(0); }
+    /* Cursor Styles - Fixed for performance */
+    .cursor-dot {
+      position: fixed; top: 0; left: 0; width: 8px; height: 8px; 
+      background: var(--primary); border-radius: 50%; z-index: 10000;
+      pointer-events: none; transform: translate(-50%, -50%);
+      box-shadow: 0 0 15px var(--primary); transition: transform 0.1s ease-out;
     }
-    body[data-bg="glitch"] h1 { animation: glitch-anim 0.3s infinite linear; }
-    body[data-bg="glitch"]::after {
-      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10;
-      background: repeating-linear-gradient(transparent 0%, rgba(255,255,255,0.02) 0.5%, transparent 1%);
-      animation: scanline 10s infinite linear;
+    .cursor-ring {
+      position: fixed; top: 0; left: 0; width: 36px; height: 36px;
+      border: 2px solid var(--primary); border-radius: 50%; z-index: 9999;
+      pointer-events: none; transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, border 0.2s, transform 0.15s ease-out;
     }
-    @keyframes scanline { from { background-position: 0 0; } to { background-position: 0 100%; } }
-
-    /* Background Modes */
-    body[data-bg="neon"] { background: radial-gradient(circle at 18% 16%, var(--primary-glow), transparent 38%), linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 54%, var(--bg2) 100%); }
-    body[data-bg="gradient"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
-    body[data-bg="stars"] { background: radial-gradient(circle at 50% 50%, #fff 1px, transparent 1px); background-size: 80px 80px; background-color: var(--bg0); }
-
-    .cursor-dot, .cursor-ring { position: fixed; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); }
-    .cursor-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 12px var(--primary); }
-    .cursor-ring { width: 34px; height: 34px; border: 2px solid var(--primary); border-radius: 50%; transition: 0.2s; box-shadow: 0 0 20px var(--primary-glow); }
 
     header { padding: 86px 20px 20px; text-align: center; }
     h1 { font-size: clamp(3.4rem, 10vw, 6.2rem); margin: 0; font-weight: 800; text-shadow: 0 0 26px var(--primary-glow); }
@@ -95,22 +78,26 @@
     .credits-section p { font-size: 0.85rem; opacity: 0.6; margin: 10px 0; }
     .wa-link { color: var(--primary); text-decoration: none; font-weight: 800; }
 
-    .bottom-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 1000; flex-wrap: wrap; justify-content: center; width: 95%; }
-    .panel { background: rgba(0,0,0,0.7); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 8px 15px; display: flex; align-items: center; gap: 10px; }
-    .t-btn { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: none; }
+    .bottom-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 1000; flex-wrap: wrap; justify-content: center; }
+    .panel { background: rgba(0,0,0,0.75); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 8px 15px; display: flex; align-items: center; gap: 10px; }
     .bg-btn { background: rgba(255,255,255,.08); border: 1px solid var(--glass-border); color: white; padding: 5px 12px; border-radius: 999px; font-weight: 800; font-size: 10px; cursor: none; }
     .bg-btn.active { background: var(--primary); color: #000; }
+    .t-btn { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: none; }
+
+    /* Background Modes */
+    body[data-bg="neon"] { background: radial-gradient(circle at 18% 16%, var(--primary-glow), transparent 38%), linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 54%, var(--bg2) 100%); }
+    body[data-bg="glitch"] { background: repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 6px), var(--bg0); }
   </style>
 </head>
 <body data-bg="neon">
 
-  <canvas id="matrixCanvas"></canvas>
+  <canvas id="bgCanvas"></canvas>
   <div class="cursor-dot"></div>
   <div class="cursor-ring"></div>
 
   <header>
-    <h1 data-text="Nebula">Nebula</h1>
-    <p style="letter-spacing: 5px; opacity: 0.6;">CLOUD GAMING HUB</p>
+    <h1>Nebula</h1>
+    <p style="letter-spacing: 5px; opacity: 0.6; font-size: 0.8rem;">CLOUD GAMING HUB</p>
   </header>
 
   <div class="search-wrap">
@@ -132,21 +119,13 @@
       <div class="t-btn" style="background:#ff2bd6" onclick="setTheme('cyber')"></div>
       <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
       <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
-      <div class="t-btn" style="background:#ff3b3b" onclick="setTheme('crimson')"></div>
-      <div class="t-btn" style="background:#8b5cf6" onclick="setTheme('violet')"></div>
-      <div class="t-btn" style="background:#a3ff12" onclick="setTheme('lime')"></div>
-      <div class="t-btn" style="background:#7dd3fc" onclick="setTheme('ice')"></div>
-      <div class="t-btn" style="background:#ffd700" onclick="setTheme('gold')"></div>
-      <div class="t-btn" style="background:#ff4d94" onclick="setTheme('rose')"></div>
-      <div class="t-btn" style="background:#2ecc71" onclick="setTheme('emerald')"></div>
       <div class="t-btn" style="background:#ccff00" onclick="setTheme('toxic')"></div>
     </div>
     <div class="panel">
-      <button class="bg-btn" onclick="setBg('neon')">NEON</button>
-      <button class="bg-btn" onclick="setBg('gradient')">GRADIENT</button>
+      <button class="bg-btn active" onclick="setBg('neon')">NEON</button>
       <button class="bg-btn" onclick="setBg('glitch')">GLITCH</button>
       <button class="bg-btn" onclick="setBg('matrix')">MATRIX</button>
-      <button class="bg-btn" onclick="setBg('stars')">STARS</button>
+      <button class="bg-btn" onclick="setBg('warp')">WARP</button>
     </div>
   </div>
 
@@ -171,50 +150,78 @@
       { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
     ];
 
-    function init() {
-      const grid = document.getElementById("gameGrid");
-      grid.innerHTML = games.map(g => `
-        <a href="${g.url}" class="game-link" target="_blank">
-          ${g.tag ? `<span style="position:absolute;top:10px;right:10px;font-size:10px;background:var(--primary);color:black;padding:2px 8px;border-radius:10px;font-weight:800">${g.tag}</span>` : ''}
-          <span style="font-weight:800">${g.name}</span>
-        </a>
-      `).join('');
-      initMatrix();
+    // Smooth Mouse Fix
+    const dot = document.querySelector(".cursor-dot");
+    const ring = document.querySelector(".cursor-ring");
+    document.addEventListener("mousemove", (e) => {
+      const x = e.clientX;
+      const y = e.clientY;
+      // Using requestAnimationFrame style positioning
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+      ring.style.left = `${x}px`;
+      ring.style.top = `${y}px`;
+    });
+
+    // Canvas Visuals
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, columns, drops, stars = [];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      columns = Math.floor(width / 20);
+      drops = Array(columns).fill(1);
+      stars = Array.from({length: 200}, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        z: Math.random() * width,
+        o: Math.random()
+      }));
     }
 
-    // Live Matrix Logic
-    const canvas = document.getElementById('matrixCanvas');
-    const ctx = canvas.getContext('2d');
-    let drops = [];
-    function initMatrix() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      drops = Array(Math.floor(canvas.width / 20)).fill(1);
+    function draw() {
+      const mode = document.body.getAttribute('data-bg');
+      if (mode === 'matrix') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
+        ctx.font = '15px monospace';
+        drops.forEach((y, i) => {
+          const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+          ctx.fillText(text, i * 20, y * 20);
+          if (y * 20 > height && Math.random() > 0.975) drops[i] = 0;
+          drops[i]++;
+        });
+      } else if (mode === 'warp') {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = 'white';
+        stars.forEach(s => {
+          s.z -= 10;
+          if (s.z <= 0) s.z = width;
+          const x = (s.x - width / 2) * (width / s.z) + width / 2;
+          const y = (s.y - height / 2) * (width / s.z) + height / 2;
+          const size = (1 - s.z / width) * 3;
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+      requestAnimationFrame(draw);
     }
-    function drawMatrix() {
-      if(document.body.getAttribute('data-bg') !== 'matrix') return;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
-      ctx.font = '15px monospace';
-      drops.forEach((y, i) => {
-        const text = String.fromCharCode(0x30A0 + Math.random() * 96);
-        ctx.fillText(text, i * 20, y * 20);
-        if (y * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
-      });
-    }
-    setInterval(drawMatrix, 50);
-    window.addEventListener('resize', initMatrix);
 
     function setBg(m) {
       document.body.setAttribute('data-bg', m);
       document.querySelectorAll('.bg-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase() === m));
     }
+
     function setTheme(t) {
       if(t === 'default') document.documentElement.removeAttribute('data-theme');
       else document.documentElement.setAttribute('data-theme', t);
     }
+
     function filterGames() {
       const val = document.getElementById("moduleSearch").value.toLowerCase();
       document.querySelectorAll(".game-link").forEach(el => {
@@ -222,15 +229,23 @@
       });
     }
 
-    // Cursor
-    const dot = document.querySelector(".cursor-dot");
-    const ring = document.querySelector(".cursor-ring");
-    document.addEventListener("mousemove", e => {
-      dot.style.left = ring.style.left = e.clientX + "px";
-      dot.style.top = ring.style.top = e.clientY + "px";
-    });
+    window.addEventListener('resize', resize);
+    resize();
+    draw();
 
-    init();
+    // Populate Grid
+    document.getElementById("gameGrid").innerHTML = games.map(g => `
+      <a href="${g.url}" class="game-link" target="_blank">
+        ${g.tag ? `<span style="position:absolute;top:10px;right:10px;font-size:10px;background:var(--primary);color:black;padding:2px 8px;border-radius:10px;font-weight:800">${g.tag}</span>` : ''}
+        <span style="font-weight:800">${g.name}</span>
+      </a>
+    `).join('');
+
+    // Cursor hover effects
+    document.querySelectorAll('a, button, .t-btn').forEach(el => {
+      el.onmouseenter = () => { ring.style.width = '55px'; ring.style.height = '55px'; };
+      el.onmouseleave = () => { ring.style.width = '36px'; ring.style.height = '36px'; };
+    });
   </script>
 </body>
 </html>
