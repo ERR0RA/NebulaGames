@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ARMS | TACTICAL SLOW</title>
+    <title>NEXUS ARMS | INFINITE ARENA</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; user-select: none; touch-action: none; }
@@ -18,7 +18,7 @@
         .bar-bg { width: 100%; height: 18px; background: rgba(0,0,0,0.8); border: 2px solid #444; position: relative; }
         .hp-fill { height: 100%; width: 100%; background: #00f2ff; transition: width 0.2s ease-out; box-shadow: 0 0 10px #00f2ff; }
         .hp-fill.p2 { background: #ff0055; box-shadow: 0 0 10px #ff0055; }
-        .win-counter { font-size: 1.2rem; color: #00f2ff; margin-bottom: 5px; font-weight: 900; }
+        .win-counter { font-size: 1.5rem; color: #fff; margin-bottom: 5px; font-weight: 900; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
 
         #msg-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; font-weight: 900; color: #fff; z-index: 150; pointer-events: none; text-shadow: 0 0 20px #00f2ff; display: none; text-align: center; }
     </style>
@@ -27,7 +27,7 @@
 
 <div id="lobby">
     <h1 style="color: #00f2ff; text-shadow: 0 0 20px #00f2ff; margin-bottom: 5px;">NEXUS ARMS</h1>
-    <p style="color: #666; font-size: 0.8rem;">HEAVYWEIGHT TACTICAL MODE</p>
+    <p style="color: #666; font-size: 0.8rem;">INFINITE TACTICAL COMBAT</p>
     
     <div class="setup-grid">
         <div class="player-setup">
@@ -61,20 +61,19 @@
 <script type="module">
     import * as THREE from 'three';
 
+    // Increased ranges and bigger hitboxes
     const WEAPONS = {
-        katana:      { dmg: 15, speed: 0.18, range: 3.5, cd: 600, scale: [0.06, 2.5, 0.08], color: 0x00f2ff },
-        executioner: { dmg: 35, speed: 0.07, range: 4.5, cd: 1400, scale: [0.3, 3.2, 0.12], color: 0xff0055 },
-        rapier:      { dmg: 10, speed: 0.3, range: 4.8, cd: 400, scale: [0.03, 3.8, 0.03], color: 0xffffff }
+        katana:      { dmg: 15, speed: 0.18, range: 4.2, cd: 600, scale: [0.08, 2.8, 0.1], color: 0x00f2ff },
+        executioner: { dmg: 35, speed: 0.07, range: 5.2, cd: 1400, scale: [0.35, 3.5, 0.15], color: 0xff0055 },
+        rapier:      { dmg: 10, speed: 0.3, range: 5.5, cd: 400, scale: [0.05, 4.0, 0.05], color: 0xffffff }
     };
 
     let sessionWins = { p1: 0, p2: 0 };
     let roundActive = false, isBot = false, isHitStop = false;
     
-    // --- MOVEMENT TUNING ---
     const ARENA_RADIUS = 25; 
-    const ACCEL = 0.025;      // MUCH slower takeoff
-    const FRICTION = 0.82;   // Characters stop very quickly
-    // -----------------------
+    const ACCEL = 0.025;      
+    const FRICTION = 0.82;   
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x010103);
@@ -86,7 +85,6 @@
     scene.add(new THREE.AmbientLight(0xffffff, 0.3));
     const light = new THREE.PointLight(0x00f2ff, 2, 100); light.position.set(0, 20, 10); scene.add(light);
 
-    // Arena
     const arenaGeo = new THREE.CylinderGeometry(ARENA_RADIUS, ARENA_RADIUS, 1, 64);
     const arena = new THREE.Mesh(arenaGeo, new THREE.MeshStandardMaterial({color: 0x08080a}));
     arena.position.y = -0.5; scene.add(arena);
@@ -108,7 +106,8 @@
         }
         init(wepKey, color) {
             this.group.clear(); this.wep = WEAPONS[wepKey];
-            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 1), new THREE.MeshStandardMaterial({color: color}));
+            // Fighter hitbox body (visual only)
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.6, 1.2), new THREE.MeshStandardMaterial({color: color}));
             body.position.y = 1; this.group.add(body);
             this.pivot = new THREE.Group(); this.pivot.position.set(0, 1.2, 0);
             const blade = new THREE.Mesh(new THREE.BoxGeometry(...this.wep.scale), new THREE.MeshStandardMaterial({color: this.wep.color, emissive: this.wep.color, emissiveIntensity: 2}));
@@ -117,8 +116,6 @@
         }
         update(targetPos) {
             if (this.stunned > 0) { this.stunned -= 0.016; return; }
-            
-            // Smoother rotation toward opponent
             const lookPos = new THREE.Vector3(targetPos.x, 0, targetPos.z);
             const targetRotation = new THREE.Matrix4().lookAt(this.group.position, lookPos, THREE.Object3D.DEFAULT_UP);
             this.group.quaternion.slerp(new THREE.Quaternion().setFromRotationMatrix(targetRotation), 0.1);
@@ -128,20 +125,18 @@
                 this.pivot.rotation.x = Math.sin(this.atkPhase * Math.PI) * -2.5;
             } else { this.pivot.rotation.x = this.isBlocking ? -1.2 : -0.5; }
 
-            // Apply Velocity & Friction
             this.group.position.add(this.vel);
             this.vel.x *= FRICTION;
             this.vel.z *= FRICTION;
 
-            // Arena Bounds
             if (this.group.position.length() > ARENA_RADIUS) {
                 this.group.position.normalize().multiplyScalar(ARENA_RADIUS);
             }
         }
     }
 
-    const p1 = new Fighter(-10, 0, 1);
-    const p2 = new Fighter(10, 0, 2);
+    const p1 = new Fighter(-12, 0, 1);
+    const p2 = new Fighter(12, 0, 2);
     const keys = {}; window.onkeydown = (e) => keys[e.code] = true; window.onkeyup = (e) => keys[e.code] = false;
 
     window.toggleP2Wep = () => {
@@ -167,10 +162,10 @@
         }
         if (isBot) {
             const dist = p2.group.position.distanceTo(p1.group.position);
-            if (dist > p2.wep.range) {
+            if (dist > p2.wep.range - 1) { // Bot tries to get within "Big Hitbox" range
                 const dir = new THREE.Vector3().subVectors(p1.group.position, p2.group.position).normalize();
                 p2.vel.add(dir.multiplyScalar(ACCEL * 0.6));
-            } else if (Math.random() > 0.98) p2.tryAtk();
+            } else if (Math.random() > 0.97) p2.tryAtk();
         } else if (p2.stunned <= 0) {
             if (keys['ArrowUp']) p2.vel.z -= ACCEL; if (keys['ArrowDown']) p2.vel.z += ACCEL;
             if (keys['ArrowLeft']) p2.vel.x -= ACCEL; if (keys['ArrowRight']) p2.vel.x += ACCEL;
@@ -196,10 +191,11 @@
             const dist = p1.group.position.distanceTo(p2.group.position);
             [p1, p2].forEach((atk, i) => {
                 const def = i === 0 ? p2 : p1;
-                if (atk.atkPhase > 0.4 && atk.atkPhase < 0.7 && !atk.hitMark && dist < atk.wep.range) {
+                // Hit detection logic with larger hitbox consideration
+                if (atk.atkPhase > 0.3 && atk.atkPhase < 0.8 && !atk.hitMark && dist < atk.wep.range) {
                     if (!def.isBlocking) {
                         def.hp -= atk.wep.dmg;
-                        isHitStop = true; setTimeout(() => isHitStop = false, 100);
+                        isHitStop = true; setTimeout(() => isHitStop = false, 80);
                     } else { def.hp -= atk.wep.dmg * 0.2; }
                     atk.hitMark = true;
                 }
@@ -215,11 +211,13 @@
             sessionWins[winner]++;
             document.getElementById(`wins-${winner}`).innerText = `${winner.toUpperCase()}: ${sessionWins[winner]}`;
             document.getElementById('msg-overlay').style.display = 'block';
+            
+            // INFINITE RESET LOGIC
             setTimeout(() => {
                 p1.reset(); p2.reset();
                 document.getElementById('msg-overlay').style.display = 'none';
                 roundActive = true;
-            }, 2000);
+            }, 1800);
         }
 
         const mid = new THREE.Vector3().addVectors(p1.group.position, p2.group.position).multiplyScalar(0.5);
