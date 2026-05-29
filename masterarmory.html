@@ -3,238 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ARMS | FIXED COMBAT</title>
+    <title>NEXUS ARMS | FULLY FIXED</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; user-select: none; touch-action: none; }
-        #lobby { position: absolute; inset: 0; background: radial-gradient(circle at center, #001, #000); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; color: white; text-align: center; }
-        .setup-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
-        .player-setup { background: rgba(0, 242, 255, 0.05); padding: 20px; border-radius: 15px; width: 260px; border: 1px solid #00f2ff44; backdrop-filter: blur(10px); }
-        select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; font-family: 'Orbitron'; cursor: pointer; border: 1px solid #444; background: #111; color: white; transition: 0.3s; }
-        #start-btn { background: #00f2ff; color: #000; font-size: 1.4rem; font-weight: 900; border: none; box-shadow: 0 0 20px #00f2ff; }
-        
-        #ui { position: absolute; top: 20px; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; visibility: hidden; }
-        .bar-container { width: 35%; }
-        .bar-bg { width: 100%; height: 18px; background: rgba(0,0,0,0.8); border: 2px solid #444; position: relative; }
-        .hp-fill { height: 100%; width: 100%; background: #00f2ff; transition: width 0.2s ease-out; box-shadow: 0 0 10px #00f2ff; }
-        .hp-fill.p2 { background: #ff0055; box-shadow: 0 0 10px #ff0055; }
-        .win-counter { font-size: 1.5rem; color: #fff; margin-bottom: 5px; font-weight: 900; }
-
-        #msg-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; font-weight: 900; color: #fff; z-index: 150; pointer-events: none; text-shadow: 0 0 20px #00f2ff; display: none; text-align: center; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; user-select: none; }
+        #lobby { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; color: white; }
+        .setup-grid { display: flex; gap: 15px; margin-bottom: 20px; }
+        .player-setup { background: #111; padding: 20px; border-radius: 10px; border: 1px solid #333; width: 250px; }
+        select, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 5px; font-family: 'Orbitron'; cursor: pointer; background: #222; color: white; border: 1px solid #444; }
+        #start-btn { background: #00f2ff; color: #000; font-weight: 900; border: none; font-size: 1.2rem; }
+        #ui { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-around; visibility: hidden; pointer-events: none; }
+        .bar-bg { width: 300px; height: 20px; background: #222; border: 2px solid #444; }
+        .hp { height: 100%; width: 100%; transition: width 0.1s; }
+        #hp1 { background: #00f2ff; box-shadow: 0 0 15px #00f2ff; }
+        #hp2 { background: #ff0055; box-shadow: 0 0 15px #ff0055; }
+        .score { font-size: 1.5rem; color: #fff; text-align: center; margin-bottom: 5px; }
+        #msg { position: absolute; top: 40%; width: 100%; text-align: center; font-size: 80px; font-weight: 900; color: #fff; display: none; text-shadow: 0 0 20px #f00; }
     </style>
 </head>
 <body>
 
 <div id="lobby">
-    <h1 style="color: #00f2ff; text-shadow: 0 0 20px #00f2ff; margin-bottom: 5px;">NEXUS ARMS</h1>
+    <h1>NEXUS ARMS</h1>
     <div class="setup-grid">
         <div class="player-setup">
-            <h3 style="color:#00f2ff; margin-top:0;">P1 (WASD + F)</h3>
-            <select id="p1-wep"><option value="katana">KATANA</option><option value="executioner">EXECUTIONER</option><option value="rapier">RAPIER</option></select>
+            <h3>P1: WASD + F</h3>
+            <select id="p1-wep"><option value="katana">KATANA</option><option value="heavy">HEAVY</option></select>
         </div>
         <div class="player-setup">
-            <h3 style="color:#ff0055; margin-top:0;">P2 (ARROWS + ENT)</h3>
-            <select id="game-mode" onchange="toggleP2Wep()"><option value="bot">AI BOT</option><option value="pvp">LOCAL PVP</option></select>
-            <select id="p2-wep" style="display:none; border-color:#ff0055;"><option value="katana">KATANA</option><option value="executioner">EXECUTIONER</option><option value="rapier">RAPIER</option></select>
+            <h3>P2: ARROWS + ENTER</h3>
+            <select id="mode" onchange="document.getElementById('p2-s').style.display = (this.value=='pvp'?'block':'none')">
+                <option value="bot">AI BOT</option><option value="pvp">LOCAL PVP</option>
+            </select>
+            <div id="p2-s" style="display:none"><select id="p2-wep"><option value="katana">KATANA</option><option value="heavy">HEAVY</option></select></div>
         </div>
     </div>
-    <button id="start-btn">ENGAGE</button>
+    <button id="start-btn">START COMBAT</button>
 </div>
-
-<div id="msg-overlay">K.O.</div>
 
 <div id="ui">
-    <div class="bar-container">
-        <div id="wins-p1" class="win-counter">P1: 0</div>
-        <div class="bar-bg"><div id="hp1" class="hp-fill"></div></div>
-    </div>
-    <div class="bar-container" style="text-align:right">
-        <div id="wins-p2" class="win-counter">P2: 0</div>
-        <div class="bar-bg"><div id="hp2" class="hp-fill p2"></div></div>
-    </div>
+    <div><div id="s1" class="score">0</div><div class="bar-bg"><div id="hp1" class="hp"></div></div></div>
+    <div><div id="s2" class="score">0</div><div class="bar-bg"><div id="hp2" class="hp"></div></div></div>
 </div>
+<div id="msg">K.O.</div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
-
 <script type="module">
     import * as THREE from 'three';
 
-    const WEAPONS = {
-        katana:      { dmg: 15, speed: 0.18, range: 4.8, cd: 400, scale: [0.1, 2.8, 0.1], color: 0x00f2ff },
-        executioner: { dmg: 35, speed: 0.08, range: 5.8, cd: 1000, scale: [0.4, 3.5, 0.2], color: 0xff0055 },
-        rapier:      { dmg: 10, speed: 0.3, range: 6.5, cd: 250, scale: [0.05, 4.2, 0.05], color: 0xffffff }
+    const WEP = {
+        katana: { dmg: 15, range: 5.5, speed: 0.18, cd: 400 },
+        heavy:  { dmg: 35, range: 6.5, speed: 0.08, cd: 1000 }
     };
 
-    let wins = { p1: 0, p2: 0 };
-    let roundActive = false, isBot = false, hitStop = false;
-    const ARENA_RADIUS = 25; 
-    const ACCEL = 0.025;      
-    const FRICTION = 0.85;   
+    let wins = { p1: 0, p2: 0 }, roundActive = false, isBot = true, hitStop = false;
+    const ARENA_SIZE = 25, ACCEL = 0.02, FRIC = 0.88;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x010103);
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const sun = new THREE.PointLight(0x00f2ff, 2, 100); sun.position.set(0, 20, 10); scene.add(sun);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const light = new THREE.PointLight(0x00f2ff, 2, 100); light.position.set(0, 20, 0); scene.add(light);
 
-    const arena = new THREE.Mesh(new THREE.CylinderGeometry(ARENA_RADIUS, ARENA_RADIUS, 1, 64), new THREE.MeshStandardMaterial({color: 0x08080a}));
-    arena.position.y = -0.5; scene.add(arena);
-    scene.add(new THREE.GridHelper(ARENA_RADIUS * 2, 30, 0x00f2ff, 0x111111));
+    const floor = new THREE.Mesh(new THREE.CylinderGeometry(ARENA_SIZE, ARENA_SIZE, 1, 64), new THREE.MeshStandardMaterial({color: 0x111111}));
+    floor.position.y = -0.5; scene.add(floor);
+    scene.add(new THREE.GridHelper(ARENA_SIZE*2, 20, 0x00f2ff, 0x222222));
 
     class Fighter {
-        constructor(startX, startZ, id, color) {
-            this.id = id;
+        constructor(x, z, color) {
             this.group = new THREE.Group();
             this.vel = new THREE.Vector3();
-            this.baseColor = color;
-            this.resetPos = { x: startX, z: startZ };
+            this.color = color;
+            this.startPos = { x, z };
+            
+            this.mesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 1.5), new THREE.MeshStandardMaterial({color}));
+            this.mesh.position.y = 1.25;
+            this.group.add(this.mesh);
+
+            this.pivot = new THREE.Group();
+            this.pivot.position.set(0, 1.5, 0);
+            this.sword = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.5, 0.2), new THREE.MeshStandardMaterial({color: 0xffffff, emissive: color}));
+            this.sword.position.y = 1.75;
+            this.pivot.add(this.sword);
+            this.group.add(this.pivot);
+            
             scene.add(this.group);
         }
-        init(wepKey) {
-            this.group.clear();
-            this.wep = WEAPONS[wepKey];
-            this.body = new THREE.Mesh(new THREE.CapsuleGeometry(0.8, 1.2), new THREE.MeshStandardMaterial({color: this.baseColor}));
-            this.body.position.y = 1;
-            this.group.add(this.body);
-            
-            this.pivot = new THREE.Group();
-            this.pivot.position.set(0, 1.2, 0);
-            const blade = new THREE.Mesh(new THREE.BoxGeometry(...this.wep.scale), new THREE.MeshStandardMaterial({color: this.wep.color, emissive: this.wep.color, emissiveIntensity: 2}));
-            blade.position.y = this.wep.scale[1]/2;
-            this.pivot.add(blade);
-            this.group.add(this.pivot);
-            this.reset();
+        init(wKey) {
+            this.w = WEP[wKey];
+            this.hp = 100; this.atk = 0; this.last = 0; this.hit = false;
+            this.group.position.set(this.startPos.x, 0, this.startPos.z);
+            this.mesh.material.color.setHex(this.color);
         }
-        reset() {
-            this.hp = 100; this.atkPhase = 0; this.hitMark = false;
-            this.lastAtk = 0; this.isBlocking = false;
-            this.group.position.set(this.resetPos.x, 0, this.resetPos.z);
-            this.vel.set(0,0,0);
-            this.body.material.color.setHex(this.baseColor);
-        }
-        update(target) {
-            this.group.lookAt(target.position.x, 0, target.position.z);
-
-            if (this.atkPhase > 0) {
-                this.atkPhase -= this.wep.speed;
-                this.pivot.rotation.x = Math.sin(this.atkPhase * Math.PI) * -2.5;
-            } else {
-                this.pivot.rotation.x = this.isBlocking ? -1.2 : -0.5;
+        update(opp) {
+            this.group.lookAt(opp.group.position.x, 0, opp.group.position.z);
+            if(this.atk > 0) {
+                this.atk -= this.w.speed;
+                this.pivot.rotation.x = Math.sin(this.atk * Math.PI) * -2.5;
             }
-
             this.group.position.add(this.vel);
-            this.vel.multiplyScalar(FRICTION);
-
-            if (this.group.position.length() > ARENA_RADIUS) {
-                this.group.position.normalize().multiplyScalar(ARENA_RADIUS);
-            }
+            this.vel.multiplyScalar(FRIC);
+            if(this.group.position.length() > ARENA_SIZE) this.group.position.normalize().multiplyScalar(ARENA_SIZE);
         }
-        tryAtk() {
-            const now = Date.now();
-            if (now - this.lastAtk > this.wep.cd && !this.isBlocking && this.atkPhase <= 0) {
-                this.atkPhase = 1; this.hitMark = false; this.lastAtk = now;
+        doAtk() {
+            if(Date.now() - this.last > this.w.cd && this.atk <= 0) {
+                this.atk = 1; this.hit = false; this.last = Date.now();
             }
         }
     }
 
-    const p1 = new Fighter(-12, 0, 1, 0x00f2ff);
-    const p2 = new Fighter(12, 0, 2, 0xff0055);
+    const p1 = new Fighter(-12, 0, 0x00f2ff);
+    const p2 = new Fighter(12, 0, 0xff0055);
     const keys = {};
-    
     window.onkeydown = (e) => { 
         keys[e.code] = true; 
-        if(e.code === 'KeyF') p1.tryAtk(); 
-        if(e.code === 'Enter' && !isBot) p2.tryAtk(); 
+        if(e.code === 'KeyF') p1.doAtk(); 
+        if((e.code === 'Enter' || e.code === 'NumpadEnter') && !isBot) p2.doAtk();
     };
     window.onkeyup = (e) => keys[e.code] = false;
 
-    window.toggleP2Wep = () => {
-        document.getElementById('p2-wep').style.display = (document.getElementById('game-mode').value === 'pvp') ? 'block' : 'none';
-    };
-
     document.getElementById('start-btn').onclick = () => {
-        isBot = document.getElementById('game-mode').value === 'bot';
+        isBot = document.getElementById('mode').value === 'bot';
         p1.init(document.getElementById('p1-wep').value);
         p2.init(isBot ? 'katana' : document.getElementById('p2-wep').value);
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('ui').style.visibility = 'visible';
-        roundActive = true; animate();
+        roundActive = true; loop();
     };
 
-    function checkHits(attacker, defender) {
-        // Broadened hit window for better feel
-        if (attacker.atkPhase > 0.1 && attacker.atkPhase < 0.9 && !attacker.hitMark) {
-            const dist = attacker.group.position.distanceTo(defender.group.position);
-            // generous range check
-            if (dist < attacker.wep.range + 0.5) {
-                if (defender.isBlocking) {
-                    defender.hp -= attacker.wep.dmg * 0.15;
-                } else {
-                    defender.hp -= attacker.wep.dmg;
-                    defender.body.material.color.set(0xffffff);
-                    setTimeout(() => defender.body.material.color.set(defender.baseColor), 80);
-                    hitStop = true; setTimeout(() => hitStop = false, 40);
-                }
-                attacker.hitMark = true;
+    function processHits(a, b) {
+        if(a.atk > 0.2 && a.atk < 0.8 && !a.hit) {
+            if(a.group.position.distanceTo(b.group.position) < a.w.range) {
+                b.hp -= a.w.dmg; a.hit = true;
+                b.mesh.material.color.set(0xffffff);
+                setTimeout(() => b.mesh.material.color.set(b.color), 100);
+                hitStop = true; setTimeout(() => hitStop = false, 50);
             }
         }
     }
 
-    function animate() {
-        if (!roundActive) return;
-        requestAnimationFrame(animate);
-        if (hitStop) return;
+    function loop() {
+        if(!roundActive) return;
+        requestAnimationFrame(loop);
+        if(hitStop) return;
 
-        // P1 Movement
-        if (keys['KeyW']) p1.vel.z -= ACCEL; if (keys['KeyS']) p1.vel.z += ACCEL;
-        if (keys['KeyA']) p1.vel.x -= ACCEL; if (keys['KeyD']) p1.vel.x += ACCEL;
-        p1.isBlocking = keys['ShiftLeft'];
+        // P1
+        if(keys['KeyW']) p1.vel.z -= ACCEL; if(keys['KeyS']) p1.vel.z += ACCEL;
+        if(keys['KeyA']) p1.vel.x -= ACCEL; if(keys['KeyD']) p1.vel.x += ACCEL;
 
-        // P2 Logic
-        if (isBot) {
-            const d = p2.group.position.distanceTo(p1.group.position);
-            if (d > p2.wep.range - 1.5) {
-                const dir = new THREE.Vector3().subVectors(p1.group.position, p2.group.position).normalize();
-                p2.vel.add(dir.multiplyScalar(ACCEL * 0.7));
-            } else if (Math.random() > 0.96) {
-                p2.tryAtk();
-            }
+        // P2
+        if(isBot) {
+            let d = p2.group.position.distanceTo(p1.group.position);
+            if(d > p2.w.range-1) {
+                let dir = new THREE.Vector3().subVectors(p1.group.position, p2.group.position).normalize();
+                p2.vel.add(dir.multiplyScalar(ACCEL*0.6));
+            } else if(Math.random() > 0.98) p2.doAtk();
         } else {
-            if (keys['ArrowUp']) p2.vel.z -= ACCEL; if (keys['ArrowDown']) p2.vel.z += ACCEL;
-            if (keys['ArrowLeft']) p2.vel.x -= ACCEL; if (keys['ArrowRight']) p2.vel.x += ACCEL;
-            p2.isBlocking = keys['ShiftRight'] || keys['Slash']; // Added Slash as alternative P2 block
+            if(keys['ArrowUp']) p2.vel.z -= ACCEL; if(keys['ArrowDown']) p2.vel.z += ACCEL;
+            if(keys['ArrowLeft']) p2.vel.x -= ACCEL; if(keys['ArrowRight']) p2.vel.x += ACCEL;
         }
 
-        p1.update(p2);
-        p2.update(p1);
-
-        // Check hits for both directions
-        checkHits(p1, p2);
-        checkHits(p2, p1);
+        p1.update(p2); p2.update(p1);
+        processHits(p1, p2); processHits(p2, p1);
 
         document.getElementById('hp1').style.width = Math.max(0, p1.hp) + '%';
         document.getElementById('hp2').style.width = Math.max(0, p2.hp) + '%';
 
-        if (p1.hp <= 0 || p2.hp <= 0) {
+        if(p1.hp <= 0 || p2.hp <= 0) {
             roundActive = false;
-            const winId = p1.hp <= 0 ? 'p2' : 'p1';
-            wins[winId]++;
-            document.getElementById(`wins-${winId}`).innerText = `${winId.toUpperCase()}: ${wins[winId]}`;
-            document.getElementById('msg-overlay').style.display = 'block';
+            let w = p1.hp <= 0 ? 'p2' : 'p1';
+            wins[w]++;
+            document.getElementById('s1').innerText = wins.p1;
+            document.getElementById('s2').innerText = wins.p2;
+            document.getElementById('msg').style.display = 'block';
             setTimeout(() => {
-                p1.reset(); p2.reset();
-                document.getElementById('msg-overlay').style.display = 'none';
-                roundActive = true;
-            }, 1200);
+                p1.init(document.getElementById('p1-wep').value);
+                p2.init(isBot ? 'katana' : document.getElementById('p2-wep').value);
+                document.getElementById('msg').style.display = 'none';
+                roundActive = true; loop();
+            }, 1500);
         }
 
-        const mid = new THREE.Vector3().addVectors(p1.group.position, p2.group.position).multiplyScalar(0.5);
-        camera.position.lerp(new THREE.Vector3(mid.x, 15, mid.z + 30), 0.05);
-        camera.lookAt(mid.x, 1, mid.z);
+        let mid = new THREE.Vector3().addVectors(p1.group.position, p2.group.position).multiplyScalar(0.5);
+        camera.position.lerp(new THREE.Vector3(mid.x, 15, mid.z + 30), 0.1);
+        camera.lookAt(mid.x, 0, mid.z);
         renderer.render(scene, camera);
     }
 </script>
