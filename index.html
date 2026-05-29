@@ -41,7 +41,7 @@
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
     body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas, body[data-bg="stars"] #bgCanvas { opacity: 0.6; }
 
-    /* BETTER NEON */
+    /* NEON */
     body[data-bg="neon"]::before {
       content: ""; position: fixed; inset: 0; z-index: -2;
       background: 
@@ -52,7 +52,7 @@
     @keyframes neonPulse { 0% { opacity: 0.4; filter: blur(40px); } 100% { opacity: 0.9; filter: blur(20px); } }
     body[data-bg="neon"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
 
-    /* BETTER GLITCH */
+    /* GLITCH */
     body[data-bg="glitch"] { background: var(--bg0); }
     body[data-bg="glitch"]::after {
       content: ""; position: fixed; inset: 0; z-index: -1;
@@ -66,7 +66,6 @@
     }
     @keyframes scanline { 0% { transform: translateY(0); } 100% { transform: translateY(100vh); } }
 
-    /* Cursor */
     .cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); }
     .cursor-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 15px var(--primary); }
     .cursor-ring { width: 36px; height: 36px; border: 2px solid var(--primary); border-radius: 50%; transition: width 0.2s, height 0.2s; }
@@ -105,7 +104,6 @@
       body { cursor: auto; padding-bottom: 200px; }
       .cursor-dot, .cursor-ring { display: none !important; }
       .link-container { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-      .game-link { min-height: 110px; }
     }
   </style>
 </head>
@@ -198,15 +196,11 @@
       height = canvas.height = window.innerHeight;
       columns = Math.floor(width / 20);
       drops = Array(columns).fill(1);
-      
       starArray = [];
       for(let i=0; i<200; i++) {
         starArray.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          size: Math.random() * 2,
-          speed: Math.random() * 0.5 + 0.1,
-          opacity: Math.random()
+          x: Math.random() * width, y: Math.random() * height,
+          size: Math.random() * 2, speed: Math.random() * 0.5 + 0.1, opacity: Math.random()
         });
       }
     }
@@ -214,7 +208,6 @@
     function draw() {
       const mode = document.body.getAttribute('data-bg');
       ctx.clearRect(0,0,width,height);
-
       if (mode === 'matrix') {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.fillRect(0, 0, width, height);
@@ -230,26 +223,19 @@
       else if (mode === 'stars') {
         starArray.forEach(s => {
           ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
-          ctx.fill();
-          s.y += s.speed;
-          if(s.y > height) s.y = 0;
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI*2); ctx.fill();
+          s.y += s.speed; if(s.y > height) s.y = 0;
         });
       }
       else if (mode === 'warp') {
         starArray.forEach(s => {
-          let speed = 15;
           s.z = s.z || Math.random() * width;
-          s.z -= speed;
+          s.z -= 15;
           if (s.z <= 0) s.z = width;
           const x = (s.x - width/2) * (width/s.z) + width/2;
           const y = (s.y - height/2) * (width/s.z) + height/2;
           const size = (1 - s.z/width) * 5;
-          ctx.fillStyle = "white";
-          ctx.beginPath();
-          ctx.arc(x, y, size, 0, Math.PI*2);
-          ctx.fill();
+          ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI*2); ctx.fill();
         });
       }
       requestAnimationFrame(draw);
@@ -278,16 +264,23 @@
       });
     }
 
+    // INITIALIZATION: Default to Red (Crimson) and Warp for 1st time users
     window.onload = () => {
       const savedTheme = localStorage.getItem('nebula-theme');
-      const savedBg = localStorage.getItem('nebula-bg') || 'neon';
-      if(savedTheme) setTheme(savedTheme);
-      setBg(savedBg);
+      const savedBg = localStorage.getItem('nebula-bg');
+
+      // If no memory exists, use Red Warp
+      if (!savedTheme && !savedBg) {
+        setTheme('crimson');
+        setBg('warp');
+      } else {
+        if(savedTheme) setTheme(savedTheme);
+        setBg(savedBg || 'neon');
+      }
     };
 
     window.addEventListener('resize', resize);
-    resize();
-    draw();
+    resize(); draw();
 
     document.getElementById("gameGrid").innerHTML = games.map(g => `
       <a href="${g.url}" class="game-link" target="_blank">
