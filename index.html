@@ -16,7 +16,7 @@
       --secondary: #00d9ff; --secondary-glow: rgba(0,217,255,.24);
     }
 
-    /* ALL 12 ORIGINAL THEMES KEPT */
+    /* ALL 12 THEMES PRESERVED */
     [data-theme="cyber"] { --primary:#ff2bd6; --primary-glow:rgba(255,43,214,.42); --secondary:#00f5ff; --bg0:#07020b; }
     [data-theme="ocean"] { --primary:#00d9ff; --primary-glow:rgba(0,217,255,.42); --secondary:#38ffb5; --bg0:#021016; }
     [data-theme="amber"] { --primary:#ffaa00; --primary-glow:rgba(255,170,0,.38); --secondary:#ff4d6d; --bg0:#110904; }
@@ -41,13 +41,27 @@
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
     body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas { opacity: 0.5; }
 
-    /* Cursor Fixes */
+    /* BETTER NEON ENHANCEMENTS */
+    body[data-bg="neon"]::before {
+      content: ""; position: fixed; inset: 0; z-index: -2;
+      background: 
+        radial-gradient(circle at 20% 30%, var(--primary-glow) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, var(--secondary-glow) 0%, transparent 40%);
+      animation: neonPulse 8s infinite alternate ease-in-out;
+    }
+    @keyframes neonPulse {
+      0% { opacity: 0.6; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.1); }
+    }
+    body[data-bg="neon"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
+
+    /* Desktop Cursor */
     .cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); }
     .cursor-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 15px var(--primary); }
     .cursor-ring { width: 36px; height: 36px; border: 2px solid var(--primary); border-radius: 50%; transition: width 0.2s, height 0.2s; }
 
     header { padding: 60px 20px 20px; text-align: center; }
-    h1 { font-size: clamp(2.8rem, 10vw, 6.2rem); margin: 0; font-weight: 800; text-shadow: 0 0 26px var(--primary-glow); }
+    h1 { font-size: clamp(2.8rem, 10vw, 6.2rem); margin: 0; font-weight: 800; text-shadow: 0 0 30px var(--primary-glow); letter-spacing: -2px; }
 
     .search-wrap { width: min(90%, 640px); margin: 25px auto; }
     #moduleSearch {
@@ -63,7 +77,6 @@
     }
     .game-link:hover { border-color: var(--primary); box-shadow: 0 0 24px var(--primary-glow); transform: translateY(-5px); }
 
-    /* Footer Fix (Credit update) */
     .credits-section {
       text-align: center; margin-top: 80px; padding: 40px 20px; border-top: 1px solid var(--glass-border);
       background: rgba(0,0,0,0.4); backdrop-filter: blur(15px);
@@ -71,15 +84,13 @@
     .credits-section p { font-size: 0.85rem; opacity: 0.6; margin: 10px 0; }
     .wa-link { color: var(--primary); text-decoration: none; font-weight: 800; }
 
-    /* UI Controls */
     .bottom-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 1000; flex-wrap: wrap; justify-content: center; width: 95%; }
     .panel { background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
     .bg-btn { background: rgba(255,255,255,.08); border: 1px solid var(--glass-border); color: white; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 10px; cursor: pointer; }
     .bg-btn.active { background: var(--primary); color: #000; }
     .t-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.2s; }
 
-    /* ALL 5 BACKGROUND THEMES KEPT */
-    body[data-bg="neon"] { background: radial-gradient(circle at 18% 16%, var(--primary-glow), transparent 38%), linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 54%, var(--bg2) 100%); }
+    /* Other Backgrounds */
     body[data-bg="gradient"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
     body[data-bg="glitch"] { background: repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 6px), var(--bg0); }
     body[data-bg="stars"] { background: radial-gradient(circle at 50% 50%, #fff 1px, transparent 1px); background-size: 80px 80px; background-color: var(--bg0); }
