@@ -16,7 +16,7 @@
       --secondary: #00d9ff; --secondary-glow: rgba(0,217,255,.24);
     }
 
-    /* ALL 12 THEMES PRESERVED */
+    /* ALL 12 THEMES */
     [data-theme="cyber"] { --primary:#ff2bd6; --primary-glow:rgba(255,43,214,.42); --secondary:#00f5ff; --bg0:#07020b; }
     [data-theme="ocean"] { --primary:#00d9ff; --primary-glow:rgba(0,217,255,.42); --secondary:#38ffb5; --bg0:#021016; }
     [data-theme="amber"] { --primary:#ffaa00; --primary-glow:rgba(255,170,0,.38); --secondary:#ff4d6d; --bg0:#110904; }
@@ -41,7 +41,7 @@
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
     body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas { opacity: 0.5; }
 
-    /* BETTER NEON ENHANCEMENTS */
+    /* Better Neon Background layer */
     body[data-bg="neon"]::before {
       content: ""; position: fixed; inset: 0; z-index: -2;
       background: 
@@ -49,10 +49,7 @@
         radial-gradient(circle at 80% 70%, var(--secondary-glow) 0%, transparent 40%);
       animation: neonPulse 8s infinite alternate ease-in-out;
     }
-    @keyframes neonPulse {
-      0% { opacity: 0.6; transform: scale(1); }
-      100% { opacity: 1; transform: scale(1.1); }
-    }
+    @keyframes neonPulse { 0% { opacity: 0.6; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } }
     body[data-bg="neon"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
 
     /* Desktop Cursor */
@@ -88,7 +85,7 @@
     .panel { background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
     .bg-btn { background: rgba(255,255,255,.08); border: 1px solid var(--glass-border); color: white; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 10px; cursor: pointer; }
     .bg-btn.active { background: var(--primary); color: #000; }
-    .t-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: 0.2s; }
+    .t-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; }
 
     /* Other Backgrounds */
     body[data-bg="gradient"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
@@ -143,7 +140,7 @@
       <div class="t-btn" style="background:#ccff00" onclick="setTheme('toxic')"></div>
     </div>
     <div class="panel">
-      <button class="bg-btn active" onclick="setBg('neon')">NEON</button>
+      <button class="bg-btn" onclick="setBg('neon')">NEON</button>
       <button class="bg-btn" onclick="setBg('glitch')">GLITCH</button>
       <button class="bg-btn" onclick="setBg('matrix')">MATRIX</button>
       <button class="bg-btn" onclick="setBg('warp')">WARP</button>
@@ -232,12 +229,18 @@
 
     function setBg(m) {
       document.body.setAttribute('data-bg', m);
+      localStorage.setItem('nebula-bg', m); // MEMORIZE BG
       document.querySelectorAll('.bg-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase() === m));
     }
 
     function setTheme(t) {
-      if(t === 'default') document.documentElement.removeAttribute('data-theme');
-      else document.documentElement.setAttribute('data-theme', t);
+      if(t === 'default') {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.removeItem('nebula-theme'); // MEMORIZE THEME
+      } else {
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('nebula-theme', t); // MEMORIZE THEME
+      }
     }
 
     function filterGames() {
@@ -246,6 +249,14 @@
         el.style.display = el.innerText.toLowerCase().includes(val) ? "flex" : "none";
       });
     }
+
+    // LOAD MEMORIZED SETTINGS
+    window.onload = () => {
+      const savedTheme = localStorage.getItem('nebula-theme');
+      const savedBg = localStorage.getItem('nebula-bg') || 'neon';
+      if(savedTheme) setTheme(savedTheme);
+      setBg(savedBg);
+    };
 
     window.addEventListener('resize', resize);
     resize();
