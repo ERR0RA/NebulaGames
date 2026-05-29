@@ -15,13 +15,11 @@
       --muted: rgba(255,255,255,.62);
       --card: rgba(255,255,255,.045);
       --shadow: rgba(0,0,0,.45);
-      --bg0: #050608;
-      --bg1: #0a0e17;
-      --bg2: #120a1c;
-      --secondary: #00d9ff;
-      --secondary-glow: rgba(0,217,255,.24);
+      --bg0: #050608; --bg1: #0a0e17; --bg2: #120a1c;
+      --secondary: #00d9ff; --secondary-glow: rgba(0,217,255,.24);
     }
 
+    /* ALL ORIGINAL COLOR THEMES RESTORED */
     [data-theme="cyber"] { --primary:#ff2bd6; --primary-glow:rgba(255,43,214,.42); --secondary:#00f5ff; --secondary-glow:rgba(0,245,255,.22); --bg0:#07020b; --bg1:#14051d; --bg2:#05131b; }
     [data-theme="ocean"] { --primary:#00d9ff; --primary-glow:rgba(0,217,255,.42); --secondary:#38ffb5; --secondary-glow:rgba(56,255,181,.22); --bg0:#021016; --bg1:#06263a; --bg2:#03141f; }
     [data-theme="amber"] { --primary:#ffaa00; --primary-glow:rgba(255,170,0,.38); --secondary:#ff4d6d; --secondary-glow:rgba(255,77,109,.18); --bg0:#110904; --bg1:#241304; --bg2:#170b14; }
@@ -36,72 +34,72 @@
     [data-theme="midnight"] { --primary:#706fd3; --primary-glow:rgba(112,111,211,.42); --secondary:#7dd3fc; --secondary-glow:rgba(125,211,252,.16); --bg0:#050716; --bg1:#0d1030; --bg2:#060814; }
 
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
     body {
       margin: 0; min-height: 100vh; overflow-x: hidden;
-      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      font-family: "Plus Jakarta Sans", sans-serif;
       background: var(--bg); color: var(--text); cursor: none;
       transition: background .35s ease; padding-bottom: 120px;
     }
 
-    /* Matrix Rain Canvas */
-    #matrixCanvas {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: -1; opacity: 0;
-      transition: opacity 1s ease;
-    }
+    /* Matrix Logic */
+    #matrixCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
     body[data-bg="matrix"] #matrixCanvas { opacity: 0.35; }
 
-    body::before {
-      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -4;
-      background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
-      background-size: 44px 44px; mask-image: linear-gradient(to bottom, rgba(0,0,0,.95), rgba(0,0,0,.18));
+    /* GLITCH MODE IMPROVEMENTS */
+    @keyframes glitch-anim {
+      0% { text-shadow: 2px 0 red, -2px 0 blue; transform: translate(0); }
+      20% { text-shadow: -2px 0 red, 2px 0 blue; transform: translate(-1px, 1px); }
+      40% { text-shadow: 2px 0 blue, -2px 0 red; transform: translate(1px, -1px); }
+      60% { text-shadow: -2px 0 blue, 2px 0 red; transform: translate(-1px, -1px); }
+      100% { text-shadow: 2px 0 red, -2px 0 blue; transform: translate(0); }
     }
+    body[data-bg="glitch"] h1 { animation: glitch-anim 0.3s infinite linear; }
+    body[data-bg="glitch"]::after {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10;
+      background: repeating-linear-gradient(transparent 0%, rgba(255,255,255,0.02) 0.5%, transparent 1%);
+      animation: scanline 10s infinite linear;
+    }
+    @keyframes scanline { from { background-position: 0 0; } to { background-position: 0 100%; } }
 
-    body[data-bg="neon"] { background: radial-gradient(circle at 18% 16%, var(--primary-glow), transparent 38%), radial-gradient(circle at 80% 78%, var(--secondary-glow), transparent 40%), linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 54%, var(--bg2) 100%); }
+    /* Background Modes */
+    body[data-bg="neon"] { background: radial-gradient(circle at 18% 16%, var(--primary-glow), transparent 38%), linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 54%, var(--bg2) 100%); }
     body[data-bg="gradient"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
-    body[data-bg="glitch"] { background: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 6px), radial-gradient(circle at 25% 18%, var(--primary-glow), transparent 30%), radial-gradient(circle at 72% 68%, var(--secondary-glow), transparent 34%), linear-gradient(120deg, var(--bg0), var(--bg1) 45%, var(--bg2)); }
-    body[data-bg="stars"] { background: radial-gradient(circle at 12% 28%, rgba(255,255,255,.12) 0 1px, transparent 2px), radial-gradient(circle at 44% 16%, var(--primary) 0 1px, transparent 2px), linear-gradient(145deg, var(--bg0), var(--bg1), var(--bg2)); background-size: 220px 220px, 260px 260px, auto; }
+    body[data-bg="stars"] { background: radial-gradient(circle at 50% 50%, #fff 1px, transparent 1px); background-size: 80px 80px; background-color: var(--bg0); }
 
     .cursor-dot, .cursor-ring { position: fixed; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); }
     .cursor-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 12px var(--primary); }
-    .cursor-ring { width: 34px; height: 34px; border: 2px solid var(--primary); border-radius: 50%; transition: width .2s, height .2s, border .2s; box-shadow: 0 0 20px var(--primary-glow); }
+    .cursor-ring { width: 34px; height: 34px; border: 2px solid var(--primary); border-radius: 50%; transition: 0.2s; box-shadow: 0 0 20px var(--primary-glow); }
 
     header { padding: 86px 20px 20px; text-align: center; }
-    h1 { font-size: clamp(3.4rem, 10vw, 6.2rem); margin: 0; font-weight: 800; text-shadow: 0 0 26px var(--primary-glow); position: relative; }
-    .sub { opacity: .68; letter-spacing: 4px; text-transform: uppercase; font-size: .78rem; margin-top: 14px; }
+    h1 { font-size: clamp(3.4rem, 10vw, 6.2rem); margin: 0; font-weight: 800; text-shadow: 0 0 26px var(--primary-glow); }
 
-    .search-wrap { width: min(90%, 640px); margin: 30px auto; position: relative; }
+    .search-wrap { width: min(90%, 640px); margin: 30px auto; }
     #moduleSearch {
       width: 100%; padding: 17px 24px; border-radius: 999px; border: 1px solid var(--glass-border);
-      background: rgba(255, 255, 255, .045); color: white; outline: none; font-size: 1rem;
-      backdrop-filter: blur(20px); text-align: center; transition: .3s;
+      background: rgba(255, 255, 255, .045); color: white; outline: none; text-align: center; backdrop-filter: blur(20px);
     }
 
     .link-container { width: min(92%, 1240px); margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
     .game-link {
       position: relative; min-height: 148px; display: flex; flex-direction: column; align-items: center; justify-content: center;
       text-decoration: none; color: white; border-radius: 18px; border: 1px solid var(--glass-border);
-      background: linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.025)); backdrop-filter: blur(18px);
-      transition: transform .1s ease-out, border .3s, box-shadow .3s; overflow: hidden; padding: 15px;
+      background: rgba(255,255,255,0.03); backdrop-filter: blur(18px); transition: 0.3s; padding: 15px;
     }
-    .game-link:hover { border-color: var(--primary); box-shadow: 0 0 24px var(--primary-glow); }
+    .game-link:hover { border-color: var(--primary); box-shadow: 0 0 24px var(--primary-glow); transform: translateY(-5px); }
 
-    /* Bottom Section Fix */
+    /* Footer Fix */
     .credits-section {
-      text-align: center; margin-top: 80px; padding: 40px 20px;
-      border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
-      backdrop-filter: blur(10px);
+      text-align: center; margin-top: 80px; padding: 40px 20px; border-top: 1px solid var(--glass-border);
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(15px);
     }
-    .credits-section p { font-size: 0.85rem; opacity: 0.6; margin: 10px 0; max-width: 800px; margin-left: auto; margin-right: auto; }
-    .wa-link { color: var(--primary); text-decoration: none; font-weight: 800; transition: 0.3s; }
-    .wa-link:hover { text-shadow: 0 0 10px var(--primary); text-decoration: underline; }
+    .credits-section p { font-size: 0.85rem; opacity: 0.6; margin: 10px 0; }
+    .wa-link { color: var(--primary); text-decoration: none; font-weight: 800; }
 
-    .bottom-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 1000; }
-    .panel { background: rgba(0,0,0,0.58); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 8px 12px; display: flex; align-items: center; gap: 10px; }
-    .bg-btn { background: rgba(255,255,255,.08); border: 1px solid var(--glass-border); color: white; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 11px; cursor: none; transition: .2s; }
-    .bg-btn:hover, .bg-btn.active { background: var(--primary); color: #000; }
-    .t-btn { width: 19px; height: 19px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: none; }
+    .bottom-controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 1000; flex-wrap: wrap; justify-content: center; width: 95%; }
+    .panel { background: rgba(0,0,0,0.7); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 999px; padding: 8px 15px; display: flex; align-items: center; gap: 10px; }
+    .t-btn { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: none; }
+    .bg-btn { background: rgba(255,255,255,.08); border: 1px solid var(--glass-border); color: white; padding: 5px 12px; border-radius: 999px; font-weight: 800; font-size: 10px; cursor: none; }
+    .bg-btn.active { background: var(--primary); color: #000; }
   </style>
 </head>
 <body data-bg="neon">
@@ -112,7 +110,7 @@
 
   <header>
     <h1 data-text="Nebula">Nebula</h1>
-    <p class="sub">Cloud Gaming Interface</p>
+    <p style="letter-spacing: 5px; opacity: 0.6;">CLOUD GAMING HUB</p>
   </header>
 
   <div class="search-wrap">
@@ -125,7 +123,7 @@
     <p>These games are made using humans and AI. ALL rights reserved to DC, ERR0R, and AK.</p>
     <p>Note: I am not the creator of Neon Sparx, but the <b>Editor</b>.</p>
     <p>By using Neon Sparx you accept full responsibility; the owner and editor are not liable.</p>
-    <p>WhatsApp Group Chat (no swearing): <a href="https://chat.whatsapp.com/CNVOOoyQL7ZCRCcndD9phU" class="wa-link" target="_blank">Join Channel</a></p>
+    <p>WhatsApp Group (No Swearing): <a href="https://chat.whatsapp.com/CNVOOoyQL7ZCRCcndD9phU" class="wa-link" target="_blank">Join Channel</a></p>
   </div>
 
   <div class="bottom-controls">
@@ -133,9 +131,16 @@
       <div class="t-btn" style="background:#00ff88" onclick="setTheme('default')"></div>
       <div class="t-btn" style="background:#ff2bd6" onclick="setTheme('cyber')"></div>
       <div class="t-btn" style="background:#00d9ff" onclick="setTheme('ocean')"></div>
+      <div class="t-btn" style="background:#ffaa00" onclick="setTheme('amber')"></div>
+      <div class="t-btn" style="background:#ff3b3b" onclick="setTheme('crimson')"></div>
+      <div class="t-btn" style="background:#8b5cf6" onclick="setTheme('violet')"></div>
+      <div class="t-btn" style="background:#a3ff12" onclick="setTheme('lime')"></div>
+      <div class="t-btn" style="background:#7dd3fc" onclick="setTheme('ice')"></div>
+      <div class="t-btn" style="background:#ffd700" onclick="setTheme('gold')"></div>
+      <div class="t-btn" style="background:#ff4d94" onclick="setTheme('rose')"></div>
+      <div class="t-btn" style="background:#2ecc71" onclick="setTheme('emerald')"></div>
       <div class="t-btn" style="background:#ccff00" onclick="setTheme('toxic')"></div>
     </div>
-
     <div class="panel">
       <button class="bg-btn" onclick="setBg('neon')">NEON</button>
       <button class="bg-btn" onclick="setBg('gradient')">GRADIENT</button>
@@ -166,47 +171,49 @@
       { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
     ];
 
-    function buildGrid() {
-      const container = document.getElementById("gameGrid");
-      container.innerHTML = games.map(game => `
-          <a href="${game.url}" class="game-link" target="_blank">
-            ${game.tag ? `<span style="position:absolute;top:12px;right:12px;font-size:.6rem;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--primary);color:#000;">${game.tag}</span>` : ""}
-            <span style="font-weight:800;font-size:1.08rem;text-align:center;">${game.name}</span>
-          </a>
-      `).join("");
+    function init() {
+      const grid = document.getElementById("gameGrid");
+      grid.innerHTML = games.map(g => `
+        <a href="${g.url}" class="game-link" target="_blank">
+          ${g.tag ? `<span style="position:absolute;top:10px;right:10px;font-size:10px;background:var(--primary);color:black;padding:2px 8px;border-radius:10px;font-weight:800">${g.tag}</span>` : ''}
+          <span style="font-weight:800">${g.name}</span>
+        </a>
+      `).join('');
+      initMatrix();
     }
 
-    // Matrix Rain Script
+    // Live Matrix Logic
     const canvas = document.getElementById('matrixCanvas');
     const ctx = canvas.getContext('2d');
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    const columns = Math.floor(width / 20);
-    const drops = Array(columns).fill(1);
-
+    let drops = [];
+    function initMatrix() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      drops = Array(Math.floor(canvas.width / 20)).fill(1);
+    }
     function drawMatrix() {
       if(document.body.getAttribute('data-bg') !== 'matrix') return;
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
       ctx.font = '15px monospace';
-      for (let i = 0; i < drops.length; i++) {
+      drops.forEach((y, i) => {
         const text = String.fromCharCode(0x30A0 + Math.random() * 96);
-        ctx.fillText(text, i * 20, drops[i] * 20);
-        if (drops[i] * 20 > height && Math.random() > 0.975) drops[i] = 0;
+        ctx.fillText(text, i * 20, y * 20);
+        if (y * 20 > canvas.height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
-      }
+      });
     }
     setInterval(drawMatrix, 50);
+    window.addEventListener('resize', initMatrix);
 
-    // Controls
     function setBg(m) {
-      document.body.setAttribute("data-bg", m);
-      document.querySelectorAll('.bg-btn').forEach(btn => btn.classList.toggle('active', btn.innerText.toLowerCase() === m));
+      document.body.setAttribute('data-bg', m);
+      document.querySelectorAll('.bg-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase() === m));
     }
     function setTheme(t) {
-      if (t === "default") document.documentElement.removeAttribute("data-theme");
-      else document.documentElement.setAttribute("data-theme", t);
+      if(t === 'default') document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', t);
     }
     function filterGames() {
       const val = document.getElementById("moduleSearch").value.toLowerCase();
@@ -223,7 +230,7 @@
       dot.style.top = ring.style.top = e.clientY + "px";
     });
 
-    buildGrid();
+    init();
   </script>
 </body>
 </html>
