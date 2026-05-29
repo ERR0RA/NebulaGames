@@ -3,100 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Fighter: Polished Armory</title>
+    <title>MASTER ARMORY: OVERDRIVE</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; user-select: none; touch-action: none; }
-        
-        /* LOBBY UI */
-        #lobby { position: absolute; inset: 0; background: radial-gradient(circle at center, #1a1a2e, #000); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; color: white; transition: 0.5s; }
-        .setup-grid { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
-        .player-setup { background: rgba(0, 242, 255, 0.05); padding: 20px; border-radius: 15px; width: 280px; border: 1px solid #00f2ff55; backdrop-filter: blur(10px); }
-        
+        #lobby { position: absolute; inset: 0; background: radial-gradient(circle at center, #001, #000); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; color: white; text-align: center; }
+        .setup-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+        .player-setup { background: rgba(0, 242, 255, 0.05); padding: 20px; border-radius: 15px; width: 260px; border: 1px solid #00f2ff44; backdrop-filter: blur(10px); }
         select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; font-family: 'Orbitron'; cursor: pointer; border: 1px solid #444; background: #111; color: white; transition: 0.3s; }
-        select:hover { border-color: #00f2ff; }
+        #start-btn { background: #00f2ff; color: #000; font-size: 1.4rem; font-weight: 900; border: none; box-shadow: 0 0 20px #00f2ff; }
         
-        #start-btn { background: #00f2ff; color: #000; font-size: 1.4rem; font-weight: 900; border: none; box-shadow: 0 0 20px #00f2ffaa; margin-top: 20px; width: 320px; }
-        #start-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px #00f2ff; }
+        #ui { position: absolute; top: 20px; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; visibility: hidden; }
+        .bar-container { width: 40%; }
+        .bar-bg { width: 100%; height: 22px; background: rgba(0,0,0,0.8); border: 2px solid #444; position: relative; }
+        .hp-fill { height: 100%; width: 100%; background: #00f2ff; transition: width 0.2s ease-out; }
+        .hp-fill.p2 { background: #ff0055; }
+        .status-text { font-size: 0.7rem; color: #fff; margin-top: 5px; letter-spacing: 1px; }
 
-        /* HUD */
-        #ui { position: absolute; top: 20px; width: 100%; padding: 0 40px; display: flex; justify-content: space-between; box-sizing: border-box; z-index: 10; opacity: 0; pointer-events: none; transition: 1s; }
-        .bar-container { width: 40%; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
-        .name-label { margin-bottom: 5px; font-size: 0.8rem; letter-spacing: 2px; }
-        .bar-bg { width: 100%; height: 20px; background: rgba(0,0,0,0.6); border: 2px solid #333; border-radius: 4px; overflow: hidden; position: relative; }
-        .hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #00f2ff, #0077ff); transition: width 0.4s cubic-bezier(0, 1, 0, 1); }
-        .hp-fill.p2 { background: linear-gradient(90deg, #ff0055, #880022); }
-        .cd-bar { width: 100%; height: 4px; background: #ffd700; margin-top: 6px; transform-origin: left; transition: transform 0.1s linear; }
-
-        /* MESSAGES */
-        #msg-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; font-weight: 900; color: #fff; z-index: 150; pointer-events: none; text-shadow: 0 0 20px #00f2ff; display: none; text-align: center; }
-
-        /* TOUCH CONTROLS */
-        #touch-controls { position: absolute; bottom: 40px; width: 100%; display: none; justify-content: space-between; padding: 0 40px; box-sizing: border-box; z-index: 100; }
-        .touch-btn { width: 85px; height: 85px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; pointer-events: auto; backdrop-filter: blur(5px); }
-        .touch-btn:active { background: #00f2ff44; border-color: #00f2ff; }
-        #atk-btn { width: 110px; height: 110px; border-color: #ff0055; color: #ff0055; font-weight: 900; }
+        #msg-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; font-weight: 900; color: #fff; z-index: 150; pointer-events: none; text-shadow: 0 0 20px #00f2ff; display: none; }
+        
+        #touch-controls { position: absolute; bottom: 30px; width: 100%; display: none; justify-content: space-between; padding: 0 30px; box-sizing: border-box; z-index: 100; }
+        .t-group { display: flex; gap: 10px; }
+        .touch-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 2px solid #555; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
 <div id="lobby">
-    <h1 style="font-size: 3rem; margin-bottom: 5px; color: #00f2ff; text-shadow: 0 0 15px #00f2ff55;">MASTER ARMORY</h1>
-    <p style="opacity: 0.6; margin-bottom: 30px;">ULTIMATE 3D COMBAT PROTOCOL</p>
-    
+    <h1 style="color: #00f2ff; text-shadow: 0 0 20px #00f2ff;">NEXUS ARMS</h1>
+    <p style="margin-bottom: 30px; opacity: 0.7;">PARRY / JUMP / SURVIVE</p>
     <div class="setup-grid">
         <div class="player-setup">
-            <h3 style="color:#00f2ff; margin:0 0 15px 0;">UNIT-01 (YOU)</h3>
-            <select id="p1-skin">
-                <option value="0x00f2ff">Neon Cyan</option>
-                <option value="0xffdbac">Human Form</option>
-                <option value="0x333333">Obsidian</option>
-                <option value="0xffffff">Titanium</option>
-            </select>
+            <h3 style="color:#00f2ff; margin-top:0;">FIGHTER 1</h3>
             <select id="p1-wep">
-                <option value="katana">KATANA (Balanced)</option>
+                <option value="katana">KATANA (Swift)</option>
                 <option value="executioner">EXECUTIONER (Heavy)</option>
-                <option value="rapier">RAPIER (Fast)</option>
+                <option value="rapier">RAPIER (Long)</option>
             </select>
         </div>
-        
         <div class="player-setup">
-            <h3 style="color:#ff0055; margin:0 0 15px 0;">OPPONENT</h3>
-            <select id="game-mode">
-                <option value="bot">VS NEURAL NET (AI)</option>
-                <option value="pvp">LOCAL PVP (2 PLAYER)</option>
-            </select>
-            <select id="p2-wep">
-                <option value="katana">KATANA</option>
-                <option value="executioner">EXECUTIONER</option>
-                <option value="rapier">RAPIER</option>
-            </select>
+            <h3 style="color:#ff0055; margin-top:0;">MODE</h3>
+            <select id="game-mode"><option value="bot">AI CHALLENGE</option><option value="pvp">LOCAL PVP</option></select>
         </div>
     </div>
-    <button id="start-btn">ENGAGE COMBAT</button>
+    <button id="start-btn">INITIALIZE</button>
 </div>
 
-<div id="msg-overlay">READY?</div>
+<div id="msg-overlay">K.O.</div>
 
 <div id="ui">
     <div class="bar-container">
-        <div class="name-label">PLAYER 1</div>
         <div class="bar-bg"><div id="hp1" class="hp-fill"></div></div>
-        <div id="cd1" class="cd-bar"></div>
+        <div id="st1" class="status-text">SYSTEMS NOMINAL</div>
     </div>
-    <div class="bar-container" style="text-align: right;">
-        <div class="name-label">OPPONENT</div>
+    <div class="bar-container" style="text-align:right">
         <div class="bar-bg"><div id="hp2" class="hp-fill p2"></div></div>
-        <div id="cd2" class="cd-bar" style="margin-left: auto;"></div>
+        <div id="st2" class="status-text">TARGET ACQUIRED</div>
     </div>
 </div>
 
 <div id="touch-controls">
-    <div style="display: flex; gap: 20px; align-items: flex-end;">
-        <div class="touch-btn" id="l-btn">◀</div>
-        <div class="touch-btn" id="r-btn">▶</div>
+    <div class="t-group">
+        <div class="touch-btn" id="l-btn">L</div><div class="touch-btn" id="u-btn">J</div><div class="touch-btn" id="r-btn">R</div><div class="touch-btn" id="d-btn">B</div>
     </div>
-    <div class="touch-btn" id="atk-btn">HIT</div>
+    <div class="touch-btn" id="atk-btn" style="width:100px; height:100px; border-color:#ff0055">HIT</div>
 </div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }</script>
@@ -105,257 +75,156 @@
     import * as THREE from 'three';
 
     const WEAPONS = {
-        katana:      { dmg: 18, speed: 0.18, range: 2.6, cd: 600, scale: [0.06, 2.5, 0.08], color: 0xcccccc },
-        executioner: { dmg: 42, speed: 0.07, range: 3.4, cd: 1500, scale: [0.3, 3.4, 0.12], color: 0x888888 },
-        rapier:      { dmg: 11, speed: 0.32, range: 3.6, cd: 350, scale: [0.03, 3.6, 0.03], color: 0x00f2ff }
+        katana:      { dmg: 16, speed: 0.2, range: 2.5, cd: 550, scale: [0.06, 2.5, 0.08], color: 0x00f2ff },
+        executioner: { dmg: 40, speed: 0.08, range: 3.2, cd: 1400, scale: [0.3, 3.2, 0.12], color: 0xff0055 },
+        rapier:      { dmg: 12, speed: 0.35, range: 3.8, cd: 350, scale: [0.03, 3.8, 0.03], color: 0xffffff }
     };
 
-    let roundActive = false, isBot = false;
-    let clock = new THREE.Clock();
+    let roundActive = false, isBot = false, isHitStop = false, laserActive = false;
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x000000, 10, 35);
-
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    // LIGHTING
-    const ambient = new THREE.AmbientLight(0xffffff, 0.3);
-    scene.add(ambient);
-    const mainLight = new THREE.SpotLight(0x00f2ff, 200);
-    mainLight.position.set(0, 15, 10);
-    mainLight.castShadow = true;
-    scene.add(mainLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+    const sun = new THREE.DirectionalLight(0xffffff, 2); sun.position.set(5, 10, 5); scene.add(sun);
+    
+    // Arena with reflective floor
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 20), new THREE.MeshStandardMaterial({color: 0x080808, roughness: 0.1, metalness: 0.5}));
+    floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
+    scene.add(new THREE.GridHelper(100, 40, 0x00f2ff, 0x111111));
 
-    // ARENA
-    const floorGeo = new THREE.PlaneGeometry(100, 100);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.1, metalness: 0.8 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI/2;
-    floor.receiveShadow = true;
-    scene.add(floor);
-
-    const grid = new THREE.GridHelper(100, 50, 0x00f2ff, 0x222222);
-    grid.position.y = 0.01;
-    scene.add(grid);
-
-    // PARTICLES
-    const particles = [];
-    function spawnSpark(pos, color) {
-        const geo = new THREE.IcosahedronGeometry(0.1, 0);
-        const mat = new THREE.MeshBasicMaterial({ color });
-        for(let i=0; i<8; i++){
-            const p = new THREE.Mesh(geo, mat);
-            p.position.copy(pos);
-            p.userData.vel = new THREE.Vector3((Math.random()-0.5)*0.3, Math.random()*0.3, (Math.random()-0.5)*0.3);
-            p.userData.life = 1.0;
-            scene.add(p);
-            particles.push(p);
-        }
-    }
+    // Laser Hazard
+    const laser = new THREE.Mesh(new THREE.BoxGeometry(100, 0.2, 0.2), new THREE.MeshBasicMaterial({color: 0xff0000}));
+    laser.position.set(0, 0.5, 0); laser.visible = false; scene.add(laser);
 
     class Fighter {
-        constructor(x, id, color) {
+        constructor(x, id) {
             this.id = id; this.hp = 100; this.atkPhase = 0; this.hitMark = false;
             this.lastAtk = 0; this.group = new THREE.Group(); this.group.position.x = x;
-            this.vel = new THREE.Vector3(); this.color = color;
+            this.vel = new THREE.Vector3(); this.isBlocking = false; this.stunned = 0;
+            this.isJumping = false; this.blockTime = 0;
             scene.add(this.group);
         }
-
-        init(skin, wepKey) {
-            this.group.clear();
-            this.hp = 100;
-            this.wep = WEAPONS[wepKey];
-            
-            // Body
-            const body = new THREE.Mesh(
-                new THREE.CapsuleGeometry(0.4, 1), 
-                new THREE.MeshStandardMaterial({ color: parseInt(skin), metalness: 0.5, roughness: 0.2 })
-            );
-            body.position.y = 0.9;
-            body.castShadow = true;
-            this.group.add(body);
-
-            // Sword
-            this.pivot = new THREE.Group();
-            this.pivot.position.set(0.4, 1.2, 0);
-            const blade = new THREE.Mesh(
-                new THREE.BoxGeometry(...this.wep.scale), 
-                new THREE.MeshStandardMaterial({ color: this.wep.color, metalness: 1, roughness: 0 })
-            );
-            blade.position.y = this.wep.scale[1]/2;
-            this.pivot.add(blade);
+        init(wepKey, color) {
+            this.group.clear(); this.wep = WEAPONS[wepKey];
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1), new THREE.MeshStandardMaterial({color: color}));
+            body.position.y = 0.9; body.castShadow = true; this.group.add(body);
+            this.pivot = new THREE.Group(); this.pivot.position.set(0.4, 1.2, 0);
+            const blade = new THREE.Mesh(new THREE.BoxGeometry(...this.wep.scale), new THREE.MeshStandardMaterial({color: this.wep.color, emissive: this.wep.color, emissiveIntensity: 0.5}));
+            blade.position.y = this.wep.scale[1]/2; this.pivot.add(blade);
             this.group.add(this.pivot);
         }
-
         update() {
+            if (this.stunned > 0) {
+                this.stunned -= 0.016;
+                this.group.children[0].material.emissive.setHex(0xffff00);
+                return;
+            }
+            this.group.children[0].material.emissive.setHex(this.isBlocking ? 0x00f2ff : 0x000000);
+            
             if (this.atkPhase > 0) {
                 this.atkPhase -= this.wep.speed;
                 this.pivot.rotation.z = Math.sin(this.atkPhase * Math.PI) * 3;
-            } else {
-                this.pivot.rotation.z = THREE.MathUtils.lerp(this.pivot.rotation.z, 0, 0.2);
-            }
+            } else { this.pivot.rotation.z = THREE.MathUtils.lerp(this.pivot.rotation.z, this.isBlocking ? 1.5 : 0, 0.2); }
 
-            this.group.position.x += this.vel.x;
+            this.vel.y -= 0.015; // Gravity
+            this.group.position.add(this.vel);
+            if (this.group.position.y <= 0) { this.group.position.y = 0; this.vel.y = 0; this.isJumping = false; }
             this.vel.x *= 0.85;
-            this.group.position.x = Math.max(-14, Math.min(14, this.group.position.x));
-        }
-
-        tryAttack() {
-            const now = Date.now();
-            if (this.atkPhase <= 0 && now - this.lastAtk >= this.wep.cd) {
-                this.atkPhase = 1; this.hitMark = false; this.lastAtk = now;
-                return true;
-            }
-            return false;
         }
     }
 
-    const p1 = new Fighter(-5, 1, 0x00f2ff);
-    const p2 = new Fighter(5, 2, 0xff0055);
-    const inputs = { l: false, r: false, atk: false };
-
-    // CONTROLS
-    const setupTouch = (id, key) => {
-        const el = document.getElementById(id);
-        el.addEventListener('touchstart', (e) => { e.preventDefault(); inputs[key] = true; });
-        el.addEventListener('touchend', (e) => { e.preventDefault(); inputs[key] = false; });
-    };
-    setupTouch('l-btn', 'l'); setupTouch('r-btn', 'r'); setupTouch('atk-btn', 'atk');
-
-    const keys = {};
-    window.onkeydown = (e) => keys[e.code] = true;
-    window.onkeyup = (e) => keys[e.code] = false;
+    const p1 = new Fighter(-5, 1);
+    const p2 = new Fighter(5, 2);
+    const keys = {}; window.onkeydown = (e) => keys[e.code] = true; window.onkeyup = (e) => keys[e.code] = false;
 
     document.getElementById('start-btn').onclick = () => {
         isBot = document.getElementById('game-mode').value === 'bot';
-        p1.init(document.getElementById('p1-skin').value, document.getElementById('p1-wep').value);
-        p2.init(isBot ? "0x333333" : "0xffffff", document.getElementById('p2-wep').value);
-        
-        document.getElementById('lobby').style.opacity = '0';
-        setTimeout(() => document.getElementById('lobby').style.display = 'none', 500);
-        
-        startCountdown();
+        p1.init(document.getElementById('p1-wep').value, 0x00f2ff);
+        p2.init('katana', 0xff0055);
+        document.getElementById('lobby').style.display = 'none';
+        document.getElementById('ui').style.visibility = 'visible';
+        roundActive = true; animate();
     };
 
-    function startCountdown() {
-        const msg = document.getElementById('msg-overlay');
-        msg.style.display = 'block';
-        let count = 3;
-        const timer = setInterval(() => {
-            msg.innerText = count > 0 ? count : "FIGHT!";
-            if(count === -1) {
-                clearInterval(timer);
-                msg.style.display = 'none';
-                document.getElementById('ui').style.opacity = '1';
-                if(/Android|iPhone/i.test(navigator.userAgent)) document.getElementById('touch-controls').style.display = 'flex';
-                roundActive = true;
-                animate();
-            }
-            count--;
-        }, 800);
+    function handleInput() {
+        // P1 Controls
+        p1.isBlocking = keys['KeyS'] || keys['ArrowDown'];
+        if (p1.stunned <= 0) {
+            if (keys['KeyA'] || keys['ArrowLeft']) p1.vel.x = -0.15;
+            if (keys['KeyD'] || keys['ArrowRight']) p1.vel.x = 0.15;
+            if ((keys['KeyW'] || keys['ArrowUp']) && !p1.isJumping) { p1.vel.y = 0.35; p1.isJumping = true; }
+            if (keys['Space'] || keys['KeyF']) p1.atkPhase <= 0 && p1.tryAtk();
+        }
+        // AI / P2
+        if (isBot && p2.stunned <= 0) {
+            const d = p2.group.position.x - p1.group.position.x;
+            if (Math.abs(d) > p2.wep.range) p2.vel.x = d > 0 ? -0.1 : 0.1;
+            if (Math.abs(d) < p2.wep.range) Math.random() > 0.95 ? p2.tryAtk() : (p2.isBlocking = Math.random() > 0.9);
+            if (laserActive && laser.position.x < p2.group.position.x + 5 && !p2.isJumping) { p2.vel.y = 0.35; p2.isJumping = true; }
+        }
     }
 
-    let shake = 0;
+    Fighter.prototype.tryAtk = function() {
+        const now = Date.now();
+        if (now - this.lastAtk > this.wep.cd && !this.isBlocking) {
+            this.atkPhase = 1; this.hitMark = false; this.lastAtk = now;
+        }
+    }
+
+    let shake = 0, laserTimer = 0;
 
     function animate() {
-        if (!roundActive) return;
+        if (!roundActive || isHitStop) return;
         requestAnimationFrame(animate);
-        const now = Date.now();
-
-        // P1 Movement
-        if (keys['KeyA'] || inputs.l) p1.vel.x = -0.18;
-        if (keys['KeyD'] || inputs.r) p1.vel.x = 0.18;
-        if (keys['Space'] || inputs.atk) p1.tryAttack();
-
-        // P2 / Bot AI
-        if (isBot) {
-            const dist = p2.group.position.x - p1.group.position.x;
-            const absDist = Math.abs(dist);
-            // Spacing AI
-            if (absDist > p2.wep.range * 0.9) p2.vel.x = dist > 0 ? -0.12 : 0.12;
-            else if (absDist < p2.wep.range * 0.5) p2.vel.x = dist > 0 ? 0.08 : -0.08;
-            
-            if (absDist < p2.wep.range) p2.tryAttack();
-        } else {
-            if (keys['ArrowLeft']) p2.vel.x = -0.18;
-            if (keys['ArrowRight']) p2.vel.x = 0.18;
-            if (keys['Enter']) p2.tryAttack();
-        }
-
+        
+        handleInput();
         p1.update(); p2.update();
 
-        // Combat Detection
-        const dist = Math.abs(p1.group.position.x - p2.group.position.x);
+        // Laser Logic
+        laserTimer++;
+        if (laserTimer > 400) {
+            laserActive = true; laser.visible = true;
+            laser.position.x = 30 - (laserTimer - 400) * 0.5;
+            if (Math.abs(p1.group.position.x - laser.position.x) < 0.5 && p1.group.position.y < 1) { p1.hp -= 0.5; shake = 0.2; }
+            if (laserTimer > 600) { laserTimer = 0; laserActive = false; laser.visible = false; }
+        }
+
+        // Combat
+        const d = Math.abs(p1.group.position.x - p2.group.position.x);
         [p1, p2].forEach((atk, i) => {
             const def = i === 0 ? p2 : p1;
-            // Hit frame is halfway through animation
-            if (atk.atkPhase > 0.4 && atk.atkPhase < 0.6 && !atk.hitMark && dist < atk.wep.range) {
-                def.hp -= atk.wep.dmg;
+            if (atk.atkPhase > 0.4 && atk.atkPhase < 0.6 && !atk.hitMark && d < atk.wep.range && Math.abs(atk.group.position.y - def.group.position.y) < 1.5) {
+                if (def.isBlocking) {
+                    const perfect = Date.now() - def.lastAtk < 100; // Parry window
+                    if (perfect) { atk.stunned = 1.5; shake = 0.5; }
+                    def.hp -= atk.wep.dmg * 0.2;
+                    def.vel.x = (atk.group.position.x < def.group.position.x ? 1 : -1) * 0.1;
+                } else {
+                    def.hp -= atk.wep.dmg;
+                    def.vel.x = (atk.group.position.x < def.group.position.x ? 1 : -1) * 0.4;
+                    isHitStop = true; setTimeout(() => isHitStop = false, 50); // Hit-Stop
+                    shake = atk.wep.dmg * 0.01;
+                }
                 atk.hitMark = true;
-                def.vel.x = (atk.group.position.x < def.group.position.x ? 1 : -1) * (atk.wep.dmg * 0.015);
-                
-                // VFX
-                spawnSpark(new THREE.Vector3((atk.group.position.x + def.group.position.x)/2, 1.2, 0), atk.wep.color);
-                shake = atk.wep.dmg * 0.02;
             }
         });
 
-        // Particle Update
-        for(let i=particles.length-1; i>=0; i--){
-            const p = particles[i];
-            p.position.add(p.userData.vel);
-            p.userData.life -= 0.02;
-            p.scale.setScalar(p.userData.life);
-            if(p.userData.life <= 0) {
-                scene.remove(p);
-                particles.splice(i, 1);
-            }
-        }
+        document.getElementById('hp1').style.width = p1.hp + '%';
+        document.getElementById('hp2').style.width = p2.hp + '%';
+        document.getElementById('st1').innerText = p1.stunned > 0 ? "STUNNED" : (p1.isBlocking ? "BLOCKING" : "NOMINAL");
+        document.getElementById('st2').innerText = p2.stunned > 0 ? "STUNNED" : (p2.isBlocking ? "BLOCKING" : "NOMINAL");
 
-        // UI
-        document.getElementById('hp1').style.width = Math.max(0, p1.hp) + '%';
-        document.getElementById('hp2').style.width = Math.max(0, p2.hp) + '%';
-        
-        const updateCD = (fighter, elId) => {
-            const ratio = Math.min(1, (now - fighter.lastAtk) / fighter.wep.cd);
-            document.getElementById(elId).style.transform = `scaleX(${ratio})`;
-            document.getElementById(elId).style.opacity = ratio === 1 ? '0' : '1';
-        };
-        updateCD(p1, 'cd1'); updateCD(p2, 'cd2');
+        if (p1.hp <= 0 || p2.hp <= 0) { roundActive = false; document.getElementById('msg-overlay').style.display = 'block'; setTimeout(() => location.reload(), 3000); }
 
-        if (p1.hp <= 0 || p2.hp <= 0) {
-            roundActive = false;
-            const msg = document.getElementById('msg-overlay');
-            msg.innerText = p1.hp <= 0 ? "OPPONENT WINS" : "PLAYER 1 WINS";
-            msg.style.display = 'block';
-            setTimeout(() => location.reload(), 3000);
-        }
-
-        // Camera Logic
-        const midX = (p1.group.position.x + p2.group.position.x) / 2;
-        const camTarget = new THREE.Vector3(midX, 4, 12 + Math.abs(p1.group.position.x - p2.group.position.x)*0.5);
-        camera.position.lerp(camTarget, 0.1);
-        
-        // Screenshake
-        if(shake > 0) {
-            camera.position.x += (Math.random()-0.5) * shake;
-            camera.position.y += (Math.random()-0.5) * shake;
-            shake *= 0.9;
-        }
-        
-        camera.lookAt(midX, 2, 0);
+        camera.position.lerp(new THREE.Vector3((p1.group.position.x + p2.group.position.x)/2, 4, 12), 0.1);
+        if(shake > 0) { camera.position.x += Math.random()*shake; shake *= 0.9; }
+        camera.lookAt((p1.group.position.x + p2.group.position.x)/2, 1.5, 0);
         renderer.render(scene, camera);
     }
-
-    window.onresize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    };
 </script>
 </body>
 </html>
