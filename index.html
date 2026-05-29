@@ -39,20 +39,34 @@
     }
 
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
-    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas { opacity: 0.5; }
+    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas, body[data-bg="stars"] #bgCanvas { opacity: 0.6; }
 
-    /* Better Neon Background layer */
+    /* BETTER NEON */
     body[data-bg="neon"]::before {
       content: ""; position: fixed; inset: 0; z-index: -2;
       background: 
-        radial-gradient(circle at 20% 30%, var(--primary-glow) 0%, transparent 40%),
-        radial-gradient(circle at 80% 70%, var(--secondary-glow) 0%, transparent 40%);
-      animation: neonPulse 8s infinite alternate ease-in-out;
+        radial-gradient(circle at 20% 30%, var(--primary-glow) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, var(--secondary-glow) 0%, transparent 50%);
+      animation: neonPulse 6s infinite alternate ease-in-out;
     }
-    @keyframes neonPulse { 0% { opacity: 0.6; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } }
+    @keyframes neonPulse { 0% { opacity: 0.4; filter: blur(40px); } 100% { opacity: 0.9; filter: blur(20px); } }
     body[data-bg="neon"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
 
-    /* Desktop Cursor */
+    /* BETTER GLITCH */
+    body[data-bg="glitch"] { background: var(--bg0); }
+    body[data-bg="glitch"]::after {
+      content: ""; position: fixed; inset: 0; z-index: -1;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background-size: 100% 4px, 3px 100%; pointer-events: none;
+    }
+    body[data-bg="glitch"]::before {
+      content: ""; position: fixed; inset: 0; z-index: -1;
+      background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px);
+      animation: scanline 10s linear infinite;
+    }
+    @keyframes scanline { 0% { transform: translateY(0); } 100% { transform: translateY(100vh); } }
+
+    /* Cursor */
     .cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); }
     .cursor-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 15px var(--primary); }
     .cursor-ring { width: 36px; height: 36px; border: 2px solid var(--primary); border-radius: 50%; transition: width 0.2s, height 0.2s; }
@@ -86,11 +100,6 @@
     .bg-btn { background: rgba(255,255,255,.08); border: 1px solid var(--glass-border); color: white; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 10px; cursor: pointer; }
     .bg-btn.active { background: var(--primary); color: #000; }
     .t-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; }
-
-    /* Other Backgrounds */
-    body[data-bg="gradient"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
-    body[data-bg="glitch"] { background: repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 6px), var(--bg0); }
-    body[data-bg="stars"] { background: radial-gradient(circle at 50% 50%, #fff 1px, transparent 1px); background-size: 80px 80px; background-color: var(--bg0); }
 
     @media (max-width: 768px) {
       body { cursor: auto; padding-bottom: 200px; }
@@ -182,22 +191,30 @@
 
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
-    let width, height, columns, drops, stars = [];
+    let width, height, columns, drops, starArray = [];
 
     function resize() {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
       columns = Math.floor(width / 20);
       drops = Array(columns).fill(1);
-      stars = Array.from({length: 150}, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        z: Math.random() * width
-      }));
+      
+      starArray = [];
+      for(let i=0; i<200; i++) {
+        starArray.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          size: Math.random() * 2,
+          speed: Math.random() * 0.5 + 0.1,
+          opacity: Math.random()
+        });
+      }
     }
 
     function draw() {
       const mode = document.body.getAttribute('data-bg');
+      ctx.clearRect(0,0,width,height);
+
       if (mode === 'matrix') {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.fillRect(0, 0, width, height);
@@ -209,16 +226,27 @@
           if (y * 20 > height && Math.random() > 0.975) drops[i] = 0;
           drops[i]++;
         });
-      } else if (mode === 'warp') {
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = 'white';
-        stars.forEach(s => {
-          s.z -= 15;
+      } 
+      else if (mode === 'stars') {
+        starArray.forEach(s => {
+          ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+          ctx.fill();
+          s.y += s.speed;
+          if(s.y > height) s.y = 0;
+        });
+      }
+      else if (mode === 'warp') {
+        starArray.forEach(s => {
+          let speed = 15;
+          s.z = s.z || Math.random() * width;
+          s.z -= speed;
           if (s.z <= 0) s.z = width;
           const x = (s.x - width/2) * (width/s.z) + width/2;
           const y = (s.y - height/2) * (width/s.z) + height/2;
-          const size = (1 - s.z/width) * 4;
+          const size = (1 - s.z/width) * 5;
+          ctx.fillStyle = "white";
           ctx.beginPath();
           ctx.arc(x, y, size, 0, Math.PI*2);
           ctx.fill();
@@ -229,17 +257,17 @@
 
     function setBg(m) {
       document.body.setAttribute('data-bg', m);
-      localStorage.setItem('nebula-bg', m); // MEMORIZE BG
+      localStorage.setItem('nebula-bg', m);
       document.querySelectorAll('.bg-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase() === m));
     }
 
     function setTheme(t) {
       if(t === 'default') {
         document.documentElement.removeAttribute('data-theme');
-        localStorage.removeItem('nebula-theme'); // MEMORIZE THEME
+        localStorage.removeItem('nebula-theme');
       } else {
         document.documentElement.setAttribute('data-theme', t);
-        localStorage.setItem('nebula-theme', t); // MEMORIZE THEME
+        localStorage.setItem('nebula-theme', t);
       }
     }
 
@@ -250,7 +278,6 @@
       });
     }
 
-    // LOAD MEMORIZED SETTINGS
     window.onload = () => {
       const savedTheme = localStorage.getItem('nebula-theme');
       const savedBg = localStorage.getItem('nebula-bg') || 'neon';
