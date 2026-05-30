@@ -45,6 +45,9 @@
         .start-btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 40px var(--neon); }
 
         canvas { display: block; }
+
+        /* New high score style */
+        #highScoreBox { margin-top: 15px; color: #fff; font-size: 0.7rem; letter-spacing: 1px; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -58,12 +61,17 @@
             <div class="label">STABILITY</div>
             <div id="health" class="value" style="color: var(--neon);">100%</div>
         </div>
+        <div class="stat">
+            <div class="label">RECORD_PEAK</div>
+            <div id="highScoreDisplay" class="value" style="font-size: 1.2rem; opacity: 0.7;">0</div>
+        </div>
     </div>
 
     <div id="overlay">
         <h1 id="header">NEON_HEX</h1>
         <div class="msg">ORBIT THE CORE // FIND THE GAP</div>
         <button class="start-btn" onclick="startGame()">INIT_CORE</button>
+        <div id="highScoreBox">BEST_SYNC: <span id="bestVal">0</span></div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -75,6 +83,8 @@
     const healthEl = document.getElementById('health');
     const overlay = document.getElementById('overlay');
     const header = document.getElementById('header');
+    const highScoreDisplay = document.getElementById('highScoreDisplay');
+    const bestVal = document.getElementById('bestVal');
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -88,6 +98,11 @@
     let frame = 0;
     let wallSpeed = 4;
     let spawnRate = 80;
+
+    // Load High Score from storage on boot
+    let highScore = localStorage.getItem('neonHexHighScore') || 0;
+    bestVal.innerText = highScore;
+    highScoreDisplay.innerText = highScore;
 
     class Wall {
         constructor() {
@@ -103,7 +118,6 @@
             ctx.shadowColor = this.color;
             ctx.lineWidth = 8;
             ctx.beginPath();
-            // Draw an arc with a gap
             ctx.arc(canvas.width/2, canvas.height/2, this.dist, this.angle, this.angle + (Math.PI * 2) - this.width);
             ctx.stroke();
         }
@@ -135,15 +149,12 @@
         if (!gameActive) return;
         frame++;
 
-        // Clear with fade effect
         ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Player Controls
         if (keys['ArrowLeft'] || keys['KeyA']) playerAngle -= rotationSpeed;
         if (keys['ArrowRight'] || keys['KeyD']) playerAngle += rotationSpeed;
 
-        // Draw Player
         const px = canvas.width/2 + Math.cos(playerAngle) * 60;
         const py = canvas.height/2 + Math.sin(playerAngle) * 60;
         
@@ -154,23 +165,18 @@
         ctx.arc(px, py, 8, 0, Math.PI * 2);
         ctx.fill();
 
-        // Spawn Walls
         if (frame % Math.floor(spawnRate) === 0) {
             walls.push(new Wall());
         }
 
-        // Difficulty scaling
         wallSpeed = 4 + (score / 1000);
         spawnRate = Math.max(30, 80 - (score / 200));
 
-        // Update/Draw Walls
         walls.forEach((wall, i) => {
             wall.update();
             wall.draw();
 
-            // Collision Detection
             if (wall.dist < 70 && wall.dist > 50) {
-                // Normalize angles to 0 - 2PI
                 let normPlayer = ((playerAngle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
                 let start = ((wall.angle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
                 let end = (((wall.angle + (Math.PI * 2) - wall.width) % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
@@ -186,7 +192,7 @@
                     health -= 20;
                     walls.splice(i, 1);
                     ctx.fillStyle = 'white';
-                    ctx.fillRect(0,0,canvas.width, canvas.height); // Flash
+                    ctx.fillRect(0,0,canvas.width, canvas.height); 
                 }
             }
 
@@ -196,12 +202,20 @@
             }
         });
 
-        // UI
         scoreEl.innerText = score;
         healthEl.innerText = health + "%";
 
         if (health <= 0) {
             gameActive = false;
+            
+            // High Score Logic
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('neonHexHighScore', highScore);
+                bestVal.innerText = highScore;
+                highScoreDisplay.innerText = highScore;
+            }
+
             header.innerText = "CORE_CRAPSED";
             overlay.style.display = 'flex';
         }
