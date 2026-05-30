@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SCIENCE MEGA-HUB | iPad Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bio: #00ff88;
+            --chem: #00d9ff;
+            --phys: #ff0055;
+            --bg: #07090d;
+            --card: #131722;
+            --text: #ffffff;
+            --correct: #00ff88;
+            --wrong: #ff3b3b;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-user-select: none;
+        }
+
+        header {
+            background: linear-gradient(135deg, #111 0%, #000 100%);
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 3px solid #333;
+            transition: border-color 0.3s;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-weight: 900;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .game-card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255,255,255,0.1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .subject-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            color: #000;
+            text-transform: uppercase;
+            transition: background 0.3s;
+        }
+
+        .question-display {
+            min-height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 25px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 18px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: border-color 0.3s;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
+
+        .btn-tap {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            min-height: 85px; /* Perfect iPad tap size */
+        }
+
+        .btn-tap:active {
+            transform: scale(0.96);
+            color: #000;
+        }
+
+        .feedback-pop {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: 900;
+            z-index: 1000;
+            pointer-events: none;
+            display: none;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+    </style>
+</head>
+<body>
+
+<header id="main-header">
+    <h1 style="margin:0; font-size: 2.2rem; letter-spacing: -1px;">SCIENCE MEGA-HUB</h1>
+    <p style="opacity: 0.7; font-weight: 700;">Biology 🧬 | Chemistry 🧪 | Physics ⚛️</p>
+</header>
+
+<div class="stats-bar">
+    <div>XP: <span id="xp" style="color:#fff;">0</span></div>
+    <div>STREAK: <span id="streak" style="color:var(--correct);">0</span></div>
+</div>
+
+<div class="container">
+    
+    <div id="quiz-card" class="game-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span id="sub-badge" class="subject-badge" style="background:#fff;">LOADING</span>
+            <span style="font-size: 0.8rem; opacity: 0.5; font-weight: bold;">OMNI-TEST</span>
+        </div>
+        
+        <div id="q-text" class="question-display">Initializing Data Banks...</div>
+        <div id="options" class="options-grid"></div>
+    </div>
+
+    <div class="game-card" style="border-color: #555;">
+        <span class="subject-badge" style="background:#ddd;">QUICK FIRE: WHICH SUBJECT?</span>
+        <div id="sorter-q" class="question-display" style="font-size: 1.6rem;">Photosynthesis</div>
+        <div class="options-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+            <button class="btn-tap" onclick="checkSort('Biology')" style="border-color: var(--bio);">BIO 🧬</button>
+            <button class="btn-tap" onclick="checkSort('Chemistry')" style="border-color: var(--chem);">CHEM 🧪</button>
+            <button class="btn-tap" onclick="checkSort('Physics')" style="border-color: var(--phys);">PHYS ⚛️</button>
+        </div>
+    </div>
+
+    <div id="feedback" class="feedback-pop"></div>
+
+</div>
+
+<script>
+    // COMBINED DATA BANK (Pulls from all 3 revision guides)
+    const MASTER_DATA = [
+        // BIOLOGY
+        { q: "What is the function of the Xylem?", a: "Transports water and minerals", o: ["Transports water and minerals", "Transports sucrose", "Site of photosynthesis", "Opens stomata"], sub: "Biology", color: "var(--bio)" },
+        { q: "Which pathogen causes Salmonella?", a: "Bacteria", o: ["Bacteria", "Virus", "Fungi", "Protist"], sub: "Biology", color: "var(--bio)" },
+        { q: "What do Lymphocytes produce?", a: "Antibodies", o: ["Antibodies", "Antigens", "Red Blood Cells", "Stomach Acid"], sub: "Biology", color: "var(--bio)" },
+        { q: "What is a random change in DNA called?", a: "Mutation", o: ["Mutation", "Allele", "Extinction", "Zygote"], sub: "Biology", color: "var(--bio)" },
+        
+        // CHEMISTRY
+        { q: "Is 'Melting Ice' a physical or chemical change?", a: "Physical Change", o: ["Physical Change", "Chemical Change", "Neutralisation", "Oxidation"], sub: "Chemistry", color: "var(--chem)" },
+        { q: "What does an Exothermic reaction do?", a: "Transfers energy to surroundings", o: ["Transfers energy to surroundings", "Takes energy in", "Destroys atoms", "Requires a vacuum"], sub: "Chemistry", color: "var(--chem)" },
+        { q: "Atoms with the same protons but different neutrons are...", a: "Isotopes", o: ["Isotopes", "Ions", "Alloys", "Molecules"], sub: "Chemistry", color: "var(--chem)" },
+        { q: "What forms when a Metal reacts with Acid?", a: "Salt + Hydrogen", o: ["Salt + Hydrogen", "Salt + Water", "Metal Oxide", "Alkali + Hydrogen"], sub: "Chemistry", color: "var(--chem)" },
+        
+        // PHYSICS
+        { q: "What is the unit for Force?", a: "Newtons (N)", o: ["Newtons (N)", "Joules (J)", "Pascals (Pa)", "Hertz (Hz)"], sub: "Physics", color: "var(--phys)" },
+        { q: "Sound waves are an example of...", a: "Longitudinal Waves", o: ["Longitudinal Waves", "Transverse Waves", "Electromagnetic Waves", "Standing Waves"], sub: "Physics", color: "var(--phys)" },
+        { q: "What is 'k' in Hooke's Law (F = kx)?", a: "Spring Constant", o: ["Spring Constant", "Kinetic Energy", "Mass", "Extension"], sub: "Physics", color: "var(--phys)" },
+        { q: "What phenomenon shows the universe is expanding?", a: "Red-shift", o: ["Red-shift", "Blue-shift", "Refraction", "Diffraction"], sub: "Physics", color: "var(--phys)" }
+    ];
+
+    const SORT_DATA = [
+        { q: "Pathogens & Immunity", a: "Biology" },
+        { q: "Atomic Structure & Isotopes", a: "Chemistry" },
+        { q: "Transverse & Longitudinal Waves", a: "Physics" },
+        { q: "Hooke's Law", a: "Physics" },
+        { q: "Mendeleev & Periodic Table", a: "Chemistry" },
+        { q: "Natural Selection", a: "Biology" }
+    ];
+
+    let xp = 0;
+    let streak = 0;
+    let usedQuestions = [];
+
+    function showFeedback(text, color) {
+        const f = document.getElementById('feedback');
+        f.innerText = text;
+        f.style.color = color;
+        f.style.display = 'block';
+        setTimeout(() => f.style.display = 'none', 700);
+    }
+
+    // MEGA QUIZ LOGIC
+    function loadQuestion() {
+        if (usedQuestions.length === MASTER_DATA.length) usedQuestions = []; 
+
+        let q;
+        do {
+            q = MASTER_DATA[Math.floor(Math.random() * MASTER_DATA.length)];
+        } while (usedQuestions.includes(q.q));
+
+        usedQuestions.push(q.q);
+
+        // Update UI Colors dynamically based on subject
+        document.getElementById('q-text').innerText = q.q;
+        document.getElementById('q-text').style.borderColor = q.color;
+        
+        const badge = document.getElementById('sub-badge');
+        badge.innerText = q.sub;
+        badge.style.background = q.color;
+
+        document.getElementById('quiz-card').style.borderColor = q.color;
+        document.getElementById('main-header').style.borderBottomColor = q.color;
+
+        const optDiv = document.getElementById('options');
+        optDiv.innerHTML = '';
+        
+        [...q.o].sort(() => Math.random() - 0.5).forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-tap';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                if(opt === q.a) {
+                    xp += 100;
+                    streak++;
+                    btn.style.background = q.color; // Flash the subject color on correct tap
+                    showFeedback("BOOM!", "var(--correct)");
+                } else {
+                    streak = 0;
+                    btn.style.background = "var(--wrong)";
+                    showFeedback("MISS", "var(--wrong)");
+                }
+                updateUI();
+                setTimeout(loadQuestion, 200); // Slight delay for visual feedback
+            };
+            optDiv.appendChild(btn);
+        });
+    }
+
+    // SORTER GAME LOGIC
+    let activeSort = {};
+    function loadSort() {
+        activeSort = SORT_DATA[Math.floor(Math.random() * SORT_DATA.length)];
+        document.getElementById('sorter-q').innerText = activeSort.q;
+    }
+
+    function checkSort(val) {
+        if(val === activeSort.a) {
+            xp += 50;
+            streak++;
+            showFeedback("YES!", "var(--correct)");
+        } else {
+            streak = 0;
+            showFeedback("NOPE!", "var(--wrong)");
+        }
+        updateUI();
+        loadSort();
+    }
+
+    function updateUI() {
+        document.getElementById('xp').innerText = xp;
+        document.getElementById('streak').innerText = streak;
+        localStorage.setItem('omni_xp', xp);
+    }
+
+    window.onload = () => {
+        xp = parseInt(localStorage.getItem('omni_xp')) || 0;
+        updateUI();
+        loadQuestion();
+        loadSort();
+    };
+</script>
+
+</body>
+</html>
