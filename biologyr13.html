@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCSE Biology: The Ultimate Interactive Hub</title>
+    <style>
+        :root {
+            --primary: #1b5e20;
+            --secondary: #0d47a1;
+            --accent: #e65100;
+            --bg: #fafafa;
+            --card-bg: #ffffff;
+            --text: #212121;
+        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.6; }
+        header { background: linear-gradient(135deg, var(--primary), #43a047); color: white; padding: 40px 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .nav-bar { background: #333; color: white; padding: 10px; position: sticky; top: 0; z-index: 1000; text-align: center; }
+        .nav-bar a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
+        .container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+        
+        /* GAME STYLES */
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .game-card { background: var(--card-bg); border-radius: 15px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); transition: transform 0.2s; }
+        .game-card:hover { transform: translateY(-5px); }
+        .game-card h3 { margin-top: 0; color: var(--primary); }
+        .display-area { min-height: 120px; display: flex; align-items: center; justify-content: center; background: #f1f8e9; border-radius: 10px; margin: 15px 0; padding: 15px; text-align: center; font-size: 1.1rem; font-weight: 500; border: 2px solid #c8e6c9; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; flex: 1 1 40%; transition: all 0.2s; }
+        .btn:hover { background: #2e7d32; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .btn.secondary { background: var(--secondary); }
+        .feedback { height: 25px; margin-top: 10px; font-weight: bold; text-align: center; }
+        
+        /* CONTENT STYLES */
+        .content-section { background: white; padding: 30px; border-radius: 15px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        h2 { color: var(--primary); border-left: 5px solid var(--primary); padding-left: 15px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95rem; }
+        th { background: #f5f5f5; color: var(--primary); font-weight: bold; padding: 15px; border: 1px solid #ddd; text-align: left; }
+        td { padding: 12px; border: 1px solid #ddd; vertical-align: top; }
+        .warning-box { background: #fff3e0; border-left: 5px solid #ff9800; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .check-item { margin-bottom: 8px; display: flex; align-items: center; }
+        .check-item::before { content: "✔️"; margin-right: 10px; }
+        
+        @media (max-width: 600px) {
+            .btn { flex: 1 1 100%; }
+            .game-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>GCSE Biology Ultimate Revision Hub</h1>
+    <p>Botany | Health & Disease | Evolution</p>
+</header>
+
+<div class="nav-bar">
+    <a href="#games">GAMES</a>
+    <a href="#botany">BOTANY</a>
+    <a href="#health">HEALTH</a>
+    <a href="#evolution">EVOLUTION</a>
+    <a href="#practical">PRACTICAL SKILLS</a>
+</div>
+
+<div class="container">
+    
+    <section id="games" style="padding-top:20px;">
+        <h2>🎮 Interactive Challenges</h2>
+        <div class="game-grid">
+            
+            <div class="game-card">
+                <h3>1. Definition Dash</h3>
+                <p>Match the complex term to its scientific definition.</p>
+                <div id="dash-def" class="display-area">Loading...</div>
+                <div id="dash-btns" class="btn-group"></div>
+                <div id="dash-feedback" class="feedback"></div>
+                <button onclick="initDash()" class="btn secondary" style="width:100%; margin-top:10px;">Shuffle Question</button>
+            </div>
+
+            <div class="game-card">
+                <h3>2. Pathogen Patrol</h3>
+                <p>Categorize the disease by its pathogen type.</p>
+                <div id="path-name" class="display-area" style="font-size:1.8rem; color:var(--secondary);">---</div>
+                <div class="btn-group">
+                    <button onclick="checkPath('Bacteria')" class="btn">Bacteria</button>
+                    <button onclick="checkPath('Virus')" class="btn">Virus</button>
+                    <button onclick="checkPath('Fungi')" class="btn">Fungi</button>
+                    <button onclick="checkPath('Protist')" class="btn">Protist</button>
+                </div>
+                <div id="path-feedback" class="feedback"></div>
+            </div>
+
+            <div class="game-card">
+                <h3>3. Exam Trap Blitz</h3>
+                <p>True or False? Spot the common GCSE misconceptions.</p>
+                <div id="trap-text" class="display-area">---</div>
+                <div class="btn-group">
+                    <button onclick="checkTrap(true)" class="btn" style="background:#2e7d32;">TRUE</button>
+                    <button onclick="checkTrap(false)" class="btn" style="background:#c62828;">FALSE</button>
+                </div>
+                <div id="trap-feedback" class="feedback"></div>
+            </div>
+
+            <div class="game-card">
+                <h3>4. Adaptation Expert</h3>
+                <p>Identify the reason for these specific adaptations.</p>
+                <div id="adapt-text" class="display-area">---</div>
+                <div id="adapt-btns" class="btn-group"></div>
+                <div id="adapt-feedback" class="feedback"></div>
+                <button onclick="initAdapt()" class="btn secondary" style="width:100%; margin-top:10px;">New Adaptation</button>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="botany" class="content-section">
+        <h2>Section 1: Botany & Plant Biology</h2>
+        <p>Plants are multicellular eukaryotic organisms that act as <b>producers</b> in food chains by making glucose via photosynthesis[cite: 39, 40].</p>
+        
+        <h3>Plant Cell Specialization</h3>
+        <table>
+            <tr><th>Cell Type</th><th>Adaptation [cite: 65, 67, 73]</th><th>Function [cite: 65, 67, 73]</th></tr>
+            <tr><td>Palisade Cell</td><td>Packed with chloroplasts; at top of leaf.</td><td>Maximum photosynthesis.</td></tr>
+            <tr><td>Root Hair Cell</td><td>Long hair-like projection; thin wall.</td><td>Absorption of water (osmosis) and minerals.</td></tr>
+            <tr><td>Xylem</td><td>Hollow tubes; lignified walls; dead cells.</td><td>Transport water/minerals (one-way).</td></tr>
+            <tr><td>Phloem</td><td>Sieve plates; companion cells; living.</td><td>Translocation of sucrose (two-way).</td></tr>
+        </table>
+
+        <h3>Transpiration Stream [cite: 94]</h3>
+        <p>Transpiration is the <b>loss of water vapour</b> through the stomata[cite: 92]. The process follows this sequence[cite: 94]:</p>
+        <ol>
+            <li>Water absorbed by root hair cells via osmosis[cite: 70, 94].</li>
+            <li>Water moves into the xylem[cite: 94].</li>
+            <li>Water travels up the stem to the leaves[cite: 94].</li>
+            <li>Water evaporates from leaf cells[cite: 94].</li>
+            <li>Water vapour diffuses out through stomata[cite: 86, 94].</li>
+        </ol>
+    </section>
+
+    <section id="health" class="content-section">
+        <h2>Section 2: Health & Disease</h2>
+        <p>Health is defined as physical and mental wellbeing[cite: 174]. Pathogens are microorganisms that cause disease[cite: 175].</p>
+        
+        <div class="warning-box">
+            <b>🛡️ Body Defences[cite: 201, 202]:</b>
+            <ul>
+                <li><b>Skin:</b> Physical barrier[cite: 201].</li>
+                <li><b>Mucus/Cilia:</b> Traps and moves pathogens[cite: 201, 202].</li>
+                <li><b>Stomach Acid:</b> Hydrochloric acid kills swallowed microbes[cite: 202].</li>
+            </ul>
+        </div>
+
+        <h3>The Immune Response [cite: 203, 204]</h3>
+        <ul>
+            <li><b>Phagocytes:</b> Engulf and digest pathogens[cite: 203].</li>
+            <li><b>Lymphocytes:</b> Produce <b>antibodies</b> that bind to <b>antigens</b>[cite: 204, 205].</li>
+            <li><b>Vaccination:</b> Introduces inactive pathogens to trigger <b>memory cell</b> production[cite: 208, 209].</li>
+        </ul>
+    </section>
+
+    <section id="evolution" class="content-section">
+        <h2>Section 3: Evolution & Variation</h2>
+        <p>Evolution is the gradual change in species over generations[cite: 233]. It occurs through <b>Natural Selection</b>[cite: 238].</p>
+
+        <h3>Natural Selection Steps [cite: 239]</h3>
+        <p>Ensure your exam answers follow this logical order[cite: 239]:</p>
+        <ol>
+            <li><b>Variation:</b> Exists in a population due to mutations[cite: 239].</li>
+            <li><b>Competition:</b> Resources are limited[cite: 239].</li>
+            <li><b>Survival:</b> Individuals with advantageous traits survive[cite: 239].</li>
+            <li><b>Reproduction:</b> Survivors reproduce successfully[cite: 239].</li>
+            <li><b>Inheritance:</b> Beneficial <b>alleles</b> are passed to offspring[cite: 239].</li>
+            <li><b>Generations:</b> The trait becomes more common over time[cite: 239].</li>
+        </ol>
+
+        <div class="warning-box">
+            <b>🦴 Fossil Evidence [cite: 251, 252]:</b> Fossils show extinct species and provide evidence for evolutionary change[cite: 252, 253]. However, the record is incomplete because many soft-bodied organisms decayed or fossils were destroyed[cite: 254, 255].
+        </div>
+    </section>
+
+    <section id="practical" class="content-section">
+        <h2>Section 4: Data & Practical Skills</h2>
+        <h3>Pondweed Photosynthesis [cite: 109, 110]</h3>
+        <ul>
+            <li><b>Independent Variable:</b> Distance from lamp (light intensity)[cite: 111, 270].</li>
+            <li><b>Dependent Variable:</b> Number of oxygen bubbles per minute[cite: 111, 271].</li>
+            <li><b>Control Variables:</b> Temperature, pondweed species, CO2 concentration[cite: 111, 272].</li>
+        </ul>
+    </section>
+</div>
+
+<script>
+    /* --- DATA POOLS --- */
+    const ALL_TERMS = [
+        {t: "Osmosis", d: "Movement of water from high to low concentration through a partially permeable membrane [cite: 69, 280]"},
+        {t: "Translocation", d: "Movement of dissolved sugars through phloem [cite: 73, 282]"},
+        {t: "Pathogen", d: "A microorganism that causes disease [cite: 175, 285]"},
+        {t: "Fertilisation", d: "The fusion of male and female nuclei [cite: 154, 283]"},
+        {t: "Allele", d: "A different version of a gene [cite: 228, 289]"},
+        {t: "Xerophyte", d: "A plant adapted to survive in dry environments [cite: 127, 128]"},
+        {t: "Extinction", d: "When a species has completely died out [cite: 258, 291]"},
+        {t: "Mutation", d: "A random change in DNA [cite: 235, 236]"}
+    ];
+
+    const PATHOGENS = [
+        {n: "Salmonella", c: "Bacteria", r: "[cite: 181]"},
+        {n: "Covid-19", c: "Virus", r: "[cite: 197]"},
+        {n: "Ringworm", c: "Fungi", r: "[cite: 194]"},
+        {n: "Ebola", c: "Virus", r: "[cite: 199]"},
+        {n: "Tuberculosis", c: "Bacteria", r: "[cite: 177]"},
+        {n: "Malaria", c: "Protist", r: "[cite: 177]"}
+    ];
+
+    const TRAPS = [
+        {s: "Chloroplasts absorb sunlight for photosynthesis.", v: false, e: "Chlorophyll is the pigment that absorbs light[cite: 53, 292]."},
+        {s: "Gas exchange in stomata happens by diffusion.", v: true, e: "Correct! Osmosis is for water only[cite: 90, 293]."},
+        {s: "Viruses are considered fully living organisms.", v: false, e: "Viruses cannot reproduce independently[cite: 187, 296]."},
+        {s: "Dominant alleles are 'better' than recessive ones.", v: false, e: "Dominant just means they are always expressed[cite: 230, 231]."},
+        {s: "Seeds disperse to reduce competition for light.", v: true, e: "Correct! It reduces competition with the parent plant[cite: 164, 297]."}
+    ];
+
+    const ADAPTATIONS = [
+        {a: "Thick waxy cuticle", r: "Reduces water loss by evaporation [cite: 129]"},
+        {a: "Sunken stomata", r: "Traps moist air to reduce concentration gradient [cite: 129]"},
+        {a: "Petals with scent", r: "Attracts pollinators like insects [cite: 142, 145]"},
+        {a: "Large surface area roots", r: "Absorbs more water/minerals from soil [cite: 67, 129]"}
+    ];
+
+    /* --- GAME LOGIC --- */
+    function shuffle(array) { return array.sort(() => Math.random() - 0.5); }
+
+    // Dash Game
+    function initDash() {
+        const item = ALL_TERMS[Math.floor(Math.random() * ALL_TERMS.length)];
+        document.getElementById('dash-def').innerText = item.d;
+        const btnContainer = document.getElementById('dash-btns');
+        btnContainer.innerHTML = '';
+        
+        let choices = [item.t];
+        while(choices.length < 3) {
+            let r = ALL_TERMS[Math.floor(Math.random() * ALL_TERMS.length)].t;
+            if(!choices.includes(r)) choices.push(r);
+        }
+        shuffle(choices).forEach(c => {
+            const b = document.createElement('button');
+            b.className = 'btn';
+            b.innerText = c;
+            b.onclick = () => {
+                if(c === item.t) {
+                    document.getElementById('dash-feedback').innerHTML = "<span style='color:green'>Correct! ✅</span>";
+                    setTimeout(initDash, 1500);
+                } else {
+                    document.getElementById('dash-feedback').innerHTML = "<span style='color:red'>Try again! ❌</span>";
+                }
+            };
+            btnContainer.appendChild(b);
+        });
+    }
+
+    // Pathogen Game
+    let activePath = {};
+    function initPath() {
+        activePath = PATHOGENS[Math.floor(Math.random() * PATHOGENS.length)];
+        document.getElementById('path-name').innerText = activePath.n;
+        document.getElementById('path-feedback').innerText = '';
+    }
+    function checkPath(cat) {
+        if(cat === activePath.c) {
+            document.getElementById('path-feedback').innerHTML = `<span style='color:green'>Yes! ${activePath.n} is a ${activePath.c}.</span>`;
+            setTimeout(initPath, 1500);
+        } else {
+            document.getElementById('path-feedback').innerHTML = `<span style='color:red'>No, it's a ${activePath.c}.</span>`;
+        }
+    }
+
+    // Trap Game
+    let activeTrap = {};
+    function initTrap() {
+        activeTrap = TRAPS[Math.floor(Math.random() * TRAPS.length)];
+        document.getElementById('trap-text').innerText = activeTrap.s;
+        document.getElementById('trap-feedback').innerText = '';
+    }
+    function checkTrap(val) {
+        if(val === activeTrap.v) {
+            document.getElementById('trap-feedback').innerHTML = "<span style='color:green'>Correct!</span>";
+        } else {
+            document.getElementById('trap-feedback').innerHTML = `<span style='color:red'>Incorrect: ${activeTrap.e}</span>`;
+        }
+        setTimeout(initTrap, 3000);
+    }
+
+    // Adaptation Game
+    function initAdapt() {
+        const item = ADAPTATIONS[Math.floor(Math.random() * ADAPTATIONS.length)];
+        document.getElementById('adapt-text').innerText = item.a;
+        const btnContainer = document.getElementById('adapt-btns');
+        btnContainer.innerHTML = '';
+        
+        let choices = [item.r];
+        while(choices.length < 3) {
+            let r = ADAPTATIONS[Math.floor(Math.random() * ADAPTATIONS.length)].r;
+            if(!choices.includes(r)) choices.push(r);
+        }
+        shuffle(choices).forEach(c => {
+            const b = document.createElement('button');
+            b.className = 'btn';
+            b.innerText = c;
+            b.onclick = () => {
+                if(c === item.r) {
+                    document.getElementById('adapt-feedback').innerHTML = "<span style='color:green'>Spot on!</span>";
+                    setTimeout(initAdapt, 2000);
+                } else {
+                    document.getElementById('adapt-feedback').innerHTML = "<span style='color:red'>Not quite.</span>";
+                }
+            };
+            btnContainer.appendChild(b);
+        });
+    }
+
+    // Global Init
+    window.onload = () => {
+        initDash();
+        initPath();
+        initTrap();
+        initAdapt();
+    };
+</script>
+</body>
+</html>
