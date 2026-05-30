@@ -7,16 +7,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
         :root {
+            /* Default Neon Mode */
             --neon: #ff00ff;
             --neon-alt: #00ffff;
             --bg: #050505;
+            --player: #fff;
+            --ui-text: #fff;
+        }
+
+        /* Dark Mode (Stealth) */
+        [data-theme="stealth"] {
+            --neon: #444;
+            --neon-alt: #222;
+            --bg: #000;
+            --player: #00ffff;
+            --ui-text: #666;
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background: var(--bg); color: #fff;
+            background: var(--bg); color: var(--ui-text);
             font-family: 'Orbitron', sans-serif;
             overflow: hidden; display: flex; align-items: center; justify-content: center;
+            transition: background 0.5s ease;
         }
 
         #ui {
@@ -28,13 +41,21 @@
         .label { font-size: 0.6rem; color: var(--neon-alt); letter-spacing: 2px; }
         .value { font-size: 2rem; font-weight: 900; text-shadow: 0 0 15px var(--neon-alt); }
 
+        /* Mode Toggle */
+        #theme-switcher {
+            position: absolute; top: 30px; right: 30px; z-index: 101;
+            background: transparent; border: 1px solid var(--neon-alt);
+            color: var(--neon-alt); padding: 5px 10px; font-family: 'Orbitron';
+            cursor: pointer; font-size: 0.7rem;
+        }
+
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 100;
         }
 
-        h1 { font-size: 4rem; margin: 0; text-shadow: 0 0 20px var(--neon); color: var(--neon); }
+        h1 { font-size: 4rem; margin: 0; text-shadow: 0 0 20px var(--neon); color: var(--neon); text-align: center; }
         .msg { color: var(--neon-alt); margin: 20px 0; letter-spacing: 5px; font-size: 0.8rem; }
         
         .start-btn {
@@ -45,12 +66,12 @@
         .start-btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 40px var(--neon); }
 
         canvas { display: block; }
-
-        /* New high score style */
         #highScoreBox { margin-top: 15px; color: #fff; font-size: 0.7rem; letter-spacing: 1px; opacity: 0.8; }
     </style>
 </head>
 <body>
+
+    <button id="theme-switcher" onclick="toggleTheme()">MODE: NEON</button>
 
     <div id="ui">
         <div class="stat">
@@ -85,6 +106,7 @@
     const header = document.getElementById('header');
     const highScoreDisplay = document.getElementById('highScoreDisplay');
     const bestVal = document.getElementById('bestVal');
+    const themeBtn = document.getElementById('theme-switcher');
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -93,32 +115,45 @@
     let score = 0;
     let health = 100;
     let playerAngle = 0;
-    let rotationSpeed = 0.08;
+    let rotationSpeed = 0.09;
     let walls = [];
     let frame = 0;
     let wallSpeed = 4;
     let spawnRate = 80;
 
-    // Load High Score from storage on boot
+    // Persist High Score
     let highScore = localStorage.getItem('neonHexHighScore') || 0;
     bestVal.innerText = highScore;
     highScoreDisplay.innerText = highScore;
 
+    // Theme Management
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme');
+        if (current === 'stealth') {
+            document.documentElement.removeAttribute('data-theme');
+            themeBtn.innerText = "MODE: NEON";
+        } else {
+            document.documentElement.setAttribute('data-theme', 'stealth');
+            themeBtn.innerText = "MODE: STEALTH";
+        }
+    }
+
     class Wall {
         constructor() {
-            this.dist = Math.max(canvas.width, canvas.height);
-            this.width = Math.random() * 1.5 + 1; // Gap size multiplier
+            this.dist = Math.max(canvas.width, canvas.height) / 1.5;
+            this.gapSize = Math.random() * 0.8 + 0.6; // Size of the safe opening
             this.angle = Math.random() * Math.PI * 2;
-            this.color = Math.random() > 0.5 ? 'var(--neon)' : 'var(--neon-alt)';
+            this.color = Math.random() > 0.5 ? getComputedStyle(document.documentElement).getPropertyValue('--neon').trim() : getComputedStyle(document.documentElement).getPropertyValue('--neon-alt').trim();
         }
 
         draw() {
             ctx.strokeStyle = this.color;
             ctx.shadowBlur = 15;
             ctx.shadowColor = this.color;
-            ctx.lineWidth = 8;
+            ctx.lineWidth = 10;
             ctx.beginPath();
-            ctx.arc(canvas.width/2, canvas.height/2, this.dist, this.angle, this.angle + (Math.PI * 2) - this.width);
+            // We draw the wall, leaving the gap empty
+            ctx.arc(canvas.width/2, canvas.height/2, this.dist, this.angle + this.gapSize, this.angle);
             ctx.stroke();
         }
 
@@ -131,15 +166,11 @@
         score = 0;
         health = 100;
         walls = [];
+        frame = 0;
         gameActive = true;
         overlay.style.display = 'none';
         animate();
     }
-
-    window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    });
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.code] = true);
@@ -149,9 +180,13 @@
         if (!gameActive) return;
         frame++;
 
-        ctx.fillStyle = 'rgba(5, 5, 5, 0.2)';
+        // Clear with slight trail
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg');
+        ctx.globalAlpha = 0.3;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 1.0;
 
+        // Player Movement
         if (keys['ArrowLeft'] || keys['KeyA']) playerAngle -= rotationSpeed;
         if (keys['ArrowRight'] || keys['KeyD']) playerAngle += rotationSpeed;
 
@@ -159,27 +194,31 @@
         const py = canvas.height/2 + Math.sin(playerAngle) * 60;
         
         ctx.shadowBlur = 20;
-        ctx.shadowColor = '#fff';
-        ctx.fillStyle = '#fff';
+        const playerColor = getComputedStyle(document.documentElement).getPropertyValue('--player');
+        ctx.shadowColor = playerColor;
+        ctx.fillStyle = playerColor;
         ctx.beginPath();
         ctx.arc(px, py, 8, 0, Math.PI * 2);
         ctx.fill();
 
+        // Spawn Walls
         if (frame % Math.floor(spawnRate) === 0) {
             walls.push(new Wall());
         }
 
-        wallSpeed = 4 + (score / 1000);
-        spawnRate = Math.max(30, 80 - (score / 200));
+        // Difficulty Scaling
+        wallSpeed = 4 + (score / 2000);
+        spawnRate = Math.max(25, 80 - (score / 500));
 
         walls.forEach((wall, i) => {
             wall.update();
             wall.draw();
 
+            // Collision Check (When wall passes the player radius)
             if (wall.dist < 70 && wall.dist > 50) {
                 let normPlayer = ((playerAngle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
                 let start = ((wall.angle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
-                let end = (((wall.angle + (Math.PI * 2) - wall.width) % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+                let end = (((wall.angle + wall.gapSize) % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
 
                 let inGap = false;
                 if (start < end) {
@@ -191,12 +230,14 @@
                 if (!inGap) {
                     health -= 20;
                     walls.splice(i, 1);
-                    ctx.fillStyle = 'white';
-                    ctx.fillRect(0,0,canvas.width, canvas.height); 
+                    // Flash effect
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(0,0, canvas.width, canvas.height);
                 }
             }
 
-            if (wall.dist < 0) {
+            // Score point and remove wall
+            if (wall.dist < 10) {
                 walls.splice(i, 1);
                 score += 100;
             }
@@ -206,22 +247,29 @@
         healthEl.innerText = health + "%";
 
         if (health <= 0) {
-            gameActive = false;
-            
-            // High Score Logic
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('neonHexHighScore', highScore);
-                bestVal.innerText = highScore;
-                highScoreDisplay.innerText = highScore;
-            }
-
-            header.innerText = "CORE_CRAPSED";
-            overlay.style.display = 'flex';
+            endGame();
+            return;
         }
 
         requestAnimationFrame(animate);
     }
+
+    function endGame() {
+        gameActive = false;
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('neonHexHighScore', highScore);
+            bestVal.innerText = highScore;
+            highScoreDisplay.innerText = highScore;
+        }
+        header.innerText = "CORE_COLLAPSED";
+        overlay.style.display = 'flex';
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
 </script>
 </body>
 </html>
