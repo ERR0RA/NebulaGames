@@ -41,10 +41,16 @@
             z-index: 10; backdrop-filter: blur(5px);
         }
 
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
         .btn { 
             border: 2px solid var(--neon); color: var(--neon); padding: 12px 24px; 
             background: rgba(0, 242, 255, 0.1); font: inherit; 
-            margin-top: 15px; transition: 0.3s; font-weight: bold; letter-spacing: 2px;
+            transition: 0.3s; font-weight: bold; letter-spacing: 2px;
         }
 
         .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 30px var(--neon); transform: scale(1.05); }
@@ -67,7 +73,10 @@
         <div id="overlay">
             <h1 id="title" style="color: var(--neon); text-shadow: 0 0 20px var(--neon);">BLOCK BREAKER</h1>
             <p id="sub">System initialized. Cursor locked.</p>
-            <button class="btn" onclick="initGame()">START ENGINE</button>
+            <div class="btn-container">
+                <button class="btn" onclick="initGame(1)">1 PLAYER</button>
+                <button class="btn" onclick="initGame(2)">2 PLAYERS</button>
+            </div>
         </div>
     </div>
 
@@ -78,7 +87,7 @@
         const bossWarning = document.getElementById('bossWarning');
         canvas.width = 480; canvas.height = 600;
 
-        let score = 0, lives = 3, level = 1, active = false;
+        let score = 0, lives = 3, level = 1, active = false, gameMode = 1;
         let highScore = localStorage.getItem('blockBreakerHighScore') || 0;
         highDisp.innerText = highScore;
 
@@ -94,8 +103,8 @@
         const baseSpeed = 6;
         const paddle = { x: 200, y: 560, w: 80, h: 12, color: '#00f2ff', targetW: 80, prevX: 200 };
 
-        // Keyboard tracking state
-        const keys = { left: false, right: false };
+        // Keyboard tracking state for P1 and P2
+        const keys = { p1Left: false, p1Right: false, p2Left: false, p2Right: false };
         const keyboardSpeed = 8;
 
         function createBall(x, y, vx, vy, isAttached) {
@@ -147,15 +156,22 @@
         function update() {
             if(!active) return;
 
-            // Handle Keyboard Input
-            if (keys.left) {
-                paddle.x -= keyboardSpeed;
-                if (paddle.x < 0) paddle.x = 0;
+            // Handle Keyboard Input based on Game Mode
+            if (gameMode === 1) {
+                // In 1 Player mode, BOTH sets of keys control the single player
+                if (keys.p1Left || keys.p2Left) paddle.x -= keyboardSpeed;
+                if (keys.p1Right || keys.p2Right) paddle.x += keyboardSpeed;
+            } else if (gameMode === 2) {
+                // In 2 Player mode, P1 uses AD, P2 uses Arrows. Inputs can combine or fight each other!
+                if (keys.p1Left) paddle.x -= keyboardSpeed;
+                if (keys.p1Right) paddle.x += keyboardSpeed;
+                if (keys.p2Left) paddle.x -= keyboardSpeed;
+                if (keys.p2Right) paddle.x += keyboardSpeed;
             }
-            if (keys.right) {
-                paddle.x += keyboardSpeed;
-                if (paddle.x + paddle.w > canvas.width) paddle.x = canvas.width - paddle.w;
-            }
+
+            // Keep paddle in bounds
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.w > canvas.width) paddle.x = canvas.width - paddle.w;
 
             if (glitchTimer > 0) {
                 glitchTimer--;
@@ -385,10 +401,22 @@
             pLasers.forEach(l => { ctx.fillStyle = l.color; ctx.fillRect(l.x, l.y, 4, 15); });
             eLasers.forEach(l => { ctx.fillStyle = l.color; ctx.fillRect(l.x, l.y, 6, 20); });
 
-            ctx.fillStyle = glitchTimer > 0 ? '#ff3333' : paddle.color;
-            ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+            // Render Paddle (Splits colors in 2-player mode to show sides)
             let px = paddle.x + (glitchTimer > 0 ? (Math.random()-0.5)*5 : 0);
-            ctx.fillRect(px, paddle.y, paddle.w, paddle.h);
+            if (gameMode === 2) {
+                ctx.shadowBlur = 15; ctx.shadowColor = glitchTimer > 0 ? '#ff3333' : paddle.color;
+                // P1 Side (Left half)
+                ctx.fillStyle = glitchTimer > 0 ? '#ff3333' : '#00f2ff';
+                ctx.fillRect(px, paddle.y, paddle.w / 2, paddle.h);
+                // P2 Side (Right half)
+                ctx.fillStyle = glitchTimer > 0 ? '#ff3333' : '#ff007f';
+                ctx.fillRect(px + paddle.w / 2, paddle.y, paddle.w / 2, paddle.h);
+            } else {
+                ctx.fillStyle = glitchTimer > 0 ? '#ff3333' : paddle.color;
+                ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+                ctx.fillRect(px, paddle.y, paddle.w, paddle.h);
+            }
+
             if (laserTimer > 0) {
                 ctx.fillStyle = '#ff3333'; ctx.fillRect(px + 5, paddle.y - 5, 8, 8);
                 ctx.fillRect(px + paddle.w - 13, paddle.y - 5, 8, 8);
@@ -429,8 +457,9 @@
             bossWarning.style.display = 'none';
         }
 
-        function initGame() {
+        function initGame(mode) {
             cancelAnimationFrame(animId);
+            gameMode = mode;
             score = 0; lives = 3; level = 1; active = true;
             paddle.targetW = 80; paddle.w = 80; laserTimer = 0; glitchTimer = 0; shieldActive = false;
             scoreEl.innerText = score; levelEl.innerText = level; livesEl.innerText = "❤️❤️❤️";
@@ -442,6 +471,7 @@
         }
 
         function movePaddle(clientX) {
+            // Mouse/Touch movement still works for setup/convenience
             const rect = canvas.getBoundingClientRect();
             paddle.x = (clientX - rect.left) - paddle.w/2;
             if(paddle.x < 0) paddle.x = 0;
@@ -454,25 +484,26 @@
 
         // Keyboard Event Listeners
         window.addEventListener('keydown', e => {
-            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') {
-                keys.left = true;
-            }
-            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') {
-                keys.right = true;
-            }
-            // Spacebar can also launch the ball for keyboard players
-            if (e.key === ' ') {
-                launchBall();
-            }
+            // Player 1 Keys (A / D)
+            if (e.key === 'a' || e.key === 'A') keys.p1Left = true;
+            if (e.key === 'd' || e.key === 'D') keys.p1Right = true;
+
+            // Player 2 Keys (Arrows)
+            if (e.key === 'ArrowLeft') keys.p2Left = true;
+            if (e.key === 'ArrowRight') keys.p2Right = true;
+
+            // Launch ball actions
+            if (e.key === ' ') launchBall();
         });
 
         window.addEventListener('keyup', e => {
-            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') {
-                keys.left = false;
-            }
-            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') {
-                keys.right = false;
-            }
+            // Player 1 Keys
+            if (e.key === 'a' || e.key === 'A') keys.p1Left = false;
+            if (e.key === 'd' || e.key === 'D') keys.p1Right = false;
+
+            // Player 2 Keys
+            if (e.key === 'ArrowLeft') keys.p2Left = false;
+            if (e.key === 'ArrowRight') keys.p2Right = false;
         });
 
         function launchBall() {
