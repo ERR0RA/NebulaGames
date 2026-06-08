@@ -101,9 +101,11 @@
         let glitchTimer = 0;
 
         const baseSpeed = 6;
-        const paddle = { x: 200, y: 560, w: 80, h: 12, color: '#00f2ff', targetW: 80, prevX: 200 };
+        
+        // Setup two completely independent paddle objects
+        const p1Paddle = { x: 200, y: 560, w: 80, h: 12, color: '#00f2ff', targetW: 80, prevX: 200 };
+        const p2Paddle = { x: 280, y: 560, w: 80, h: 12, color: '#ff007f', targetW: 80, prevX: 280 };
 
-        // Keyboard tracking state for P1 and P2
         const keys = { p1Left: false, p1Right: false, p2Left: false, p2Right: false };
         const keyboardSpeed = 8;
 
@@ -153,40 +155,71 @@
             powerups.push({ x, y, w: 24, h: 24, type, vy: 3 });
         }
 
+        function checkPaddlePowerup(p, pad) {
+            if(p.y + p.h > pad.y && p.x + p.w > pad.x && p.x < pad.x + pad.w) {
+                if(p.type === 'W') {
+                    pad.targetW = 140; setTimeout(() => pad.targetW = 80, 10000);
+                } else if(p.type === 'M' && balls.length > 0) {
+                    let mb = balls[0];
+                    balls.push(createBall(mb.x, mb.y, mb.speed, -mb.speed, false));
+                    balls.push(createBall(mb.x, mb.y, -mb.speed, -mb.speed, false));
+                } else if(p.type === 'L') {
+                    laserTimer = 480;
+                } else if(p.type === 'S') {
+                    shieldActive = true;
+                }
+                score += 50; scoreEl.innerText = score;
+                return true;
+            }
+            return false;
+        }
+
         function update() {
             if(!active) return;
 
-            // Handle Keyboard Input based on Game Mode
+            // Handle Input and Boundary constraints independently
             if (gameMode === 1) {
-                // In 1 Player mode, BOTH sets of keys control the single player
-                if (keys.p1Left || keys.p2Left) paddle.x -= keyboardSpeed;
-                if (keys.p1Right || keys.p2Right) paddle.x += keyboardSpeed;
-            } else if (gameMode === 2) {
-                // In 2 Player mode, P1 uses AD, P2 uses Arrows. Inputs can combine or fight each other!
-                if (keys.p1Left) paddle.x -= keyboardSpeed;
-                if (keys.p1Right) paddle.x += keyboardSpeed;
-                if (keys.p2Left) paddle.x -= keyboardSpeed;
-                if (keys.p2Right) paddle.x += keyboardSpeed;
+                if (keys.p1Left || keys.p2Left) p1Paddle.x -= keyboardSpeed;
+                if (keys.p1Right || keys.p2Right) p1Paddle.x += keyboardSpeed;
+                
+                if (p1Paddle.x < 0) p1Paddle.x = 0;
+                if (p1Paddle.x + p1Paddle.w > canvas.width) p1Paddle.x = canvas.width - p1Paddle.w;
+            } else {
+                // Player 1 handles the Left Half
+                if (keys.p1Left) p1Paddle.x -= keyboardSpeed;
+                if (keys.p1Right) p1Paddle.x += keyboardSpeed;
+                if (p1Paddle.x < 0) p1Paddle.x = 0;
+                if (p1Paddle.x + p1Paddle.w > canvas.width / 2) p1Paddle.x = (canvas.width / 2) - p1Paddle.w;
+
+                // Player 2 handles the Right Half
+                if (keys.p2Left) p2Paddle.x -= keyboardSpeed;
+                if (keys.p2Right) p2Paddle.x += keyboardSpeed;
+                if (p2Paddle.x < canvas.width / 2) p2Paddle.x = canvas.width / 2;
+                if (p2Paddle.x + p2Paddle.w > canvas.width) p2Paddle.x = canvas.width - p2Paddle.w;
             }
 
-            // Keep paddle in bounds
-            if (paddle.x < 0) paddle.x = 0;
-            if (paddle.x + paddle.w > canvas.width) paddle.x = canvas.width - paddle.w;
-
+            // Powerup width animation handling
             if (glitchTimer > 0) {
                 glitchTimer--;
-                paddle.targetW = 40; 
+                p1Paddle.targetW = 40; 
+                p2Paddle.targetW = 40;
             }
-            paddle.w += (paddle.targetW - paddle.w) * 0.1;
+            p1Paddle.w += (p1Paddle.targetW - p1Paddle.w) * 0.1;
+            p2Paddle.w += (p2Paddle.targetW - p2Paddle.w) * 0.1;
 
             if (laserTimer > 0) {
                 laserTimer--;
                 if (laserTimer % 15 === 0) {
-                    pLasers.push({ x: paddle.x + 10, y: paddle.y, vy: -10, color: '#00f2ff' });
-                    pLasers.push({ x: paddle.x + paddle.w - 10, y: paddle.y, vy: -10, color: '#00f2ff' });
+                    pLasers.push({ x: p1Paddle.x + 10, y: p1Paddle.y, vy: -10, color: '#00f2ff' });
+                    pLasers.push({ x: p1Paddle.x + p1Paddle.w - 10, y: p1Paddle.y, vy: -10, color: '#00f2ff' });
+                    if (gameMode === 2) {
+                        pLasers.push({ x: p2Paddle.x + 10, y: p2Paddle.y, vy: -10, color: '#ff007f' });
+                        pLasers.push({ x: p2Paddle.x + p2Paddle.w - 10, y: p2Paddle.y, vy: -10, color: '#ff007f' });
+                    }
                 }
             } else if (glitchTimer <= 0) {
-                paddle.targetW = 80;
+                p1Paddle.targetW = 80;
+                p2Paddle.targetW = 80;
             }
 
             if(bricks.length === 0 && !boss) {
@@ -206,24 +239,17 @@
                 balls = [createBall(0, 0, 0, 0, true)];
             }
 
+            // Update Powerups
             for(let i = powerups.length - 1; i >= 0; i--) {
                 let p = powerups[i];
                 p.y += p.vy;
-                if(p.y + p.h > paddle.y && p.x + p.w > paddle.x && p.x < paddle.x + paddle.w) {
-                    if(p.type === 'W') {
-                        paddle.targetW = 140; setTimeout(() => paddle.targetW = 80, 10000);
-                    } else if(p.type === 'M' && balls.length > 0) {
-                        let mb = balls[0];
-                        balls.push(createBall(mb.x, mb.y, mb.speed, -mb.speed, false));
-                        balls.push(createBall(mb.x, mb.y, -mb.speed, -mb.speed, false));
-                    } else if(p.type === 'L') {
-                        laserTimer = 480;
-                    } else if(p.type === 'S') {
-                        shieldActive = true;
-                    }
-                    score += 50; scoreEl.innerText = score;
-                    powerups.splice(i, 1);
-                } else if (p.y > canvas.height) {
+                
+                let hit = checkPaddlePowerup(p, p1Paddle);
+                if (!hit && gameMode === 2) {
+                    hit = checkPaddlePowerup(p, p2Paddle);
+                }
+                
+                if (hit || p.y > canvas.height) {
                     powerups.splice(i, 1);
                 }
             }
@@ -264,7 +290,10 @@
 
             for (let i = eLasers.length - 1; i >= 0; i--) {
                 let l = eLasers[i]; l.y += l.vy;
-                if (l.y + 10 > paddle.y && l.x > paddle.x && l.x < paddle.x + paddle.w) {
+                let hitP1 = (l.y + 10 > p1Paddle.y && l.x > p1Paddle.x && l.x < p1Paddle.x + p1Paddle.w);
+                let hitP2 = (gameMode === 2 && l.y + 10 > p2Paddle.y && l.x > p2Paddle.x && l.x < p2Paddle.x + p2Paddle.w);
+                
+                if (hitP1 || hitP2) {
                     glitchTimer = 180; shakeTime = 10;
                     spawnParticles(l.x, l.y, '#ff3333', 10);
                     eLasers.splice(i, 1);
@@ -274,16 +303,14 @@
             for(let i = balls.length - 1; i >= 0; i--) {
                 let ball = balls[i];
                 if(ball.attached) {
-                    ball.x = paddle.x + paddle.w/2; ball.y = paddle.y - ball.r;
+                    ball.x = p1Paddle.x + p1Paddle.w/2; ball.y = p1Paddle.y - ball.r;
                 } else {
                     ball.trail.push({x: ball.x, y: ball.y});
                     if(ball.trail.length > 5) ball.trail.shift();
                     
-                    // Predict next position
                     ball.x += ball.vx; 
                     ball.y += ball.vy;
 
-                    // Wall Bounces
                     if(ball.x + ball.r > canvas.width || ball.x - ball.r < 0) {
                         ball.vx *= -1; 
                         ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r;
@@ -293,15 +320,25 @@
                         ball.y = ball.r; 
                     }
 
-                    // Improved Paddle Collision
-                    if(ball.y + ball.r > paddle.y && ball.y - ball.r < paddle.y + paddle.h && ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
-                        if (ball.vy > 0) { // Only bounce if moving downwards
-                            let hitPos = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
-                            // Influence angle by paddle movement speed
-                            let paddleSpeed = (paddle.x - paddle.prevX) * 0.5;
+                    // Check collisions against P1 Paddle
+                    if(ball.y + ball.r > p1Paddle.y && ball.y - ball.r < p1Paddle.y + p1Paddle.h && ball.x > p1Paddle.x && ball.x < p1Paddle.x + p1Paddle.w) {
+                        if (ball.vy > 0) {
+                            let hitPos = (ball.x - (p1Paddle.x + p1Paddle.w/2)) / (p1Paddle.w/2);
+                            let paddleSpeed = (p1Paddle.x - p1Paddle.prevX) * 0.5;
                             ball.vx = (hitPos * ball.speed) + paddleSpeed;
                             ball.vy = -Math.abs(ball.speed); 
-                            ball.y = paddle.y - ball.r; 
+                            ball.y = p1Paddle.y - ball.r; 
+                        }
+                    }
+                    
+                    // Check collisions against P2 Paddle
+                    if(gameMode === 2 && ball.y + ball.r > p2Paddle.y && ball.y - ball.r < p2Paddle.y + p2Paddle.h && ball.x > p2Paddle.x && ball.x < p2Paddle.x + p2Paddle.w) {
+                        if (ball.vy > 0) {
+                            let hitPos = (ball.x - (p2Paddle.x + p2Paddle.w/2)) / (p2Paddle.w/2);
+                            let paddleSpeed = (p2Paddle.x - p2Paddle.prevX) * 0.5;
+                            ball.vx = (hitPos * ball.speed) + paddleSpeed;
+                            ball.vy = -Math.abs(ball.speed); 
+                            ball.y = p2Paddle.y - ball.r; 
                         }
                     }
                     
@@ -343,7 +380,6 @@
                     
                     if ((dX * dX) + (dY * dY) < (ball.r * ball.r)) {
                         let oX = ball.r - Math.abs(dX), oY = ball.r - Math.abs(dY);
-                        // Better axis determination
                         if (oX < oY) { ball.vx *= -1; ball.x += (dX > 0) ? oX : -oX; } 
                         else { ball.vy *= -1; ball.y += (dY > 0) ? oY : -oY; }
                         
@@ -363,7 +399,8 @@
                 if(p.life <= 0) particles.splice(i, 1);
             });
             
-            paddle.prevX = paddle.x;
+            p1Paddle.prevX = p1Paddle.x;
+            p2Paddle.prevX = p2Paddle.x;
         }
 
         function draw() {
@@ -401,25 +438,28 @@
             pLasers.forEach(l => { ctx.fillStyle = l.color; ctx.fillRect(l.x, l.y, 4, 15); });
             eLasers.forEach(l => { ctx.fillStyle = l.color; ctx.fillRect(l.x, l.y, 6, 20); });
 
-            // Render Paddle (Splits colors in 2-player mode to show sides)
-            let px = paddle.x + (glitchTimer > 0 ? (Math.random()-0.5)*5 : 0);
-            if (gameMode === 2) {
-                ctx.shadowBlur = 15; ctx.shadowColor = glitchTimer > 0 ? '#ff3333' : paddle.color;
-                // P1 Side (Left half)
-                ctx.fillStyle = glitchTimer > 0 ? '#ff3333' : '#00f2ff';
-                ctx.fillRect(px, paddle.y, paddle.w / 2, paddle.h);
-                // P2 Side (Right half)
-                ctx.fillStyle = glitchTimer > 0 ? '#ff3333' : '#ff007f';
-                ctx.fillRect(px + paddle.w / 2, paddle.y, paddle.w / 2, paddle.h);
-            } else {
-                ctx.fillStyle = glitchTimer > 0 ? '#ff3333' : paddle.color;
-                ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
-                ctx.fillRect(px, paddle.y, paddle.w, paddle.h);
+            // Render Player 1 Paddle
+            let p1x = p1Paddle.x + (glitchTimer > 0 ? (Math.random()-0.5)*5 : 0);
+            ctx.fillStyle = glitchTimer > 0 ? '#ff3333' : p1Paddle.color;
+            ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+            ctx.fillRect(p1x, p1Paddle.y, p1Paddle.w, p1Paddle.h);
+            
+            if (laserTimer > 0) {
+                ctx.fillStyle = '#ff3333'; ctx.fillRect(p1x + 5, p1Paddle.y - 5, 8, 8);
+                ctx.fillRect(p1x + p1Paddle.w - 13, p1Paddle.y - 5, 8, 8);
             }
 
-            if (laserTimer > 0) {
-                ctx.fillStyle = '#ff3333'; ctx.fillRect(px + 5, paddle.y - 5, 8, 8);
-                ctx.fillRect(px + paddle.w - 13, paddle.y - 5, 8, 8);
+            // Render Player 2 Paddle (Only in 2 Player Mode)
+            if (gameMode === 2) {
+                let p2x = p2Paddle.x + (glitchTimer > 0 ? (Math.random()-0.5)*5 : 0);
+                ctx.fillStyle = glitchTimer > 0 ? '#ff3333' : p2Paddle.color;
+                ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+                ctx.fillRect(p2x, p2Paddle.y, p2Paddle.w, p2Paddle.h);
+                
+                if (laserTimer > 0) {
+                    ctx.fillStyle = '#ff3333'; ctx.fillRect(p2x + 5, p2Paddle.y - 5, 8, 8);
+                    ctx.fillRect(p2x + p2Paddle.w - 13, p2Paddle.y - 5, 8, 8);
+                }
             }
             ctx.shadowBlur = 0;
 
@@ -461,47 +501,52 @@
             cancelAnimationFrame(animId);
             gameMode = mode;
             score = 0; lives = 3; level = 1; active = true;
-            paddle.targetW = 80; paddle.w = 80; laserTimer = 0; glitchTimer = 0; shieldActive = false;
+            
+            // Reset paddle properties
+            p1Paddle.targetW = p1Paddle.w = 80;
+            p2Paddle.targetW = p2Paddle.w = 80;
+            p1Paddle.x = 200;
+            p2Paddle.x = 280;
+            
+            laserTimer = 0; glitchTimer = 0; shieldActive = false;
             scoreEl.innerText = score; levelEl.innerText = level; livesEl.innerText = "❤️❤️❤️";
             document.getElementById('overlay').style.display = 'none';
             powerups = []; particles = []; pLasers = []; eLasers = [];
+            
+            keys.p1Left = keys.p1Right = keys.p2Left = keys.p2Right = false;
+            
             initLevel();
             balls = [createBall(0, 0, 0, 0, true)];
             draw();
         }
 
         function movePaddle(clientX) {
-            // Mouse/Touch movement still works for setup/convenience
+            // Mouse/Touch controls only work in Single Player mode
+            if (gameMode === 2) return;
+
             const rect = canvas.getBoundingClientRect();
-            paddle.x = (clientX - rect.left) - paddle.w/2;
-            if(paddle.x < 0) paddle.x = 0;
-            if(paddle.x + paddle.w > canvas.width) paddle.x = canvas.width - paddle.w;
+            p1Paddle.x = (clientX - rect.left) - p1Paddle.w/2;
+            if(p1Paddle.x < 0) p1Paddle.x = 0;
+            if(p1Paddle.x + p1Paddle.w > canvas.width) p1Paddle.x = canvas.width - p1Paddle.w;
         }
 
-        // Global mouse move ensures paddle reacts even outside container
         window.addEventListener('mousemove', e => movePaddle(e.clientX));
-        window.addEventListener('touchmove', e => { e.preventDefault(); movePaddle(e.touches[0].clientX); }, {passive: false});
+        window.addEventListener('touchmove', e => { if(gameMode !== 2) e.preventDefault(); movePaddle(e.touches[0].clientX); }, {passive: false});
 
-        // Keyboard Event Listeners
         window.addEventListener('keydown', e => {
-            // Player 1 Keys (A / D)
             if (e.key === 'a' || e.key === 'A') keys.p1Left = true;
             if (e.key === 'd' || e.key === 'D') keys.p1Right = true;
 
-            // Player 2 Keys (Arrows)
             if (e.key === 'ArrowLeft') keys.p2Left = true;
             if (e.key === 'ArrowRight') keys.p2Right = true;
 
-            // Launch ball actions
             if (e.key === ' ') launchBall();
         });
 
         window.addEventListener('keyup', e => {
-            // Player 1 Keys
             if (e.key === 'a' || e.key === 'A') keys.p1Left = false;
             if (e.key === 'd' || e.key === 'D') keys.p1Right = false;
 
-            // Player 2 Keys
             if (e.key === 'ArrowLeft') keys.p2Left = false;
             if (e.key === 'ArrowRight') keys.p2Right = false;
         });
@@ -516,8 +561,9 @@
                 }
             });
         }
-        window.addEventListener('click', launchBall);
-        window.addEventListener('touchstart', launchBall);
+        
+        window.addEventListener('click', () => { if(gameMode !== 2) launchBall(); });
+        window.addEventListener('touchstart', () => { if(gameMode !== 2) launchBall(); });
     </script>
 </body>
 </html>
