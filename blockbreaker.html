@@ -94,6 +94,10 @@
         const baseSpeed = 6;
         const paddle = { x: 200, y: 560, w: 80, h: 12, color: '#00f2ff', targetW: 80, prevX: 200 };
 
+        // Keyboard tracking state
+        const keys = { left: false, right: false };
+        const keyboardSpeed = 8;
+
         function createBall(x, y, vx, vy, isAttached) {
             return { x, y, r: 6, vx, vy, speed: baseSpeed + (level * 0.4), attached: isAttached, trail: [] };
         }
@@ -142,6 +146,16 @@
 
         function update() {
             if(!active) return;
+
+            // Handle Keyboard Input
+            if (keys.left) {
+                paddle.x -= keyboardSpeed;
+                if (paddle.x < 0) paddle.x = 0;
+            }
+            if (keys.right) {
+                paddle.x += keyboardSpeed;
+                if (paddle.x + paddle.w > canvas.width) paddle.x = canvas.width - paddle.w;
+            }
 
             if (glitchTimer > 0) {
                 glitchTimer--;
@@ -437,6 +451,29 @@
         // Global mouse move ensures paddle reacts even outside container
         window.addEventListener('mousemove', e => movePaddle(e.clientX));
         window.addEventListener('touchmove', e => { e.preventDefault(); movePaddle(e.touches[0].clientX); }, {passive: false});
+
+        // Keyboard Event Listeners
+        window.addEventListener('keydown', e => {
+            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') {
+                keys.left = true;
+            }
+            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') {
+                keys.right = true;
+            }
+            // Spacebar can also launch the ball for keyboard players
+            if (e.key === ' ') {
+                launchBall();
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') {
+                keys.left = false;
+            }
+            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') {
+                keys.right = false;
+            }
+        });
 
         function launchBall() {
             if(!active) return;
