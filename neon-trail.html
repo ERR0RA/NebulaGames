@@ -130,9 +130,9 @@ function reset() {
         botProfile = 'destroyer';
         botSpeed = 1.1;
     } else if (botSetting === 'void') {
-        botColor = '#a855f7'; // Medium Void Purple
+        botColor = '#a855f7'; 
         botProfile = 'void';
-        botSpeed = 1.0; // Standard steady speed
+        botSpeed = 1.0; 
     }
 
     players = [
@@ -194,7 +194,10 @@ window.onkeydown = e => {
         if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
         if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
         if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
+        
         if (e.code === 'Space') players[0].isBoosting = true;
+        // P1 can also use Enter to boost if playing Human vs Bot mode
+        if (mode === 'pve' && e.code === 'Enter') players[0].isBoosting = true;
     }
     if (players[1].active) {
         if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
@@ -206,8 +209,10 @@ window.onkeydown = e => {
 };
 
 window.onkeyup = e => {
+    const mode = document.getElementById('gameMode').value;
     if (e.code === 'Space') players[0].isBoosting = false;
-    if (e.key === 'Enter') players[1].isBoosting = false;
+    if (mode === 'pve' && e.code === 'Enter') players[0].isBoosting = false;
+    if (players[1].active && e.key === 'Enter') players[1].isBoosting = false;
 };
 
 function checkCollision(x, y, self) {
@@ -266,7 +271,7 @@ function update() {
             let minDist = (p.profile === 'ultimate') ? 350 : 200; 
             
             if (p.profile === 'destroyer') minDist = 400; 
-            if (p.profile === 'void') minDist = 250; // Medium hunt capability
+            if (p.profile === 'void') minDist = 250; 
 
             powerups.forEach(pu => {
                 let d = Math.hypot(p.x - pu.x, p.y - pu.y);
@@ -290,7 +295,7 @@ function update() {
             if (p.profile === 'ultimate') turnChance = 0.15;
             if (p.profile === 'destroyer') turnChance = 0.25; 
             if (p.profile === 'error') turnChance = 0.4;
-            if (p.profile === 'void') turnChance = 0.12; // Solid balanced turning instinct
+            if (p.profile === 'void') turnChance = 0.12; 
             if (p.profile === 'failed') turnChance = 0.04; 
 
             if (target && Math.random() < turnChance) {
@@ -306,7 +311,7 @@ function update() {
             let lookAheadDist = 8;
             if (p.profile === 'ultimate') lookAheadDist = 14;
             if (p.profile === 'destroyer') lookAheadDist = 12;
-            if (p.profile === 'void') lookAheadDist = 8; // Standard reliable avoidance range
+            if (p.profile === 'void') lookAheadDist = 8; 
             if (p.profile === 'failed') lookAheadDist = 5; 
             if (p.profile === 'error' && Math.random() < 0.2) lookAheadDist = 4;
 
@@ -343,6 +348,7 @@ function update() {
         if (!p.active || !p.alive) return;
         if (p.ghost > 0) p.ghost--;
         
+        // Boost evaluates to a flat true/false multiplier. Pressing space + enter cannot double this multiplier.
         let spd = (p.isBoosting && p.boost > 0) ? 2 : 1;
         
         if (p.profile === 'error') {
@@ -429,7 +435,6 @@ function draw() {
             } else if (p.profile === 'destroyer') {
                 ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 4 === 0) ? '#eab308' : '#ea580c';
             } else if (p.profile === 'void') {
-                // Flowing cosmic gradient nebula trail
                 ctx.fillStyle = (Math.floor(t.y/6 + t.cycle/4) % 3 === 0) ? '#4c1d95' : '#7e22ce';
             } else if (p.profile === 'failed') {
                 ctx.fillStyle = (Math.floor(t.x + t.y) % 8 < 3) ? '#78350f' : ((t.cycle % 40 < 5) ? '#000' : '#b45309');
