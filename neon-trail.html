@@ -110,8 +110,8 @@ const UNIT = 5;
 let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0};
 let powerupTimer = 0;
 let glitchTick = 0;
+let bot1Label = "BOT 1", bot2Label = "BOT 2";
 
-// Dynamic menu layout adjustments
 document.getElementById('gameMode').addEventListener('change', function() {
     const b2Menu = document.getElementById('botType2');
     const mainBotMenu = document.getElementById('botType');
@@ -155,10 +155,22 @@ function reset() {
     let b2 = getBotSettings(botSetting);
     let b1 = getBotSettings(bot2Setting);
 
+    let b1ProfileName = bot2Setting.toUpperCase();
+    let b2ProfileName = botSetting.toUpperCase();
+    
+    const isSameBot = (botSetting === bot2Setting);
+    if (isSameBot) {
+        bot1Label = b1ProfileName + " 1";
+        bot2Label = b2ProfileName + " 2";
+    } else {
+        bot1Label = b1ProfileName;
+        bot2Label = b2ProfileName;
+    }
+
     players = [
         { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, speedMult: 1, isBot: false, profile: 'player' },
         { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, speedMult: 1, isBot: false, profile: 'player' },
-        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: b2.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: b2.speed, isBot: true, profile: b2.profile }
+        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: b2.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: b2.speed, isBot: true, profile: b2.profile, isAltColor: false }
     ];
 
     const fillBar = document.getElementById('p3-fill');
@@ -180,6 +192,11 @@ function reset() {
         players[2].active = true;
         players[2].team = 'red_bot';
         
+        // If they are exactly the same type, apply alternate distinct color styling to Bot 2
+        if (isSameBot) {
+            players[2].isAltColor = true;
+        }
+
         const f1 = document.getElementById('p1-fill');
         if (bot2Setting === 'ultimate') f1.style.background = '#444444';
         else if (bot2Setting === 'error') f1.style.background = '#ff00ff';
@@ -187,8 +204,11 @@ function reset() {
         else if (bot2Setting === 'destroyer') f1.style.background = '#ff4500';
         else if (bot2Setting === 'void') f1.style.background = '#6b21a8';
         else f1.style.background = '#0f0';
+        
+        document.getElementById('score').innerText = `${bot1Label}: ${score.p1} | ${bot2Label}: ${score.bot}`;
     } else {
         document.getElementById('p1-fill').style.background = '#0f0';
+        document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
     }
 
     if (mode === 'pvp') players[1].team = 'red';
@@ -197,9 +217,9 @@ function reset() {
     document.getElementById('p2-ui').style.visibility = players[1].active ? "visible" : "hidden";
     document.getElementById('bot-ui').style.visibility = players[2].active ? "visible" : "hidden";
     
-    document.getElementById('msg').innerText = "READY...";
+    document.getElementById('msg').innerText = mode === 'bvb' ? `${bot1Label} VS ${bot2Label}` : "READY...";
     gameActive = false;
-    setTimeout(() => { document.getElementById('msg').innerText = ""; gameActive = true; }, 1000);
+    setTimeout(() => { document.getElementById('msg').innerText = ""; gameActive = true; }, 1200);
 }
 
 document.getElementById('startBtn').onclick = (e) => { e.target.blur(); reset(); };
@@ -378,7 +398,6 @@ function update() {
         if (!p.active || !p.alive) return;
         if (p.ghost > 0) p.ghost--;
         
-        // Static Boolean value handles velocity condition. Velocity cannot multiply or double.
         let spd = (p.isBoosting && p.boost > 0) ? 2 : 1;
         
         if (p.profile === 'error') {
@@ -421,12 +440,12 @@ function checkWinner() {
     } 
     else if (mode === 'bvb') {
         if (!p1.alive && !bot.alive) endGame("DRAW!");
-        else if (!p1.alive) { score.bot++; endGame("RED BOT WINS!"); }
-        else if (!bot.alive) { score.p1++; endGame("GREEN BOT WINS!"); }
+        else if (!p1.alive) { score.bot++; endGame(`${bot2Label} WINS!`); }
+        else if (!bot.alive) { score.p1++; endGame(`${bot1Label} WINS!`); }
     } 
     else {
         const humansAlive = (p1.active && p1.alive) || (p2.active && p2.alive);
-        if (!humansAlive) { score.bot++; endGame("BOT WINS!"); }
+        if (!humansAlive) { score.bot++; endGame(`${bot2Label} WINS!`); }
         else if (bot.active && !bot.alive) { score.p1++; endGame("HUMANS WIN!"); }
     }
 }
@@ -436,7 +455,7 @@ function endGame(txt) {
     document.getElementById('msg').innerText = txt;
     const mode = document.getElementById('gameMode').value;
     if (mode === 'bvb') {
-        document.getElementById('score').innerText = `GREEN BOT: ${score.p1} | RED BOT: ${score.bot}`;
+        document.getElementById('score').innerText = `${bot1Label}: ${score.p1} | ${bot2Label}: ${score.bot}`;
     } else {
         document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
     }
@@ -460,6 +479,9 @@ function draw() {
         p.trail.forEach(t => {
             if (t.isGhost) {
                 ctx.fillStyle = '#333';
+            } else if (p.isAltColor) {
+                // Modified aesthetic pattern for identical matching bot configurations
+                ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 5 === 0) ? '#22c55e' : '#14532d';
             } else if (p.profile === 'ultimate') {
                 ctx.fillStyle = (Math.floor(t.x + t.y) % 15 < 7) ? '#ff1a1a' : '#2b0000';
             } else if (p.profile === 'destroyer') {
@@ -480,6 +502,10 @@ function draw() {
         if (p.alive) {
             if (p.ghost > 0) {
                 ctx.fillStyle = '#fff';
+            } else if (p.isAltColor) {
+                ctx.fillStyle = '#4ade80';
+                ctx.shadowColor = '#22c55e';
+                ctx.shadowBlur = 18;
             } else if (p.profile === 'ultimate') {
                 ctx.fillStyle = '#ff1a1a';
                 ctx.shadowColor = '#ff0000';
