@@ -68,6 +68,11 @@
             <option value="pvp">Human vs Human</option>
             <option value="bvb">Bot vs Bot (Spectate)</option>
         </select>
+        <select id="botType">
+            <option value="default">BOT: Default</option>
+            <option value="ultimate">BOT: Ultimate</option>
+            <option value="error">BOT: ERR0R</option>
+        </select>
         <label class="toggle-label">
             <input type="checkbox" id="usePowerUps" checked> POWER-UPS
         </label>
@@ -93,18 +98,40 @@ const ctx = canvas.getContext('2d');
 const UNIT = 5;
 let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0};
 let powerupTimer = 0;
+let glitchTick = 0;
 
 function reset() {
     const mode = document.getElementById('gameMode').value;
+    const botSetting = document.getElementById('botType').value;
     grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
     powerups = [];
     powerupTimer = 0;
     
+    // Set Bot configuration aesthetics and profiles
+    let botColor = '#f00';
+    let botProfile = 'default';
+    let botSpeed = 1;
+    
+    if (botSetting === 'ultimate') {
+        botColor = '#ff3333'; // Menacing bright red paired with charcoal elements in drawing loop
+        botProfile = 'ultimate';
+        botSpeed = 1.2;
+    } else if (botSetting === 'error') {
+        botColor = '#00ffff'; // Glitching base cyan
+        botProfile = 'error';
+    }
+
     players = [
-        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, speedMult: 1, isBot: false },
-        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, speedMult: 1, isBot: false },
-        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: '#f00', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: 1, isBot: true }
+        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, speedMult: 1, isBot: false, profile: 'player' },
+        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, speedMult: 1, isBot: false, profile: 'player' },
+        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: botColor, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: botSpeed, isBot: true, profile: botProfile }
     ];
+
+    // Adjust UI indicator meter for Bot variant
+    const fillBar = document.getElementById('p3-fill');
+    if (botSetting === 'ultimate') fillBar.style.background = '#444444';
+    else if (botSetting === 'error') fillBar.style.background = '#ff00ff';
+    else fillBar.style.background = '#f00';
 
     if (mode === 'bvb') {
         players[0].active = true;
@@ -188,8 +215,8 @@ function checkCollision(x, y, self) {
 function applyPowerUp(player, type) {
     if (type === 'ghost') player.ghost = 180;
     if (type === 'speed') {
-        player.speedMult = 2;
-        setTimeout(() => { player.speedMult = 1; }, 4000);
+        player.speedMult = (player.profile === 'ultimate') ? 2.4 : 2;
+        setTimeout(() => { player.speedMult = (player.profile === 'ultimate') ? 1.2 : 1; }, 4000);
     }
     if (type === 'clear') {
         grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
@@ -210,6 +237,8 @@ function spawnPowerUp() {
 function update() {
     if (!gameActive) return;
 
+    glitchTick++;
+
     if (document.getElementById('usePowerUps').checked) {
         powerupTimer++;
         if (powerupTimer > 250) { spawnPowerUp(); powerupTimer = 0; }
@@ -218,7 +247,7 @@ function update() {
     players.forEach(p => {
         if (p.active && p.alive && p.isBot) {
             let target = null;
-            let minDist = 200; 
+            let minDist = (p.profile === 'ultimate') ? 350 : 200; 
             powerups.forEach(pu => {
                 let d = Math.hypot(p.x - pu.x, p.y - pu.y);
                 if (d < minDist) { minDist = d; target = pu; }
@@ -232,7 +261,11 @@ function update() {
                 return false;
             };
 
-            if (target && Math.random() < 0.1) {
+            let turnChance = 0.1;
+            if (p.profile === 'ultimate') turnChance = 0.15;
+            if (p.profile === 'error') turnChance = 0.4; // Glitchy, highly erratic movement adjustments
+
+            if (target && Math.random() < turnChance) {
                 if (Math.abs(p.x - target.x) > 10 && p.dy !== 0) {
                     let newDx = p.x < target.x ? UNIT : -UNIT;
                     if (!checkAhead(newDx, 0, 15)) { p.dx = newDx; p.dy = 0; }
@@ -242,7 +275,11 @@ function update() {
                 }
             }
 
-            if (checkAhead(p.dx, p.dy, 8) || (Math.random() < 0.005)) {
+            let lookAheadDist = 8;
+            if (p.profile === 'ultimate') lookAheadDist = 14; // Dodges obstacles early
+            if (p.profile === 'error' && Math.random() < 0.2) lookAheadDist = 4; // Makes sudden close-call cuts
+
+            if (checkAhead(p.dx, p.dy, lookAheadDist) || (Math.random() < (p.profile === 'error' ? 0.04 : 0.005))) {
                 const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}]
                     .filter(d => !(d.dx === -p.dx && d.dy === -p.dy))
                     .sort(() => Math.random() - 0.5); 
@@ -250,26 +287,43 @@ function update() {
                 let bestDir = null, maxDist = -1;
                 dirs.forEach(d => {
                     let dCount = 0;
-                    while(dCount < 30 && !checkCollision(p.x + d.dx*(dCount+1), p.y + d.dy*(dCount+1), p)) { dCount++; }
+                    let cap = (p.profile === 'ultimate') ? 50 : 30;
+                    while(dCount < cap && !checkCollision(p.x + d.dx*(dCount+1), p.y + d.dy*(dCount+1), p)) { dCount++; }
                     if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
                 });
                 if (bestDir) { p.dx = bestDir.dx; p.dy = bestDir.dy; }
             }
-            p.isBoosting = (p.boost > 40 && !checkAhead(p.dx, p.dy, 50));
+            
+            if (p.profile === 'error') {
+                p.isBoosting = (Math.random() < 0.3 && p.boost > 20);
+            } else {
+                p.isBoosting = (p.boost > 40 && !checkAhead(p.dx, p.dy, 50));
+            }
         }
     });
 
     players.forEach(p => {
         if (!p.active || !p.alive) return;
         if (p.ghost > 0) p.ghost--;
+        
         let spd = (p.isBoosting && p.boost > 10) ? 2 : 1;
+        
+        // ERR0R bot variable speed glitch matrix
+        if (p.profile === 'error') {
+            p.speedMult = (glitchTick % 20 < 5) ? 1.8 : (glitchTick % 30 === 0 ? 0.5 : 1);
+        }
+        
         spd *= p.speedMult;
         if (p.isBoosting) p.boost -= 2.5; else if (p.boost < 100) p.boost += 0.15;
+        
         for (let i = 0; i < spd; i++) {
             p.x += p.dx; p.y += p.dy;
             if (checkCollision(p.x, p.y, p)) { p.alive = false; checkWinner(); return; }
             grid[Math.floor(p.x)][Math.floor(p.y)] = p.id;
-            p.trail.push({x: p.x, y: p.y, isGhost: p.ghost > 0});
+            
+            // Capture specific glitch properties for the error trail
+            let trailMeta = p.ghost > 0;
+            p.trail.push({x: p.x, y: p.y, isGhost: trailMeta, cycle: glitchTick});
         }
     });
 
@@ -278,7 +332,6 @@ function update() {
     document.getElementById('p3-fill').style.width = players[2].boost + "%";
 }
 
-// FIXED WINNER CHECK LOGIC
 function checkWinner() {
     const mode = document.getElementById('gameMode').value;
     const p1 = players[0], p2 = players[1], bot = players[2];
@@ -315,25 +368,64 @@ function endGame(txt) {
 function draw() {
     ctx.fillStyle = "rgba(0,0,0,0.2)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
     powerups.forEach(pu => {
         ctx.fillStyle = pu.type === 'ghost' ? '#fff' : pu.type === 'speed' ? '#ff0' : '#0ff';
         ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
         ctx.fillRect(pu.x, pu.y, 12, 12);
         ctx.shadowBlur = 0;
     });
+
     players.forEach(p => {
         if (!p.active) return;
+        
         p.trail.forEach(t => {
-            ctx.fillStyle = t.isGhost ? '#333' : p.color;
+            if (t.isGhost) {
+                ctx.fillStyle = '#333';
+            } else if (p.profile === 'ultimate') {
+                // Alternating Menacing Red and Charcoal/Dark Crimson stripes
+                ctx.fillStyle = (Math.floor(t.x + t.y) % 15 < 7) ? '#ff1a1a' : '#2b0000';
+            } else if (p.profile === 'error') {
+                // Glitching colors through history frames
+                let colors = ['#00ffff', '#ff00ff', '#ffffff', '#222'];
+                ctx.fillStyle = colors[(t.cycle + Math.floor(t.x/5)) % colors.length];
+            } else {
+                ctx.fillStyle = p.color;
+            }
             ctx.fillRect(t.x, t.y, UNIT, UNIT);
         });
+
         if (p.alive) {
-            ctx.fillStyle = p.ghost > 0 ? '#fff' : p.color;
-            ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
-            ctx.fillRect(p.x, p.y, UNIT, UNIT);
+            if (p.ghost > 0) {
+                ctx.fillStyle = '#fff';
+            } else if (p.profile === 'ultimate') {
+                ctx.fillStyle = '#ff1a1a';
+                ctx.shadowColor = '#ff0000';
+                ctx.shadowBlur = 18;
+            } else if (p.profile === 'error') {
+                // Head flashes erratically
+                ctx.fillStyle = (glitchTick % 4 < 2) ? '#ffffff' : '#ff00ff';
+                ctx.shadowColor = '#00ffff';
+                ctx.shadowBlur = 20;
+            } else {
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 10;
+            }
+            
+            // Draw bot head with visual offsets if ERR0R profile is applied
+            let headX = p.x;
+            let headY = p.y;
+            if (p.profile === 'error' && glitchTick % 12 < 2) {
+                headX += (Math.random() > 0.5 ? 4 : -4);
+                headY += (Math.random() > 0.5 ? 4 : -4);
+            }
+            
+            ctx.fillRect(headX, headY, UNIT, UNIT);
             ctx.shadowBlur = 0;
         }
     });
+    
     update();
     requestAnimationFrame(draw);
 }
