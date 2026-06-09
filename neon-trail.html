@@ -121,11 +121,11 @@ function reset() {
         botColor = '#00ffff';
         botProfile = 'error';
     } else if (botSetting === 'failed') {
-        botColor = '#d97706'; // Dull Orange
+        botColor = '#d97706'; 
         botProfile = 'failed';
-        botSpeed = 0.8; // Slower movement
+        botSpeed = 0.8; 
     } else if (botSetting === 'destroyer') {
-        botColor = '#ea580c'; // Aggressive Neon Orange
+        botColor = '#ea580c'; 
         botProfile = 'destroyer';
         botSpeed = 1.1;
     }
@@ -259,14 +259,13 @@ function update() {
             let target = null;
             let minDist = (p.profile === 'ultimate') ? 350 : 200; 
             
-            if (p.profile === 'destroyer') minDist = 400; // Large hunt radius
+            if (p.profile === 'destroyer') minDist = 400; 
 
             powerups.forEach(pu => {
                 let d = Math.hypot(p.x - pu.x, p.y - pu.y);
                 if (d < minDist) { minDist = d; target = pu; }
             });
 
-            // Destroyer hunts closest live human player if no powerups exist
             if (!target && p.profile === 'destroyer') {
                 let humanTarget = players.find(pl => pl.active && pl.alive && pl.team === 'human');
                 if (humanTarget) target = humanTarget;
@@ -282,9 +281,9 @@ function update() {
 
             let turnChance = 0.1;
             if (p.profile === 'ultimate') turnChance = 0.15;
-            if (p.profile === 'destroyer') turnChance = 0.25; // Sharp hunting logic
+            if (p.profile === 'destroyer') turnChance = 0.25; 
             if (p.profile === 'error') turnChance = 0.4;
-            if (p.profile === 'failed') turnChance = 0.04; // Very sluggish reactions
+            if (p.profile === 'failed') turnChance = 0.04; 
 
             if (target && Math.random() < turnChance) {
                 if (Math.abs(p.x - target.x) > 10 && p.dy !== 0) {
@@ -299,7 +298,7 @@ function update() {
             let lookAheadDist = 8;
             if (p.profile === 'ultimate') lookAheadDist = 14;
             if (p.profile === 'destroyer') lookAheadDist = 12;
-            if (p.profile === 'failed') lookAheadDist = 5; // Crashes more easily due to late checks
+            if (p.profile === 'failed') lookAheadDist = 5; 
             if (p.profile === 'error' && Math.random() < 0.2) lookAheadDist = 4;
 
             if (checkAhead(p.dx, p.dy, lookAheadDist) || (Math.random() < (p.profile === 'error' ? 0.04 : (p.profile === 'failed' ? 0.001 : 0.005)))) {
@@ -311,7 +310,7 @@ function update() {
                 dirs.forEach(d => {
                     let dCount = 0;
                     let cap = (p.profile === 'ultimate' || p.profile === 'destroyer') ? 50 : 30;
-                    if (p.profile === 'failed') cap = 15; // Slow analytical response limits space search
+                    if (p.profile === 'failed') cap = 15; 
                     
                     while(dCount < cap && !checkCollision(p.x + d.dx*(dCount+1), p.y + d.dy*(dCount+1), p)) { dCount++; }
                     if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
@@ -320,13 +319,13 @@ function update() {
             }
             
             if (p.profile === 'error') {
-                p.isBoosting = (Math.random() < 0.3 && p.boost > 20);
+                p.isBoosting = (Math.random() < 0.3 && p.boost > 0);
             } else if (p.profile === 'destroyer') {
-                p.isBoosting = (p.boost > 15 && !checkAhead(p.dx, p.dy, 25)); // Highly aggressive continuous boosting
+                p.isBoosting = (p.boost > 0 && !checkAhead(p.dx, p.dy, 25)); 
             } else if (p.profile === 'failed') {
-                p.isBoosting = false; // Failed bot boost engine is completely broken
+                p.isBoosting = false; 
             } else {
-                p.isBoosting = (p.boost > 40 && !checkAhead(p.dx, p.dy, 50));
+                p.isBoosting = (p.boost > 0 && !checkAhead(p.dx, p.dy, 50));
             }
         }
     });
@@ -335,14 +334,23 @@ function update() {
         if (!p.active || !p.alive) return;
         if (p.ghost > 0) p.ghost--;
         
-        let spd = (p.isBoosting && p.boost > 10) ? 2 : 1;
+        // Allowed to boost all the way down to 0
+        let spd = (p.isBoosting && p.boost > 0) ? 2 : 1;
         
         if (p.profile === 'error') {
             p.speedMult = (glitchTick % 20 < 5) ? 1.8 : (glitchTick % 30 === 0 ? 0.5 : 1);
         }
         
         spd *= p.speedMult;
-        if (p.isBoosting) p.boost -= 2.5; else if (p.boost < 100) p.boost += 0.15;
+        
+        // Modified mechanics: Consume if active and available, always regenerate when not boosting (even at 0)
+        if (p.isBoosting && p.boost > 0) {
+            p.boost -= 2.5;
+            if (p.boost < 0) p.boost = 0;
+        } else if (p.boost < 100) {
+            p.boost += 0.15;
+            if (p.boost > 100) p.boost = 100;
+        }
         
         for (let i = 0; i < spd; i++) {
             p.x += p.dx; p.y += p.dy;
@@ -412,10 +420,8 @@ function draw() {
             } else if (p.profile === 'ultimate') {
                 ctx.fillStyle = (Math.floor(t.x + t.y) % 15 < 7) ? '#ff1a1a' : '#2b0000';
             } else if (p.profile === 'destroyer') {
-                // Volcanic lava flow pattern
                 ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 4 === 0) ? '#eab308' : '#ea580c';
             } else if (p.profile === 'failed') {
-                // Sputtering, decaying rusty look
                 ctx.fillStyle = (Math.floor(t.x + t.y) % 8 < 3) ? '#78350f' : ((t.cycle % 40 < 5) ? '#000' : '#b45309');
             } else if (p.profile === 'error') {
                 let colors = ['#00ffff', '#ff00ff', '#ffffff', '#222'];
@@ -438,7 +444,6 @@ function draw() {
                 ctx.shadowColor = '#ff4500';
                 ctx.shadowBlur = 22;
             } else if (p.profile === 'failed') {
-                // Flickers out randomly due to bad core engine hardware
                 ctx.fillStyle = (glitchTick % 30 < 25) ? '#b45309' : '#451a03';
                 ctx.shadowColor = '#78350f';
                 ctx.shadowBlur = (glitchTick % 30 < 25) ? 6 : 0;
