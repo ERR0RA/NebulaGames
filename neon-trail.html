@@ -192,7 +192,6 @@ function reset() {
         players[2].active = true;
         players[2].team = 'red_bot';
         
-        // If they are exactly the same type, apply alternate distinct color styling to Bot 2
         if (isSameBot) {
             players[2].isAltColor = true;
         }
@@ -240,7 +239,7 @@ document.getElementById('btn-boost').ontouchstart = (e) => { e.preventDefault();
 document.getElementById('btn-boost').ontouchend = (e) => { e.preventDefault(); players[0].isBoosting = false; };
 
 window.onkeydown = e => {
-    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "ShiftRight", "ShiftLeft"].includes(e.code)) e.preventDefault();
+    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "ShiftRight", "ShiftLeft", "KeyF"].includes(e.code)) e.preventDefault();
     const mode = document.getElementById('gameMode').value;
     if (players[0].active && !players[0].isBot) {
         if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
@@ -248,7 +247,7 @@ window.onkeydown = e => {
         if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
         if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
         
-        if (e.code === 'Space' || (mode === 'pve' && e.code === 'Enter')) players[0].isBoosting = true;
+        if (e.code === 'Space' || e.code === 'KeyF' || (mode === 'pve' && e.code === 'Enter')) players[0].isBoosting = true;
     }
     if (players[1].active) {
         if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
@@ -261,7 +260,7 @@ window.onkeydown = e => {
 
 window.onkeyup = e => {
     const mode = document.getElementById('gameMode').value;
-    if (e.code === 'Space' || (mode === 'pve' && e.code === 'Enter')) players[0].isBoosting = false;
+    if (e.code === 'Space' || e.code === 'KeyF' || (mode === 'pve' && e.code === 'Enter')) players[0].isBoosting = false;
     if (players[1].active && (e.code === 'Enter' || e.code === 'ShiftRight')) players[1].isBoosting = false;
 };
 
@@ -480,7 +479,6 @@ function draw() {
             if (t.isGhost) {
                 ctx.fillStyle = '#333';
             } else if (p.isAltColor) {
-                // Modified aesthetic pattern for identical matching bot configurations
                 ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 5 === 0) ? '#22c55e' : '#14532d';
             } else if (p.profile === 'ultimate') {
                 ctx.fillStyle = (Math.floor(t.x + t.y) % 15 < 7) ? '#ff1a1a' : '#2b0000';
