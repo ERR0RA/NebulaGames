@@ -68,14 +68,6 @@
             <option value="pvp">Human vs Human</option>
             <option value="bvb">Bot vs Bot (Spectate)</option>
         </select>
-        <select id="botType">
-            <option value="default">BOT 2: Default</option>
-            <option value="failed">BOT 2: Failed</option>
-            <option value="void">BOT 2: V0ID</option>
-            <option value="ultimate">BOT 2: Ultimate</option>
-            <option value="destroyer">BOT 2: Destroyer</option>
-            <option value="error">BOT 2: ERR0R</option>
-        </select>
         <select id="botType2" style="display: none;">
             <option value="default">BOT 1: Default</option>
             <option value="failed">BOT 1: Failed</option>
@@ -83,6 +75,14 @@
             <option value="ultimate">BOT 1: Ultimate</option>
             <option value="destroyer">BOT 1: Destroyer</option>
             <option value="error">BOT 1: ERR0R</option>
+        </select>
+        <select id="botType">
+            <option value="default">BOT: Default</option>
+            <option value="failed">BOT: Failed</option>
+            <option value="void">BOT: V0ID</option>
+            <option value="ultimate">BOT: Ultimate</option>
+            <option value="destroyer">BOT: Destroyer</option>
+            <option value="error">BOT: ERR0R</option>
         </select>
         <label class="toggle-label">
             <input type="checkbox" id="usePowerUps" checked> POWER-UPS
@@ -113,13 +113,13 @@ let glitchTick = 0;
 let bot1Label = "BOT 1", bot2Label = "BOT 2";
 
 document.getElementById('gameMode').addEventListener('change', function() {
-    const b2Menu = document.getElementById('botType2');
+    const b1Menu = document.getElementById('botType2');
     const mainBotMenu = document.getElementById('botType');
     if (this.value === 'bvb') {
-        b2Menu.style.display = 'inline-block';
+        b1Menu.style.display = 'inline-block';
         mainBotMenu.options[0].text = "BOT 2: Default";
     } else {
-        b2Menu.style.display = 'none';
+        b1Menu.style.display = 'none';
         mainBotMenu.options[0].text = "BOT: Default";
     }
 });
