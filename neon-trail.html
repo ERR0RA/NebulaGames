@@ -69,12 +69,20 @@
             <option value="bvb">Bot vs Bot (Spectate)</option>
         </select>
         <select id="botType">
-            <option value="default">BOT: Default</option>
-            <option value="failed">BOT: Failed</option>
-            <option value="void">BOT: V0ID</option>
-            <option value="ultimate">BOT: Ultimate</option>
-            <option value="destroyer">BOT: Destroyer</option>
-            <option value="error">BOT: ERR0R</option>
+            <option value="default">BOT 2: Default</option>
+            <option value="failed">BOT 2: Failed</option>
+            <option value="void">BOT 2: V0ID</option>
+            <option value="ultimate">BOT 2: Ultimate</option>
+            <option value="destroyer">BOT 2: Destroyer</option>
+            <option value="error">BOT 2: ERR0R</option>
+        </select>
+        <select id="botType2" style="display: none;">
+            <option value="default">BOT 1: Default</option>
+            <option value="failed">BOT 1: Failed</option>
+            <option value="void">BOT 1: V0ID</option>
+            <option value="ultimate">BOT 1: Ultimate</option>
+            <option value="destroyer">BOT 1: Destroyer</option>
+            <option value="error">BOT 1: ERR0R</option>
         </select>
         <label class="toggle-label">
             <input type="checkbox" id="usePowerUps" checked> POWER-UPS
@@ -103,42 +111,54 @@ let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0
 let powerupTimer = 0;
 let glitchTick = 0;
 
+// Dynamic menu layout adjustments
+document.getElementById('gameMode').addEventListener('change', function() {
+    const b2Menu = document.getElementById('botType2');
+    const mainBotMenu = document.getElementById('botType');
+    if (this.value === 'bvb') {
+        b2Menu.style.display = 'inline-block';
+        mainBotMenu.options[0].text = "BOT 2: Default";
+    } else {
+        b2Menu.style.display = 'none';
+        mainBotMenu.options[0].text = "BOT: Default";
+    }
+});
+
+function getBotSettings(setting) {
+    let color = '#f00';
+    let profile = 'default';
+    let speed = 1;
+    
+    if (setting === 'ultimate') {
+        color = '#ff3333'; profile = 'ultimate'; speed = 1.2;
+    } else if (setting === 'error') {
+        color = '#00ffff'; profile = 'error';
+    } else if (setting === 'failed') {
+        color = '#d97706'; profile = 'failed'; speed = 0.8; 
+    } else if (setting === 'destroyer') {
+        color = '#ea580c'; profile = 'destroyer'; speed = 1.1;
+    } else if (setting === 'void') {
+        color = '#a855f7'; profile = 'void'; speed = 1.0; 
+    }
+    return { color, profile, speed };
+}
+
 function reset() {
     const mode = document.getElementById('gameMode').value;
     const botSetting = document.getElementById('botType').value;
+    const bot2Setting = document.getElementById('botType2').value;
+    
     grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
     powerups = [];
     powerupTimer = 0;
     
-    let botColor = '#f00';
-    let botProfile = 'default';
-    let botSpeed = 1;
-    
-    if (botSetting === 'ultimate') {
-        botColor = '#ff3333';
-        botProfile = 'ultimate';
-        botSpeed = 1.2;
-    } else if (botSetting === 'error') {
-        botColor = '#00ffff';
-        botProfile = 'error';
-    } else if (botSetting === 'failed') {
-        botColor = '#d97706'; 
-        botProfile = 'failed';
-        botSpeed = 0.8; 
-    } else if (botSetting === 'destroyer') {
-        botColor = '#ea580c'; 
-        botProfile = 'destroyer';
-        botSpeed = 1.1;
-    } else if (botSetting === 'void') {
-        botColor = '#a855f7'; 
-        botProfile = 'void';
-        botSpeed = 1.0; 
-    }
+    let b2 = getBotSettings(botSetting);
+    let b1 = getBotSettings(bot2Setting);
 
     players = [
         { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, speedMult: 1, isBot: false, profile: 'player' },
         { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, speedMult: 1, isBot: false, profile: 'player' },
-        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: botColor, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: botSpeed, isBot: true, profile: botProfile }
+        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: b2.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: b2.speed, isBot: true, profile: b2.profile }
     ];
 
     const fillBar = document.getElementById('p3-fill');
@@ -153,9 +173,22 @@ function reset() {
         players[0].active = true;
         players[0].isBot = true; 
         players[0].team = 'green_bot';
+        players[0].color = b1.color;
+        players[0].profile = b1.profile;
+        players[0].speedMult = b1.speed;
         players[1].active = false;
         players[2].active = true;
         players[2].team = 'red_bot';
+        
+        const f1 = document.getElementById('p1-fill');
+        if (bot2Setting === 'ultimate') f1.style.background = '#444444';
+        else if (bot2Setting === 'error') f1.style.background = '#ff00ff';
+        else if (bot2Setting === 'failed') f1.style.background = '#78350f';
+        else if (bot2Setting === 'destroyer') f1.style.background = '#ff4500';
+        else if (bot2Setting === 'void') f1.style.background = '#6b21a8';
+        else f1.style.background = '#0f0';
+    } else {
+        document.getElementById('p1-fill').style.background = '#0f0';
     }
 
     if (mode === 'pvp') players[1].team = 'red';
@@ -187,7 +220,7 @@ document.getElementById('btn-boost').ontouchstart = (e) => { e.preventDefault();
 document.getElementById('btn-boost').ontouchend = (e) => { e.preventDefault(); players[0].isBoosting = false; };
 
 window.onkeydown = e => {
-    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"].includes(e.code)) e.preventDefault();
+    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "ShiftRight", "ShiftLeft"].includes(e.code)) e.preventDefault();
     const mode = document.getElementById('gameMode').value;
     if (players[0].active && !players[0].isBot) {
         if ((e.key === 'w' || (mode === 'pve' && e.key === 'ArrowUp')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
@@ -195,24 +228,21 @@ window.onkeydown = e => {
         if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
         if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
         
-        if (e.code === 'Space') players[0].isBoosting = true;
-        // P1 can also use Enter to boost if playing Human vs Bot mode
-        if (mode === 'pve' && e.code === 'Enter') players[0].isBoosting = true;
+        if (e.code === 'Space' || (mode === 'pve' && e.code === 'Enter')) players[0].isBoosting = true;
     }
     if (players[1].active) {
         if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
         if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
         if (e.key === 'ArrowLeft' && players[1].dx === 0) { players[1].dx = -UNIT; players[1].dy = 0; }
         if (e.key === 'ArrowRight' && players[1].dx === 0) { players[1].dx = UNIT; players[1].dy = 0; }
-        if (e.key === 'Enter') players[1].isBoosting = true;
+        if (e.code === 'Enter' || e.code === 'ShiftRight') players[1].isBoosting = true;
     }
 };
 
 window.onkeyup = e => {
     const mode = document.getElementById('gameMode').value;
-    if (e.code === 'Space') players[0].isBoosting = false;
-    if (mode === 'pve' && e.code === 'Enter') players[0].isBoosting = false;
-    if (players[1].active && e.key === 'Enter') players[1].isBoosting = false;
+    if (e.code === 'Space' || (mode === 'pve' && e.code === 'Enter')) players[0].isBoosting = false;
+    if (players[1].active && (e.code === 'Enter' || e.code === 'ShiftRight')) players[1].isBoosting = false;
 };
 
 function checkCollision(x, y, self) {
@@ -348,7 +378,7 @@ function update() {
         if (!p.active || !p.alive) return;
         if (p.ghost > 0) p.ghost--;
         
-        // Boost evaluates to a flat true/false multiplier. Pressing space + enter cannot double this multiplier.
+        // Static Boolean value handles velocity condition. Velocity cannot multiply or double.
         let spd = (p.isBoosting && p.boost > 0) ? 2 : 1;
         
         if (p.profile === 'error') {
