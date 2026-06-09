@@ -70,7 +70,9 @@
         </select>
         <select id="botType">
             <option value="default">BOT: Default</option>
+            <option value="failed">BOT: Failed</option>
             <option value="ultimate">BOT: Ultimate</option>
+            <option value="destroyer">BOT: Destroyer</option>
             <option value="error">BOT: ERR0R</option>
         </select>
         <label class="toggle-label">
@@ -107,18 +109,25 @@ function reset() {
     powerups = [];
     powerupTimer = 0;
     
-    // Set Bot configuration aesthetics and profiles
     let botColor = '#f00';
     let botProfile = 'default';
     let botSpeed = 1;
     
     if (botSetting === 'ultimate') {
-        botColor = '#ff3333'; // Menacing bright red paired with charcoal elements in drawing loop
+        botColor = '#ff3333';
         botProfile = 'ultimate';
         botSpeed = 1.2;
     } else if (botSetting === 'error') {
-        botColor = '#00ffff'; // Glitching base cyan
+        botColor = '#00ffff';
         botProfile = 'error';
+    } else if (botSetting === 'failed') {
+        botColor = '#d97706'; // Dull Orange
+        botProfile = 'failed';
+        botSpeed = 0.8; // Slower movement
+    } else if (botSetting === 'destroyer') {
+        botColor = '#ea580c'; // Aggressive Neon Orange
+        botProfile = 'destroyer';
+        botSpeed = 1.1;
     }
 
     players = [
@@ -127,10 +136,11 @@ function reset() {
         { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: botColor, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: botSpeed, isBot: true, profile: botProfile }
     ];
 
-    // Adjust UI indicator meter for Bot variant
     const fillBar = document.getElementById('p3-fill');
     if (botSetting === 'ultimate') fillBar.style.background = '#444444';
     else if (botSetting === 'error') fillBar.style.background = '#ff00ff';
+    else if (botSetting === 'failed') fillBar.style.background = '#78350f';
+    else if (botSetting === 'destroyer') fillBar.style.background = '#ff4500';
     else fillBar.style.background = '#f00';
 
     if (mode === 'bvb') {
@@ -215,8 +225,8 @@ function checkCollision(x, y, self) {
 function applyPowerUp(player, type) {
     if (type === 'ghost') player.ghost = 180;
     if (type === 'speed') {
-        player.speedMult = (player.profile === 'ultimate') ? 2.4 : 2;
-        setTimeout(() => { player.speedMult = (player.profile === 'ultimate') ? 1.2 : 1; }, 4000);
+        player.speedMult = (player.profile === 'ultimate' || player.profile === 'destroyer') ? 2.4 : 2;
+        setTimeout(() => { player.speedMult = (player.profile === 'ultimate') ? 1.2 : (player.profile === 'destroyer' ? 1.1 : (player.profile === 'failed' ? 0.8 : 1)); }, 4000);
     }
     if (type === 'clear') {
         grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
@@ -248,10 +258,19 @@ function update() {
         if (p.active && p.alive && p.isBot) {
             let target = null;
             let minDist = (p.profile === 'ultimate') ? 350 : 200; 
+            
+            if (p.profile === 'destroyer') minDist = 400; // Large hunt radius
+
             powerups.forEach(pu => {
                 let d = Math.hypot(p.x - pu.x, p.y - pu.y);
                 if (d < minDist) { minDist = d; target = pu; }
             });
+
+            // Destroyer hunts closest live human player if no powerups exist
+            if (!target && p.profile === 'destroyer') {
+                let humanTarget = players.find(pl => pl.active && pl.alive && pl.team === 'human');
+                if (humanTarget) target = humanTarget;
+            }
 
             const checkAhead = (dx, dy, dist) => {
                 for(let i=1; i<=dist; i++) {
@@ -263,7 +282,9 @@ function update() {
 
             let turnChance = 0.1;
             if (p.profile === 'ultimate') turnChance = 0.15;
-            if (p.profile === 'error') turnChance = 0.4; // Glitchy, highly erratic movement adjustments
+            if (p.profile === 'destroyer') turnChance = 0.25; // Sharp hunting logic
+            if (p.profile === 'error') turnChance = 0.4;
+            if (p.profile === 'failed') turnChance = 0.04; // Very sluggish reactions
 
             if (target && Math.random() < turnChance) {
                 if (Math.abs(p.x - target.x) > 10 && p.dy !== 0) {
@@ -276,10 +297,12 @@ function update() {
             }
 
             let lookAheadDist = 8;
-            if (p.profile === 'ultimate') lookAheadDist = 14; // Dodges obstacles early
-            if (p.profile === 'error' && Math.random() < 0.2) lookAheadDist = 4; // Makes sudden close-call cuts
+            if (p.profile === 'ultimate') lookAheadDist = 14;
+            if (p.profile === 'destroyer') lookAheadDist = 12;
+            if (p.profile === 'failed') lookAheadDist = 5; // Crashes more easily due to late checks
+            if (p.profile === 'error' && Math.random() < 0.2) lookAheadDist = 4;
 
-            if (checkAhead(p.dx, p.dy, lookAheadDist) || (Math.random() < (p.profile === 'error' ? 0.04 : 0.005))) {
+            if (checkAhead(p.dx, p.dy, lookAheadDist) || (Math.random() < (p.profile === 'error' ? 0.04 : (p.profile === 'failed' ? 0.001 : 0.005)))) {
                 const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}]
                     .filter(d => !(d.dx === -p.dx && d.dy === -p.dy))
                     .sort(() => Math.random() - 0.5); 
@@ -287,7 +310,9 @@ function update() {
                 let bestDir = null, maxDist = -1;
                 dirs.forEach(d => {
                     let dCount = 0;
-                    let cap = (p.profile === 'ultimate') ? 50 : 30;
+                    let cap = (p.profile === 'ultimate' || p.profile === 'destroyer') ? 50 : 30;
+                    if (p.profile === 'failed') cap = 15; // Slow analytical response limits space search
+                    
                     while(dCount < cap && !checkCollision(p.x + d.dx*(dCount+1), p.y + d.dy*(dCount+1), p)) { dCount++; }
                     if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
                 });
@@ -296,6 +321,10 @@ function update() {
             
             if (p.profile === 'error') {
                 p.isBoosting = (Math.random() < 0.3 && p.boost > 20);
+            } else if (p.profile === 'destroyer') {
+                p.isBoosting = (p.boost > 15 && !checkAhead(p.dx, p.dy, 25)); // Highly aggressive continuous boosting
+            } else if (p.profile === 'failed') {
+                p.isBoosting = false; // Failed bot boost engine is completely broken
             } else {
                 p.isBoosting = (p.boost > 40 && !checkAhead(p.dx, p.dy, 50));
             }
@@ -308,7 +337,6 @@ function update() {
         
         let spd = (p.isBoosting && p.boost > 10) ? 2 : 1;
         
-        // ERR0R bot variable speed glitch matrix
         if (p.profile === 'error') {
             p.speedMult = (glitchTick % 20 < 5) ? 1.8 : (glitchTick % 30 === 0 ? 0.5 : 1);
         }
@@ -321,7 +349,6 @@ function update() {
             if (checkCollision(p.x, p.y, p)) { p.alive = false; checkWinner(); return; }
             grid[Math.floor(p.x)][Math.floor(p.y)] = p.id;
             
-            // Capture specific glitch properties for the error trail
             let trailMeta = p.ghost > 0;
             p.trail.push({x: p.x, y: p.y, isGhost: trailMeta, cycle: glitchTick});
         }
@@ -383,10 +410,14 @@ function draw() {
             if (t.isGhost) {
                 ctx.fillStyle = '#333';
             } else if (p.profile === 'ultimate') {
-                // Alternating Menacing Red and Charcoal/Dark Crimson stripes
                 ctx.fillStyle = (Math.floor(t.x + t.y) % 15 < 7) ? '#ff1a1a' : '#2b0000';
+            } else if (p.profile === 'destroyer') {
+                // Volcanic lava flow pattern
+                ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 4 === 0) ? '#eab308' : '#ea580c';
+            } else if (p.profile === 'failed') {
+                // Sputtering, decaying rusty look
+                ctx.fillStyle = (Math.floor(t.x + t.y) % 8 < 3) ? '#78350f' : ((t.cycle % 40 < 5) ? '#000' : '#b45309');
             } else if (p.profile === 'error') {
-                // Glitching colors through history frames
                 let colors = ['#00ffff', '#ff00ff', '#ffffff', '#222'];
                 ctx.fillStyle = colors[(t.cycle + Math.floor(t.x/5)) % colors.length];
             } else {
@@ -402,8 +433,16 @@ function draw() {
                 ctx.fillStyle = '#ff1a1a';
                 ctx.shadowColor = '#ff0000';
                 ctx.shadowBlur = 18;
+            } else if (p.profile === 'destroyer') {
+                ctx.fillStyle = '#ff4500';
+                ctx.shadowColor = '#ff4500';
+                ctx.shadowBlur = 22;
+            } else if (p.profile === 'failed') {
+                // Flickers out randomly due to bad core engine hardware
+                ctx.fillStyle = (glitchTick % 30 < 25) ? '#b45309' : '#451a03';
+                ctx.shadowColor = '#78350f';
+                ctx.shadowBlur = (glitchTick % 30 < 25) ? 6 : 0;
             } else if (p.profile === 'error') {
-                // Head flashes erratically
                 ctx.fillStyle = (glitchTick % 4 < 2) ? '#ffffff' : '#ff00ff';
                 ctx.shadowColor = '#00ffff';
                 ctx.shadowBlur = 20;
@@ -413,7 +452,6 @@ function draw() {
                 ctx.shadowBlur = 10;
             }
             
-            // Draw bot head with visual offsets if ERR0R profile is applied
             let headX = p.x;
             let headY = p.y;
             if (p.profile === 'error' && glitchTick % 12 < 2) {
