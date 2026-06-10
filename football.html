@@ -3,45 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2v2 NEON STRIKER: SQUAD AI</title>
+    <title> NEON 26: HYPER-STRIKER SQUAD AI</title>
     <style>
-        body { margin: 0; background: #080812; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Arial Black', sans-serif; overflow: hidden; user-select: none; }
-        #canvas-wrapper { position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 0 60px rgba(0, 255, 136, 0.25); }
-        canvas { background: #0d1117; border: 4px solid #30363d; display: block; }
+        body { margin: 0; background: #05050d; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: white; font-family: 'Arial Black', sans-serif; overflow: hidden; user-select: none; }
+        #canvas-wrapper { position: relative; border-radius: 16px; overflow: hidden; box-shadow: 0 0 80px rgba(0, 255, 136, 0.15); border: 1px solid rgba(255,255,255,0.1); }
+        canvas { background: #0b1c13; display: block; }
         
         /* HUD Display */
-        #hud { display: flex; justify-content: space-between; width: 900px; font-size: 54px; font-weight: 900; margin-bottom: 10px; font-style: italic; }
-        .red-score { color: #ff4757; text-shadow: 0 0 20px rgba(255,71,87,0.6); }
-        .blue-score { color: #2e86de; text-shadow: 0 0 20px rgba(46,134,222,0.6); }
+        #hud { display: flex; justify-content: space-between; width: 1000px; font-size: 40px; font-weight: 900; margin-bottom: 12px; font-style: italic; background: rgba(13, 17, 23, 0.85); padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); box-sizing: border-box;}
+        .red-score { color: #ff3838; text-shadow: 0 0 15px rgba(255,56,56,0.5); }
+        .blue-score { color: #17c0eb; text-shadow: 0 0 15px rgba(23,192,235,0.5); }
         
         /* Overlay UI Menus */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 10, 25, 0.9); z-index: 10; transition: 0.3s; }
-        h1 { margin: 0 0 20px; color: #00ff88; font-size: 46px; letter-spacing: 4px; text-shadow: 0 0 25px rgba(0,255,136,0.5); text-align: center; }
-        .btn { padding: 16px 40px; font-size: 18px; font-family: inherit; background: linear-gradient(45deg, #00ff88, #2e86de); border: none; color: white; border-radius: 8px; cursor: pointer; box-shadow: 0 5px 20px rgba(0,255,136,0.3); transition: 0.2s; }
-        .btn:hover { transform: scale(1.05); box-shadow: 0 8px 25px rgba(0,255,136,0.5); }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(6, 6, 14, 0.95); z-index: 10; transition: 0.3s; }
+        h1 { margin: 0 0 10px; color: #00ff88; font-size: 50px; letter-spacing: 4px; text-shadow: 0 0 35px rgba(0,255,136,0.4); text-align: center; }
+        h2 { margin: 0 0 30px; font-size: 16px; color: #8b949e; letter-spacing: 2px; font-weight: normal; }
+        .btn { padding: 18px 50px; font-size: 20px; font-family: inherit; background: linear-gradient(135deg, #00ff88, #0575e6); border: none; color: white; border-radius: 30px; cursor: pointer; box-shadow: 0 10px 25px rgba(0,255,136,0.3); transition: 0.2s; font-weight: bold; text-transform: uppercase; }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 12px 30px rgba(0,255,136,0.5); }
         
-        #goal-banner { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 70px; font-weight: 900; color: #f1c40f; text-shadow: 0 0 30px #f1c40f; display: none; pointer-events: none; z-index: 5; font-style: italic; }
+        #goal-banner { position: absolute; top: 40%; width: 100%; text-align: center; font-size: 85px; font-weight: 900; color: #fff; text-shadow: 0 0 30px #f1c40f; display: none; pointer-events: none; z-index: 5; font-style: italic; }
         
-        .controls-info { font-size: 13px; font-family: 'Segoe UI', sans-serif; color: #8b949e; margin-top: 15px; text-align: center; line-height: 1.6; max-width: 600px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
-        b { color: #ffcc00; }
+        .controls-grid { display: flex; gap: 30px; margin-top: 25px; text-align: left; max-width: 800px; }
+        .control-card { background: rgba(255,255,255,0.03); padding: 15px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); font-size: 13px; font-family: 'Segoe UI', sans-serif; color: #a3b1cc; line-height: 1.6; flex: 1; }
+        .control-card b { color: #00ff88; display: block; font-size: 15px; margin-bottom: 5px; font-family: sans-serif; }
+        .control-card span { color: #ffcc00; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="hud">
     <div id="s1" class="red-score">0</div>
-    <div style="font-size: 16px; align-self: center; letter-spacing: 6px; color: #8b949e; font-weight: normal;">STRIKER 2v2</div>
+    <div style="font-size: 14px; align-self: center; letter-spacing: 8px; color: #8b949e; font-weight: normal; text-transform: uppercase;">FC 26 PRO NEON EDITION</div>
     <div id="s2" class="blue-score">0</div>
 </div>
 
 <div id="canvas-wrapper">
     <div id="menu-screen" class="overlay">
-        <h1 id="menu-title">NEON STRIKER: MULTI-AI</h1>
-        <button class="btn" onclick="initiateGame()">START MATCH</button>
-        <div class="controls-info">
-            <b>TEAM RED (Left):</b> [W, A, D] Move & Jump | [S] Swap Control Character<br>
-            <b>TEAM BLUE (Right):</b> [▲, ◀, ▶] Move & Jump | [▼] Swap Control Character<br>
-            <i>Idle unselected squad teammates are instantly driven by advanced positional tactical AI models.</i>
+        <h1 id="menu-title">Neon 26: HYPER STRIKER</h1>
+        <h2>ADVANCED PRO TAC-AI INTEGRATION</h2>
+        <button class="btn" onclick="initiateGame()">Kick Off</button>
+        
+        <div class="controls-grid">
+            <div class="control-card">
+                <b>TEAM RED (LEFT OUTPOST)</b>
+                Movement: <span>[W, A, S, D]</span><br>
+                Action (Pass/Shoot): <span>[Spacebar]</span><br>
+                Cycle Active Player: <span>[ShiftKeyLeft]</span>
+            </div>
+            <div class="control-card">
+                <b>TEAM BLUE (RIGHT OUTPOST)</b>
+                Movement: <span>[▲, ◀, ▼, ▶]</span><br>
+                Action (Pass/Shoot): <span>[Enter]</span><br>
+                Cycle Active Player: <span>[ControlKeyRight]</span>
+            </div>
         </div>
     </div>
     
@@ -52,31 +66,30 @@
 <script>
     const canvas = document.getElementById('field');
     const ctx = canvas.getContext('2d');
-    canvas.width = 900; canvas.height = 450;
+    canvas.width = 1000; canvas.height = 550;
 
-    // --- AUDIO GENERATION MODULE (Web Audio API Engine) ---
+    // --- AUDIO PROCEDURAL SYSTEM ENGINE ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function synthSound(freq, type, duration, volRamptown=true) {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        if (volRamptown) {
+    function synthSound(freq, type, duration, vol=0.15) {
+        try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-        }
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        } catch(e){}
     }
 
-    // Physics constants
-    const gravity = 0.48;
-    const friction = 0.988;
-    const FLOOR_Y = 450;
+    // Gameplay Engine Settings
+    const friction = 0.982;
     const MAX_SCORE = 5;
+    const GOAL_TOP = 190;
+    const GOAL_BOTTOM = 360;
 
     let score1 = 0, score2 = 0;
     let matchRunning = false;
@@ -84,200 +97,212 @@
     let screenShakeAmount = 0;
     
     const particles = [];
-    const ball = { x: 450, y: 180, vx: 0, vy: 0, r: 12, bounciness: 0.78, lastTouchTeam: 0, trail: [] };
+
+    // --- TRUE 3D-CONTEXT BALL OBJECT ---
+    const ball = { 
+        x: 500, y: 275, z: 0, 
+        vx: 0, vy: 0, vz: 0, 
+        r: 10, bounciness: 0.75, 
+        lastTouchTeam: 0, trail: [] 
+    };
 
     class Player {
         constructor(x, y, color, team, id) {
-            this.x = x; this.y = y; this.vx = 0; this.vy = 0;
+            this.x = x; this.y = y; this.z = 0;
+            this.vx = 0; this.vy = 0; this.vz = 0;
             this.color = color; this.team = team; this.id = id;
-            this.active = false; this.grounded = false;
-            this.animTimer = 0;
-            this.w = 28; this.h = 56;
-            this.accel = 0.75;
-            this.maxSpeed = 6.5;
+            this.active = false;
+            this.radius = 16;
+            this.accel = 0.55;
+            this.maxSpeed = 5.2;
+            this.kickCooldown = 0;
         }
 
         update(isManual, controls) {
-            this.animTimer += Math.abs(this.vx) * 0.05;
+            if(this.kickCooldown > 0) this.kickCooldown--;
 
             if (isManual) {
-                // Manual input handling matrix maps
-                if (keys[controls.left]) this.vx -= this.accel;
-                else if (keys[controls.right]) this.vx += this.accel;
-                else this.vx *= 0.82;
+                // Handling Linear Diagonal Normalizations
+                let moveX = 0; let moveY = 0;
+                if (keys[controls.left]) moveX -= 1;
+                if (keys[controls.right]) moveX += 1;
+                if (keys[controls.up]) moveY -= 1;
+                if (keys[controls.down]) moveY += 1;
 
-                if (keys[controls.up] && this.grounded) {
-                    this.vy = -12;
-                    this.grounded = false;
-                    synthSound(180, 'triangle', 0.15);
+                if (moveX !== 0 || moveY !== 0) {
+                    let len = Math.sqrt(moveX*moveX + moveY*moveY);
+                    this.vx += (moveX / len) * this.accel;
+                    this.vy += (moveY / len) * this.accel;
+                } else {
+                    this.vx *= 0.84; this.vy *= 0.84;
+                }
+
+                // Action Mechanic Matrix (Pass / Shoot Modifier Context)
+                if (keys[controls.action] && this.kickCooldown === 0) {
+                    let dist = Math.hypot(ball.x - this.x, ball.y - this.y);
+                    if (dist < this.radius + ball.r + 15 && ball.z < 35) {
+                        this.executeContextKick();
+                    }
                 }
             } else {
-                // --- STRATEGIC COOPERATIVE AI MODULE ---
-                let targetX;
-                const isBallInTeamHalf = (this.team === 1) ? (ball.x < canvas.width / 2) : (ball.x >= canvas.width / 2);
+                // --- ADVANCED PRO SQUAD TAC-AI ---
+                let targetX, targetY;
+                let distToBall = Math.hypot(ball.x - this.x, ball.y - this.y);
 
-                if (this.id === 0) { 
-                    // Dynamic Primary Interceptor/Attacker Role
-                    targetX = ball.x + (this.team === 1 ? -15 : 15);
-                } else { 
-                    // Tactical Zone Defense & Rebound Covering Role
-                    if (isBallInTeamHalf) {
-                        targetX = (this.team === 1) ? Math.max(40, ball.x - 90) : Math.min(canvas.width - 40, ball.x + 90);
+                if (this.id === 0) {
+                    // Attack Attacking Striker Core
+                    let leadBonus = (this.team === 1) ? 25 : -25;
+                    targetX = ball.x + leadBonus;
+                    targetY = ball.y;
+                    
+                    // Trigger Passive interception sweeps automatically
+                    if(distToBall < 45 && ball.z < 25 && Math.random() < 0.4) {
+                        this.executeContextKick();
+                    }
+                } else {
+                    // Holding Midfield Anchor & Lane Interceptor
+                    if ((this.team === 1 && ball.x < 500) || (this.team === 2 && ball.x > 500)) {
+                        targetX = ball.x + (this.team === 1 ? -60 : 60);
+                        targetY = ball.y;
                     } else {
-                        // Return cleanly to structural home base anchor positions if ball is away
-                        targetX = (this.team === 1) ? 160 : canvas.width - 160;
+                        targetX = (this.team === 1) ? 220 : 780;
+                        targetY = 275 + Math.sin(Date.now() * 0.001) * 80;
                     }
                 }
 
-                // Smooth directional alignment track
-                let distanceDelta = targetX - (this.x + this.w / 2);
-                if (Math.abs(distanceDelta) > 8) {
-                    this.vx += Math.sign(distanceDelta) * 0.45;
-                } else {
-                    this.vx *= 0.8;
-                }
-
-                // Smart Reactive AI Jump conditions
-                const closeToBallX = Math.abs(ball.x - (this.x + this.w / 2)) < 60;
-                const ballThreateningHeight = ball.y < this.y - 20 && ball.y > this.y - 140;
-                if (closeToBallX && ballThreateningHeight && this.grounded && Math.random() < 0.3) {
-                    this.vy = -10.5;
-                    this.grounded = false;
+                let dx = targetX - this.x; let dy = targetY - this.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist > 10) {
+                    this.vx += (dx / dist) * (this.accel * 0.9);
+                    this.vy += (dy / dist) * (this.accel * 0.9);
                 }
             }
 
-            // Standard Kinematics Environment Runs
-            this.vx = Math.max(-this.maxSpeed, Math.min(this.maxSpeed, this.vx));
-            this.vy += gravity; this.x += this.vx; this.y += this.vy;
+            // Standard Velocity Constraints
+            let speed = Math.hypot(this.vx, this.vy);
+            if (speed > this.maxSpeed) {
+                this.vx = (this.vx / speed) * this.maxSpeed;
+                this.vy = (this.vy / speed) * this.maxSpeed;
+            }
 
-            // Pitch Edge Limiters
-            if (this.y + this.h > FLOOR_Y) { this.y = FLOOR_Y - this.h; this.vy = 0; this.grounded = true; }
-            if (this.x < 0) { this.x = 0; this.vx = 0; }
-            if (this.x + this.w > canvas.width) { this.x = canvas.width - this.w; this.vx = 0; }
+            this.x += this.vx; this.y += this.vy;
 
-            // --- DEEP COLLISION KICK MATRIX ---
-            let pCenterX = this.x + this.w / 2;
-            let pCenterY = this.y + this.h / 2;
-            let dx = ball.x - pCenterX;
-            let dy = ball.y - pCenterY;
-            let distance = Math.sqrt(dx * dx + dy * dy);
-            let collisionThreshold = 36; 
+            // Pitch Constraints (Boundary collision walls)
+            if (this.x < 30) { this.x = 30; this.vx = 0; }
+            if (this.x > canvas.width - 30) { this.x = canvas.width - 30; this.vx = 0; }
+            if (this.y < 35) { this.y = 35; this.vy = 0; }
+            if (this.y > canvas.height - 35) { this.y = canvas.height - 35; this.vy = 0; }
 
-            if (distance < collisionThreshold && !roundBreaking) {
+            // Dynamic Proximity Ball Collisions Check (Dribble Vectors)
+            let ballDist = Math.hypot(ball.x - this.x, ball.y - this.y);
+            if (ballDist < this.radius + ball.r && ball.z < 20 && !roundBreaking) {
                 ball.lastTouchTeam = this.team;
-                let forceAngle = Math.atan2(dy, dx);
+                let angle = Math.atan2(ball.y - this.y, ball.x - this.x);
                 
-                // Elastic energy displacement logic shifts velocity context based on speed values
-                let baseVelocityKick = 8.5;
-                let userVelocityBonus = Math.abs(this.vx) * 0.4;
-                
-                ball.vx = Math.cos(forceAngle) * (baseVelocityKick + userVelocityBonus);
-                ball.vy = Math.sin(forceAngle) * baseVelocityKick - 2; // Slight vertical lifting vectors applied
-
-                // Visual-audio strike responses triggers
-                screenShakeAmount = 6;
-                synthSound(260 + (userVelocityBonus * 30), 'square', 0.1);
-                createParticles(ball.x, ball.y, this.color, 8);
-
-                // Instantly displace positions to mitigate overlap looping bugs
-                ball.x = pCenterX + Math.cos(forceAngle) * collisionThreshold;
-                ball.y = pCenterY + Math.sin(forceAngle) * collisionThreshold;
+                // Light push interaction mechanics (Dribbling Feel)
+                ball.vx = Math.cos(angle) * 3.5 + this.vx * 0.6;
+                ball.vy = Math.sin(angle) * 3.5 + this.vy * 0.6;
+                if(ball.z === 0 && Math.random() < 0.15) ball.vz = 1.2; 
             }
+        }
+
+        executeContextKick() {
+            this.kickCooldown = 25;
+            let targetGoalX = (this.team === 1) ? canvas.width - 20 : 20;
+            let targetGoalY = 275 + (Math.random() - 0.5) * 80;
+            
+            let angle = Math.atan2(targetGoalY - this.y, targetGoalX - this.x);
+            
+            // Apply physics velocity calculations
+            ball.vx = Math.cos(angle) * 14.5;
+            ball.vy = Math.sin(angle) * 14.5;
+            ball.vz = 6.5 + Math.random() * 4; // Air Lift Height component
+
+            screenShakeAmount = 5;
+            synthSound(380, 'triangle', 0.18, 0.25);
+            createParticles(ball.x, ball.y, '#ffffff', 12);
         }
 
         draw() {
+            // Drop Shadows Rendering Matrix
             ctx.save();
-            ctx.translate(this.x + this.w / 2, this.y);
-
-            // Translucent Ground Positioning Shadow mapping
-            ctx.fillStyle = "rgba(0,0,0,0.35)";
-            ctx.beginPath(); ctx.ellipse(0, this.h, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
-
-            // Animated walking stride limbs mechanics
-            ctx.strokeStyle = "#1e222b"; ctx.lineWidth = 5; ctx.lineCap = "round";
-            let angleSwing = Math.sin(this.animTimer) * 15;
-            ctx.beginPath(); ctx.moveTo(-6, 35); ctx.lineTo(-6 + angleSwing, this.h); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(6, 35); ctx.lineTo(6 - angleSwing, this.h); ctx.stroke();
-
-            // Render glowing neon jerseys
-            ctx.fillStyle = this.color;
-            ctx.shadowBlur = this.active ? 20 : 6;
-            ctx.shadowColor = this.color;
-            ctx.globalAlpha = this.active ? 1.0 : 0.45;
-            
-            // Draw clean structured pill style forms
+            ctx.fillStyle = "rgba(0,0,0,0.4)";
             ctx.beginPath();
-            ctx.roundRect(-14, 5, this.w, 34, 6);
+            ctx.ellipse(this.x, this.y + 2, this.radius, this.radius*0.5, 0, 0, Math.PI*2);
             ctx.fill();
-            
-            // Stripe decals
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(-14, 16, this.w, 3);
+            ctx.restore();
 
-            // Active structural overhead target icon
+            // Player Outlines Design Setup
+            ctx.save();
+            ctx.lineWidth = this.active ? 4 : 2;
+            ctx.strokeStyle = this.active ? '#ffffff' : 'rgba(255,255,255,0.2)';
+            ctx.fillStyle = this.color;
+            
+            ctx.shadowBlur = this.active ? 20 : 0;
+            ctx.shadowColor = this.color;
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y - this.z, this.radius, 0, Math.PI*2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // Tactical Role Identifier Number Markers
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.id === 0 ? "ST" : "MID", this.x, this.y - this.z + 4);
+
+            // Overhead Play Icon Indicator Visuals
             if (this.active) {
                 ctx.save();
-                ctx.fillStyle = "#f1c40f"; ctx.shadowColor = "#f1c40f"; ctx.shadowBlur = 10;
+                ctx.fillStyle = "#ffcc00";
                 ctx.beginPath();
-                ctx.moveTo(0, -26); ctx.lineTo(-7, -37); ctx.lineTo(7, -37);
+                ctx.moveTo(this.x, this.y - 25);
+                ctx.lineTo(this.x - 6, this.y - 33);
+                ctx.lineTo(this.x + 6, this.y - 33);
                 ctx.fill();
                 ctx.restore();
             }
-
-            // Head units Renders
-            ctx.fillStyle = "#ffebd4"; ctx.shadowBlur = 0;
-            ctx.beginPath(); ctx.arc(0, -6, 11, 0, Math.PI * 2); ctx.fill();
-
-            ctx.restore();
-            ctx.restore();
         }
     }
 
-    // Instantiating both operational squad arrays
-    const teamRed = [new Player(200, 300, '#ff4757', 1, 0), new Player(100, 300, '#ff4757', 1, 1)];
-    const teamBlue = [new Player(700, 300, '#2e86de', 2, 0), new Player(800, 300, '#2e86de', 2, 1)];
-    
+    // Instantiating tactical rosters
+    const teamRed = [new Player(300, 275, '#ff3838', 1, 0), new Player(180, 150, '#ff3838', 1, 1)];
+    const teamBlue = [new Player(700, 275, '#17c0eb', 2, 0), new Player(820, 400, '#17c0eb', 2, 1)];
+
     let activeRedIndex = 0, activeBlueIndex = 0;
-    let redSwapReleased = true, blueSwapReleased = true;
     teamRed[0].active = true; teamBlue[0].active = true;
 
-    // Direct User Key bindings listeners sets
+    // Control Key-bindings Matrix Map Config
     const keys = {};
-    window.onkeydown = e => { 
-        keys[e.code] = true; 
+    window.onkeydown = e => {
+        keys[e.code] = true;
         
-        // Red control swap trigger
-        if (e.code === 'KeyS' && redSwapReleased && matchRunning) {
+        // Manual roster cycling switches
+        if (e.code === 'ShiftLeft' && matchRunning) {
             teamRed[activeRedIndex].active = false;
             activeRedIndex = (activeRedIndex + 1) % 2;
             teamRed[activeRedIndex].active = true;
-            redSwapReleased = false;
-            synthSound(400, 'sine', 0.05);
+            synthSound(600, 'sine', 0.04, 0.05);
         }
-        // Blue control swap trigger
-        if (e.code === 'ArrowDown' && blueSwapReleased && matchRunning) {
+        if (e.code === 'ControlRight' && matchRunning) {
             teamBlue[activeBlueIndex].active = false;
             activeBlueIndex = (activeBlueIndex + 1) % 2;
             teamBlue[activeBlueIndex].active = true;
-            blueSwapReleased = false;
-            synthSound(440, 'sine', 0.05);
+            synthSound(640, 'sine', 0.04, 0.05);
         }
     };
-    window.onkeyup = e => { 
-        keys[e.code] = false; 
-        if (e.code === 'KeyS') redSwapReleased = true;
-        if (e.code === 'ArrowDown') blueSwapReleased = true;
-    };
+    window.onkeyup = e => { keys[e.code] = false; };
 
     function createParticles(x, y, color, count) {
         for (let i = 0; i < count; i++) {
             particles.push({
                 x: x, y: y,
-                vx: (Math.random() - 0.5) * 10,
-                vy: (Math.random() - 0.5) * 10,
-                radius: Math.random() * 4 + 1,
-                alpha: 1,
-                color: color
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                radius: Math.random() * 3 + 1,
+                alpha: 1, color: color
             });
         }
     }
@@ -290,32 +315,32 @@
     }
 
     function resetPitchState() {
-        ball.x = 450; ball.y = 120; ball.vx = 0; ball.vy = 0;
+        ball.x = 500; ball.y = 275; ball.z = 0;
+        ball.vx = 0; ball.vy = 0; ball.vz = 0;
         ball.trail = [];
-        
-        teamRed[0].x = 220; teamRed[0].y = 300; teamRed[0].vx = 0; teamRed[0].vy = 0;
-        teamRed[1].x = 100; teamRed[1].y = 300; teamRed[1].vx = 0; teamRed[1].vy = 0;
 
-        teamBlue[0].x = 680; teamBlue[0].y = 300; teamBlue[0].vx = 0; teamBlue[0].vy = 0;
-        teamBlue[1].x = 800; teamBlue[1].y = 300; teamBlue[1].vx = 0; teamBlue[1].vy = 0;
-        
+        teamRed[0].x = 350; teamRed[0].y = 275; teamRed[0].vx = 0; teamRed[0].vy = 0;
+        teamRed[1].x = 220; teamRed[1].y = 140; teamRed[1].vx = 0; teamRed[1].vy = 0;
+
+        teamBlue[0].x = 650; teamBlue[0].y = 275; teamBlue[0].vx = 0; teamBlue[0].vy = 0;
+        teamBlue[1].x = 780; teamBlue[1].y = 410; teamBlue[1].vx = 0; teamBlue[1].vy = 0;
+
         roundBreaking = false;
     }
 
     function registerGoal(scoringTeam) {
         roundBreaking = true;
         if (scoringTeam === 1) score1++; else score2++;
-        
-        screenShakeAmount = 24;
-        synthSound(90, 'sawtooth', 0.6);
-        setTimeout(() => synthSound(150, 'square', 0.4), 150);
 
-        createParticles(ball.x, ball.y, scoringTeam === 1 ? '#ff4757' : '#2e86de', 40);
-        
-        // Show Goal Banner
+        screenShakeAmount = 25;
+        synthSound(110, 'sawtooth', 0.4, 0.3);
+        setTimeout(() => synthSound(170, 'square', 0.3, 0.2), 120);
+
+        createParticles(ball.x, ball.y, scoringTeam === 1 ? '#ff3838' : '#17c0eb', 35);
+
         const banner = document.getElementById('goal-banner');
-        banner.innerText = scoringTeam === 1 ? "RED SCORES!" : "BLUE SCORES!";
-        banner.style.color = scoringTeam === 1 ? "#ff4757" : "#2e86de";
+        banner.innerText = scoringTeam === 1 ? "RED TEAM GOAL!" : "BLUE TEAM GOAL!";
+        banner.style.color = scoringTeam === 1 ? "#ff3838" : "#17c0eb";
         banner.style.display = 'block';
 
         setTimeout(() => {
@@ -325,20 +350,20 @@
             } else {
                 resetPitchState();
             }
-        }, 2000);
+        }, 2200);
     }
 
     function endMatchExecution() {
         matchRunning = false;
         const menuScreen = document.getElementById('menu-screen');
         const menuTitle = document.getElementById('menu-title');
-        
-        menuTitle.innerText = score1 >= MAX_SCORE ? "RED TEAM VICTORY!" : "BLUE TEAM VICTORY!";
-        menuTitle.style.color = score1 >= MAX_SCORE ? "#ff4757" : "#2e86de";
+
+        menuTitle.innerText = score1 >= MAX_SCORE ? "RED SQUAD CHAMPIONS" : "BLUE SQUAD CHAMPIONS";
+        menuTitle.style.color = score1 >= MAX_SCORE ? "#ff3838" : "#17c0eb";
         menuScreen.style.display = 'flex';
     }
 
-    // --- MAIN ENGINE LOOP ---
+    // --- MAIN ENGINE PERFORMANCE LOOP ---
     function loop() {
         updateGameObjects();
         renderGraphics();
@@ -348,106 +373,141 @@
     function updateGameObjects() {
         if (!matchRunning) return;
 
-        // Player updates loop runs
-        teamRed.forEach((p, i) => p.update(i === activeRedIndex, {up:'KeyW', left:'KeyA', right:'KeyD'}));
-        teamBlue.forEach((p, i) => p.update(i === activeBlueIndex, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight'}));
+        // Sync and execute rosters updates
+        teamRed.forEach((p, i) => p.update(i === activeRedIndex, {up:'KeyW', left:'KeyA', right:'KeyD', down:'KeyS', action:'Space'}));
+        teamBlue.forEach((p, i) => p.update(i === activeBlueIndex, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight', down:'ArrowDown', action:'Enter'}));
 
-        // Ball continuous integration forces
+        // Process Ball Physics Axis
         if (!roundBreaking) {
-            ball.vy += gravity * 0.48; // Lighter gravitational impact for floats
-            ball.vx *= friction;
-            ball.x += ball.vx; ball.y += ball.vy;
+            ball.vx *= friction; ball.vy *= friction;
+            
+            // 3D Gravity System Handling
+            if (ball.z > 0) {
+                ball.vz -= 0.28; // Air gravity force component
+            } else {
+                ball.vz = 0; ball.z = 0;
+            }
 
-            // Tracking positional paths trails arrays
-            ball.trail.push({x: ball.x, y: ball.y});
-            if (ball.trail.length > 12) ball.trail.shift();
+            ball.x += ball.vx; ball.y += ball.vy; ball.z += ball.vz;
+
+            // Height-Check Bounce vectors bounds
+            if (ball.z < 0) {
+                ball.z = 0;
+                ball.vz = -ball.vz * ball.bounciness;
+                if (Math.abs(ball.vz) < 0.5) ball.vz = 0;
+            }
+
+            // Ball Trails Buffer Tracking
+            ball.trail.push({x: ball.x, y: ball.y - ball.z});
+            if (ball.trail.length > 10) ball.trail.shift();
         }
 
-        // Boundary Arena Collisions Core Loops
-        if (ball.x < ball.r) {
-            if (ball.y > 220) { registerGoal(2); } else { ball.vx *= -0.8; ball.x = ball.r; synthSound(120, 'sine', 0.05); }
+        // Field goal line collision detection checks
+        if (ball.x < 25) {
+            if (ball.y > GOAL_TOP && ball.y < GOAL_BOTTOM && ball.z < 90) {
+                registerGoal(2);
+            } else {
+                ball.vx *= -0.7; ball.x = 25; synthSound(140, 'sine', 0.05);
+            }
         }
-        if (ball.x > canvas.width - ball.r) {
-            if (ball.y > 220) { registerGoal(1); } else { ball.vx *= -0.8; ball.x = canvas.width - ball.r; synthSound(120, 'sine', 0.05); }
-        }
-        if (ball.y < ball.r) { ball.vy *= -0.8; ball.y = ball.r; }
-        if (ball.y > FLOOR_Y - ball.r) {
-            ball.y = FLOOR_Y - ball.r;
-            ball.vy *= -ball.bounciness;
-            if (Math.abs(ball.vy) > 1.5) synthSound(100, 'sine', 0.04, false);
+        if (ball.x > canvas.width - 25) {
+            if (ball.y > GOAL_TOP && ball.y < GOAL_BOTTOM && ball.z < 90) {
+                registerGoal(1);
+            } else {
+                ball.vx *= -0.7; ball.x = canvas.width - 25; synthSound(140, 'sine', 0.05);
+            }
         }
 
-        // Interactive dynamic engine particle shifts
+        // Sideline Constraints
+        if (ball.y < 25) { ball.vy *= -0.7; ball.y = 25; }
+        if (ball.y > canvas.height - 25) { ball.vy *= -0.7; ball.y = canvas.height - 25; }
+
+        // Process particles shifts
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i];
-            p.x += p.vx; p.y += p.vy; p.alpha -= 0.025;
+            p.x += p.vx; p.y += p.vy; p.alpha -= 0.03;
             if (p.alpha <= 0) particles.splice(i, 1);
         }
     }
 
     function renderGraphics() {
         ctx.save();
-        // Camera matrix screen shake engine modifiers
+        // Camera screen shakes execution modifiers
         if (screenShakeAmount > 0) {
             let dx = (Math.random() - 0.5) * screenShakeAmount;
             let dy = (Math.random() - 0.5) * screenShakeAmount;
-            ctx.translate(dx, dy);
-            screenShakeAmount *= 0.9;
+            ctx.translate(dx, dy); screenShakeAmount *= 0.88;
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Draw Technical Tech Grid Markings Background layout
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.015)"; ctx.lineWidth = 1;
-        for (let i = 0; i < canvas.width; i += 30) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
-        for (let j = 0; j < canvas.height; j += 30) { ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke(); }
+        // Render Turf Lawn Markings Design Layers
+        ctx.fillStyle = "#0c2015"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "#0e2418";
+        for (let i = 0; i < canvas.width; i += 100) {
+            if((i/100)%2===0) ctx.fillRect(i, 0, 50, canvas.height);
+        }
 
-        // Stadium Outlines field details
-        ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 4;
-        ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-        ctx.beginPath(); ctx.moveTo(canvas.width / 2, 10); ctx.lineTo(canvas.width / 2, canvas.height - 10); ctx.stroke();
-        ctx.beginPath(); ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2); ctx.stroke();
-
-        // Glowing Structural Net Posts designs
-        ctx.fillStyle = "rgba(255, 71, 87, 0.15)"; ctx.fillRect(0, 220, 12, canvas.height - 220);
-        ctx.fillStyle = "#ff4757"; ctx.fillRect(0, 220, 4, canvas.height - 220);
+        // Pitch Outlines Graphics Pass
+        ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 3;
+        ctx.strokeRect(25, 25, canvas.width - 50, canvas.height - 50);
         
-        ctx.fillStyle = "rgba(46, 134, 222, 0.15)"; ctx.fillRect(canvas.width - 12, 220, 12, canvas.height - 220);
-        ctx.fillStyle = "#2e86de"; ctx.fillRect(canvas.width - 4, 220, 4, canvas.height - 220);
+        // Midfield layout circles lines
+        ctx.beginPath(); ctx.moveTo(canvas.width/2, 25); ctx.lineTo(canvas.width/2, canvas.height-25); ctx.stroke();
+        ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height/2, 90, 0, Math.PI*2); ctx.stroke();
 
-        // Draw Entity Groups
+        // 18-Yard Penalty Box zones maps
+        ctx.strokeRect(25, 120, 130, 310);
+        ctx.strokeRect(canvas.width - 155, 120, 130, 310);
+
+        // Rendering Stadium Goal Net Boxes
+        ctx.strokeStyle = "#ff3838"; ctx.strokeRect(5, GOAL_TOP, 20, GOAL_BOTTOM - GOAL_TOP);
+        ctx.strokeStyle = "#17c0eb"; ctx.strokeRect(canvas.width - 25, GOAL_TOP, 20, GOAL_BOTTOM - GOAL_TOP);
+
+        // Dynamic 3D Ball Shadow pass (Scales size based on height Z value)
+        if (matchRunning && !roundBreaking) {
+            ctx.save();
+            let shadowSize = Math.max(4, ball.r - (ball.z * 0.12));
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            ctx.beginPath();
+            ctx.ellipse(ball.x, ball.y, shadowSize, shadowSize * 0.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Render Entity Layers
         teamRed.forEach(p => p.draw());
         teamBlue.forEach(p => p.draw());
 
-        // Particles Render passes
+        // Particle FX loop runs
         particles.forEach(p => {
-            ctx.save();
-            ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill();
             ctx.restore();
         });
 
-        // Ball Rendering featuring custom motion trails passes
+        // Ball Graphics 3D pass drawing
         if (matchRunning && !roundBreaking) {
             ball.trail.forEach((pos, idx) => {
                 ctx.save();
-                ctx.globalAlpha = (idx / ball.trail.length) * 0.3;
+                ctx.globalAlpha = (idx / ball.trail.length) * 0.25;
                 ctx.fillStyle = "#00ff88";
-                ctx.beginPath(); ctx.arc(pos.x, pos.y, ball.r * (idx / ball.trail.length), 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(pos.x, pos.y, ball.r * (idx / ball.trail.length), 0, Math.PI*2); ctx.fill();
                 ctx.restore();
             });
 
             ctx.save();
+            ctx.translate(ball.x, ball.y - ball.z);
             ctx.shadowBlur = 15; ctx.shadowColor = "#00ff88";
             ctx.fillStyle = "#ffffff";
-            ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = "#00ff88"; ctx.lineWidth = 3; ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, ball.r, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = "#0d1117"; ctx.lineWidth = 2; ctx.stroke();
             ctx.restore();
         }
 
         ctx.restore();
 
-        // Sync Score interfaces cleanly
+        // Sync Score outputs HUD interface counters
         document.getElementById('s1').innerText = score1;
         document.getElementById('s2').innerText = score2;
     }
