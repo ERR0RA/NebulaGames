@@ -3,21 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=none">
-    <title>NEON-GRID | Power-Up Evolution</title>
+    <title>NEON-GRID | OVERDRIVE</title>
     <style>
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
-        canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; max-height: 60vh; box-shadow: 0 0 20px #0f0; touch-action: none; }
+        body { background: #050505; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
+        #wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; max-height: 60vh; box-shadow: 0 0 30px rgba(0, 255, 0, 0.3); touch-action: none; }
         #ui { text-align: center; width: 800px; max-width: 95vw; margin-bottom: 10px; }
-        .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; }
-        .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; }
-        .meter-container { width: 30%; background: #000; border: 1px solid #333; height: 12px; }
-        .fill { height: 100%; width: 100%; transition: width 0.1s; }
-        #p1-fill { background: #0f0; } #p2-fill { background: #00f; } #p3-fill { background: #f00; }
-        #msg { position: absolute; font-size: 2.5rem; font-weight: bold; top: 40%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 3px 3px #000; z-index: 100; text-align: center; width: 100%; }
-        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; font-weight: bold; font-family: 'Courier New', monospace; }
-        button:hover { background: #0f0; color: #000; }
-        .toggle-label { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
-        #score { margin-bottom: 5px; font-size: 1rem; letter-spacing: 2px; }
+        .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; box-shadow: inset 0 0 10px rgba(0,255,0,0.2); }
+        .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; gap: 10px; }
+        .meter-container { width: 32%; background: #222; border: 2px solid #333; height: 16px; position: relative; border-radius: 3px; overflow: hidden; }
+        .fill { height: 100%; width: 100%; transition: width 0.05s linear; }
+        .label-overlay { position: absolute; width: 100%; text-align: center; font-size: 0.7rem; font-weight: bold; color: #fff; top: 1px; text-shadow: 1px 1px 2px #000; }
+        #p1-fill { background: linear-gradient(90deg, #050, #0f0); } 
+        #p2-fill { background: linear-gradient(90deg, #005, #00f); } 
+        #p3-fill { background: linear-gradient(90deg, #500, #f00); }
+        #msg { position: absolute; font-size: 3rem; font-weight: bold; top: 45%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 0 0 15px #000; z-index: 100; text-align: center; width: 100%; letter-spacing: 4px; }
+        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px 15px; cursor: pointer; font-weight: bold; font-family: 'Courier New', monospace; transition: all 0.2s; }
+        button:hover { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
+        .toggle-label { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
+        #score { margin-bottom: 5px; font-size: 1.2rem; letter-spacing: 2px; font-weight: bold; text-shadow: 0 0 8px rgba(0,255,0,0.5); }
 
         #mobile-controls {
             display: none;
@@ -29,26 +33,27 @@
             padding: 10px;
         }
         .ctrl-btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(0, 255, 0, 0.1);
+            width: 65px;
+            height: 65px;
+            background: rgba(0, 255, 0, 0.05);
             border: 2px solid #0f0;
             color: #0f0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             user-select: none;
             -webkit-user-select: none;
             touch-action: none;
+            border-radius: 8px;
         }
-        .ctrl-btn:active { background: #0f0; color: #000; }
-        #btn-boost { grid-column: 3; background: rgba(255, 0, 0, 0.2); border-color: #f00; color: #f00; }
+        .ctrl-btn:active { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
+        #btn-boost { grid-column: 3; background: rgba(255, 0, 0, 0.1); border-color: #f00; color: #f00; }
         
         @media (pointer: coarse) {
             #mobile-controls { display: grid; }
             .setup-panel { padding: 8px; font-size: 0.8rem; }
-            button, select { padding: 5px; }
+            button, select { padding: 6px; }
         }
     </style>
 </head>
@@ -57,9 +62,9 @@
 <div id="ui">
     <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
     <div class="meters">
-        <div class="meter-container" id="p1-ui"><div id="p1-fill" class="fill"></div></div>
-        <div class="meter-container" id="p2-ui"><div id="p2-fill" class="fill"></div></div>
-        <div class="meter-container" id="bot-ui"><div id="p3-fill" class="fill"></div></div>
+        <div class="meter-container" id="p1-ui"><div id="p1-fill" class="fill"></div><div class="label-overlay" id="lbl-p1">P1 ENERGY</div></div>
+        <div class="meter-container" id="p2-ui"><div id="p2-fill" class="fill"></div><div class="label-overlay" id="lbl-p2">P2 ENERGY</div></div>
+        <div class="meter-container" id="bot-ui"><div id="p3-fill" class="fill"></div><div class="label-overlay" id="lbl-b3">BOT ENERGY</div></div>
     </div>
     <div class="setup-panel">
         <select id="gameMode">
@@ -68,6 +73,7 @@
             <option value="pvp">Human vs Human</option>
             <option value="bvb">Bot vs Bot (Spectate)</option>
         </select>
+        
         <select id="botType2" style="display: none;">
             <option value="default">BOT 1: Default</option>
             <option value="failed">BOT 1: Failed</option>
@@ -76,6 +82,7 @@
             <option value="destroyer">BOT 1: Destroyer</option>
             <option value="error">BOT 1: ERR0R</option>
         </select>
+
         <select id="botType">
             <option value="default">BOT: Default</option>
             <option value="failed">BOT: Failed</option>
@@ -84,15 +91,18 @@
             <option value="destroyer">BOT: Destroyer</option>
             <option value="error">BOT: ERR0R</option>
         </select>
+        
         <label class="toggle-label">
             <input type="checkbox" id="usePowerUps" checked> POWER-UPS
         </label>
-        <button id="startBtn">START</button>
+        <button id="startBtn">ENGAGE</button>
     </div>
 </div>
 
-<div id="msg"></div>
-<canvas id="game" width="800" height="600"></canvas>
+<div id="wrapper">
+    <div id="msg"></div>
+    <canvas id="game" width="800" height="600"></canvas>
+</div>
 
 <div id="mobile-controls">
     <div></div>
@@ -107,10 +117,13 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const UNIT = 5;
+
 let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0};
 let powerupTimer = 0;
 let glitchTick = 0;
 let bot1Label = "BOT 1", bot2Label = "BOT 2";
+let particles = [];
+let screenShake = 0;
 
 document.getElementById('gameMode').addEventListener('change', function() {
     const b1Menu = document.getElementById('botType2');
@@ -129,18 +142,27 @@ function getBotSettings(setting) {
     let profile = 'default';
     let speed = 1;
     
-    if (setting === 'ultimate') {
-        color = '#ff3333'; profile = 'ultimate'; speed = 1.2;
-    } else if (setting === 'error') {
-        color = '#00ffff'; profile = 'error';
-    } else if (setting === 'failed') {
-        color = '#d97706'; profile = 'failed'; speed = 0.8; 
-    } else if (setting === 'destroyer') {
-        color = '#ea580c'; profile = 'destroyer'; speed = 1.1;
-    } else if (setting === 'void') {
-        color = '#a855f7'; profile = 'void'; speed = 1.0; 
-    }
+    if (setting === 'ultimate') { color = '#ff3333'; profile = 'ultimate'; speed = 1.2; }
+    else if (setting === 'error') { color = '#00ffff'; profile = 'error'; }
+    else if (setting === 'failed') { color = '#d97706'; profile = 'failed'; speed = 0.8; }
+    else if (setting === 'destroyer') { color = '#ea580c'; profile = 'destroyer'; speed = 1.1; }
+    else if (setting === 'void') { color = '#a855f7'; profile = 'void'; speed = 1.0; }
     return { color, profile, speed };
+}
+
+function createExplosion(x, y, color) {
+    screenShake = 15;
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8,
+            radius: Math.random() * 3 + 1,
+            color: color,
+            alpha: 1,
+            decay: Math.random() * 0.03 + 0.01
+        });
+    }
 }
 
 function reset() {
@@ -150,7 +172,9 @@ function reset() {
     
     grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
     powerups = [];
+    particles = [];
     powerupTimer = 0;
+    screenShake = 0;
     
     let b2 = getBotSettings(botSetting);
     let b1 = getBotSettings(bot2Setting);
@@ -168,13 +192,17 @@ function reset() {
     }
 
     players = [
-        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, speedMult: 1, isBot: false, profile: 'player' },
-        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, speedMult: 1, isBot: false, profile: 'player' },
-        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: b2.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, speedMult: b2.speed, isBot: true, profile: b2.profile, isAltColor: false }
+        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, shield: false, speedMult: 1, isBot: false, profile: 'player' },
+        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, shield: false, speedMult: 1, isBot: false, profile: 'player' },
+        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: b2.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, shield: false, speedMult: b2.speed, isBot: true, profile: b2.profile, isAltColor: false }
     ];
 
+    document.getElementById('lbl-p1').innerText = (mode === 'bvb') ? bot1Label : "P1 ENERGY";
+    document.getElementById('lbl-p2').innerText = "P2 ENERGY";
+    document.getElementById('lbl-b3').innerText = (mode === 'bvb') ? bot2Label : (mode === 'pvp' ? "P2 ENERGY" : "BOT ENERGY");
+
     const fillBar = document.getElementById('p3-fill');
-    if (botSetting === 'ultimate') fillBar.style.background = '#444444';
+    if (botSetting === 'ultimate') fillBar.style.background = '#444';
     else if (botSetting === 'error') fillBar.style.background = '#ff00ff';
     else if (botSetting === 'failed') fillBar.style.background = '#78350f';
     else if (botSetting === 'destroyer') fillBar.style.background = '#ff4500';
@@ -182,22 +210,13 @@ function reset() {
     else fillBar.style.background = '#f00';
 
     if (mode === 'bvb') {
-        players[0].active = true;
-        players[0].isBot = true; 
-        players[0].team = 'green_bot';
-        players[0].color = b1.color;
-        players[0].profile = b1.profile;
-        players[0].speedMult = b1.speed;
-        players[1].active = false;
-        players[2].active = true;
-        players[2].team = 'red_bot';
-        
-        if (isSameBot) {
-            players[2].isAltColor = true;
-        }
+        players[0].active = true; players[0].isBot = true; players[0].team = 'green_bot';
+        players[0].color = b1.color; players[0].profile = b1.profile; players[0].speedMult = b1.speed;
+        players[1].active = false; players[2].active = true; players[2].team = 'red_bot';
+        if (isSameBot) players[2].isAltColor = true;
 
         const f1 = document.getElementById('p1-fill');
-        if (bot2Setting === 'ultimate') f1.style.background = '#444444';
+        if (bot2Setting === 'ultimate') f1.style.background = '#444';
         else if (bot2Setting === 'error') f1.style.background = '#ff00ff';
         else if (bot2Setting === 'failed') f1.style.background = '#78350f';
         else if (bot2Setting === 'destroyer') f1.style.background = '#ff4500';
@@ -206,7 +225,7 @@ function reset() {
         
         document.getElementById('score').innerText = `${bot1Label}: ${score.p1} | ${bot2Label}: ${score.bot}`;
     } else {
-        document.getElementById('p1-fill').style.background = '#0f0';
+        document.getElementById('p1-fill').style.background = 'linear-gradient(90deg, #050, #0f0)';
         document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
     }
 
@@ -216,9 +235,9 @@ function reset() {
     document.getElementById('p2-ui').style.visibility = players[1].active ? "visible" : "hidden";
     document.getElementById('bot-ui').style.visibility = players[2].active ? "visible" : "hidden";
     
-    document.getElementById('msg').innerText = mode === 'bvb' ? `${bot1Label} VS ${bot2Label}` : "READY...";
+    document.getElementById('msg').innerHTML = mode === 'bvb' ? `<span style="color:#0ff">${bot1Label}</span> <span style="color:#fff">VS</span> <span style="color:#f00">${bot2Label}</span>` : "<span style='color:#0f0'>READY...</span>";
     gameActive = false;
-    setTimeout(() => { document.getElementById('msg').innerText = ""; gameActive = true; }, 1200);
+    setTimeout(() => { document.getElementById('msg').innerText = ""; gameActive = true; }, 1500);
 }
 
 document.getElementById('startBtn').onclick = (e) => { e.target.blur(); reset(); };
@@ -246,7 +265,6 @@ window.onkeydown = e => {
         if ((e.key === 's' || (mode === 'pve' && e.key === 'ArrowDown')) && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
         if ((e.key === 'a' || (mode === 'pve' && e.key === 'ArrowLeft')) && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
         if ((e.key === 'd' || (mode === 'pve' && e.key === 'ArrowRight')) && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
-        
         if (e.code === 'Space' || e.code === 'KeyF' || (mode === 'pve' && e.code === 'Enter')) players[0].isBoosting = true;
     }
     if (players[1].active) {
@@ -266,26 +284,37 @@ window.onkeyup = e => {
 
 function checkCollision(x, y, self) {
     if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
+    
     for (let i = powerups.length - 1; i >= 0; i--) {
         const pu = powerups[i];
-        if (Math.abs(x - pu.x) < 15 && Math.abs(y - pu.y) < 15) {
+        if (Math.abs(x - pu.x) < 16 && Math.abs(y - pu.y) < 16) {
             applyPowerUp(self, pu.type);
             powerups.splice(i, 1);
+            screenShake = 6;
         }
     }
+    
     const hitId = grid[Math.floor(x)][Math.floor(y)];
     if (hitId === null) return false;
     if (self.ghost > 0) return false;
+    
     const owner = players[hitId];
-    if (self.id === owner.id) return true;
+    if (self.id === owner.id) {
+        if (self.shield) { self.shield = false; return false; }
+        return true;
+    }
     if (self.team === 'human' && owner.team === 'human') return false;
+    
+    if (self.shield) { self.shield = false; return false; }
     return true;
 }
 
 function applyPowerUp(player, type) {
-    if (type === 'ghost') player.ghost = 180;
+    if (type === 'ghost') player.ghost = 200;
+    if (type === 'shield') player.shield = true;
+    if (type === 'battery') player.boost = Math.min(100, player.boost + 50);
     if (type === 'speed') {
-        player.speedMult = (player.profile === 'ultimate' || player.profile === 'destroyer') ? 2.4 : 2;
+        player.speedMult = (player.profile === 'ultimate' || player.profile === 'destroyer') ? 2.5 : 2;
         setTimeout(() => { player.speedMult = (player.profile === 'ultimate') ? 1.2 : (player.profile === 'destroyer' ? 1.1 : (player.profile === 'failed' ? 0.8 : 1)); }, 4000);
     }
     if (type === 'clear') {
@@ -295,32 +324,31 @@ function applyPowerUp(player, type) {
 }
 
 function spawnPowerUp() {
-    const types = ['ghost', 'speed', 'clear'];
+    const types = ['ghost', 'speed', 'clear', 'shield', 'battery'];
     const type = types[Math.floor(Math.random() * types.length)];
     powerups.push({
-        x: Math.random() * (canvas.width - 60) + 30,
-        y: Math.random() * (canvas.height - 60) + 30,
-        type: type
+        x: Math.random() * (canvas.width - 80) + 40,
+        y: Math.random() * (canvas.height - 80) + 40,
+        type: type,
+        pulse: 0
     });
 }
 
 function update() {
     if (!gameActive) return;
-
     glitchTick++;
 
     if (document.getElementById('usePowerUps').checked) {
         powerupTimer++;
-        if (powerupTimer > 250) { spawnPowerUp(); powerupTimer = 0; }
+        if (powerupTimer > 200) { spawnPowerUp(); powerupTimer = 0; }
     }
 
+    // Process Bot Decisional logic loop
     players.forEach(p => {
         if (p.active && p.alive && p.isBot) {
             let target = null;
-            let minDist = (p.profile === 'ultimate') ? 350 : 200; 
-            
-            if (p.profile === 'destroyer') minDist = 400; 
-            if (p.profile === 'void') minDist = 250; 
+            let minDist = (p.profile === 'ultimate') ? 400 : 250; 
+            if (p.profile === 'destroyer') minDist = 450; 
 
             powerups.forEach(pu => {
                 let d = Math.hypot(p.x - pu.x, p.y - pu.y);
@@ -334,18 +362,15 @@ function update() {
 
             const checkAhead = (dx, dy, dist) => {
                 for(let i=1; i<=dist; i++) {
-                    let nx = p.x + dx*i, ny = p.y + dy*i;
-                    if (checkCollision(nx, ny, p)) return true;
+                    if (checkCollision(p.x + dx*i, p.y + dy*i, p)) return true;
                 }
                 return false;
             };
 
-            let turnChance = 0.1;
-            if (p.profile === 'ultimate') turnChance = 0.15;
-            if (p.profile === 'destroyer') turnChance = 0.25; 
-            if (p.profile === 'error') turnChance = 0.4;
-            if (p.profile === 'void') turnChance = 0.12; 
-            if (p.profile === 'failed') turnChance = 0.04; 
+            let turnChance = 0.12;
+            if (p.profile === 'ultimate') turnChance = 0.18;
+            if (p.profile === 'destroyer') turnChance = 0.28; 
+            if (p.profile === 'error') turnChance = 0.45;
 
             if (target && Math.random() < turnChance) {
                 if (Math.abs(p.x - target.x) > 10 && p.dy !== 0) {
@@ -357,14 +382,11 @@ function update() {
                 }
             }
 
-            let lookAheadDist = 8;
-            if (p.profile === 'ultimate') lookAheadDist = 14;
-            if (p.profile === 'destroyer') lookAheadDist = 12;
-            if (p.profile === 'void') lookAheadDist = 8; 
-            if (p.profile === 'failed') lookAheadDist = 5; 
-            if (p.profile === 'error' && Math.random() < 0.2) lookAheadDist = 4;
+            let lookAheadDist = 10;
+            if (p.profile === 'ultimate') lookAheadDist = 16;
+            if (p.profile === 'destroyer') lookAheadDist = 14;
 
-            if (checkAhead(p.dx, p.dy, lookAheadDist) || (Math.random() < (p.profile === 'error' ? 0.04 : (p.profile === 'failed' ? 0.001 : 0.005)))) {
+            if (checkAhead(p.dx, p.dy, lookAheadDist) || (Math.random() < (p.profile === 'error' ? 0.05 : 0.005))) {
                 const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}]
                     .filter(d => !(d.dx === -p.dx && d.dy === -p.dy))
                     .sort(() => Math.random() - 0.5); 
@@ -372,54 +394,44 @@ function update() {
                 let bestDir = null, maxDist = -1;
                 dirs.forEach(d => {
                     let dCount = 0;
-                    let cap = (p.profile === 'ultimate' || p.profile === 'destroyer') ? 50 : 30;
-                    if (p.profile === 'failed') cap = 15; 
-                    
+                    let cap = (p.profile === 'ultimate' || p.profile === 'destroyer') ? 60 : 35;
                     while(dCount < cap && !checkCollision(p.x + d.dx*(dCount+1), p.y + d.dy*(dCount+1), p)) { dCount++; }
                     if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
                 });
                 if (bestDir) { p.dx = bestDir.dx; p.dy = bestDir.dy; }
             }
-            
-            if (p.profile === 'error') {
-                p.isBoosting = (Math.random() < 0.3 && p.boost > 0);
-            } else if (p.profile === 'destroyer') {
-                p.isBoosting = (p.boost > 0 && !checkAhead(p.dx, p.dy, 25)); 
-            } else if (p.profile === 'failed') {
-                p.isBoosting = false; 
-            } else {
-                p.isBoosting = (p.boost > 0 && !checkAhead(p.dx, p.dy, 50));
-            }
+            p.isBoosting = (p.boost > 0 && !checkAhead(p.dx, p.dy, 40) && p.profile !== 'failed');
         }
     });
 
+    // Process Movement physics loop
     players.forEach(p => {
         if (!p.active || !p.alive) return;
         if (p.ghost > 0) p.ghost--;
         
         let spd = (p.isBoosting && p.boost > 0) ? 2 : 1;
-        
         if (p.profile === 'error') {
             p.speedMult = (glitchTick % 20 < 5) ? 1.8 : (glitchTick % 30 === 0 ? 0.5 : 1);
         }
-        
         spd *= p.speedMult;
         
         if (p.isBoosting && p.boost > 0) {
-            p.boost -= 2.5;
+            p.boost -= 2.0;
             if (p.boost < 0) p.boost = 0;
         } else if (p.boost < 100) {
-            p.boost += 0.15;
-            if (p.boost > 100) p.boost = 100;
+            p.boost += 0.2;
         }
         
         for (let i = 0; i < spd; i++) {
             p.x += p.dx; p.y += p.dy;
-            if (checkCollision(p.x, p.y, p)) { p.alive = false; checkWinner(); return; }
+            if (checkCollision(p.x, p.y, p)) { 
+                p.alive = false; 
+                createExplosion(p.x, p.y, p.color);
+                checkWinner(); 
+                return; 
+            }
             grid[Math.floor(p.x)][Math.floor(p.y)] = p.id;
-            
-            let trailMeta = p.ghost > 0;
-            p.trail.push({x: p.x, y: p.y, isGhost: trailMeta, cycle: glitchTick});
+            p.trail.push({x: p.x, y: p.y, isGhost: p.ghost > 0, cycle: glitchTick});
         }
     });
 
@@ -433,118 +445,148 @@ function checkWinner() {
     const p1 = players[0], p2 = players[1], bot = players[2];
 
     if (mode === 'pvp') {
-        if (!p1.alive && !p2.alive) endGame("DRAW!");
-        else if (!p1.alive) { score.p2++; endGame("PLAYER 2 WINS!"); }
-        else if (!p2.alive) { score.p1++; endGame("PLAYER 1 WINS!"); }
+        if (!p1.alive && !p2.alive) endGame("SIMULTANEOUS CRASH!");
+        else if (!p1.alive) { score.p2++; endGame("PLAYER 2 VICTORIOUS"); }
+        else if (!p2.alive) { score.p1++; endGame("PLAYER 1 VICTORIOUS"); }
     } 
     else if (mode === 'bvb') {
-        if (!p1.alive && !bot.alive) endGame("DRAW!");
-        else if (!p1.alive) { score.bot++; endGame(`${bot2Label} WINS!`); }
-        else if (!bot.alive) { score.p1++; endGame(`${bot1Label} WINS!`); }
+        if (!p1.alive && !bot.alive) endGame("GRID LOCKOUT!");
+        else if (!p1.alive) { score.bot++; endGame(`${bot2Label} DOMINATES`); }
+        else if (!bot.alive) { score.p1++; endGame(`${bot1Label} DOMINATES`); }
     } 
     else {
         const humansAlive = (p1.active && p1.alive) || (p2.active && p2.alive);
-        if (!humansAlive) { score.bot++; endGame(`${bot2Label} WINS!`); }
-        else if (bot.active && !bot.alive) { score.p1++; endGame("HUMANS WIN!"); }
+        if (!humansAlive) { score.bot++; endGame(`${bot2Label} WINS`); }
+        else if (bot.active && !bot.alive) { score.p1++; endGame("HUMAN ALLIANCE WINS"); }
     }
 }
 
 function endGame(txt) {
     gameActive = false;
-    document.getElementById('msg').innerText = txt;
-    const mode = document.getElementById('gameMode').value;
-    if (mode === 'bvb') {
-        document.getElementById('score').innerText = `${bot1Label}: ${score.p1} | ${bot2Label}: ${score.bot}`;
-    } else {
-        document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
+    document.getElementById('msg').innerHTML = `<span style="color:#fff; background:#000; padding:10px; border:2px solid #f00;">${txt}</span>`;
+    setTimeout(reset, 2500);
+}
+
+function drawGridBackground() {
+    ctx.strokeStyle = "rgba(0, 50, 0, 0.15)";
+    ctx.lineWidth = 1;
+    const size = 40;
+    for (let x = 0; x < canvas.width; x += size) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
     }
-    setTimeout(reset, 2000);
+    for (let y = 0; y < canvas.height; y += size) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
 }
 
 function draw() {
-    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.save();
+    
+    // Apply camera screen shake 
+    if (screenShake > 0) {
+        let dx = (Math.random() - 0.5) * screenShake;
+        let dy = (Math.random() - 0.5) * screenShake;
+        ctx.translate(dx, dy);
+        screenShake *= 0.9;
+        if (screenShake < 0.5) screenShake = 0;
+    }
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
+    drawGridBackground();
+    
+    // Update and draw system particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.alpha -= p.decay;
+        if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 10; ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // Render powerups
     powerups.forEach(pu => {
-        ctx.fillStyle = pu.type === 'ghost' ? '#fff' : pu.type === 'speed' ? '#ff0' : '#0ff';
-        ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
-        ctx.fillRect(pu.x, pu.y, 12, 12);
-        ctx.shadowBlur = 0;
+        pu.pulse += 0.1;
+        let scale = 12 + Math.sin(pu.pulse) * 2;
+        let col = '#fff';
+        if (pu.type === 'speed') col = '#ff0';
+        if (pu.type === 'clear') col = '#0ff';
+        if (pu.type === 'shield') col = '#f0f';
+        if (pu.type === 'battery') col = '#0f0';
+
+        ctx.save();
+        ctx.fillStyle = col;
+        ctx.shadowBlur = 15; ctx.shadowColor = col;
+        ctx.fillRect(pu.x - scale/2, pu.y - scale/2, scale, scale);
+        
+        // Internal design symbol marker inside powerup
+        ctx.fillStyle = '#000';
+        ctx.fillRect(pu.x - 2, pu.y - 2, 4, 4);
+        ctx.restore();
     });
 
+    // Render players
     players.forEach(p => {
         if (!p.active) return;
         
         p.trail.forEach(t => {
-            if (t.isGhost) {
-                ctx.fillStyle = '#333';
-            } else if (p.isAltColor) {
-                ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 5 === 0) ? '#22c55e' : '#14532d';
-            } else if (p.profile === 'ultimate') {
-                ctx.fillStyle = (Math.floor(t.x + t.y) % 15 < 7) ? '#ff1a1a' : '#2b0000';
-            } else if (p.profile === 'destroyer') {
-                ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 4 === 0) ? '#eab308' : '#ea580c';
-            } else if (p.profile === 'void') {
-                ctx.fillStyle = (Math.floor(t.y/6 + t.cycle/4) % 3 === 0) ? '#4c1d95' : '#7e22ce';
-            } else if (p.profile === 'failed') {
-                ctx.fillStyle = (Math.floor(t.x + t.y) % 8 < 3) ? '#78350f' : ((t.cycle % 40 < 5) ? '#000' : '#b45309');
-            } else if (p.profile === 'error') {
+            if (t.isGhost) { ctx.fillStyle = '#222'; }
+            else if (p.isAltColor) { ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 5 === 0) ? '#22c55e' : '#14532d'; }
+            else if (p.profile === 'ultimate') { ctx.fillStyle = (Math.floor(t.x + t.y) % 15 < 7) ? '#ff1a1a' : '#2b0000'; }
+            else if (p.profile === 'destroyer') { ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 4 === 0) ? '#eab308' : '#ea580c'; }
+            else if (p.profile === 'void') { ctx.fillStyle = (Math.floor(t.y/6 + t.cycle/4) % 3 === 0) ? '#4c1d95' : '#7e22ce'; }
+            else if (p.profile === 'failed') { ctx.fillStyle = (Math.floor(t.x + t.y) % 8 < 3) ? '#78350f' : ((t.cycle % 40 < 5) ? '#000' : '#b45309'); }
+            else if (p.profile === 'error') {
                 let colors = ['#00ffff', '#ff00ff', '#ffffff', '#222'];
                 ctx.fillStyle = colors[(t.cycle + Math.floor(t.x/5)) % colors.length];
-            } else {
-                ctx.fillStyle = p.color;
-            }
+            } else { ctx.fillStyle = p.color; }
+            
             ctx.fillRect(t.x, t.y, UNIT, UNIT);
         });
 
         if (p.alive) {
-            if (p.ghost > 0) {
-                ctx.fillStyle = '#fff';
-            } else if (p.isAltColor) {
-                ctx.fillStyle = '#4ade80';
-                ctx.shadowColor = '#22c55e';
-                ctx.shadowBlur = 18;
-            } else if (p.profile === 'ultimate') {
-                ctx.fillStyle = '#ff1a1a';
-                ctx.shadowColor = '#ff0000';
-                ctx.shadowBlur = 18;
-            } else if (p.profile === 'destroyer') {
-                ctx.fillStyle = '#ff4500';
-                ctx.shadowColor = '#ff4500';
-                ctx.shadowBlur = 22;
-            } else if (p.profile === 'void') {
-                ctx.fillStyle = '#d946ef';
-                ctx.shadowColor = '#c084fc';
-                ctx.shadowBlur = 15;
-            } else if (p.profile === 'failed') {
-                ctx.fillStyle = (glitchTick % 30 < 25) ? '#b45309' : '#451a03';
-                ctx.shadowColor = '#78350f';
-                ctx.shadowBlur = (glitchTick % 30 < 25) ? 6 : 0;
-            } else if (p.profile === 'error') {
-                ctx.fillStyle = (glitchTick % 4 < 2) ? '#ffffff' : '#ff00ff';
-                ctx.shadowColor = '#00ffff';
-                ctx.shadowBlur = 20;
-            } else {
-                ctx.fillStyle = p.color;
-                ctx.shadowColor = ctx.fillStyle;
-                ctx.shadowBlur = 10;
-            }
+            ctx.save();
+            let headX = p.x; let headY = p.y;
             
-            let headX = p.x;
-            let headY = p.y;
             if (p.profile === 'error' && glitchTick % 12 < 2) {
-                headX += (Math.random() > 0.5 ? 4 : -4);
-                headY += (Math.random() > 0.5 ? 4 : -4);
+                headX += (Math.random() > 0.5 ? 4 : -4); headY += (Math.random() > 0.5 ? 4 : -4);
             }
+
+            if (p.ghost > 0) { ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 15; }
+            else if (p.isAltColor) { ctx.fillStyle = '#4ade80'; ctx.shadowColor = '#22c55e'; ctx.shadowBlur = 18; }
+            else if (p.profile === 'ultimate') { ctx.fillStyle = '#ff1a1a'; ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 18; }
+            else if (p.profile === 'destroyer') { ctx.fillStyle = '#ff4500'; ctx.shadowColor = '#ff4500'; ctx.shadowBlur = 22; }
+            else if (p.profile === 'void') { ctx.fillStyle = '#d946ef'; ctx.shadowColor = '#c084fc'; ctx.shadowBlur = 15; }
+            else { ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 12; }
             
             ctx.fillRect(headX, headY, UNIT, UNIT);
-            ctx.shadowBlur = 0;
+
+            // Draw visible active Shield ring bubble 
+            if (p.shield) {
+                ctx.strokeStyle = '#f0f';
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 10; ctx.shadowColor = '#f0f';
+                ctx.beginPath();
+                ctx.arc(headX + UNIT/2, headY + UNIT/2, UNIT * 2.5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
         }
     });
     
+    ctx.restore();
     update();
     requestAnimationFrame(draw);
 }
+
 reset();
 draw();
 </script>
