@@ -3,60 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEBULA B-BALL: MULTIVERSE</title>
+    <title>NEBULA B-BALL: MULTIVERSE PRO</title>
     <style>
-        body { margin: 0; background: #020205; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; color: white; font-family: 'Arial Black', sans-serif; }
-        canvas { border: 4px solid #1a1a3a; border-radius: 12px; box-shadow: 0 0 100px rgba(0, 210, 255, 0.2); display: none; }
-        #ui { position: absolute; top: 30px; display: none; justify-content: space-between; width: 800px; pointer-events: none; z-index: 10; }
-        .score { font-size: 80px; font-weight: 900; text-shadow: 0 0 30px currentColor; font-style: italic; }
-        #msg { position: absolute; top: 40%; width: 100%; text-align: center; font-size: 100px; color: #fff; text-shadow: 0 0 50px #0ff; display: none; pointer-events: none; z-index: 20; }
-        #menu { position: absolute; text-align: center; background: rgba(10, 10, 30, 0.9); padding: 40px; border: 2px solid #00d2ff; border-radius: 20px; box-shadow: 0 0 50px #00d2ff55; z-index: 30; }
-        h1 { margin-top: 0; color: #00d2ff; letter-spacing: 5px; }
-        .btn { display: block; width: 300px; padding: 15px; margin: 10px auto; background: transparent; border: 2px solid #fff; color: #fff; font-family: 'Arial Black'; cursor: pointer; transition: 0.3s; border-radius: 5px; }
-        .btn:hover { background: #fff; color: #000; transform: scale(1.05); }
-        .controls { font-size: 12px; color: #888; margin-top: 20px; line-height: 1.5; }
+        body { margin: 0; background: #050515; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; color: white; font-family: 'Arial Black', sans-serif; user-select: none; }
+        canvas { border: 4px solid #00ffff; border-radius: 16px; box-shadow: 0 0 50px rgba(0, 255, 255, 0.3); display: none; background: #0a0a28; }
+        
+        /* UI Styling */
+        #ui { position: absolute; top: 20px; display: none; justify-content: space-between; width: 950px; pointer-events: none; z-index: 10; }
+        .score-container { display: flex; flex-direction: column; align-items: center; width: 250px; }
+        .score { font-size: 70px; font-weight: 900; text-shadow: 0 0 20px currentColor; font-style: italic; margin: 0; }
+        .bar-container { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-top: 5px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
+        .stamina-bar { height: 100%; width: 100%; background: #00ffcc; transition: width 0.1s; }
+        .power-bar { height: 100%; width: 0%; background: #ff00ff; box-shadow: 0 0 10px #ff00ff; transition: width 0.1s; }
+        
+        #msg { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 80px; color: #fff; text-shadow: 0 0 40px #ff00ff; display: none; pointer-events: none; z-index: 20; font-style: italic; letter-spacing: 4px; }
+        
+        /* Main Menu */
+        #menu { position: absolute; text-align: center; background: rgba(5, 5, 20, 0.95); padding: 50px; border: 3px solid #ff00ff; border-radius: 24px; box-shadow: 0 0 60px rgba(255, 0, 255, 0.4); z-index: 30; max-width: 500px; }
+        h1 { margin-top: 0; color: #00ffff; letter-spacing: 6px; font-size: 42px; text-shadow: 0 0 20px #00ffff; }
+        .btn { display: block; width: 100%; padding: 16px; margin: 15px 0; background: linear-gradient(45deg, #ff00ff, #00ffff); border: none; color: #fff; font-family: 'Arial Black'; font-size: 16px; cursor: pointer; transition: 0.3s; border-radius: 8px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); box-shadow: 0 4px 15px rgba(0,255,255,0.2); }
+        .btn:hover { transform: scale(1.04) translateY(-2px); box-shadow: 0 6px 20px rgba(255,0,255,0.4); }
+        .controls { font-size: 13px; color: #aaa; margin-top: 25px; line-height: 1.6; text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Mobile Controls */
+        #touch-controls { position: absolute; bottom: 30px; width: 950px; display: none; justify-content: space-between; z-index: 40; pointer-events: none; }
+        .touch-btn { width: 70px; height: 70px; background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; pointer-events: auto; active { background: rgba(255,255,255,0.4); } }
+        .control-group { display: flex; gap: 15px; pointer-events: auto; }
     </style>
 </head>
 <body>
+
     <div id="menu">
-        <h1>NEBULA B-BALL</h1>
+        <h1>NEBULA B-BALL<br><span style="font-size:20px; color:#ff00ff; vertical-align:super;">MULTIVERSE PRO</span></h1>
         <button class="btn" onclick="startGame('P1_VS_BOT')">1 PLAYER (VS BOT)</button>
         <button class="btn" onclick="startGame('P1_VS_P2')">2 PLAYERS (LOCAL)</button>
         <button class="btn" onclick="startGame('BOT_VS_BOT')">BOT VS BOT (SPECTATE)</button>
-        <div class="controls">P1: WASD | P2: IJKL<br><b>TACKLE:</b> Run into the ball carrier at speed!</div>
+        <div class="controls">
+            <b>P1 (Red):</b> WASD | <b>DASH:</b> Double tap A/D | <b>SUPER:</b> Space<br>
+            <b>P2 (Blue):</b> IJKL | <b>DASH:</b> Double tap J/L | <b>SUPER:</b> Key 'O'<br>
+            <b>TACKLE:</b> Dash directly into the ball carrier to knock them out!
+        </div>
     </div>
 
     <div id="ui">
-        <div id="s1" class="score" style="color: #ff3e3e">0</div>
-        <div id="s2" class="score" style="color: #00d2ff">0</div>
+        <div class="score-container">
+            <div id="s1" class="score" style="color: #ff3e3e">0</div>
+            <div class="bar-container"><div id="stamina1" class="stamina-bar" style="background:#ff3e3e"></div></div>
+            <div class="bar-container"><div id="power1" class="power-bar"></div></div>
+        </div>
+        <div class="score-container">
+            <div id="s2" class="score" style="color: #00d2ff">0</div>
+            <div class="bar-container"><div id="stamina2" class="stamina-bar" style="background:#00d2ff"></div></div>
+            <div class="bar-container"><div id="power2" class="power-bar"></div></div>
+        </div>
     </div>
+    
     <div id="msg">GOAL!</div>
     <canvas id="court"></canvas>
+
+    <div id="touch-controls">
+        <div class="control-group">
+            <div class="touch-btn" id="btn-left">◀</div>
+            <div class="touch-btn" id="btn-right">▶</div>
+        </div>
+        <div class="control-group">
+            <div class="touch-btn" id="btn-jump">▲</div>
+            <div class="touch-btn" id="btn-super" style="background:rgba(255, 0, 255, 0.3); border-color:#ff00ff;">★</div>
+        </div>
+    </div>
 
 <script>
     const canvas = document.getElementById('court');
     const ctx = canvas.getContext('2d');
     canvas.width = 1000; canvas.height = 600;
 
+    // Audio Engine (Web Audio API)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+
+        if (type === 'hit') {
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'tackle') {
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'score') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        } else if (type === 'super') {
+            osc.type = 'square'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+    }
+
     let gameActive = false;
     let scoringCooldown = false;
     let screenShake = 0;
+    let gameMode = '';
     const particles = [];
-    const stars = Array.from({length: 100}, () => ({x: Math.random()*1000, y: Math.random()*600, s: Math.random()*2}));
+    const stars = Array.from({length: 80}, () => ({x: Math.random()*1000, y: Math.random()*600, s: Math.random()*2+1, speed: Math.random()*0.5+0.1}));
     
-    const gravity = 0.45;
+    const gravity = 0.5;
     const friction = 0.98;
-    const bounciness = 0.8;
+    const bounciness = 0.75;
     const FLOOR_Y = 540;
 
     let score1 = 0, score2 = 0;
     const keys = {};
 
+    // Dash Detection Tracking
+    let lastTapA = 0, lastTapD = 0;
+    let lastTapJ = 0, lastTapL = 0;
+
     const ball = { 
-        x: 500, y: 150, vx: 5, vy: 0, r: 14, trail: [],
+        x: 500, y: 150, vx: 5, vy: 0, r: 15, trail: [],
         holder: null, 
         reset(dir) {
-            this.x = 500; this.y = 150; this.vx = dir * 7; this.vy = -5;
+            this.x = 500; this.y = 150; this.vx = dir * 6; this.vy = -6;
             this.trail = [];
             this.holder = null;
             scoringCooldown = false;
@@ -66,115 +141,186 @@
     class Player {
         constructor(x, color, team, controlType) {
             this.x = x; this.y = 400; this.vx = 0; this.vy = 0;
-            this.w = 45; this.h = 90; this.color = color; this.team = team;
+            this.w = 46; this.h = 85; this.color = color; this.team = team;
             this.controlType = controlType;
             this.grounded = false;
-            this.moveSpeed = 1.3;
-            this.maxSpeed = 9;
-            this.jumpForce = -15;
+            this.moveSpeed = 1.1;
+            this.maxSpeed = 8;
+            this.jumpForce = -14;
             this.stunned = 0;
+            
+            // New Mechanics Counters
+            this.stamina = 100;
+            this.superMeter = 0;
+            this.dashCooldown = 0;
+            this.isSuperActive = false;
+            this.superTimer = 0;
         }
 
         update(opponent) {
-            if (this.stunned > 0) { this.stunned--; this.vx *= 0.9; }
+            if (this.stunned > 0) { this.stunned--; this.vx *= 0.85; }
+            if (this.dashCooldown > 0) this.dashCooldown--;
             
-            let left = false, right = false, jump = false;
+            // Passive Stamina & Super building
+            if (this.stamina < 100 && this.stunned <= 0) this.stamina = Math.min(100, this.stamina + 0.4);
+            if (this.superMeter < 100 && !this.isSuperActive) this.superMeter = Math.min(100, this.superMeter + 0.05);
+
+            if (this.isSuperActive) {
+                this.superTimer--;
+                if (this.superTimer <= 0) { this.isSuperActive = false; this.maxSpeed = 8; }
+            }
+
+            let left = false, right = false, jump = false, superTrigger = false;
 
             if (this.stunned <= 0) {
                 if (this.controlType === 'p1') {
-                    left = keys['KeyA'] || keys['ArrowLeft'];
-                    right = keys['KeyD'] || keys['ArrowRight'];
-                    jump = keys['KeyW'] || keys['ArrowUp'] || keys['Space'];
+                    left = keys['KeyA']; right = keys['KeyD']; jump = keys['KeyW'];
+                    superTrigger = keys['Space'];
                 } else if (this.controlType === 'p2') {
-                    left = keys['KeyJ'];
-                    right = keys['KeyL'];
-                    jump = keys['KeyI'];
+                    left = keys['KeyJ']; right = keys['KeyL']; jump = keys['KeyI'];
+                    superTrigger = keys['KeyO'];
                 } else if (this.controlType === 'bot') {
-                    // Bot logic: Chase ball or tackle player
-                    let targetX = (ball.holder === opponent) ? opponent.x : ball.x;
-                    this.vx += Math.sign(targetX - this.x) * 0.7;
-                    if (Math.abs(targetX - this.x) < 150 && (ball.y < this.y || opponent.y < this.y) && this.grounded) jump = true;
+                    // Smart Upgraded Bot AI
+                    let targetX = ball.x;
+                    if (ball.holder === opponent) {
+                        targetX = opponent.x; // Pursuit Mode
+                        if (Math.abs(this.x - opponent.x) < 200 && this.stamina > 40 && this.dashCooldown === 0 && Math.random() < 0.05) {
+                            this.dash(Math.sign(opponent.x - this.x)); // Bot Decides to Dash Tackle
+                        }
+                    } else if (ball.holder === this) {
+                        targetX = this.team === 1 ? 960 : 40; // Scoring Target Run
+                    }
+                    
+                    this.vx += Math.sign(targetX - this.x) * 0.65;
+                    if (Math.abs(targetX - this.x) < 100 && ball.y < this.y - 50 && this.grounded) jump = true;
+                    if (this.superMeter >= 100 && Math.random() < 0.01) this.useSuper();
                 }
 
+                // Handle Manual Player Movements
                 if (this.controlType !== 'bot') {
                     if (left) this.vx -= this.moveSpeed;
                     else if (right) this.vx += this.moveSpeed;
                     else this.vx *= 0.82;
+                    if (superTrigger && this.superMeter >= 100) this.useSuper();
                 }
-                if (jump && this.grounded) { this.vy = this.jumpForce; this.grounded = false; }
+                if (jump && this.grounded) { this.vy = this.jumpForce; this.grounded = false; playSound('hit'); }
             }
 
+            // Apply limits and Physics environment
             this.vx = Math.max(-this.maxSpeed, Math.min(this.maxSpeed, this.vx));
-            this.vy += gravity;
-            this.x += this.vx; this.y += this.vy;
+            this.vy += gravity; this.x += this.vx; this.y += this.vy;
 
             if (this.y + this.h > FLOOR_Y) { this.y = FLOOR_Y - this.h; this.vy = 0; this.grounded = true; }
             if (this.x < 0) this.x = 0; if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
 
-            // Tackle Check
+            // Strict Hitbox Collision Processing 
             if (this !== ball.holder && ball.holder === opponent) {
-                if (Math.abs(this.x - opponent.x) < 40 && Math.abs(this.y - opponent.y) < 80) {
-                    if (Math.abs(this.vx) > 4) { // Only tackle if moving fast
+                if (Math.abs(this.x - opponent.x) < 42 && Math.abs(this.y - opponent.y) < 80) {
+                    if (Math.abs(this.vx) > 11) { // Requires high speed velocity momentum context (Dash)
                         this.tackle(opponent);
                     }
                 }
             }
 
-            // Ball Interaction
+            // Interactive Ball Collection Framework
             if (!scoringCooldown && this.stunned <= 0) {
                 if (ball.holder === null) {
                     let cx = Math.max(this.x, Math.min(ball.x, this.x + this.w));
                     let cy = Math.max(this.y, Math.min(ball.y, this.y + this.h));
                     let dx = ball.x - cx, dy = ball.y - cy;
                     if (Math.sqrt(dx*dx + dy*dy) < ball.r + 5) {
-                        if (!this.grounded && this.vy < 0) ball.holder = this;
-                        else {
-                            ball.vx = (dx / 5) * 14 + this.vx;
-                            ball.vy = (dy / 5) * 12 + (this.vy < 0 ? this.vy : -4);
-                            spawnParticles(ball.x, ball.y, "#fff", 5);
+                        if (!this.grounded && this.vy < 0) {
+                            ball.holder = this;
+                            this.superMeter = Math.min(100, this.superMeter + 10); // Reward Interception
+                        } else {
+                            ball.vx = (dx / 4) * 12 + this.vx;
+                            ball.vy = (dy / 4) * 11 + (this.vy < 0 ? this.vy : -3);
+                            playSound('hit');
+                            spawnParticles(ball.x, ball.y, "#ffcc00", 6);
                         }
                     }
                 } else if (ball.holder === this) {
-                    ball.x = this.x + this.w/2 + (this.team === 1 ? 25 : -25);
-                    ball.y = this.y - 15;
-                    if ((this.team === 1 && ball.x > 930 && ball.y < 300) || 
-                        (this.team === 2 && ball.x < 70 && ball.y < 300)) this.performDunk();
-                    if (this.grounded) ball.holder = null;
+                    ball.x = this.x + this.w/2 + (this.team === 1 ? 26 : -26);
+                    ball.y = this.y + 10;
+                    
+                    // High Dunk Mechanics Boundary Limits
+                    if ((this.team === 1 && ball.x > 920 && ball.y < 320) || 
+                        (this.team === 2 && ball.x < 80 && ball.y < 320)) this.performDunk();
+                    if (this.grounded && Math.abs(this.vx) > 1) ball.holder = null; // Drop ball running ground rules
                 }
             }
+
+            // Sync UI elements cleanly
+            const prefix = this.team === 1 ? '1' : '2';
+            document.getElementById(`stamina${prefix}`).style.width = `${this.stamina}%`;
+            document.getElementById(`power${prefix}`).style.width = `${this.superMeter}%`;
+        }
+
+        dash(dir) {
+            if (this.stamina >= 35 && this.dashCooldown === 0) {
+                this.vx = dir * 16;
+                this.stamina -= 35;
+                this.dashCooldown = 25;
+                playSound('hit');
+                spawnParticles(this.x + this.w/2, this.y + this.h/2, "#00ffff", 12);
+            }
+        }
+
+        useSuper() {
+            this.superMeter = 0;
+            this.isSuperActive = true;
+            this.superTimer = 250; // Active frames duration
+            this.maxSpeed = 13; // Mega velocity mode running
+            playSound('super');
+            screenShake = 15;
+            spawnParticles(this.x+this.w/2, this.y+this.h/2, "#ff00ff", 30);
         }
 
         tackle(target) {
             ball.holder = null;
-            ball.vx = this.vx * 1.5;
-            ball.vy = -8;
-            target.vx = this.vx * 1.2;
-            target.vy = -5;
-            target.stunned = 30;
-            screenShake = 25;
-            spawnParticles(target.x + 20, target.y + 40, "#ff0000", 20);
+            ball.vx = this.vx * 1.3; ball.vy = -7;
+            target.vx = this.vx * 1.1; target.vy = -6;
+            target.stunned = 45; // Enhanced knockdown execution time
+            screenShake = 30;
+            playSound('tackle');
+            spawnParticles(target.x + 20, target.y + 40, "#ff0055", 35);
         }
 
         performDunk() {
             if (scoringCooldown) return;
             scoringCooldown = true;
-            if (this.team === 1) { score1++; resetRound('s1', score1, -1, "SLAM DUNK!!"); }
-            else { score2++; resetRound('s2', score2, 1, "SLAM DUNK!!"); }
-            screenShake = 40;
-            spawnParticles(ball.x, ball.y, this.color, 50);
+            if (this.team === 1) { score1++; resetRound('s1', score1, -1, "METEOR DUNK!!"); }
+            else { score2++; resetRound('s2', score2, 1, "METEOR DUNK!!"); }
+            screenShake = 45;
+            playSound('score');
+            spawnParticles(ball.x, ball.y, "#ff00ff", 60);
             ball.holder = null;
         }
 
         draw() {
             ctx.save();
             ctx.translate(this.x + this.w/2, this.y + this.h/2);
-            ctx.rotate(ball.holder === this ? (this.team === 1 ? 0.4 : -0.4) : this.vx * 0.04);
-            if (this.stunned > 0) ctx.filter = "brightness(5) saturate(0)";
-            ctx.shadowBlur = 15; ctx.shadowColor = this.color;
+            
+            // Dynamic aesthetic animations tilt rotations
+            let angle = ball.holder === this ? (this.team === 1 ? 0.3 : -0.3) : this.vx * 0.03;
+            ctx.rotate(angle);
+
+            if (this.stunned > 0) ctx.filter = "brightness(3) grayscale(1)";
+            if (this.isSuperActive) { ctx.shadowBlur = 30; ctx.shadowColor = "#ff00ff"; }
+            else { ctx.shadowBlur = 15; ctx.shadowColor = this.color; }
+
+            // Futuristic Grid Mesh Jersey Render Style
             ctx.fillStyle = this.color;
-            ctx.fillRect(-this.w/2, -15, this.w, 40); 
-            ctx.fillStyle = "#ffdbac";
-            ctx.beginPath(); ctx.arc(0, -35, 18, 0, Math.PI*2); ctx.fill(); 
+            ctx.fillRect(-this.w/2, -15, this.w, 40);
+            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
+            ctx.strokeRect(-this.w/2, -15, this.w, 40);
+
+            // Cyber Visor Neon Head Design
+            ctx.fillStyle = "#ffe0bd";
+            ctx.beginPath(); ctx.arc(0, -32, 16, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = this.isSuperActive ? "#ff00ff" : "#00ffff";
+            ctx.fillRect(this.team === 1 ? 0 : -14, -36, 14, 6); 
+
             ctx.restore();
         }
     }
@@ -182,77 +328,136 @@
     let t1, t2;
 
     function startGame(mode) {
+        gameMode = mode;
         document.getElementById('menu').style.display = 'none';
         document.getElementById('ui').style.display = 'flex';
         canvas.style.display = 'block';
+        
+        // Support dynamic mobile environment layouts instantly
+        if(window.innerWidth < 1024 || 'ontouchstart' in window) {
+            document.getElementById('touch-controls').style.display = 'flex';
+        }
+
         if (mode === 'P1_VS_BOT') { t1 = new Player(150, '#ff3e3e', 1, 'p1'); t2 = new Player(800, '#00d2ff', 2, 'bot'); }
         else if (mode === 'P1_VS_P2') { t1 = new Player(150, '#ff3e3e', 1, 'p1'); t2 = new Player(800, '#00d2ff', 2, 'p2'); }
         else { t1 = new Player(150, '#ff3e3e', 1, 'bot'); t2 = new Player(800, '#00d2ff', 2, 'bot'); }
+        
         gameActive = true;
         loop();
     }
 
-    window.onkeydown = e => keys[e.code] = true;
+    // Capture precise Desktop Input Handling 
+    window.onkeydown = e => {
+        keys[e.code] = true;
+        
+        // Double Tap Dash Triggers Processing Matrix
+        let now = performance.now();
+        if (e.code === 'KeyD') { if(now - lastTapD < 220) t1.dash(1); lastTapD = now; }
+        if (e.code === 'KeyA') { if(now - lastTapA < 220) t1.dash(-1); lastTapA = now; }
+        if (e.code === 'KeyL') { if(now - lastTapL < 220) t2.dash(1); lastTapL = now; }
+        if (e.code === 'KeyJ') { if(now - lastTapJ < 220) t2.dash(-1); lastTapJ = now; }
+    };
     window.onkeyup = e => keys[e.code] = false;
+
+    // Mobile Control Inputs Attachments Maps
+    const setupMobileButton = (id, keyCode) => {
+        const btn = document.getElementById(id);
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyCode] = true; });
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyCode] = false; });
+    };
+    setupMobileButton('btn-left', 'KeyA');
+    setupMobileButton('btn-right', 'KeyD');
+    setupMobileButton('btn-jump', 'KeyW');
+    setupMobileButton('btn-super', 'Space');
 
     function spawnParticles(x, y, color, count) {
         for (let i = 0; i < count; i++) {
-            particles.push({ x, y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, alpha: 1, color, r: Math.random()*3+1 });
+            particles.push({ 
+                x, y, 
+                vx: (Math.random() - 0.5) * 14, 
+                vy: (Math.random() - 0.5) * 14, 
+                alpha: 1, color, 
+                r: Math.random() * 4 + 1 
+            });
         }
     }
 
     function loop() {
         if (!gameActive) return;
+        
+        // Dynamic Camera Screen Shake System Engine matrix calculations
         ctx.setTransform(1, 0, 0, 1, (Math.random()-0.5)*screenShake, (Math.random()-0.5)*screenShake);
-        screenShake *= 0.9;
+        screenShake *= 0.88;
 
-        // Background
-        let grad = ctx.createRadialGradient(500, 300, 50, 500, 300, 600);
-        grad.addColorStop(0, "#0a0a25"); grad.addColorStop(1, "#020205");
+        // Visual Backdrop Scenery Rendering
+        let grad = ctx.createRadialGradient(500, 300, 40, 500, 300, 600);
+        grad.addColorStop(0, "#080822"); grad.addColorStop(1, "#02020a");
         ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "white"; stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
-        ctx.fillStyle = "#050510"; ctx.fillRect(0, FLOOR_Y, canvas.width, 60);
+        
+        // Retro-Synth Grid Lines
+        ctx.strokeStyle = "rgba(0, 255, 255, 0.04)"; ctx.lineWidth = 2;
+        for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, FLOOR_Y); ctx.stroke(); }
+        for(let j=0; j<FLOOR_Y; j+=40) { ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke(); }
+
+        // Parallax Starfields
+        ctx.fillStyle = "rgba(255,255,255,0.7)"; 
+        stars.forEach(s => { s.x -= s.speed; if(s.x < 0) s.x = canvas.width; ctx.fillRect(s.x, s.y, s.s, s.s); });
+        
+        // Solid Floor Ground
+        ctx.fillStyle = "#0c0d21"; ctx.fillRect(0, FLOOR_Y, canvas.width, 60);
+        ctx.strokeStyle = "#ff00ff"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, FLOOR_Y); ctx.lineTo(canvas.width, FLOOR_Y); ctx.stroke();
 
         t1.update(t2); t2.update(t1);
 
+        // Core Ball Vector Mechanics
         if (!ball.holder) {
             ball.vy += gravity; ball.vx *= friction;
             ball.x += ball.vx; ball.y += ball.vy;
-            if (ball.x < ball.r || ball.x > canvas.width - ball.r) { ball.vx *= -bounciness; ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r; }
-            if (ball.y < ball.r || ball.y + ball.r > FLOOR_Y) { ball.vy *= -bounciness; ball.y = ball.y < ball.r ? ball.r : FLOOR_Y - ball.r; }
             
-            if (ball.x > 400 && ball.x < 600 && ball.y + ball.r > 320 && ball.y - ball.r < 335) {
-                ball.y = ball.vy > 0 ? 320 - ball.r : 335 + ball.r;
-                ball.vy *= -bounciness;
+            if (ball.x < ball.r || ball.x > canvas.width - ball.r) { ball.vx *= -bounciness; ball.x = ball.x < ball.r ? ball.r : canvas.width - ball.r; playSound('hit'); }
+            if (ball.y < ball.r || ball.y + ball.r > FLOOR_Y) { ball.vy *= -bounciness; ball.y = ball.y < ball.r ? ball.r : FLOOR_Y - ball.r; playSound('hit'); }
+            
+            // Middle Defensive Court Obstacle Collisions
+            if (ball.x > 380 && ball.x < 620 && ball.y + ball.r > 340 && ball.y - ball.r < 355) {
+                ball.y = ball.vy > 0 ? 340 - ball.r : 355 + ball.r;
+                ball.vy *= -bounciness; playSound('hit');
             }
 
-            if (!scoringCooldown && ball.y > 240 && ball.y < 265) {
-                if (ball.x < 50) { scoringCooldown = true; score2++; resetRound('s2', score2, 1, "GOAL!"); }
-                if (ball.x > 950) { scoringCooldown = true; score1++; resetRound('s1', score1, -1, "GOAL!"); }
+            // Hoop Entrance Vectors Detection
+            if (!scoringCooldown && ball.y > 230 && ball.y < 265) {
+                if (ball.x < 60) { scoringCooldown = true; score2++; resetRound('s2', score2, 1, "RANGED SHOT!"); playSound('score'); }
+                if (ball.x > 940) { scoringCooldown = true; score1++; resetRound('s1', score1, -1, "RANGED SHOT!"); playSound('score'); }
             }
         }
 
-        // Trail & Particles
-        ball.trail.push({x: ball.x, y: ball.y}); if (ball.trail.length > 15) ball.trail.shift();
+        // Particle FX Tracks Processing loop
+        ball.trail.push({x: ball.x, y: ball.y}); if (ball.trail.length > 20) ball.trail.shift();
         ball.trail.forEach((p, i) => {
-            ctx.beginPath(); ctx.arc(p.x, p.y, ball.r * (i/15), 0, Math.PI*2);
-            ctx.fillStyle = ball.holder ? `rgba(0, 255, 255, ${i/30})` : `rgba(255, 165, 0, ${i/30})`; ctx.fill();
+            ctx.beginPath(); ctx.arc(p.x, p.y, ball.r * (i/20), 0, Math.PI*2);
+            ctx.fillStyle = ball.holder ? `rgba(255, 0, 255, ${i/40})` : `rgba(0, 255, 255, ${i/40})`; ctx.fill();
         });
 
         particles.forEach((p, i) => {
-            p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
+            p.x += p.vx; p.y += p.vy; p.alpha -= 0.025;
             ctx.globalAlpha = Math.max(0, p.alpha); ctx.fillStyle = p.color;
             ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
             if (p.alpha <= 0) particles.splice(i, 1);
         });
         ctx.globalAlpha = 1;
 
-        // Hoops
-        ctx.strokeStyle = "#ff3e3e"; ctx.strokeRect(0, 250, 45, 8);
-        ctx.strokeStyle = "#00d2ff"; ctx.strokeRect(955, 250, 45, 8);
+        // Beautiful Neon Board Backrim Hoops Construction Renders
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#ff3e3e"; ctx.strokeRect(0, 250, 55, 8); ctx.shadowBlur = 10; ctx.shadowColor = "#ff3e3e";
+        ctx.strokeStyle = "#00d2ff"; ctx.strokeRect(945, 250, 55, 8); ctx.shadowBlur = 10; ctx.shadowColor = "#00d2ff";
+        ctx.shadowBlur = 0; // Clear blur layer parameters
 
         t1.draw(); t2.draw();
-        ctx.fillStyle = ball.holder ? "#00ffff" : "#ffaa00";
+        
+        // Main Core Basketball Orb Render Look
+        let ballGrad = ctx.createRadialGradient(ball.x - 3, ball.y - 3, 2, ball.x, ball.y, ball.r);
+        ballGrad.addColorStop(0, ball.holder ? "#fff" : "#ffff00");
+        ballGrad.addColorStop(1, ball.holder ? "#ff00ff" : "#ff5500");
+        ctx.fillStyle = ballGrad;
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
 
         requestAnimationFrame(loop);
@@ -261,9 +466,8 @@
     function resetRound(id, val, dir, text) {
         document.getElementById(id).innerText = val;
         const msg = document.getElementById('msg');
-        msg.innerText = text;
-        msg.style.display = 'block';
-        setTimeout(() => { msg.style.display = 'none'; ball.reset(dir); }, 1200);
+        msg.innerText = text; msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; ball.reset(dir); }, 1400);
     }
 </script>
 </body>
