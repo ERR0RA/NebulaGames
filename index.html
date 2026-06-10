@@ -39,7 +39,7 @@
     }
 
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
-    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas, body[data-bg="stars"] #bgCanvas { opacity: 0.6; }
+    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas, body[data-bg="stars"] #bgCanvas, body[data-bg="grid"] #bgCanvas { opacity: 0.6; }
 
     /* NEON */
     body[data-bg="neon"]::before {
@@ -65,6 +65,9 @@
       animation: scanline 10s linear infinite;
     }
     @keyframes scanline { 0% { transform: translateY(0); } 100% { transform: translateY(100vh); } }
+
+    /* GRID BACKGROUND THEME (NEW) */
+    body[data-bg="grid"] { background: var(--bg0); }
 
     .cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); }
     .cursor-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 15px var(--primary); }
@@ -309,6 +312,7 @@
       <button class="bg-btn" onclick="setBg('matrix')">MATRIX</button>
       <button class="bg-btn" onclick="setBg('warp')">WARP</button>
       <button class="bg-btn" onclick="setBg('stars')">STARS</button>
+      <button class="bg-btn" onclick="setBg('grid')">GRID</button>
     </div>
   </div>
 
@@ -354,6 +358,7 @@
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
     let width, height, columns, drops, starArray = [];
+    let gridOffset = 0;
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -401,6 +406,22 @@
           const size = (1 - s.z/width) * 5;
           ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI*2); ctx.fill();
         });
+      }
+      else if (mode === 'grid') {
+        gridOffset = (gridOffset + 0.5) % 40;
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.15;
+        
+        // Vertical lines
+        for (let x = gridOffset; x < width; x += 40) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+        }
+        // Horizontal lines
+        for (let y = gridOffset; y < height; y += 40) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+        }
+        ctx.globalAlpha = 1.0;
       }
       requestAnimationFrame(draw);
     }
