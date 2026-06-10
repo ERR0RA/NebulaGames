@@ -39,7 +39,7 @@
     }
 
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s; }
-    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas, body[data-bg="stars"] #bgCanvas, body[data-bg="grid"] #bgCanvas { opacity: 0.6; }
+    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas, body[data-bg="stars"] #bgCanvas, body[data-bg="aurora"] #bgCanvas { opacity: 0.6; }
 
     /* NEON */
     body[data-bg="neon"]::before {
@@ -66,8 +66,8 @@
     }
     @keyframes scanline { 0% { transform: translateY(0); } 100% { transform: translateY(100vh); } }
 
-    /* GRID BACKGROUND THEME (NEW) */
-    body[data-bg="grid"] { background: var(--bg0); }
+    /* AURORA BACKGROUND THEME */
+    body[data-bg="aurora"] { background: var(--bg0); }
 
     .cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); }
     .cursor-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 15px var(--primary); }
@@ -312,7 +312,7 @@
       <button class="bg-btn" onclick="setBg('matrix')">MATRIX</button>
       <button class="bg-btn" onclick="setBg('warp')">WARP</button>
       <button class="bg-btn" onclick="setBg('stars')">STARS</button>
-      <button class="bg-btn" onclick="setBg('grid')">GRID</button>
+      <button class="bg-btn" onclick="setBg('aurora')">AURORA</button>
     </div>
   </div>
 
@@ -358,7 +358,7 @@
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
     let width, height, columns, drops, starArray = [];
-    let gridOffset = 0;
+    let auroraWaves = [];
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -372,6 +372,13 @@
           size: Math.random() * 2, speed: Math.random() * 0.5 + 0.1, opacity: Math.random()
         });
       }
+      
+      // Setup elements for Aurora mode
+      auroraWaves = [
+        { yBase: height * 0.3, amplitude: 40, speed: 0.005, phase: 0, length: 0.002 },
+        { yBase: height * 0.5, amplitude: 60, speed: 0.003, phase: 2, length: 0.0015 },
+        { yBase: height * 0.7, amplitude: 50, speed: 0.004, phase: 4, length: 0.001 }
+      ];
     }
 
     function draw() {
@@ -407,21 +414,40 @@
           ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI*2); ctx.fill();
         });
       }
-      else if (mode === 'grid') {
-        gridOffset = (gridOffset + 0.5) % 40;
-        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary');
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.15;
+      else if (mode === 'aurora') {
+        ctx.fillStyle = 'rgba(5, 6, 8, 1)';
+        ctx.fillRect(0, 0, width, height);
         
-        // Vertical lines
-        for (let x = gridOffset; x < width; x += 40) {
-          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
-        }
-        // Horizontal lines
-        for (let y = gridOffset; y < height; y += 40) {
-          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
-        }
-        ctx.globalAlpha = 1.0;
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+        
+        auroraWaves.forEach((wave, index) => {
+          wave.phase += wave.speed;
+          
+          ctx.save();
+          ctx.globalCompositeOperation = 'screen';
+          
+          let gradient = ctx.createLinearGradient(0, 0, 0, height);
+          gradient.addColorStop(0, 'transparent');
+          gradient.addColorStop(wave.yBase / height, primaryColor);
+          gradient.addColorStop(Math.min(1, (wave.yBase + 150) / height), 'transparent');
+          
+          ctx.fillStyle = gradient;
+          ctx.globalAlpha = 0.12 - (index * 0.02);
+          
+          ctx.beginPath();
+          ctx.moveTo(0, height);
+          
+          for (let x = 0; x <= width; x += 15) {
+            let y = wave.yBase + Math.sin(x * wave.length + wave.phase) * wave.amplitude 
+                             + Math.cos(x * 0.005 - wave.phase * 0.5) * (wave.amplitude * 0.3);
+            ctx.lineTo(x, y);
+          }
+          
+          ctx.lineTo(width, height);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        });
       }
       requestAnimationFrame(draw);
     }
