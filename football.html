@@ -56,13 +56,13 @@
                 <b>TEAM RED (PLAYER 1)</b>
                 Movement: <span>[W, A, S, D]</span> or <span>[▲, ◀, ▼, ▶]</span><br>
                 Action (Pass/Shoot): <span>[Spacebar]</span><br>
-                Switch Player: <span>[S]</span> or <span>[▼]</span>
+                Switch Player: <span>[F]</span> or <span>[▼]</span>
             </div>
             <div id="card-blue" class="control-card">
                 <b>TEAM BLUE (PLAYER 2 / BOT)</b>
                 Movement: <span>[▲, ◀, ▼, ▶]</span><br>
                 Action (Pass/Shoot): <span>[Enter]</span><br>
-                Switch Player: <span>[ArrowDown]</span>
+                Switch Player: <span>[ShiftRight]</span> or <span>[▼]</span>
             </div>
         </div>
     </div>
@@ -91,7 +91,7 @@
         } catch(e){}
     }
 
-    const friction = 0.984;
+    const friction = 0.965; 
     const MAX_SCORE = 5;
     const GOAL_TOP = 220;
     const GOAL_BOTTOM = 380;
@@ -100,19 +100,20 @@
     let matchRunning = false;
     let roundBreaking = false;
     let screenShakeAmount = 0;
-    let gameMode = 'pve'; // 'pve' or 'pvp'
+    let gameMode = 'pve'; 
     
     const particles = [];
-    const ball = { x: 550, y: 300, z: 0, vx: 0, vy: 0, vz: 0, r: 9, bounciness: 0.72, lastTouchTeam: 0, trail: [] };
+    const ball = { x: 550, y: 300, z: 0, vx: 0, vy: 0, vz: 0, r: 10, bounciness: 0.55, lastTouchTeam: 0, trail: [] };
 
     class Player {
         constructor(x, y, color, team, id, role) {
             this.startX = x; this.startY = y;
             this.x = x; this.y = y; this.z = 0;
             this.vx = 0; this.vy = 0;
-            this.color = color; this.team = team; this.id = id; this.role = role; // 'GK', 'DEF', 'MID', 'ST'
-            this.active = false; this.radius = 14;
-            this.accel = 0.58; this.maxSpeed = 5.4;
+            this.color = color; this.team = team; this.id = id; this.role = role; 
+            this.active = false; this.radius = 15;
+            this.accel = 0.68; 
+            this.maxSpeed = 5.8; 
             this.kickCooldown = 0;
         }
 
@@ -131,39 +132,35 @@
                     this.vx += (moveX / len) * this.accel;
                     this.vy += (moveY / len) * this.accel;
                 } else {
-                    this.vx *= 0.82; this.vy *= 0.82;
+                    this.vx *= 0.78; this.vy *= 0.78; 
                 }
 
                 if ((keys[controls.action] || (gameMode === 'pve' && keys['Space'])) && this.kickCooldown === 0) {
                     let dist = Math.hypot(ball.x - this.x, ball.y - this.y);
-                    if (dist < this.radius + ball.r + 15 && ball.z < 35) {
+                    if (dist < this.radius + ball.r + 18 && ball.z < 40) {
                         this.executeKick();
                     }
                 }
             } else {
-                // --- POSITION-BASED 5v5 TAC-AI RUNS ---
                 let targetX = this.startX;
                 let targetY = this.startY;
                 let distToBall = Math.hypot(ball.x - this.x, ball.y - this.y);
 
                 if (this.role === 'GK') {
-                    // Goalkeeper tracking logic
                     targetX = (this.team === 1) ? 45 : canvas.width - 45;
                     targetY = Math.max(GOAL_TOP, Math.min(GOAL_BOTTOM, ball.y));
-                    if (distToBall < 70) {
+                    if (distToBall < 80) {
                         targetX = ball.x; targetY = ball.y;
                     }
                 } else if (this.role === 'ST') {
-                    // Striker dynamic tracking
-                    targetX = ball.x + (this.team === 1 ? 20 : -20);
+                    targetX = ball.x + (this.team === 1 ? 25 : -25);
                     targetY = ball.y;
                 } else {
-                    // Midfielders and Defenders structural anchors
                     let ballInfluence = (this.team === 1) ? (ball.x * 0.3) : ((canvas.width - ball.x) * -0.3);
                     targetX = this.startX + ballInfluence;
                     targetY = this.startY + (ball.y - 300) * 0.4;
                     
-                    if (distToBall < 120 && ((this.team === 1 && ball.x < 600) || (this.team === 2 && ball.x > 500))) {
+                    if (distToBall < 140 && ((this.team === 1 && ball.x < 650) || (this.team === 2 && ball.x > 450))) {
                         targetX = ball.x; targetY = ball.y;
                     }
                 }
@@ -171,12 +168,11 @@
                 let dx = targetX - this.x; let dy = targetY - this.y;
                 let dist = Math.hypot(dx, dy);
                 if (dist > 8) {
-                    this.vx += (dx / dist) * (this.accel * 0.85);
-                    this.vy += (dy / dist) * (this.accel * 0.85);
+                    this.vx += (dx / dist) * (this.accel * 0.88);
+                    this.vy += (dy / dist) * (this.accel * 0.88);
                 }
 
-                // Auto defensive clearances logic
-                if (distToBall < this.radius + ball.r + 5 && ball.z < 25 && Math.random() < 0.25) {
+                if (distToBall < this.radius + ball.r + 5 && ball.z < 25 && Math.random() < 0.2) {
                     this.executeKick();
                 }
             }
@@ -189,33 +185,31 @@
 
             this.x += this.vx; this.y += this.vy;
 
-            // Pitch Limits Check
             if (this.x < 25) { this.x = 25; this.vx = 0; }
             if (this.x > canvas.width - 25) { this.x = canvas.width - 25; this.vx = 0; }
             if (this.y < 25) { this.y = 25; this.vy = 0; }
             if (this.y > canvas.height - 25) { this.y = canvas.height - 25; this.vy = 0; }
 
-            // Dynamic Ball Dribble Mechanics
             let ballDist = Math.hypot(ball.x - this.x, ball.y - this.y);
-            if (ballDist < this.radius + ball.r && ball.z < 18 && !roundBreaking) {
+            if (ballDist < this.radius + ball.r + 2 && ball.z < 20 && !roundBreaking) {
                 ball.lastTouchTeam = this.team;
                 let angle = Math.atan2(ball.y - this.y, ball.x - this.x);
-                ball.vx = Math.cos(angle) * 3.8 + this.vx * 0.5;
-                ball.vy = Math.sin(angle) * 3.8 + this.vy * 0.5;
+                ball.vx = Math.cos(angle) * 4.2 + this.vx * 0.6;
+                ball.vy = Math.sin(angle) * 4.2 + this.vy * 0.6;
             }
         }
 
         executeKick() {
             this.kickCooldown = 20;
             let targetGoalX = (this.team === 1) ? canvas.width - 25 : 25;
-            let targetGoalY = 300 + (Math.random() - 0.5) * 100;
+            let targetGoalY = 300 + (Math.random() - 0.5) * 60; 
             let angle = Math.atan2(targetGoalY - this.y, targetGoalX - this.x);
             
-            ball.vx = Math.cos(angle) * 15.5;
-            ball.vy = Math.sin(angle) * 15.5;
-            ball.vz = 5.5 + Math.random() * 5;
+            ball.vx = Math.cos(angle) * 17.0;
+            ball.vy = Math.sin(angle) * 17.0;
+            ball.vz = 4.5 + Math.random() * 4; 
 
-            screenShakeAmount = 4;
+            screenShakeAmount = 5;
             synthSound(360, 'triangle', 0.16, 0.2);
             createParticles(ball.x, ball.y, '#ffffff', 10);
         }
@@ -240,13 +234,12 @@
 
             if (this.active) {
                 ctx.save(); ctx.fillStyle = "#ffcc00"; ctx.beginPath();
-                ctx.moveTo(this.x, this.y - 22); ctx.lineTo(this.x - 5, this.y - 29); ctx.lineTo(this.x + 5, this.y - 29);
+                ctx.moveTo(this.x, this.y - 23); ctx.lineTo(this.x - 5, this.y - 30); ctx.lineTo(this.x + 5, this.y - 30);
                 ctx.fill(); ctx.restore();
             }
         }
     }
 
-    // --- Create 5v5 Rosters ---
     const teamRed = [
         new Player(60, 300, '#ff3838', 1, 0, 'GK'),
         new Player(250, 180, '#ff3838', 1, 1, 'DEF'),
@@ -263,7 +256,7 @@
         new Player(580, 300, '#17c0eb', 2, 4, 'ST')
     ];
 
-    let activeRedIndex = 4; // Start controlled at Striker
+    let activeRedIndex = 4; 
     let activeBlueIndex = 4;
     teamRed[activeRedIndex].active = true;
     teamBlue[activeBlueIndex].active = true;
@@ -272,25 +265,22 @@
     window.onkeydown = e => {
         keys[e.code] = true;
         
-        // Dynamic Player Swapping Module Engine
         if (matchRunning) {
             if (gameMode === 'pve') {
-                // In single player, both KeyS and ArrowDown cycle Team Red players
-                if (e.code === 'KeyS' || e.code === 'ArrowDown') {
+                if (e.code === 'KeyF' || e.code === 'ArrowDown') {
                     teamRed[activeRedIndex].active = false;
                     do { activeRedIndex = (activeRedIndex + 1) % 5; } while(teamRed[activeRedIndex].role === 'GK');
                     teamRed[activeRedIndex].active = true;
                     synthSound(580, 'sine', 0.04, 0.05);
                 }
             } else {
-                // PVP Mode Controls split
-                if (e.code === 'KeyS') {
+                if (e.code === 'KeyF' || e.code === 'KeyS') {
                     teamRed[activeRedIndex].active = false;
                     do { activeRedIndex = (activeRedIndex + 1) % 5; } while(teamRed[activeRedIndex].role === 'GK');
                     teamRed[activeRedIndex].active = true;
                     synthSound(580, 'sine', 0.04, 0.05);
                 }
-                if (e.code === 'ArrowDown') {
+                if (e.code === 'ShiftRight' || e.code === 'ArrowDown') {
                     teamBlue[activeBlueIndex].active = false;
                     do { activeBlueIndex = (activeBlueIndex + 1) % 5; } while(teamBlue[activeBlueIndex].role === 'GK');
                     teamBlue[activeBlueIndex].active = true;
@@ -310,7 +300,7 @@
         if (mode === 'pve') {
             blueCard.innerHTML = "<b>TEAM BLUE (CPU BOT)</b>Controlled entirely by autonomous positional squad logic patterns.";
         } else {
-            blueCard.innerHTML = "<b>TEAM BLUE (PLAYER 2)</b>Movement: <span>[▲, ◀, ▼, ▶]</span><br>Action (Pass/Shoot): <span>[Enter]</span><br>Switch Player: <span>[ControlRight]</span>";
+            blueCard.innerHTML = "<b>TEAM BLUE (PLAYER 2)</b>Movement: <span>[▲, ◀, ▼, ▶]</span><br>Action (Pass/Shoot): <span>[Enter]</span><br>Switch Player: <span>[ShiftRight]</span> or <span>[▼]</span>";
         }
     }
 
@@ -344,7 +334,7 @@
         if (scoringTeam === 1) score1++; else score2++;
 
         screenShakeAmount = 22;
-        synthSound(100, 'sawtooth', 0.4, 0.25);
+        // Sound synth tracking removed from this block completely
 
         createParticles(ball.x, ball.y, scoringTeam === 1 ? '#ff3838' : '#17c0eb', 30);
 
@@ -377,17 +367,15 @@
     function updateGameObjects() {
         if (!matchRunning) return;
 
-        // Dynamic Input Logic Allocations
         teamRed.forEach((p, i) => p.update(i === activeRedIndex, {up:'KeyW', left:'KeyA', right:'KeyD', down:'KeyS', action:'Space'}));
         teamBlue.forEach((p, i) => {
             let isManual = (gameMode === 'pvp') ? (i === activeBlueIndex) : false;
             p.update(isManual, {up:'ArrowUp', left:'ArrowLeft', right:'ArrowRight', down:'ArrowDown', action:'Enter'});
         });
 
-        // Ball Mechanics Vector Core
         if (!roundBreaking) {
             ball.vx *= friction; ball.vy *= friction;
-            if (ball.z > 0) ball.vz -= 0.26; else { ball.vz = 0; ball.z = 0; }
+            if (ball.z > 0) ball.vz -= 0.24; else { ball.vz = 0; ball.z = 0; }
 
             ball.x += ball.vx; ball.y += ball.vy; ball.z += ball.vz;
             if (ball.z < 0) { ball.z = 0; ball.vz = -ball.vz * ball.bounciness; }
@@ -396,17 +384,16 @@
             if (ball.trail.length > 8) ball.trail.shift();
         }
 
-        // Post Arena Boundary Detectors
         if (ball.x < 25) {
             if (ball.y > GOAL_TOP && ball.y < GOAL_BOTTOM && ball.z < 80) registerGoal(2);
-            else { ball.vx *= -0.7; ball.x = 25; }
+            else { ball.vx *= -0.6; ball.x = 25; }
         }
         if (ball.x > canvas.width - 25) {
             if (ball.y > GOAL_TOP && ball.y < GOAL_BOTTOM && ball.z < 80) registerGoal(1);
-            else { ball.vx *= -0.7; ball.x = canvas.width - 25; }
+            else { ball.vx *= -0.6; ball.x = canvas.width - 25; }
         }
-        if (ball.y < 25) { ball.vy *= -0.7; ball.y = 25; }
-        if (ball.y > canvas.height - 25) { ball.vy *= -0.7; ball.y = canvas.height - 25; }
+        if (ball.y < 25) { ball.vy *= -0.6; ball.y = 25; }
+        if (ball.y > canvas.height - 25) { ball.vy *= -0.6; ball.y = canvas.height - 25; }
 
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.03;
@@ -423,27 +410,22 @@
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Render Professional Grass Field Layers
         ctx.fillStyle = "#0c2015"; ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle = "#0e2418";
         for (let i = 0; i < canvas.width; i += 110) {
             if((i/110)%2===0) ctx.fillRect(i, 0, 55, canvas.height);
         }
 
-        // Field Markings Lines Passes
         ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 3;
         ctx.strokeRect(25, 25, canvas.width - 50, canvas.height - 50);
         ctx.beginPath(); ctx.moveTo(canvas.width/2, 25); ctx.lineTo(canvas.width/2, canvas.height-25); ctx.stroke();
         ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height/2, 90, 0, Math.PI*2); ctx.stroke();
 
-        // Penalty 18-Yard boxes lines
         ctx.strokeRect(25, 120, 150, 360); ctx.strokeRect(canvas.width - 175, 120, 150, 360);
 
-        // Goal Nets Boxes
         ctx.strokeStyle = "#ff3838"; ctx.strokeRect(5, GOAL_TOP, 20, GOAL_BOTTOM - GOAL_TOP);
         ctx.strokeStyle = "#17c0eb"; ctx.strokeRect(canvas.width - 25, GOAL_TOP, 20, GOAL_BOTTOM - GOAL_TOP);
 
-        // Render Shadows Vector
         if (matchRunning && !roundBreaking) {
             let shadowSize = Math.max(3, ball.r - (ball.z * 0.1));
             ctx.fillStyle = "rgba(0, 0, 0, 0.4)"; ctx.beginPath();
@@ -458,7 +440,6 @@
             ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill(); ctx.restore();
         });
 
-        // Draw Ball
         if (matchRunning && !roundBreaking) {
             ball.trail.forEach((pos, idx) => {
                 ctx.save(); ctx.globalAlpha = (idx / ball.trail.length) * 0.2; ctx.fillStyle = "#00ff88";
