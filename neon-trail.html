@@ -116,7 +116,7 @@
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const UNIT = 5;
+const UNIT = 8; // Increased from 5 to make base engine speed faster
 
 let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0};
 let powerupTimer = 0;
@@ -539,14 +539,14 @@ function draw() {
         
         p.trail.forEach(t => {
             if (t.isGhost) { ctx.fillStyle = '#222'; }
-            else if (p.isAltColor) { ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 5 === 0) ? '#22c55e' : '#14532d'; }
-            else if (p.profile === 'ultimate') { ctx.fillStyle = (Math.floor(t.x + t.y) % 15 < 7) ? '#ff1a1a' : '#2b0000'; }
-            else if (p.profile === 'destroyer') { ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 4 === 0) ? '#eab308' : '#ea580c'; }
-            else if (p.profile === 'void') { ctx.fillStyle = (Math.floor(t.y/6 + t.cycle/4) % 3 === 0) ? '#4c1d95' : '#7e22ce'; }
-            else if (p.profile === 'failed') { ctx.fillStyle = (Math.floor(t.x + t.y) % 8 < 3) ? '#78350f' : ((t.cycle % 40 < 5) ? '#000' : '#b45309'); }
+            else if (p.isAltColor) { ctx.fillStyle = (Math.floor(t.x/UNIT + t.cycle/2) % 5 === 0) ? '#22c55e' : '#14532d'; }
+            else if (p.profile === 'ultimate') { ctx.fillStyle = (Math.floor(t.x + t.y) % 24 < 12) ? '#ff1a1a' : '#2b0000'; }
+            else if (p.profile === 'destroyer') { ctx.fillStyle = (Math.floor(t.x/UNIT + t.cycle/2) % 4 === 0) ? '#eab308' : '#ea580c'; }
+            else if (p.profile === 'void') { ctx.fillStyle = (Math.floor(t.y/UNIT + t.cycle/4) % 3 === 0) ? '#4c1d95' : '#7e22ce'; }
+            else if (p.profile === 'failed') { ctx.fillStyle = (Math.floor(t.x + t.y) % 16 < 6) ? '#78350f' : ((t.cycle % 40 < 5) ? '#000' : '#b45309'); }
             else if (p.profile === 'error') {
                 let colors = ['#00ffff', '#ff00ff', '#ffffff', '#222'];
-                ctx.fillStyle = colors[(t.cycle + Math.floor(t.x/5)) % colors.length];
+                ctx.fillStyle = colors[(t.cycle + Math.floor(t.x/UNIT)) % colors.length];
             } else { ctx.fillStyle = p.color; }
             
             ctx.fillRect(t.x, t.y, UNIT, UNIT);
@@ -557,7 +557,7 @@ function draw() {
             let headX = p.x; let headY = p.y;
             
             if (p.profile === 'error' && glitchTick % 12 < 2) {
-                headX += (Math.random() > 0.5 ? 4 : -4); headY += (Math.random() > 0.5 ? 4 : -4);
+                headX += (Math.random() > 0.5 ? UNIT : -UNIT); headY += (Math.random() > 0.5 ? UNIT : -UNIT);
             }
 
             if (p.ghost > 0) { ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 15; }
