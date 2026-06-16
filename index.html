@@ -84,7 +84,7 @@
     .splash-logo-container {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       width: clamp(260px, 45vw, 400px); height: clamp(260px, 45vw, 400px);
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.65);
       border: 2px solid var(--primary);
       box-shadow: 0 0 40px var(--primary-glow), inset 0 0 30px rgba(255, 255, 255, 0.02);
       border-radius: 24px;
@@ -421,8 +421,12 @@
       starArray = [];
       for(let i=0; i<200; i++) {
         starArray.push({
-          x: Math.random() * width, y: Math.random() * height,
-          size: Math.random() * 2, speed: Math.random() * 0.5 + 0.1, opacity: Math.random()
+          x: Math.random() * width, 
+          y: Math.random() * height,
+          z: Math.random() * width,
+          size: Math.random() * 2, 
+          speed: Math.random() * 0.5 + 0.1, 
+          opacity: Math.random()
         });
       }
       
@@ -435,7 +439,11 @@
 
     function draw() {
       const mode = document.body.getAttribute('data-bg');
-      ctx.clearRect(0,0,width,height);
+      
+      if (mode !== 'matrix') {
+        ctx.clearRect(0,0,width,height);
+      }
+      
       if (mode === 'matrix') {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.fillRect(0, 0, width, height);
@@ -456,20 +464,29 @@
         });
       }
       else if (mode === 'warp') {
+        let centerX = width / 2;
+        let centerY = height / 2;
+
         starArray.forEach(s => {
-          s.z = s.z || Math.random() * width;
-          s.z -= 15;
-          if (s.z <= 0) s.z = width;
-          
-          // Focus coordinates: wrap around center logo during splash, else full screen wrap
-          let centerX = width / 2;
-          let centerY = height / 2;
+          s.z -= 12;
+          if (s.z <= 0) {
+            s.z = width;
+            // Generate coordinates positioned relatively near center to burst outward outwards
+            s.x = centerX + (Math.random() - 0.5) * 300;
+            s.y = centerY + (Math.random() - 0.5) * 300;
+          }
           
           const x = (s.x - centerX) * (width / s.z) + centerX;
           const y = (s.y - centerY) * (width / s.z) + centerY;
-          const size = (1 - s.z / width) * 5;
+          const size = (1 - s.z / width) * 6;
           
-          ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI*2); ctx.fill();
+          // Only render if they are bursting safely behind or outside bounds of splash logo zone
+          if (x >= 0 && x <= width && y >= 0 && y <= height) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${1 - s.z / width})`; 
+            ctx.beginPath(); 
+            ctx.arc(x, y, Math.max(0.1, size), 0, Math.PI*2); 
+            ctx.fill();
+          }
         });
       }
       else if (mode === 'aurora') {
@@ -576,7 +593,7 @@
         
         splash.style.opacity = '0';
         mainContent.style.opacity = '1';
-        isSplashActive = false; // Normalizes full-width background physics shifts
+        isSplashActive = false;
         
         setTimeout(() => {
           splash.remove();
