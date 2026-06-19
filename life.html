@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Life: Ultimate Sandbox</title>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --card-bg: #111827;
+            --accent-color: #a855f7; /* Royal Purple Accent */
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 15px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+        }
+
+        /* Expanded Stats Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(3, 7, 18, 0.6);
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        /* Text Log */
+        .log-container {
+            background: rgba(3, 7, 18, 0.8);
+            border-radius: 16px;
+            padding: 18px;
+            height: 180px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid rgba(168, 85, 247, 0.1);
+        }
+
+        .current-event {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #e5e7eb;
+        }
+
+        /* Action Panel */
+        .actions-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+        }
+
+        button:hover {
+            filter: brightness(1.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+        }
+
+        button.choice-btn {
+            background: #1f2937;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        button.choice-btn:hover {
+            background: #374151;
+            box-shadow: none;
+        }
+
+        button.danger-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        /* Notifications & Badges */
+        .badge {
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--accent-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        .save-banner {
+            font-size: 0.75rem;
+            color: var(--success-color);
+            text-align: center;
+            margin-bottom: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* Utilities */
+        .pos { color: var(--success-color); }
+        .neg { color: var(--danger-color); }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="save-banner" id="save-notif">✓ Progress Auto-Saved</div>
+        <header>
+            <h1>QUANTUM LIFE</h1>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Hyper-Reality Simulation Sandbox</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Identity</div>
+                <div class="stat-value" id="stat-age">Age 18</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Net Worth</div>
+                <div class="stat-value" id="stat-money">$1,500</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Physical Health</div>
+                <div class="stat-value" id="stat-health">100%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Mental Well-being</div>
+                <div class="stat-value" id="stat-mental">100%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Credit Score</div>
+                <div class="stat-value" id="stat-credit">650</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Crypto Portfolio</div>
+                <div class="stat-value" id="stat-crypto">0 BTC</div>
+            </div>
+            <div class="stat-card" style="grid-column: span 2;">
+                <div class="stat-label">Assets & Career Status</div>
+                <div class="stat-value" id="stat-job" style="font-size: 0.85rem;">Unemployed High School Grad</div>
+                <div id="asset-badges"></div>
+            </div>
+        </div>
+
+        <div class="log-container">
+            <p class="current-event" id="event-text">Loading reality matrix...</p>
+        </div>
+
+        <div class="actions-container" id="action-space">
+            </div>
+    </div>
+
+    <script>
+        // Deep Sandbox Variables
+        let life = {
+            age: 18,
+            money: 1500,
+            health: 100,
+            mental: 100,
+            credit: 650,
+            crypto: 0,
+            careerTrack: "none",
+            status: "High School Graduate",
+            experience: 0,
+            hasApartment: false,
+            hasCar: false,
+            hasGymMembership: false,
+            hasInsurance: false,
+            isMarried: false,
+            children: 0,
+            degreeEarned: false
+        };
+
+        const textDisplay = document.getElementById('event-text');
+        const actionsDisplay = document.getElementById('action-space');
+        const saveNotif = document.getElementById('save-notif');
+
+        // Over 15+ Advanced Reality Events Mechanics
+        const matrixEvents = [
+            { text: "Global inflation spikes cost of utilities and groceries across the country.", money: -900, health: 0, mental: -5, credit: -5 },
+            { text: "Identity Theft! Someone tried opening a card in your name. You resolved it, but it drained your sanity.", money: -100, health: 0, mental: -15, credit: -20 },
+            { text: "A massive stock market short-squeeze leaves you with quick retail trading profits.", money: 2500, health: 0, mental: 10, credit: 0 },
+            { text: "You slipped on icy pavement during winter, fracturing your wrist.", money: -1200, health: -25, mental: -10, credit: 0, needsInsuranceShield: true },
+            { text: "Tax Season! Your returns came back and you received a decent government stimulus kickback.", money: 850, health: 0, mental: 5, credit: 15 },
+            { text: "Burnout alert. The sheer monotony of adult scheduling weighs heavily on your spirit.", money: 0, health: -5, mental: -20, credit: 0 },
+            { text: "Bitcoin undergoes an unexpected macro bull run overnight.", cryptoPump: true },
+            { text: "You got caught speeding on a major toll highway. Ticket issued.", money: -250, health: 0, mental: -5, credit: -10 },
+            { text: "You dedicated time to eating healthy meal-preps and tracking macros.", money: -300, health: 15, mental: 10, credit: 0 }
+        ];
+
+        // 1. Core Persistence Layer: Local Storage Saves & Auto-Loads
+        function saveGame() {
+            localStorage.setItem('quantum_life_save', JSON.stringify(life));
+            saveNotif.style.opacity = '1';
+            setTimeout(() => saveNotif.style.opacity = '0', 2000);
+        }
+
+        function loadGame() {
+            const savedData = localStorage.getItem('quantum_life_save');
+            if (savedData) {
+                life = JSON.parse(savedData);
+                textDisplay.innerText = `Welcome back to your reality pipeline. Progressive timeline synced successfully at age ${life.age}.`;
+                buildMainControls();
+            } else {
+                initNewLife();
+            }
+            renderStats();
+        }
+
+        function initNewLife() {
+            textDisplay.innerText = "You stand outside holding your diploma. No properties, basic starting cash, and full choice paralysis. Pick a direction:";
+            actionsDisplay.innerHTML = `
+                <button onclick="selectPath('tech')">Tech University (-$8,000/yr)</button>
+                <button onclick="selectPath('medical')">Pre-Med Pathway (-$12,000/yr)</button>
+                <button onclick="selectPath('crypto_grind')">Day Trade & Gig Work Base</button>
+            `;
+        }
+
+        function renderStats() {
+            document.getElementById('stat-age').innerText = `Age ${life.age}`;
+            document.getElementById('stat-money').innerText = `$${life.money.toLocaleString()}`;
+            document.getElementById('stat-health').innerText = `${life.health}%`;
+            document.getElementById('stat-mental').innerText = `${life.mental}%`;
+            document.getElementById('stat-credit').innerText = life.credit;
+            document.getElementById('stat-crypto').innerText = `${life.crypto.toFixed(4)} BTC`;
+            document.getElementById('stat-job').innerText = life.status;
+
+            // Render Dynamic Badges (Assets panel)
+            let badgesHTML = '';
+            if (life.hasApartment) badgesHTML += '<span class="badge">🏠 Apartment Lease</span> ';
+            if (life.hasCar) badgesHTML += '<span class="badge">🚗 Owned Vehicle</span> ';
+            if (life.hasGymMembership) badgesHTML += '<span class="badge">💪 Gym Member</span> ';
+            if (life.hasInsurance) badgesHTML += '<span class="badge">🛡️ Health Insured</span> ';
+            if (life.isMarried) badgesHTML += '<span class="badge">💍 Married</span> ';
+            if (life.children > 0) badgesHTML += `<span class="badge">👶 Children: ${life.children}</span>`;
+            document.getElementById('asset-badges').innerHTML = badgesHTML;
+
+            // Health / Bankruptcy Checks
+            if (life.health <= 0 || life.mental <= 0) {
+                triggerGameOver("Critical System Failure: You suffered severe psychological or biological collapse due to dynamic neglect.");
+            } else if (life.money < -25000) {
+                triggerGameOver("Insolvency Bankruptcy: Debt collectors repossessed your assets. Credit score cratered out entirely.");
+            }
+        }
+
+        function selectPath(track) {
+            life.careerTrack = track;
+            if (track === 'tech') life.status = "Computer Science Undergrad";
+            if (track === 'medical') life.status = "Pre-Med Biology Major";
+            if (track === 'crypto_grind') life.status = "Independent Day Trader / Gig Hustler";
+            
+            saveGame();
+            renderStats();
+            buildMainControls();
+        }
+
+        // Expanded Options Interface
+        function buildMainControls() {
+            actionsDisplay.innerHTML = `
+                <button onclick="advanceTimeline('grind')">Work / Study Intense (+1 Year)</button>
+                <button class="choice-btn" onclick="advanceTimeline('balance')">Prioritize Leisure & Rest (+1 Year)</button>
+                <button class="choice-btn" onclick="openMarket()">Access Asset & Lifestyle Market</button>
+                <button class="choice-btn" onclick="openSocial()">Family & Social Framework</button>
+                <button class="danger-btn" style="margin-top:10px; padding:6px; font-size:0.75rem;" onclick="hardReset()">Hard Wipe Data</button>
+            `;
+        }
+
+        function openMarket() {
+            textDisplay.innerText = "FINANCIAL & COMMERCIAL EXCHANGE MARKETPLACE:\nInvest liquid cash into lifestyle upgrades, protection items, or buy volatile crypto metrics.";
+            actionsDisplay.innerHTML = `
+                <button class="choice-btn" onclick="purchaseAsset('apartment', 6000)">Sign Apartment Lease (-$6,000 upfront)</button>
+                <button class="choice-btn" onclick="purchaseAsset('car', 8000)">Buy Dependable Used Car (-$8,000)</button>
+                <button class="choice-btn" onclick="purchaseAsset('insurance', 2000)">Buy Health Premium Insurance (-$2,000/yr)</button>
+                <button class="choice-btn" onclick="purchaseAsset('crypto', 1000)">Buy $1,000 Worth of Bitcoin</button>
+                <button onclick="buildMainControls()">← Return to Pipeline</button>
+            `;
+        }
+
+        function openSocial() {
+            textDisplay.innerText = "SOCIAL & DOMESTIC DECISION MATRIX:\nManage interpersonal relationship tracking and domestic lifestyle vectors.";
+            actionsDisplay.innerHTML = `
+                <button class="choice-btn" onclick="socialAction('date')">Dating Apps & Socializing Outings (-$500)</button>
+                <button class="choice-btn" onclick="socialAction('marry')">Propose Marriage (-$5,000 Ring)</button>
+                <button class="choice-btn" onclick="socialAction('child')">Expand Family / Have a Child</button>
+                <button onclick="buildMainControls()">← Return to Pipeline</button>
+            `;
+        }
+
+        function purchaseAsset(item, cost) {
+            if (life.money < cost) {
+                textDisplay.innerText = "Transaction Rejected: Insufficient accessible checking balance for this market asset acquisition.";
+                return;
+            }
+            
+            if (item === 'apartment' && !life.hasApartment) { life.hasApartment = true; life.money -= cost; life.credit += 40; }
+            else if (item === 'car' && !life.hasCar) { life.hasCar = true; life.money -= cost; }
+            else if (item === 'insurance' && !life.hasInsurance) { life.hasInsurance = true; life.money -= cost; }
+            else if (item === 'crypto') {
+                life.money -= 1000;
+                life.crypto += 0.015 + (Math.random() * 0.01);
+                textDisplay.innerText = "Crypto balance updated. Volatility vectors remain live.";
+            } else {
+                textDisplay.innerText = "You already own this asset framework category.";
+                return;
+            }
+            renderStats();
+            saveGame();
+            openMarket();
+        }
+
+        function socialAction(action) {
+            if (action === 'date') {
+                if (life.money >= 500) { life.money -= 500; life.mental = Math.min(100, life.mental + 20); textDisplay.innerText = "Met interesting people. Your psychological health metrics recovered."; }
+            } else if (action === 'marry') {
+                if (life.money >= 5000 && !life.isMarried) { life.isMarried = true; life.money -= 5000; life.mental = Math.min(100, life.mental + 30); textDisplay.innerText = "Wedding successful! Shared financial security thresholds adjusted."; }
+            } else if (action === 'child') {
+                if (life.isMarried) { life.children += 1; textDisplay.innerText = "A child is born! Dependents add severe annual drain but raise core milestones."; }
+                else { textDisplay.innerText = "System recommendation: Stabilize primary relationship lines before introducing children vectors."; }
+            }
+            renderStats();
+            saveGame();
+        }
+
+        // Advanced Dynamic Game Engine Engine Processing Turn Mechanics
+        function advanceTimeline(pace) {
+            life.age += 1;
+            life.experience += 1;
+
+            // Baseline dynamic costs
+            let upkeepCost = 4000;
+            if (life.hasApartment) upkeepCost += 8000;
+            if (life.hasCar) upkeepCost += 2500;
+            if (life.children > 0) upkeepCost += (life.children * 4000);
+            life.money -= upkeepCost;
+
+            let logResult = `Yearly expenses subtracted: -$${upkeepCost.toLocaleString()}.\n`;
+
+            if (pace === 'grind') {
+                life.health -= 10;
+                life.mental -= 15;
+                life.credit = Math.min(850, life.credit + 15);
+
+                // Tech Path Branching
+                if (life.careerTrack === 'tech') {
+                    if (life.experience >= 4 && !life.degreeEarned) {
+                        life.degreeEarned = true;
+                        life.status = "Senior Systems Engineer";
+                        logResult += "Graduated! Snagged a high-tier backend engineering position.\n";
+                    } else if (life.degreeEarned) {
+                        life.money += 95000;
+                        logResult += "Corporate salary payment received: +$95,000.\n";
+                    } else {
+                        life.money -= 8000;
+                        logResult += "Paid university tuition. Heavy system strain studying data models.\n";
+                    }
+                }
+                // Medical Path Branching
+                else if (life.careerTrack === 'medical') {
+                    if (life.experience >= 7 && !life.degreeEarned) {
+                        life.degreeEarned = true;
+                        life.status = "Practicing Resident Surgeon";
+                        logResult += "Medical residency cleared! You are now fully active in operating environments.\n";
+                    } else if (life.degreeEarned) {
+                        life.money += 180000;
+                        logResult += "Surgeon salary milestone logged: +$180,000.\n";
+                    } else {
+                        life.money -= 12000;
+                        logResult += "Paid premium medical school tuition fees. Extreme neural exhaustion.\n";
+                    }
+                }
+                // Hustler Path Branching
+                else {
+                    let tradingPayout = 24000 + (life.experience * 3500);
+                    life.money += tradingPayout;
+                    logResult += `Cleared $${tradingPayout.toLocaleString()} scraping profits from trading orders and scaling contract shifts.\n`;
+                }
+            } else {
+                // Balance Pace
+                life.health = Math.min(100, life.health + 15);
+                life.mental = Math.min(100, life.mental + 25);
+                if (life.degreeEarned) {
+                    let standardPay = life.careerTrack === 'tech' ? 60000 : 100000;
+                    life.money += standardPay;
+                    logResult += `Maintained automated assignments at an easier pace. Logged salary check: +$${standardPay.toLocaleString()}.\n`;
+                } else {
+                    life.money += 12000;
+                    logResult += "Worked lightweight hours just to manage food costs. Career momentum holding flat.\n";
+                }
+            }
+
+            // Dynamic Matrix Event Core Roll
+            if (Math.random() > 0.35) {
+                let ev = matrixEvents[Math.floor(Math.random() * matrixEvents.length)];
+                if (ev.cryptoPump) {
+                    if (life.crypto > 0) {
+                        let gain = life.crypto * 8000;
+                        life.money += gain;
+                        logResult += `\n\n[EVENT] Crypto Market Explosion! Your digital wallets gained $${gain.toFixed(2)} valuation value liquid.`;
+                    } else {
+                        logResult += `\n\n[EVENT] Bitcoin jumped 30% in a week, but you do not hold asset entries to convert profits.`;
+                    }
+                } else {
+                    // Check if health insurance protects from accidental cost
+                    let calculatedLoss = ev.money;
+                    if (ev.needsInsuranceShield && life.hasInsurance) {
+                        calculatedLoss = -100; // Deductible only
+                        logResult += `\n\n[EVENT] ${ev.text} *Your Health Insurance policy protected you from bankruptcy!*`;
+                    } else {
+                        logResult += `\n\n[EVENT] ${ev.text}`;
+                    }
+                    life.money += calculatedLoss;
+                    life.health += ev.health;
+                    life.mental += ev.mental;
+                    life.credit = Math.max(300, Math.min(850, life.credit + ev.credit));
+                }
+            }
+
+            textDisplay.innerText = logResult;
+            renderStats();
+            saveGame();
+            buildMainControls();
+        }
+
+        function triggerGameOver(reason) {
+            textDisplay.innerHTML = `<b class="neg">TIMELINE COLLAPSE:</b><br>${reason}<br><br>Final Matrix Age: ${life.age}. Final Balance: $${life.money.toLocaleString()}.`;
+            actionsDisplay.innerHTML = `<button class="danger-btn" onclick="hardReset()">Wipe Timeline Registry (Restart)</button>`;
+            localStorage.removeItem('quantum_life_save');
+        }
+
+        function hardReset() {
+            localStorage.removeItem('quantum_life_save');
+            life = { age: 18, money: 1500, health: 100, mental: 100, credit: 650, crypto: 0, careerTrack: "none", status: "High School Graduate", experience: 0, hasApartment: false, hasCar: false, hasGymMembership: false, hasInsurance: false, isMarried: false, children: 0, degreeEarned: false };
+            initNewLife();
+            renderStats();
+        }
+
+        // Initialize Application State on launch
+        loadGame();
+    </script>
+</body>
+</html>
