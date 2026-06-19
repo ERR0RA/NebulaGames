@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Life: Ultimate Sandbox Pro</title>
+    <title>Quantum Life: Mega Sandbox Pro</title>
     <style>
         :root {
-            --bg-color: #030712;
-            --card-bg: #111827;
-            --accent-color: #a855f7; /* Royal Purple Accent */
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --text-main: #f9fafb;
-            --text-muted: #9ca3af;
+            --bg-color: #020617;
+            --card-bg: #0f172a;
+            --accent-color: #c084fc; 
+            --accent-glow: #a855f7;
+            --success-color: #34d399;
+            --danger-color: #f87171;
+            --warning-color: #fbbf24;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
         }
 
         * {
@@ -39,8 +40,8 @@
             background: var(--card-bg);
             border-radius: 24px;
             padding: 24px;
-            box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
-            border: 1px solid rgba(168, 85, 247, 0.2);
+            box-shadow: 0 0 35px rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.3);
         }
 
         header {
@@ -55,10 +56,9 @@
             color: var(--accent-color);
             text-transform: uppercase;
             letter-spacing: 3px;
-            text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+            text-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
         }
 
-        /* Expanded Stats Dashboard */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -67,10 +67,10 @@
         }
 
         .stat-card {
-            background: rgba(3, 7, 18, 0.6);
+            background: rgba(2, 6, 23, 0.7);
             padding: 12px;
             border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .stat-label {
@@ -87,7 +87,6 @@
             margin-top: 2px;
         }
 
-        /* Setup Input Blocks */
         .input-group {
             margin-bottom: 15px;
             display: flex;
@@ -103,7 +102,7 @@
         }
 
         .input-group input, .input-group select {
-            background: #1f2937;
+            background: #1e293b;
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 12px;
             border-radius: 8px;
@@ -116,25 +115,23 @@
             border-color: var(--accent-color);
         }
 
-        /* Text Log */
         .log-container {
-            background: rgba(3, 7, 18, 0.8);
+            background: rgba(2, 6, 23, 0.9);
             border-radius: 16px;
             padding: 18px;
-            height: 200px;
+            height: 220px;
             overflow-y: auto;
             margin-bottom: 20px;
-            border: 1px solid rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.15);
         }
 
         .current-event {
             font-size: 0.95rem;
             line-height: 1.6;
-            color: #e5e7eb;
+            color: #e2e8f0;
             white-space: pre-wrap;
         }
 
-        /* Action Panel */
         .actions-container {
             display: flex;
             flex-direction: column;
@@ -142,7 +139,7 @@
         }
 
         button {
-            background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+            background: linear-gradient(135deg, #c084fc 0%, #7e22ce 100%);
             color: white;
             border: none;
             padding: 14px;
@@ -157,32 +154,32 @@
         button:hover {
             filter: brightness(1.15);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
         }
 
         button.choice-btn {
-            background: #1f2937;
+            background: #1e293b;
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         button.choice-btn:hover {
-            background: #374151;
+            background: #334155;
             box-shadow: none;
         }
 
         button.danger-btn {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
         }
 
-        /* Notifications & Badges */
         .badge {
-            background: rgba(168, 85, 247, 0.2);
+            background: rgba(192, 132, 252, 0.2);
             color: var(--accent-color);
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 0.75rem;
             display: inline-block;
             margin-top: 4px;
+            border: 1px solid rgba(192, 132, 252, 0.3);
         }
 
         .save-banner {
@@ -194,65 +191,62 @@
             transition: opacity 0.3s;
         }
 
-        /* Utilities */
-        .pos { color: var(--success-color); }
-        .neg { color: var(--danger-color); }
+        .neg { color: var(--danger-color); font-weight: bold; }
+        .pos { color: var(--success-color); font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="game-container">
-        <div class="save-banner" id="save-notif">✓ Progress Auto-Saved</div>
+        <div class="save-banner" id="save-notif">✓ Quantum State Saved</div>
         <header>
             <h1>QUANTUM LIFE</h1>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Hyper-Reality Simulation Sandbox</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">The Extended Reality Sandbox</p>
         </header>
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">Identity</div>
-                <div class="stat-value" id="stat-identity">Initial Registration...</div>
+                <div class="stat-label">Identity Core</div>
+                <div class="stat-value" id="stat-identity">Awaiting Setup...</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Net Worth</div>
                 <div class="stat-value" id="stat-money">$0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Physical Health</div>
+                <div class="stat-label">Physical Form</div>
                 <div class="stat-value" id="stat-health">100%</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Mental Well-being</div>
+                <div class="stat-label">Mental Framework</div>
                 <div class="stat-value" id="stat-mental">100%</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Credit Score</div>
+                <div class="stat-label">Credit Rating</div>
                 <div class="stat-value" id="stat-credit">650</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Crypto Portfolio</div>
+                <div class="stat-label">Crypto Node</div>
                 <div class="stat-value" id="stat-crypto">0 BTC</div>
             </div>
             <div class="stat-card" style="grid-column: span 2;">
-                <div class="stat-label">Assets & Career Status</div>
-                <div class="stat-value" id="stat-job" style="font-size: 0.85rem;">Unregistered Entity</div>
+                <div class="stat-label">Assets, Career, & Network</div>
+                <div class="stat-value" id="stat-job" style="font-size: 0.85rem;">Unregistered Reality Slot</div>
                 <div id="asset-badges"></div>
             </div>
         </div>
 
         <div class="log-container">
-            <div class="current-event" id="event-text">Initialize consciousness parameters below...</div>
+            <div class="current-event" id="event-text">Construct your consciousness vectors below to begin...</div>
         </div>
 
-        <div class="actions-container" id="action-space">
-            </div>
+        <div class="actions-container" id="action-space"></div>
     </div>
 
     <script>
-        // Expanded Deep Sandbox Registry
         let life = {
             name: "Unknown",
-            gender: "Non-Binary",
+            gender: "Unassigned",
             age: 18,
             money: 1500,
             health: 100,
@@ -263,11 +257,14 @@
             status: "High School Graduate",
             experience: 0,
             hasApartment: false,
+            hasPenthouse: false,
             hasCar: false,
+            hasSupercar: false,
             hasGymMembership: false,
             hasInsurance: false,
+            hasHardwareWallet: false,
             isMarried: false,
-            children: 0,
+            childrenNames: [],
             degreeEarned: false,
             initialized: false
         };
@@ -276,37 +273,43 @@
         const actionsDisplay = document.getElementById('action-space');
         const saveNotif = document.getElementById('save-notif');
 
-        // Massive 20+ Immersive Event Arrays
+        const childFirstNames = ["Zion", "Luna", "Kai", "Nova", "Atlas", "Aria", "Miles", "Maya", "Leo", "Ivy", "Eden", "Jax"];
+
         const matrixEvents = [
-            { text: "Global inflation spikes cost of utilities and groceries across the country.", money: -1100, health: 0, mental: -5, credit: -5 },
-            { text: "Identity Theft! Someone tried opening a card in your name. You resolved it, but it drained your sanity.", money: -150, health: 0, mental: -15, credit: -20 },
-            { text: "A massive stock market short-squeeze leaves you with quick retail trading profits.", money: 3200, health: 0, mental: 10, credit: 0 },
-            { text: "You slipped on icy pavement during winter, fracturing your wrist.", money: -1500, health: -25, mental: -10, credit: 0, needsInsuranceShield: true },
-            { text: "Tax Season! Your returns came back and you received a decent government stimulus kickback.", money: 950, health: 0, mental: 5, credit: 15 },
-            { text: "Burnout alert. The sheer monotony of adult scheduling weighs heavily on your spirit.", money: 0, health: -5, mental: -25, credit: 0 },
-            { text: "Bitcoin undergoes an unexpected macro bull run overnight.", cryptoPump: true },
-            { text: "Bitcoin undergoes a brutal regulatory crash overnight.", cryptoCrash: true },
-            { text: "You got caught speeding on a major toll highway. Ticket issued.", money: -300, health: 0, mental: -5, credit: -15 },
-            { text: "You dedicated time to eating healthy meal-preps and tracking macros.", money: -400, health: 18, mental: 12, credit: 0 },
-            { text: "An unexpected dental cavity extraction caught you off-guard.", money: -800, health: -5, mental: -10, credit: 0, needsInsuranceShield: true },
-            { text: "A high-yield tech company stock split earns you side dividends.", money: 1200, health: 0, mental: 5, credit: 10 },
-            { text: "A local storage server malfunction leaks your accounts data. Cyber stress scales up.", money: 0, health: 0, mental: -15, credit: -30 },
-            { text: "Landlords push rental adjustments across the baseline housing market system.", money: -600, health: 0, mental: -8, credit: 0 },
-            { text: "You took a refreshing wellness weekend off grid, realigning perspective models.", money: -200, health: 10, mental: 25, credit: 0 }
+            { text: "Global inflation spikes hyper-market costs across all utilities and regional asset sectors.", money: -1200, health: 0, mental: -8, credit: -5 },
+            { text: "Identity Hack! Malicious dark-web actors breach a data center and copy your card records.", money: -400, health: 0, mental: -20, credit: -40 },
+            { text: "A coordinate squeeze on popular shorted assets allows you a quick tech swing-trade flip.", money: 4500, health: 0, mental: 15, credit: 0 },
+            { text: "Slipped on an oily mechanical bay platform and sustained severe ligament displacement.", money: -2500, health: -30, mental: -15, credit: 0, needsInsuranceShield: true },
+            { text: "Tax Optimization! An algorithmic system flags code exceptions allowing a heavy refund writeoff.", money: 1400, health: 0, mental: 10, credit: 20 },
+            { text: "Burnout Threshold Breached. System maintenance recommended to clear residual operational lag.", money: 0, health: -8, mental: -30, credit: 0 },
+            { text: "Dynamic structural updates flip cryptocurrency valuations upward unexpectedly.", cryptoPump: true },
+            { text: "Flash-crash liquidation cascade flattens decentralized tokens across key nodes.", cryptoCrash: true },
+            { text: "Exceeded high-velocity traffic regulations via automated radar trap. Automated penal code logged.", money: -350, health: 0, mental: -5, credit: -10 },
+            { text: "Sourced high-tier clean micro-nutrients and optimization routines.", money: -500, health: 20, mental: 15, credit: 0 },
+            { text: "Dental extraction emergency arises via an impacted root nerve.", money: -1100, health: -10, mental: -10, credit: 0, needsInsuranceShield: true },
+            { text: "A variable interest-bearing account pays out historical liquidity yield drops.", money: 1800, health: 0, mental: 5, credit: 15 },
+            { text: "Cyberphishing actors replicate your digital security keys. Panic cleanups required.", money: -200, health: 0, mental: -15, credit: -25 },
+            { text: "Landlords raise local baseline space metrics by 12% due to corporate zoning changes.", money: -750, health: 0, mental: -10, credit: 0 },
+            { text: "Isolated system reboot: Spent a week in an off-grid cyber-detox dome.", money: -400, health: 12, mental: 30, credit: 0 },
+            { text: "An ancient cold-wallet archive you found contains forgotten micro-fraction keys.", money: 2000, health: 0, mental: 8, credit: 0 },
+            { text: "Heavy rain causes a toxic mold variant to breach your local living cell walls.", money: -900, health: -15, mental: -12, credit: 0 },
+            { text: "A massive tech conglomerate purchases a tiny domain name you registered years ago.", money: 6000, health: 0, mental: 20, credit: 0 },
+            { text: "Your local energy provider charges an off-peak infrastructure surge adjustment.", money: -350, health: 0, mental: -5, credit: 0 },
+            { text: "A deep learning algorithm tool you set up generates automated micropayment royalties.", money: 800, health: 0, mental: 5, credit: 5 }
         ];
 
         function saveGame() {
-            localStorage.setItem('quantum_life_save_v2', JSON.stringify(life));
+            localStorage.setItem('quantum_life_mega_save', JSON.stringify(life));
             saveNotif.style.opacity = '1';
             setTimeout(() => saveNotif.style.opacity = '0', 2000);
         }
 
         function loadGame() {
-            const savedData = localStorage.getItem('quantum_life_save_v2');
+            const savedData = localStorage.getItem('quantum_life_mega_save');
             if (savedData) {
                 life = JSON.parse(savedData);
                 if(life.initialized) {
-                    textDisplay.innerText = `Timeline synchronized. Welcome back, ${life.name} (${life.gender}). Current age node: ${life.age}.`;
+                    textDisplay.innerText = `Data link stable. Welcome back, ${life.name} (${life.gender}). Current Age: ${life.age}.`;
                     renderStats();
                     buildMainControls();
                     return;
@@ -315,24 +318,24 @@
             initIdentityForm();
         }
 
-        // 1. Initial State: Setup Character Configuration
         function initIdentityForm() {
-            textDisplay.innerText = "CRITICAL: Input pipeline identity telemetry vectors to initialize your custom avatar blueprint.";
+            textDisplay.innerText = "PROMPT: Enter baseline bio-parameters to materialize your sandbox identity.";
             actionsDisplay.innerHTML = `
                 <div class="input-group">
-                    <label>Subject Label Name</label>
-                    <input type="text" id="init-name" placeholder="Enter Character Name..." value="Alex">
+                    <label>Designated Subject Name</label>
+                    <input type="text" id="init-name" placeholder="Type name here..." value="Casey">
                 </div>
                 <div class="input-group">
-                    <label>Gender Architecture Alignment</label>
+                    <label>Gender Manifestation Matrix</label>
                     <select id="init-gender">
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Non-Binary">Non-Binary</option>
-                        <option value="Androgynous Cyborg">Androgynous Cyborg</option>
+                        <option value="Male">Male Vector</option>
+                        <option value="Female">Female Vector</option>
+                        <option value="Non-Binary">Non-Binary Node</option>
+                        <option value="Fluid Spectrum">Fluid Spectrum</option>
+                        <option value="Bio-AI Hybrid">Bio-AI Hybrid</option>
                     </select>
                 </div>
-                <button onclick="submitIdentity()">Register Identity & Boot Reality Matrix</button>
+                <button onclick="submitIdentity()">Bind Blueprint & Initialize Sandbox</button>
             `;
         }
 
@@ -340,7 +343,7 @@
             const chosenName = document.getElementById('init-name').value.trim();
             const chosenGender = document.getElementById('init-gender').value;
             
-            life.name = chosenName ? chosenName : "Subject-7A";
+            life.name = chosenName ? chosenName : "Subject-Alpha";
             life.gender = chosenGender;
             life.initialized = true;
 
@@ -349,11 +352,11 @@
         }
 
         function initNewLife() {
-            textDisplay.innerText = `Identity locked. Hello, ${life.name}.\nYou stand outside holding your high school diploma. No properties, basic starting cash, and full choice paralysis. Pick a directory:`;
+            textDisplay.innerText = `Matrix Compiled. Subject: ${life.name}.\nYou stand outside holding a high school diploma. Capital reserves: minimal. Sandbox choices: absolute. Pick your first baseline track:`;
             actionsDisplay.innerHTML = `
-                <button onclick="selectPath('tech')">Tech University (-$8,000/yr)</button>
-                <button onclick="selectPath('medical')">Pre-Med Pathway (-$12,000/yr)</button>
-                <button onclick="selectPath('crypto_grind')">Day Trade & Gig Work Base</button>
+                <button onclick="selectPath('tech')">Quantum Computing Engineering (-$8,000/yr)</button>
+                <button onclick="selectPath('medical')">Nanotech Bio-Surgery Track (-$12,000/yr)</button>
+                <button onclick="selectPath('crypto_grind')">Algorithmic Trade & Freelance Grind</button>
             `;
             saveGame();
         }
@@ -368,29 +371,33 @@
             document.getElementById('stat-crypto').innerText = `${life.crypto.toFixed(4)} BTC`;
             document.getElementById('stat-job').innerText = life.status;
 
-            // Badges Matrix Updates
             let badgesHTML = '';
-            if (life.hasApartment) badgesHTML += '<span class="badge">🏠 Apartment Lease</span> ';
-            if (life.hasCar) badgesHTML += '<span class="badge">🚗 Owned Vehicle</span> ';
-            if (life.hasGymMembership) badgesHTML += '<span class="badge">💪 Gym Member</span> ';
-            if (life.hasInsurance) badgesHTML += '<span class="badge">🛡️ Health Insured</span> ';
-            if (life.isMarried) badgesHTML += '<span class="badge">💍 Married</span> ';
-            if (life.children > 0) badgesHTML += `<span class="badge">👶 Children Matrix x${life.children}</span>`;
+            if (life.hasApartment) badgesHTML += '<span class="badge">🏠 Studio Zone Lease</span> ';
+            if (life.hasPenthouse) badgesHTML += '<span class="badge">🏙️ Sky-Rise Penthouse</span> ';
+            if (life.hasCar) badgesHTML += '<span class="badge">🚗 Standard Transit Vehicle</span> ';
+            if (life.hasSupercar) badgesHTML += '<span class="badge">🏎️ Electric Supercar</span> ';
+            if (life.hasGymMembership) badgesHTML += '<span class="badge">💪 Bio-Optimization Hub Member</span> ';
+            if (life.hasInsurance) badgesHTML += '<span class="badge">🛡️ Premium Matrix Coverage</span> ';
+            if (life.hasHardwareWallet) badgesHTML += '<span class="badge">🔑 Safe Ledger Vault</span> ';
+            if (life.isMarried) badgesHTML += '<span class="badge">💍 Life Partner Synced</span> ';
+            
+            if (life.childrenNames.length > 0) {
+                badgesHTML += `<span class="badge">👶 Progeny Links: ${life.childrenNames.join(', ')}</span>`;
+            }
             document.getElementById('asset-badges').innerHTML = badgesHTML;
 
-            // System Threshold Checks
             if (life.health <= 0 || life.mental <= 0) {
-                triggerGameOver("Critical System Failure: Your organic structure experienced physical or mental flatlining.");
-            } else if (life.money < -35000) {
-                triggerGameOver("Insolvency Bankruptcy: Federal credit entities completely scrubbed your accounts.");
+                triggerGameOver("Biological Desynchronization: Core physical or mental parameters flatlined to 0%.");
+            } else if (life.money < -40000) {
+                triggerGameOver("Complete Liquidation: Total unsecured liability margins surpassed debt safety buffers.");
             }
         }
 
         function selectPath(track) {
             life.careerTrack = track;
-            if (track === 'tech') life.status = "Computer Science Undergrad";
-            if (track === 'medical') life.status = "Pre-Med Biology Major";
-            if (track === 'crypto_grind') life.status = "Independent Day Trader / Gig Hustler";
+            if (track === 'tech') life.status = "Computational Systems Scholar";
+            if (track === 'medical') life.status = "Molecular Bio-Med Student";
+            if (track === 'crypto_grind') life.status = "Independent High-Frequency Trader / Hustler";
             
             saveGame();
             renderStats();
@@ -399,51 +406,58 @@
 
         function buildMainControls() {
             actionsDisplay.innerHTML = `
-                <button onclick="advanceTimeline('grind')">Work / Study Intense (+1 Year)</button>
-                <button class="choice-btn" onclick="advanceTimeline('balance')">Prioritize Leisure & Rest (+1 Year)</button>
-                <button class="choice-btn" onclick="openMarket()">Access Asset & Lifestyle Market</button>
-                <button class="choice-btn" onclick="openSocial()">Family & Social Framework</button>
-                <button class="danger-btn" style="margin-top:10px; padding:6px; font-size:0.75rem;" onclick="hardReset()">Hard Wipe Data</button>
+                <button onclick="advanceTimeline('grind')">High-Intensity Sprint / Grind (+1 Year)</button>
+                <button class="choice-btn" onclick="advanceTimeline('balance')">System Equilibrium & Rest (+1 Year)</button>
+                <button class="choice-btn" onclick="openMarket()">Commercial Asset Marketplace</button>
+                <button class="choice-btn" onclick="openSocial()">Interpersonal Networking Matrix</button>
+                <button class="danger-btn" style="margin-top:10px; padding:6px; font-size:0.75rem;" onclick="hardReset()">Wipe Timeline Matrix</button>
             `;
         }
 
         function openMarket() {
-            textDisplay.innerText = "FINANCIAL & COMMERCIAL EXCHANGE MARKETPLACE:\nInvest liquid cash into lifestyle upgrades, protection items, or buy volatile crypto metrics.";
+            textDisplay.innerText = "MARKET MATRIX: Convert liquidity into core properties, assets, security insurance shields, or crypto arrays.";
             actionsDisplay.innerHTML = `
-                <button class="choice-btn" onclick="purchaseAsset('apartment', 6000)">Sign Apartment Lease (-$6,000 upfront)</button>
-                <button class="choice-btn" onclick="purchaseAsset('car', 8000)">Buy Dependable Used Car (-$8,000)</button>
-                <button class="choice-btn" onclick="purchaseAsset('gym', 500)">Annual Boxing/Gym Membership (-$500)</button>
-                <button class="choice-btn" onclick="purchaseAsset('insurance', 2000)">Buy Health Premium Insurance (-$2,000/yr)</button>
-                <button class="choice-btn" onclick="purchaseAsset('crypto', 1000)">Buy $1,000 Worth of Bitcoin</button>
-                <button onclick="buildMainControls()">← Return to Pipeline</button>
+                <button class="choice-btn" onclick="purchaseAsset('apartment', 6000)">Lease Standard Micro-Unit (-$6,000)</button>
+                <button class="choice-btn" onclick="purchaseAsset('penthouse', 50000)">Acquire Sky-Rise Penthouse Core (-$50,000)</button>
+                <button class="choice-btn" onclick="purchaseAsset('car', 8000)">Purchase Utility Commuter Car (-$8,000)</button>
+                <button class="choice-btn" onclick="purchaseAsset('supercar', 90000)">Deploy High-Velocity Supercar (-$90,000)</button>
+                <button class="choice-btn" onclick="purchaseAsset('hardware_wallet', 1500)">Secure Hardware Ledger Shield (-$1,500)</button>
+                <button class="choice-btn" onclick="purchaseAsset('gym', 600)">Unlock Wellness Hub Access (-$600)</button>
+                <button class="choice-btn" onclick="purchaseAsset('insurance', 2500)">Acquire Health Matrix Protection Plan (-$2,500/yr)</button>
+                <button class="choice-btn" onclick="purchaseAsset('crypto', 2000)">Inject $2,000 into Volatile Crypto Blocks</button>
+                <button onclick="buildMainControls()">← Return to Main Controls</button>
             `;
         }
 
         function openSocial() {
-            textDisplay.innerText = "SOCIAL & DOMESTIC DECISION MATRIX:\nManage interpersonal relationships. Romance can lead to random child roll triggers.";
+            textDisplay.innerText = "SOCIAL MODULE: Manage emotional networks and partnerships. Dynamic activities carry a randomized chance of generating a child entry.";
             actionsDisplay.innerHTML = `
-                <button class="choice-btn" onclick="socialAction('date')">Dating Apps & Socializing Outings (-$500)</button>
-                <button class="choice-btn" onclick="socialAction('marry')">Propose Marriage (-$5,000 Ring Layout)</button>
-                <button onclick="buildMainControls()">← Return to Pipeline</button>
+                <button class="choice-btn" onclick="socialAction('date')">Deploy High-End Outing Framework (-$600)</button>
+                <button class="choice-btn" onclick="socialAction('marry')">Initialize Marriage Registry Covenant (-$6,000 Ring)</button>
+                <button onclick="buildMainControls()">← Return to Main Controls</button>
             `;
         }
 
         function purchaseAsset(item, cost) {
             if (life.money < cost) {
-                textDisplay.innerText = "Transaction Rejected: Insufficient accessible checking balance.";
+                textDisplay.innerText = "Transaction Error: Insufficient operational credit liquidity.";
                 return;
             }
             
             if (item === 'apartment' && !life.hasApartment) { life.hasApartment = true; life.money -= cost; life.credit += 50; }
+            else if (item === 'penthouse' && !life.hasPenthouse) { life.hasPenthouse = true; life.money -= cost; life.credit += 150; life.mental = Math.min(100, life.mental + 20); }
             else if (item === 'car' && !life.hasCar) { life.hasCar = true; life.money -= cost; }
-            else if (item === 'gym' && !life.hasGymMembership) { life.hasGymMembership = true; life.money -= cost; life.health = Math.min(100, life.health + 10); }
+            else if (item === 'supercar' && !life.hasSupercar) { life.hasSupercar = true; life.money -= cost; life.mental = Math.min(100, life.mental + 30); }
+            else if (item === 'hardware_wallet' && !life.hasHardwareWallet) { life.hasHardwareWallet = true; life.money -= cost; }
+            else if (item === 'gym' && !life.hasGymMembership) { life.hasGymMembership = true; life.money -= cost; life.health = Math.min(100, life.health + 15); }
             else if (item === 'insurance' && !life.hasInsurance) { life.hasInsurance = true; life.money -= cost; }
             else if (item === 'crypto') {
-                life.money -= 1000;
-                life.crypto += 0.022 + (Math.random() * 0.015);
-                textDisplay.innerText = "Crypto portfolio baseline logs updated.";
+                life.money -= 2000;
+                let multiplier = life.hasHardwareWallet ? 1.05 : 1.0; 
+                life.crypto += (0.045 + (Math.random() * 0.03)) * multiplier;
+                textDisplay.innerText = "Crypto balance ledger blocks refreshed successfully.";
             } else {
-                textDisplay.innerText = "Asset vector already owned.";
+                textDisplay.innerText = "Conflict: Target registry parameters already occupied.";
                 return;
             }
             renderStats();
@@ -451,30 +465,39 @@
             openMarket();
         }
 
+        function generateRandomChild() {
+            let lastName = life.name.split(" ")[1] || "Matrix";
+            let randomFirst = childFirstNames[Math.floor(Math.random() * childFirstNames.length)];
+            let fullChildName = `${randomFirst} ${lastName}`;
+            life.childrenNames.push(fullChildName);
+            return fullChildName;
+        }
+
         function socialAction(action) {
             if (action === 'date') {
-                if (life.money >= 500) { 
-                    life.money -= 500; 
-                    life.mental = Math.min(100, life.mental + 20); 
+                if (life.money >= 600) { 
+                    life.money -= 600; 
+                    life.mental = Math.min(100, life.mental + 25); 
                     
-                    // Random Child Roll Chance during dates (15% chance if dating or active)
-                    let logStr = "Went out social networking. Your mental health metrics recovered.";
-                    if (Math.random() < 0.15) {
-                        life.children += 1;
-                        logStr += "\n\n👶 [RANDOM EVENT]: An unexpected turn of events occurred... You have had a child! Upkeep metrics increased.";
+                    let logStr = "Social interactions cross-referenced. Psychological parameters cleared and optimized.";
+                    // 18% randomized chance for child birth roll event on open socialization tracks
+                    if (Math.random() < 0.18) {
+                        let babyName = generateRandomChild();
+                        logStr += `\n\n👶 <span class="pos">[PROGENY VENTURE]:</span> Dynamic variables linked! An unexpected child has born into your lineage. Registry assigned: <b>${babyName}</b>. Annual upkeep costs added.`;
                     }
-                    textDisplay.innerText = logStr;
+                    textDisplay.innerHTML = logStr;
                 } else {
-                    textDisplay.innerText = "Insufficient capital to fund social dates.";
+                    textDisplay.innerText = "Insuffient credit parameters for high-tier dates.";
                 }
             } else if (action === 'marry') {
-                if (life.money >= 5000 && !life.isMarried) { 
+                if (life.money >= 6000 && !life.isMarried) { 
                     life.isMarried = true; 
-                    life.money -= 5000; 
-                    life.mental = Math.min(100, life.mental + 30); 
-                    textDisplay.innerText = "Wedding sequence verified! You locked down your life partner."; 
+                    life.money -= 6000; 
+                    life.mental = Math.min(100, life.mental + 35); 
+                    life.credit += 60;
+                    textDisplay.innerText = "Covenant established! Shared financial asset pools and tax shielding protocols synchronized."; 
                 } else {
-                    textDisplay.innerText = "Transaction failed. Either you lack $5,000 for a ring, or you're already married.";
+                    textDisplay.innerText = "Unable to process. You either lack $6,000 or hold a marriage registry flag already.";
                 }
             }
             renderStats();
@@ -485,98 +508,103 @@
             life.age += 1;
             life.experience += 1;
 
-            // Yearly Operational Maintenance Cost Calculation
             let upkeepCost = 4500;
             if (life.hasApartment) upkeepCost += 9000;
+            if (life.hasPenthouse) upkeepCost += 24000;
             if (life.hasCar) upkeepCost += 3000;
-            if (life.hasGymMembership) upkeepCost += 600;
-            if (life.children > 0) upkeepCost += (life.children * 5000); // Massive exponential scaling for multiple children
+            if (life.hasSupercar) upkeepCost += 7500;
+            if (life.hasGymMembership) upkeepCost += 700;
+            if (life.childrenNames.length > 0) upkeepCost += (life.childrenNames.length * 5500); 
             life.money -= upkeepCost;
 
-            let logResult = `Yearly dynamic simulation upkeep cost subtotal: -$${upkeepCost.toLocaleString()}.\n`;
+            let logResult = `Calculated lifestyle operational maintenance subtraction: -$${upkeepCost.toLocaleString()}.\n`;
 
-            // Random Child Matrix Roll Check for Married Units (25% chance each year naturally)
+            // Randomized child rolling framework for married states (25% naturally occurs each timeline step)
             if (life.isMarried && Math.random() < 0.25) {
-                life.children += 1;
-                logResult += `👶 [FAMILY EVENT]: Your spouse gave birth! A new child has randomly entered your pipeline.\n`;
+                let babyName = generateRandomChild();
+                logResult += `👶 <span class="pos">[FAMILY LOG]:</span> Your life partner finalized an addition to your home unit. Progeny registered: <b>${babyName}</b>.\n`;
             }
 
             if (pace === 'grind') {
-                life.health -= life.hasGymMembership ? 6 : 12; // Gym membership shields against heavy aging exhaustion
-                life.mental -= 18;
-                life.credit = Math.min(850, life.credit + 20);
+                life.health -= life.hasGymMembership ? 5 : 14; 
+                life.mental -= 20;
+                life.credit = Math.min(850, life.credit + 25);
 
                 if (life.careerTrack === 'tech') {
                     if (life.experience >= 4 && !life.degreeEarned) {
                         life.degreeEarned = true;
-                        life.status = "Senior Systems Engineer";
-                        logResult += "Graduation confirmed! Landed a high-tier backend corporate architectural position.\n";
+                        life.status = "Lead Quantum Systems Architect";
+                        logResult += "Academic core completed! Appointed to a top-tier algorithmic cloud architecture firm.\n";
                     } else if (life.degreeEarned) {
-                        life.money += 115000;
-                        logResult += "Corporate systems engineering payout cleared: +$115,000.\n";
+                        life.money += 135000;
+                        logResult += "Quantum systems engineering payroll node dropped: +$135,000.\n";
                     } else {
                         life.money -= 8000;
-                        logResult += "Paid tech university structural costs.\n";
+                        logResult += "Disbursed technical university asset payments.\n";
                     }
                 }
                 else if (life.careerTrack === 'medical') {
                     if (life.experience >= 7 && !life.degreeEarned) {
                         life.degreeEarned = true;
-                        life.status = "Practicing Resident Surgeon";
-                        logResult += "Medical boards cleared! Active operational license authorized.\n";
+                        life.status = "Chief Robotics Micro-Surgeon";
+                        logResult += "Medical residency validation logged! High-yield automated operating room deployment authorized.\n";
                     } else if (life.degreeEarned) {
-                        life.money += 210000;
-                        logResult += "Surgeon operational salary milestone cleared: +$210,000.\n";
+                        life.money += 240000;
+                        logResult += "Medical officer salary tier allocation processed: +$240,000.\n";
                     } else {
                         life.money -= 12000;
-                        logResult += "Paid medical school premium tuition.\n";
+                        logResult += "Disbursed neuro-surgery specialty institute tuition metrics.\n";
                     }
                 }
                 else {
-                    let tradingPayout = 28000 + (life.experience * 4500);
+                    let tradingPayout = 32000 + (life.experience * 6000);
                     life.money += tradingPayout;
-                    logResult += `Scraped day trading margins and freelance side gigs: +$${tradingPayout.toLocaleString()}.\n`;
+                    logResult += `Extracted capital out of market asset delta pools and software development bounties: +$${tradingPayout.toLocaleString()}.\n`;
                 }
             } else {
-                // Rest and Recovery Balance Selection
-                life.health = Math.min(100, life.health + 15);
-                life.mental = Math.min(100, life.mental + 25);
+                life.health = Math.min(100, life.health + 18);
+                life.mental = Math.min(100, life.mental + 30);
                 if (life.degreeEarned) {
-                    let standardPay = life.careerTrack === 'tech' ? 75000 : 120000;
+                    let standardPay = life.careerTrack === 'tech' ? 90000 : 150000;
                     life.money += standardPay;
-                    logResult += `Maintained standard work functions at an easier pace. Logged salary check: +$${standardPay.toLocaleString()}.\n`;
+                    logResult += `Sustained automated background tasks. Salary distribution acquired: +$${standardPay.toLocaleString()}.\n`;
                 } else {
-                    life.money += 14000;
-                    logResult += "Worked lightweight hours just to manage food costs. Career momentum holding flat.\n";
+                    life.money += 16000;
+                    logResult += "Executed low-stakes manual freelance adjustments to offset basic resource costs. Momentum flattening.\n";
                 }
             }
 
-            // Central Reality Engine Core Rolls
-            if (Math.random() > 0.30) {
+            // Core Matrix Event Engine Execution
+            if (Math.random() > 0.28) {
                 let ev = matrixEvents[Math.floor(Math.random() * matrixEvents.length)];
                 
                 if (ev.cryptoPump) {
                     if (life.crypto > 0) {
-                        let gain = life.crypto * 12000;
+                        let gain = life.crypto * 15000;
                         life.money += gain;
-                        logResult += `\n[EVENT] Crypto Market Moonshot! Extracted digital wallet liquidity: +$${gain.toFixed(2)}`;
+                        logResult += `\n🚀 <span class="pos">[EVENT] CRYPTO MACRO RUN:</span> Extreme network buy pressure scales your wallet metrics: +$${gain.toFixed(2)}`;
                     } else {
-                        logResult += `\n[EVENT] Bitcoin skyrocketed 45%, but your crypto account registry is empty.`;
+                        logResult += `\n📈 [EVENT] Crypto market nodes spiked 60% macro wide, but you lack long crypto entries to realize deltas.`;
                     }
                 } else if (ev.cryptoCrash) {
                     if (life.crypto > 0) {
-                        life.crypto = life.crypto * 0.2; // Wipes 80% valuation value
-                        logResult += `\n[EVENT] Crypto Market Liquidation Crash! Your crypto portfolio value was decimated by 80%.`;
+                        if (life.hasHardwareWallet) {
+                            life.crypto = life.crypto * 0.5; // Hardware wallet cuts loss severity in half
+                            logResult += `\n📉 <span class="neg">[EVENT] CRYPTO LIQUIDATION CASCADES:</span> Decentralized markets dropped 80%. Your secure hardware wallet mitigated exchange default losses; net wallet drop: 50%.`;
+                        } else {
+                            life.crypto = life.crypto * 0.15; 
+                            logResult += `\n💥 <span class="neg">[EVENT] EXCHANGE UNWIND CRASH:</span> Centralized trading venues dropped completely offline. Bare asset valuation decimated by 85%.`;
+                        }
                     } else {
-                        logResult += `\n[EVENT] Crypto markets tanked, but you held no active exposures.`;
+                        logResult += `\n📉 [EVENT] Bearish trends hit alt-coin tokens, but your balance sheets maintain zero exposure.`;
                     }
                 } else {
                     let calculatedLoss = ev.money;
                     if (ev.needsInsuranceShield && life.hasInsurance) {
-                        calculatedLoss = -150; 
-                        logResult += `\n\n[EVENT] ${ev.text} *Your premium Health Insurance protected you from severe debt!*`;
+                        calculatedLoss = -200; 
+                        logResult += `\n\n🛡️ [EVENT] ${ev.text}\n<span class="pos">*Your premium Health Insurance shielding system offset major clinical invoices! Deductible logged.*</span>`;
                     } else {
-                        logResult += `\n\n[EVENT] ${ev.text}`;
+                        logResult += `\n\n⚠️ [EVENT] ${ev.text}`;
                     }
                     life.money += calculatedLoss;
                     life.health += ev.health;
@@ -585,27 +613,26 @@
                 }
             }
 
-            textDisplay.innerText = logResult;
+            textDisplay.innerHTML = logResult;
             renderStats();
             saveGame();
             buildMainControls();
         }
 
         function triggerGameOver(reason) {
-            textDisplay.innerHTML = `<b class="neg">TIMELINE EXPIRATION:</b><br>${reason}<br><br>Identity: ${life.name}<br>Final Matrix Age: ${life.age}<br>Final Balance: $${life.money.toLocaleString()}.`;
-            actionsDisplay.innerHTML = `<button class="danger-btn" onclick="hardReset()">Wipe Registry & Reboot Timeline</button>`;
-            localStorage.removeItem('quantum_life_save_v2');
+            textDisplay.innerHTML = `<b class="neg">TIMELINE TERMINATION DETECTED:</b><br>${reason}<br><br>Profile Identity: ${life.name}<br>Terminal Structural Age: ${life.age}<br>Accumulated Progeny Links: ${life.childrenNames.length}<br>Final Liquidity: $${life.money.toLocaleString()}.`;
+            actionsDisplay.innerHTML = `<button class="danger-btn" onclick="hardReset()">Purge Timeline Cache & Force Restart</button>`;
+            localStorage.removeItem('quantum_life_mega_save');
         }
 
         function hardReset() {
-            localStorage.removeItem('quantum_life_save_v2');
-            life = { name: "Unknown", gender: "Non-Binary", age: 18, money: 1500, health: 100, mental: 100, credit: 650, crypto: 0, careerTrack: "none", status: "High School Graduate", experience: 0, hasApartment: false, hasCar: false, hasGymMembership: false, hasInsurance: false, isMarried: false, children: 0, degreeEarned: false, initialized: false };
+            localStorage.removeItem('quantum_life_mega_save');
+            life = { name: "Unknown", gender: "Unassigned", age: 18, money: 1500, health: 100, mental: 100, credit: 650, crypto: 0, careerTrack: "none", status: "High School Graduate", experience: 0, hasApartment: false, hasPenthouse: false, hasCar: false, hasSupercar: false, hasGymMembership: false, hasInsurance: false, hasHardwareWallet: false, isMarried: false, childrenNames: [], degreeEarned: false, initialized: false };
             initIdentityForm();
-            document.getElementById('stat-identity').innerText = "Registering system...";
+            document.getElementById('stat-identity').innerText = "Rebooting system framework...";
             renderStats();
         }
 
-        // Boot Pipeline Layer
         loadGame();
     </script>
 </body>
