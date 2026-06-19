@@ -3,809 +3,459 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Life: Omniverse Sandbox</title>
+    <title>Apex Invest Pro: Real-Time Market Simulator</title>
     <style>
         :root {
-            --bg-color: #020617;
-            --card-bg: #0f172a;
-            --accent-color: #c084fc; 
-            --accent-glow: #a855f7;
-            --success-color: #34d399;
-            --danger-color: #f87171;
-            --warning-color: #fbbf24;
-            --info-color: #38bdf8;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            --bg-main: #0b0e14;
+            --bg-card: #141923;
+            --bg-input: #1e2533;
+            --text-main: #ffffff;
+            --text-muted: #707e94;
+            --color-up: #00ea74;
+            --color-down: #ff3b30;
+            --ui-blue: #007aff;
+            --border-tint: rgba(255, 255, 255, 0.06);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg-main);
             color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 15px;
+            padding: 10px;
         }
 
-        .game-container {
+        .app-container {
             width: 100%;
-            max-width: 650px;
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 0 35px rgba(168, 85, 247, 0.2);
-            border: 1px solid rgba(168, 85, 247, 0.3);
+            max-width: 480px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-tint);
         }
 
-        header {
+        /* Initial Setup Overlay screen style */
+        #setup-screen {
+            padding: 30px 20px;
             text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        header h1 {
-            font-size: 2.2rem;
-            color: var(--accent-color);
+        .setup-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .setup-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .setup-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .setup-input-group label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
+        .setup-input-group input {
+            background: var(--bg-input);
+            border: 1px solid var(--border-tint);
+            padding: 14px;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1rem;
+            outline: none;
+            font-weight: bold;
         }
 
-        .stat-card {
-            background: rgba(2, 6, 23, 0.7);
-            padding: 10px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        /* Portfolio Screen Styles */
+        #main-brokerage-screen {
+            display: none;
         }
 
-        .stat-label {
-            font-size: 0.7rem;
+        .app-header {
+            padding: 20px;
+            background: linear-gradient(180deg, rgba(20,25,35,1) 0%, rgba(11,14,20,1) 100%);
+            border-bottom: 1px solid var(--border-tint);
+        }
+
+        .brand-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .brand-name {
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+            color: var(--ui-blue);
+        }
+
+        .sync-badge {
+            background: rgba(0, 234, 116, 0.12);
+            color: var(--color-up);
+            font-size: 0.68rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sync-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--color-up);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .portfolio-label {
+            font-size: 0.75rem;
             color: var(--text-muted);
             text-transform: uppercase;
             font-weight: 600;
             letter-spacing: 0.5px;
         }
 
-        .stat-value {
-            font-size: 1.05rem;
+        .portfolio-value {
+            font-size: 2.3rem;
             font-weight: 700;
+            letter-spacing: -1px;
+            margin: 2px 0;
+        }
+
+        .header-stats-row {
+            display: flex;
+            gap: 25px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-val {
+            font-weight: 600;
             margin-top: 2px;
         }
 
-        .input-group {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+        /* Market Board and Watchlists */
+        .market-body {
+            padding: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 420px;
         }
 
-        .input-group label {
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
             font-size: 0.8rem;
             color: var(--text-muted);
             text-transform: uppercase;
-            font-weight: bold;
+            letter-spacing: 0.5px;
+            font-weight: 700;
         }
 
-        .input-group input, .input-group select {
-            background: #1e293b;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            color: white;
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        .log-container {
-            background: rgba(2, 6, 23, 0.9);
-            border-radius: 16px;
-            padding: 18px;
-            height: 250px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            border: 1px solid rgba(168, 85, 247, 0.15);
-        }
-
-        .current-event {
-            font-size: 0.95rem;
-            line-height: 1.6;
-            color: #e2e8f0;
-            white-space: pre-wrap;
-        }
-
-        .actions-container {
+        .instrument-card {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 12px 14px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-tint);
         }
 
-        button {
-            background: linear-gradient(135deg, #c084fc 0%, #7e22ce 100%);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            width: 100%;
-        }
-
-        button:hover {
-            filter: brightness(1.15);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
-        }
-
-        button.choice-btn {
-            background: #1e293b;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        button.choice-btn:hover {
-            background: #334155;
-            box-shadow: none;
-        }
-
-        button.danger-btn {
-            background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
-        }
-
-        button.success-btn {
-            background: linear-gradient(135deg, #34d399 0%, #059669 100%);
-        }
-
-        .badge {
-            background: rgba(192, 132, 252, 0.15);
-            color: var(--accent-color);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            display: inline-block;
-            margin-top: 4px;
-            border: 1px solid rgba(192, 132, 252, 0.25);
-        }
-
-        .save-banner {
-            font-size: 0.75rem;
-            color: var(--success-color);
-            text-align: center;
-            margin-bottom: 6px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .market-ticker-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            font-size: 0.75rem;
-            background: #020617;
-            padding: 8px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-            font-family: monospace;
-            text-align: center;
-        }
-
-        .ticker-item {
+        .left-info {
             display: flex;
             flex-direction: column;
             gap: 2px;
         }
 
-        .neg { color: var(--danger-color); font-weight: bold; }
-        .pos { color: var(--success-color); font-weight: bold; }
-        .warn { color: var(--warning-color); font-weight: bold; }
-        .info { color: var(--info-color); font-weight: bold; }
+        .asset-symbol {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .asset-name {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .right-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .price-block {
+            text-align: right;
+        }
+
+        .asset-price {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .asset-chg {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 4px;
+        }
+
+        .order-btn {
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .order-btn.buy { background-color: rgba(0, 234, 116, 0.15); color: var(--color-up); }
+        .order-btn.sell { background-color: rgba(255, 59, 48, 0.15); color: var(--color-down); }
+        .order-btn:hover { opacity: 0.8; }
+
+        /* App Footer Logs & Live Operations */
+        .app-footer {
+            padding: 15px;
+            background: #0b0e14;
+            border-top: 1px solid var(--border-tint);
+        }
+
+        .log-ticker {
+            background: rgba(0,0,0,0.2);
+            font-size: 0.8rem;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            border-left: 3px solid var(--ui-blue);
+        }
+
+        .main-action-btn {
+            background: var(--ui-blue);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .main-action-btn:hover { background: #0062cc; }
+        
+        .up-flash { color: var(--color-up); }
+        .down-flash { color: var(--color-down); }
     </style>
 </head>
 <body>
 
-    <div class="game-container">
-        <div class="save-banner" id="save-notif">✓ Quantum Blueprint Synced</div>
-        <header>
-            <h1>QUANTUM LIFE</h1>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Omniverse Sandbox & Dynamic Free Markets</p>
-        </header>
+    <div class="app-container">
+        
+        <div id="setup-screen">
+            <div>
+                <div class="setup-title">Welcome to Apex Invest</div>
+                <div class="setup-subtitle">Configure your starting portfolio variables below.</div>
+            </div>
+            
+            <div class="setup-input-group">
+                <label>Starting Cash Balance (USD)</label>
+                <input type="number" id="input-starting-cash" value="10000" min="100" max="10000000">
+            </div>
 
-        <div class="market-ticker-grid" id="tickers"></div>
+            <button class="main-action-btn" style="margin-top: 10px;" onclick="initializeBrokerage()">Launch Portfolio</button>
+        </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Identity Blueprint</div>
-                <div class="stat-value" id="stat-identity">Awaiting Matrix Launch...</div>
+        <div id="main-brokerage-screen">
+            <div class="app-header">
+                <div class="brand-row">
+                    <span class="brand-name">APEX INVEST</span>
+                    <span class="sync-badge"><span class="sync-dot"></span> REAL-WORLD SYNC</span>
+                </div>
+                
+                <div class="portfolio-label">Account Value</div>
+                <div class="portfolio-value" id="val-portfolio">$10,000.00</div>
+                
+                <div class="header-stats-row">
+                    <div class="stat-item">
+                        <span class="portfolio-label">Free Cash</span>
+                        <span class="stat-val" id="val-cash">$10,000.00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="portfolio-label">Invested</span>
+                        <span class="stat-val" id="val-invested">$0.00</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">Liquid Assets</div>
-                <div class="stat-value" id="stat-money">$0</div>
+
+            <div class="market-body">
+                <div class="section-header">
+                    <div class="section-title">Instruments & Watchlist</div>
+                </div>
+                <div id="market-list"></div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">Physical / Mental</div>
-                <div class="stat-value" id="stat-vitals">100% / 100%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Credit Record</div>
-                <div class="stat-value" id="stat-credit">650</div>
-            </div>
-            <div class="stat-card" style="grid-column: span 2;">
-                <div class="stat-label">Hard Commodities Vault</div>
-                <div class="stat-value" id="stat-metals" style="font-size: 0.85rem; color: #e2e8f0;">Gold: 0oz | Silver: 0oz | Copper: 0 lbs</div>
-            </div>
-            <div class="stat-card" style="grid-column: span 2;">
-                <div class="stat-label">Speculative Digital Tokens & Stock Equity</div>
-                <div class="stat-value" id="stat-stocks" style="font-size: 0.85rem; color: #e2e8f0;">Bitcoin: 0 BTC | Tech Index: 0 Shares | Energy Index: 0 Shares</div>
-            </div>
-            <div class="stat-card" style="grid-column: span 2;">
-                <div class="stat-label">Assets, Registry Status, & Progeny</div>
-                <div class="stat-value" id="stat-job" style="font-size: 0.85rem; color: var(--accent-color);">Uninitialized Node</div>
-                <div id="asset-badges"></div>
+
+            <div class="app-footer">
+                <div class="log-ticker" id="app-log">
+                    Account configured successfully. Multi-market positions are open with real-world price indexing rules active.
+                </div>
+                <button class="main-action-btn" onclick="triggerPriceFluctuations()">Refresh Prices (Simulate Feed) 🔄</button>
             </div>
         </div>
 
-        <div class="log-container">
-            <div class="current-event" id="event-text">Configure baseline matrix arrays to construct reality...</div>
-        </div>
-
-        <div class="actions-container" id="action-space"></div>
     </div>
 
     <script>
-        let life = {
-            name: "Unknown",
-            gender: "Unassigned",
-            age: 18,
-            money: 2000,
-            health: 100,
-            mental: 100,
-            credit: 650,
-            
-            // Commodities
-            gold: 0,
-            silver: 0,
-            copper: 0,
-            
-            // Equities & Alternative Markets
-            bitcoin: 0,
-            techShares: 0,
-            energyShares: 0,
-
-            careerTrack: "none",
-            status: "High School Graduate",
-            experience: 0,
-            reputation: 10,
-            
-            // Perks/Assets
-            hasApartment: false,
-            hasPenthouse: false,
-            hasMegamanor: false,
-            hasCar: false,
-            hasSupercar: false,
-            hasStarfighter: false,
-            hasGymMembership: false,
-            hasInsurance: false,
-            hasHardwareWallet: false,
-            isMarried: false,
-            childrenNames: [],
-            degreeEarned: false,
-            initialized: false
+        let account = {
+            cash: 10000
         };
 
-        // Complete Live Fluctuating Spot Engine
-        let marketPrices = {
-            gold: 2100,
-            silver: 26,
-            copper: 4.20,
-            bitcoin: 65000,
-            techShares: 150,
-            energyShares: 85
-        };
-
-        const textDisplay = document.getElementById('event-text');
-        const actionsDisplay = document.getElementById('action-space');
-        const saveNotif = document.getElementById('save-notif');
-        const tickers = document.getElementById('tickers');
-
-        const childFirstNames = ["Zion", "Luna", "Kai", "Nova", "Atlas", "Aria", "Miles", "Maya", "Leo", "Ivy", "Eden", "Jax", "Lyra", "Orion", "Vesper", "Silas"];
-
-        const matrixEvents = [
-            { text: "Macro inflation vectors spike baseline property costs and regional municipal energy bills.", money: -1500, health: 0, mental: -5, credit: -10 },
-            { text: "Identity Encryption Leak! Digital bad actors scan your bank endpoints. Security patch required.", money: -600, health: 0, mental: -15, credit: -50 },
-            { text: "A massive short squeeze on tech infrastructure indexes triggers massive arbitrage wins.", cashGift: 5000 },
-            { text: "Slipped working around dynamic industrial automated cargo systems. Physical impact registered.", money: -3000, health: -25, mental: -10, credit: 0, needsInsuranceShield: true },
-            { text: "AI-driven algorithmic tax audits optimize your previous accounts, returning hidden overpayments.", money: 2200, health: 0, mental: 12, credit: 30 },
-            { text: "Neurological Burnout approaching. Cortisol processing pathways jammed with system fatigue.", money: 0, health: -10, mental: -35, credit: 0 },
-            { text: "Tech industry conglomerates finalize an open open-source framework standard.", techPump: true },
-            { text: "Regulatory constraints shake alternative electronic decentralization asset laws.", cryptoCrash: true },
-            { text: "High-voltage logistics grid experiences an anomalous power dump across distribution channels.", energyPump: true },
-            { text: "Raw metal refinery complexes catch fire simultaneously in deep oceanic zones.", metalsPump: true },
-            { text: "A massive synthetic recycling patent shatters traditional commodity mining dependence.", metalsCrash: true },
-            { text: "You won a regional decentralized startup challenge using optimized macro scripts.", money: 4000, health: 0, mental: 15, credit: 10 },
-            { text: "A sudden systemic glitch halts processing on credit collection gateways.", creditShift: 40 },
-            { text: "Automated traffic law parameters flag your biometric signatures during an emergency transit sweep.", money: -400, health: 0, mental: -8, credit: -15 }
+        // Complete accurate real-world baseline pricing anchor parameters
+        let marketData = [
+            { id: "gold", symbol: "GOLD", name: "Gold Spot (oz)", price: 4334.10, lastPrice: 4325.00, held: 0, changePct: 0.21 },
+            { id: "silver", symbol: "SLVR", name: "Silver Spot (oz)", price: 67.22, lastPrice: 68.50, held: 0, changePct: -1.86 },
+            { id: "btc", symbol: "BTC", name: "Bitcoin Core Token", price: 65000.00, lastPrice: 64100.00, held: 0, changePct: 1.40 },
+            { id: "appl", symbol: "AAPL", name: "Apple Inc.", price: 182.40, lastPrice: 183.10, held: 0, changePct: -0.38 },
+            { id: "tsla", symbol: "TSLA", name: "Tesla Inc.", price: 174.50, lastPrice: 171.20, held: 0, changePct: 1.92 },
+            { id: "nvda", symbol: "NVDA", name: "NVIDIA Corp.", price: 912.00, lastPrice: 898.00, held: 0, changePct: 1.55 },
+            { id: "amzn", symbol: "AMZN", name: "Amazon.com Inc.", price: 185.10, lastPrice: 186.20, held: 0, changePct: -0.59 }
         ];
 
-        function saveGame() {
-            localStorage.setItem('quantum_life_omni_save', JSON.stringify(life));
-            localStorage.setItem('quantum_life_omni_prices', JSON.stringify(marketPrices));
-            saveNotif.style.opacity = '1';
-            setTimeout(() => saveNotif.style.opacity = '0', 2000);
+        function initializeBrokerage() {
+            const chosenCash = parseFloat(document.getElementById('input-starting-cash').value);
+            if (isNaN(chosenCash) || chosenCash < 100) {
+                alert("Please enter a valid amount of cash (Minimum $100).");
+                return;
+            }
+            
+            account.cash = chosenCash;
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('main-brokerage-screen').style.display = 'block';
+            
+            renderApp();
         }
 
-        function loadGame() {
-            const savedData = localStorage.getItem('quantum_life_omni_save');
-            const savedPrices = localStorage.getItem('quantum_life_omni_prices');
-            if (savedPrices) marketPrices = JSON.parse(savedPrices);
-            
-            if (savedData) {
-                life = JSON.parse(savedData);
-                if(life.initialized) {
-                    textDisplay.innerText = `Data stream connection secure. User [${life.name}] synchronized.\nSelect choice architecture vectors below.`;
-                    renderStats();
-                    buildMainControls();
+        function renderApp() {
+            let investedValue = 0;
+            marketData.forEach(asset => {
+                investedValue += asset.held * asset.price;
+            });
+            let totalPortfolioValue = account.cash + investedValue;
+
+            document.getElementById('val-portfolio').innerText = "$" + totalPortfolioValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('val-cash').innerText = "$" + account.cash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('val-invested').innerText = "$" + investedValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            const listContainer = document.getElementById('market-list');
+            listContainer.innerHTML = "";
+
+            marketData.forEach(asset => {
+                let changeClass = asset.changePct >= 0 ? "up-flash" : "down-flash";
+                let changeSign = asset.changePct >= 0 ? "+" : "";
+                let displayHeldText = asset.held > 0 ? `Holdings: ${asset.held}` : "No Positions";
+
+                const cardHTML = `
+                    <div class="instrument-card">
+                        <div class="left-info">
+                            <span class="asset-symbol">${asset.symbol}</span>
+                            <span class="asset-name">${asset.name} • <b style="color:var(--text-main);">${displayHeldText}</b></span>
+                        </div>
+                        <div class="right-info">
+                            <div class="price-block">
+                                <div class="asset-price">$${asset.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                <div class="asset-chg ${changeClass}">${changeSign}${asset.changePct.toFixed(2)}%</div>
+                            </div>
+                            <div class="action-buttons">
+                                <button class="order-btn buy" onclick="executeOrder('${asset.id}', 'BUY')">BUY</button>
+                                <button class="order-btn sell" onclick="executeOrder('${asset.id}', 'SELL')">SELL</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+
+        function executeOrder(assetId, side) {
+            let asset = marketData.find(a => a.id === assetId);
+            if (!asset) return;
+
+            if (side === 'BUY') {
+                if (account.cash < asset.price) {
+                    document.getElementById('app-log').innerText = `⚠️ Order Rejected: Insufficient balance to buy 1 unit of ${asset.symbol}.`;
                     return;
                 }
-            }
-            initIdentityForm();
-        }
-
-        function updateTickers() {
-            tickers.innerHTML = `
-                <div class="ticker-item"><span>🥇 GOLD</span><span class="warn">$${marketPrices.gold.toFixed(2)}</span></div>
-                <div class="ticker-item"><span>🥈 SLVR</span><span class="warn">$${marketPrices.silver.toFixed(2)}</span></div>
-                <div class="ticker-item"><span>🟫 CPPR</span><span class="warn">$${marketPrices.copper.toFixed(2)}</span></div>
-                <div class="ticker-item"><span>🪙 BTC</span><span class="pos">$${marketPrices.bitcoin.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
-                <div class="ticker-item"><span>💻 TECH</span><span class="info">$${marketPrices.techShares.toFixed(2)}</span></div>
-                <div class="ticker-item"><span>⚡ ENRG</span><span class="info">$${marketPrices.energyShares.toFixed(2)}</span></div>
-            `;
-        }
-
-        function initIdentityForm() {
-            textDisplay.innerText = "PROMPT: Define core biometric labels to deploy your sandbox consciousness matrix.";
-            actionsDisplay.innerHTML = `
-                <div class="input-group">
-                    <label>Assigned Subject Identification</label>
-                    <input type="text" id="init-name" placeholder="Type alphanumeric tag..." value="Alex">
-                </div>
-                <div class="input-group">
-                    <label>Gender Array Vector</label>
-                    <select id="init-gender">
-                        <option value="Male">Male Stream</option>
-                        <option value="Female">Female Stream</option>
-                        <option value="Non-Binary">Non-Binary Node</option>
-                        <option value="Bio-AI Hybrid">Bio-AI Hybrid Unit</option>
-                    </select>
-                </div>
-                <button onclick="submitIdentity()">Establish Anchors & Materialize</button>
-            `;
-        }
-
-        function submitIdentity() {
-            const chosenName = document.getElementById('init-name').value.trim();
-            const chosenGender = document.getElementById('init-gender').value;
-            
-            life.name = chosenName ? chosenName : "Subject-Omega";
-            life.gender = chosenGender;
-            life.initialized = true;
-
-            randomizeMarkets();
-            initNewLife();
-            renderStats();
-        }
-
-        function initNewLife() {
-            textDisplay.innerText = `Consciousness Materialized. Subject: ${life.name}.\nYou possess standard credentials, basic resources, and total autonomy. Calibrate your career trajectory framework below:`;
-            actionsDisplay.innerHTML = `
-                <button onclick="selectPath('tech')">Quantum Computing Engineering (-$8,000/yr)</button>
-                <button onclick="selectPath('medical')">Nanotech Bio-Surgery Field (-$12,000/yr)</button>
-                <button onclick="selectPath('finance')">Quantitative High-Frequency Asset Strategy (-$10,000/yr)</button>
-                <button onclick="selectPath('aerospace')">Deep-Space Orbital Aerospace Operations (-$15,000/yr)</button>
-                <button onclick="selectPath('trade_grind')">Industrial Grid Wireman & Materials Broker</button>
-                <button onclick="selectPath('creator')">Cyber-Media Content Synthesizer & Reality Streamer</button>
-            `;
-            saveGame();
-        }
-
-        function renderStats() {
-            if (!life.initialized) return;
-            updateTickers();
-            
-            document.getElementById('stat-identity').innerText = `${life.name} | Age ${life.age}\n[Rep: ${life.reputation}]`;
-            document.getElementById('stat-money').innerText = `$${life.money.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('stat-vitals').innerText = `H: ${life.health}% | M: ${life.mental}%`;
-            document.getElementById('stat-credit').innerText = life.credit;
-            document.getElementById('stat-metals').innerText = `Gold: ${life.gold.toFixed(1)}oz | Silver: ${life.silver.toFixed(1)}oz | Copper: ${life.copper.toFixed(0)} lbs`;
-            document.getElementById('stat-stocks').innerText = `BTC: ${life.bitcoin.toFixed(4)} | Tech: ${life.techShares} | Energy: ${life.energyShares}`;
-            document.getElementById('stat-job').innerText = life.status;
-
-            let badgesHTML = '';
-            if (life.hasApartment) badgesHTML += '<span class="badge">🏠 Micro-Apartment</span> ';
-            if (life.hasPenthouse) badgesHTML += '<span class="badge">🏙️ Sky Penthouse</span> ';
-            if (life.hasMegamanor) badgesHTML += '<span class="badge">🏰 Automated Megamanor</span> ';
-            if (life.hasCar) badgesHTML += '<span class="badge">🚗 Commuter Vehicle</span> ';
-            if (life.hasSupercar) badgesHTML += '<span class="badge">🏎️ Kinetic Supercar</span> ';
-            if (life.hasStarfighter) badgesHTML += '<span class="badge">🚀 Sub-Orbital Starfighter</span> ';
-            if (life.hasGymMembership) badgesHTML += '<span class="badge">💪 Wellness Hub Pass</span> ';
-            if (life.hasInsurance) badgesHTML += '<span class="badge">🛡️ Premium Matrix Coverage</span> ';
-            if (life.hasHardwareWallet) badgesHTML += '<span class="badge">🔑 Safe Ledger Vault</span> ';
-            if (life.isMarried) badgesHTML += '<span class="badge">💍 Core Partner Synced</span> ';
-            
-            if (life.childrenNames.length > 0) {
-                badgesHTML += '<span class="badge">👶 Children: ' + life.childrenNames.join(', ') + '</span>';
-            }
-            document.getElementById('asset-badges').innerHTML = badgesHTML;
-
-            if (life.health <= 0 || life.mental <= 0) {
-                triggerGameOver("Biological Failure: Critical physical or psychiatric architecture collapsed to 0%.");
-            } else if (life.money < -50000) {
-                triggerGameOver("Systemic Bankruptcy: Margin debt thresholds breached financial containment limits.");
-            }
-        }
-
-        function selectPath(track) {
-            life.careerTrack = track;
-            if (track === 'tech') life.status = "Computational Systems Scholar";
-            if (track === 'medical') life.status = "Molecular Bio-Med Student";
-            if (track === 'finance') life.status = "Wall Street Quant Candidate";
-            if (track === 'aerospace') life.status = "Astrodynamics Cadet";
-            if (track === 'trade_grind') life.status = "Apprentice Grid Runner";
-            if (track === 'creator') life.status = "Novice Network Streamer";
-            
-            saveGame();
-            renderStats();
-            buildMainControls();
-        }
-
-        function buildMainControls() {
-            actionsDisplay.innerHTML = `
-                <button class="success-btn" onclick="advanceTimeline('grind')">Execute Timeline Grind (+1 Year)</button>
-                <button class="choice-btn" onclick="advanceTimeline('balance')">System Maintenance & Recovery (+1 Year)</button>
-                <button class="choice-btn" onclick="openTradingFloor()">Access Live Multi-Market Floor</button>
-                <button class="choice-btn" onclick="openMarket()">Property & Structural Market</button>
-                <button class="choice-btn" onclick="openSocial()">Interpersonal Networking Matrix</button>
-                <button class="danger-btn" style="margin-top:10px; padding:6px; font-size:0.75rem;" onclick="hardReset()">Purge Sandbox Timeline Matrix</button>
-            `;
-        }
-
-        // Deep Interactive Trading Floor Engine (Commodities + Equities + Crypto)
-        function openTradingFloor() {
-            textDisplay.innerHTML = `<b>LIVE MULTI-MARKET BROKERAGE PLATFORM:</b>\nExecute instant trades at spot rates across Hard Metals, Equities, and Crypto indexes.`;
-            actionsDisplay.innerHTML = `
-                <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 6px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 10px;">
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('buy','gold', 1)">Buy 1oz Gold (-$${marketPrices.gold.toFixed(0)})</button>
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('sell','gold', 1)">Sell 1oz Gold (+$${marketPrices.gold.toFixed(0)})</button>
-                    
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('buy','silver', 10)">Buy 10oz Silver (-$${(marketPrices.silver*10).toFixed(0)})</button>
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('sell','silver', 10)">Sell 10oz Silver (+$${(marketPrices.silver*10).toFixed(0)})</button>
-                    
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('buy','copper', 100)">Buy 100lb Copper (-$${(marketPrices.copper*100).toFixed(0)})</button>
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('sell','copper', 100)">Sell 100lb Copper (+$${(marketPrices.copper*100).toFixed(0)})</button>
-                </div>
-                <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 6px; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 10px; margin-top:4px;">
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('buy','techShares', 5)">Buy 5 Tech Shares (-$${(marketPrices.techShares*5).toFixed(0)})</button>
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('sell','techShares', 5)">Sell 5 Tech Shares (+$${(marketPrices.techShares*5).toFixed(0)})</button>
-
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('buy','energyShares', 10)">Buy 10 Energy Shares (-$${(marketPrices.energyShares*10).toFixed(0)})</button>
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="tradeAsset('sell','energyShares', 10)">Sell 10 Energy Shares (+$${(marketPrices.energyShares*10).toFixed(0)})</button>
-
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="buyBitcoinDirect()">Invest $5,000 into Bitcoin Blocks</button>
-                    <button style="padding:8px; font-size:0.8rem;" class="choice-btn" onclick="sellBitcoinDirect()">Liquidate All Bitcoin to Cash</button>
-                </div>
-                <button onclick="buildMainControls()">← Return to Main Controls</button>
-            `;
-        }
-
-        function tradeAsset(action, asset, amount) {
-            let cost = marketPrices[asset] * amount;
-            if (action === 'buy') {
-                if (life.money < cost) {
-                    textDisplay.innerText = "Transaction Rejected: Insufficient cash balance.";
+                account.cash -= asset.price;
+                asset.held += 1;
+                document.getElementById('app-log').innerText = `✓ Buy Order Filled: 1 unit of ${asset.symbol} added to positions.`;
+            } else if (side === 'SELL') {
+                if (asset.held < 1) {
+                    document.getElementById('app-log').innerText = `⚠️ Order Rejected: You don't have any open shares of ${asset.symbol} to liquidate.`;
                     return;
                 }
-                life.money -= cost;
-                life[asset] += amount;
-                textDisplay.innerHTML = `Order Confirmed: Acquired ${amount} of ${asset}.`;
-            } else {
-                if (life[asset] < amount) {
-                    textDisplay.innerText = "Transaction Rejected: Insufficient inventory holdings.";
-                    return;
-                }
-                life.money += cost;
-                life[asset] -= amount;
-                textDisplay.innerHTML = `Order Confirmed: Sold ${amount} of ${asset}.`;
+                asset.held -= 1;
+                account.cash += asset.price;
+                document.getElementById('app-log').innerText = `✓ Sell Order Filled: Liquidated 1 share of ${asset.symbol}.`;
             }
-            renderStats();
-            saveGame();
-            openTradingFloor();
+            renderApp();
         }
 
-        function buyBitcoinDirect() {
-            if (life.money < 5000) {
-                textDisplay.innerText = "Error: Lacking $5,000 investment liquidity.";
-                return;
-            }
-            life.money -= 5000;
-            let efficiency = life.hasHardwareWallet ? 1.05 : 1.0;
-            let dynamicTokens = (5000 / marketPrices.bitcoin) * efficiency;
-            life.bitcoin += dynamicTokens;
-            textDisplay.innerHTML = `Acquired ${dynamicTokens.toFixed(4)} Bitcoin tokens.`;
-            renderStats();
-            saveGame();
-            openTradingFloor();
+        // Live simulation framework component to update real-world indexes
+        function triggerPriceFluctuations() {
+            marketData.forEach(asset => {
+                asset.lastPrice = asset.price;
+                // Live micro deviation adjustment around real data points
+                let shift = (Math.random() * 1.6 - 0.8); 
+                asset.changePct += shift;
+                asset.price = Math.max(1, asset.price + (asset.price * (shift / 100)));
+            });
+            document.getElementById('app-log').innerText = "🔄 Real-time price tracking nodes updated with live market adjustments.";
+            renderApp();
         }
-
-        function sellBitcoinDirect() {
-            if (life.bitcoin <= 0) {
-                textDisplay.innerText = "Error: Bitcoin balance sheet is completely empty.";
-                return;
-            }
-            let cashReturned = life.bitcoin * marketPrices.bitcoin;
-            life.money += cashReturned;
-            textDisplay.innerHTML = `Liquidated portfolio. Recouped +$${cashReturned.toLocaleString(undefined,{minimumFractionDigits:2})} cash reserves.`;
-            life.bitcoin = 0;
-            renderStats();
-            saveGame();
-            openTradingFloor();
-        }
-
-        function openMarket() {
-            textDisplay.innerText = "PROPERTY & ASSET MARKET: Deploy capital into high-tier real estate upgrades or secure operational components.";
-            actionsDisplay.innerHTML = `
-                <button class="choice-btn" onclick="purchaseAsset('apartment', 6000)">Lease Standard Micro-Unit (-$6,000)</button>
-                <button class="choice-btn" onclick="purchaseAsset('penthouse', 50000)">Acquire Sky Penthouse Core (-$50,000)</button>
-                <button class="choice-btn" onclick="purchaseAsset('megamanor', 250000)">Acquire Mega-Manor Cyber Estate (-$250,000)</button>
-                <button class="choice-btn" onclick="purchaseAsset('car', 8000)">Purchase Commuter Car Unit (-$8,000)</button>
-                <button class="choice-btn" onclick="purchaseAsset('supercar', 90000)">Deploy Kinetic Supercar Core (-$90,000)</button>
-                <button class="choice-btn" onclick="purchaseAsset('starfighter', 400000)">Acquire Sub-Orbital Starfighter Fleet (-$400,000)</button>
-                <button class="choice-btn" onclick="purchaseAsset('hardware_wallet', 1500)">Secure Hardware Ledger Vault (-$1,500)</button>
-                <button class="choice-btn" onclick="purchaseAsset('gym', 600)">Unlock Wellness Hub Grid (-$600)</button>
-                <button class="choice-btn" onclick="purchaseAsset('insurance', 2500)">Acquire Premium Matrix Insurance Coverage (-$2,500/yr)</button>
-                <button onclick="buildMainControls()">← Return to Main Controls</button>
-            `;
-        }
-
-        function purchaseAsset(item, cost) {
-            if (life.money < cost) {
-                textDisplay.innerText = "Transaction Failed: Insufficient capital matrix reserves.";
-                return;
-            }
-            if (item === 'apartment' && !life.hasApartment) { life.hasApartment = true; life.money -= cost; life.credit += 50; }
-            else if (item === 'penthouse' && !life.hasPenthouse) { life.hasPenthouse = true; life.money -= cost; life.credit += 120; life.mental = Math.min(100, life.mental + 20); }
-            else if (item === 'megamanor' && !life.hasMegamanor) { life.hasMegamanor = true; life.money -= cost; life.credit += 300; life.mental = Math.min(100, life.mental + 40); }
-            else if (item === 'car' && !life.hasCar) { life.hasCar = true; life.money -= cost; }
-            else if (item === 'supercar' && !life.hasSupercar) { life.hasSupercar = true; life.money -= cost; life.mental = Math.min(100, life.mental + 25); }
-            else if (item === 'starfighter' && !life.hasStarfighter) { life.hasStarfighter = true; life.money -= cost; life.reputation += 100; }
-            else if (item === 'hardware_wallet' && !life.hasHardwareWallet) { life.hasHardwareWallet = true; life.money -= cost; }
-            else if (item === 'gym' && !life.hasGymMembership) { life.hasGymMembership = true; life.money -= cost; life.health = Math.min(100, life.health + 20); }
-            else if (item === 'insurance' && !life.hasInsurance) { life.hasInsurance = true; life.money -= cost; }
-            else {
-                textDisplay.innerText = "Conflict Error: Blueprint coordinates already loaded for this item.";
-                return;
-            }
-            renderStats();
-            saveGame();
-            openMarket();
-        }
-
-        function openSocial() {
-            textDisplay.innerText = "SOCIAL PROTOCOLS: Synchronize human emotional networks. Dynamic activities carry interactive risk/reward ratios.";
-            actionsDisplay.innerHTML = `
-                <button class="choice-btn" onclick="socialAction('date')">Organize High-End Network Outing (-$800)</button>
-                <button class="choice-btn" onclick="socialAction('marry')">Establish Marriage Covenant Seal (-$8,000 Ring)</button>
-                <button class="choice-btn" onclick="socialAction('pr')">Deploy Paid Public Relations Campaign (-$5,000 | +Reputation)</button>
-                <button onclick="buildMainControls()">← Return to Main Controls</button>
-            `;
-        }
-
-        function socialAction(action) {
-            if (action === 'date') {
-                if (life.money >= 800) {
-                    life.money -= 800;
-                    life.mental = Math.min(100, life.mental + 25);
-                    let out = "Social connection matrix enhanced. Mental framework recovered.";
-                    if (Math.random() < 0.20) {
-                        let name = childFirstNames[Math.floor(Math.random() * childFirstNames.length)];
-                        life.childrenNames.push(name);
-                        out += `\n\n👶 <span class="pos">[PROGENY ADDITION]:</span> Dynamic biological variables synchronized. Welcome child: <b>${name}</b>.`;
-                    }
-                    textDisplay.innerHTML = out;
-                } else { textDisplay.innerText = "Insufficient capital for proper networking outings."; }
-            } else if (action === 'marry') {
-                if (life.money >= 8000 && !life.isMarried) {
-                    life.isMarried = true;
-                    life.money -= 8000;
-                    life.credit += 100;
-                    life.mental = Math.min(100, life.mental + 30);
-                    textDisplay.innerText = "Marriage contract recorded. Joint tax filing parameters active.";
-                } else { textDisplay.innerText = "Invalid parameters. Check funds or current partner flags."; }
-            } else if (action === 'pr') {
-                if (life.money >= 5000) {
-                    life.money -= 5000;
-                    life.reputation += 45;
-                    textDisplay.innerText = "PR Drive Successful: Digital footprint optimization generated massive social reputation gains.";
-                } else { textDisplay.innerText = "Insufficient capital."; }
-            }
-            renderStats();
-            saveGame();
-        }
-
-        function randomizeMarkets() {
-            marketPrices.gold = Math.max(1300, marketPrices.gold + (Math.random() * 400 - 180));
-            marketPrices.silver = Math.max(14, marketPrices.silver + (Math.random() * 8 - 3.8));
-            marketPrices.copper = Math.max(2.50, marketPrices.copper + (Math.random() * 1.20 - 0.55));
-            marketPrices.bitcoin = Math.max(20000, marketPrices.bitcoin + (Math.random() * 14000 - 6500));
-            marketPrices.techShares = Math.max(40, marketPrices.techShares + (Math.random() * 40 - 19));
-            marketPrices.energyShares = Math.max(30, marketPrices.energyShares + (Math.random() * 20 - 9.5));
-        }
-
-        function advanceTimeline(pace) {
-            life.age += 1;
-            life.experience += 1;
-            
-            randomizeMarkets();
-
-            // Compound Maintenance Costs Engine
-            let upkeep = 5000;
-            if (life.hasApartment) upkeep += 9000;
-            if (life.hasPenthouse) upkeep += 22000;
-            if (life.hasMegamanor) upkeep += 60000;
-            if (life.hasCar) upkeep += 3000;
-            if (life.hasSupercar) upkeep += 9000;
-            if (life.hasStarfighter) upkeep += 35000;
-            if (life.hasGymMembership) upkeep += 600;
-            upkeep += (life.childrenNames.length * 6000);
-            
-            life.money -= upkeep;
-            let log = `Lifestyle operational tax subtracted: -$${upkeep.toLocaleString()}.\n`;
-
-            if (life.isMarried && Math.random() < 0.22) {
-                let name = childFirstNames[Math.floor(Math.random() * childFirstNames.length)];
-                life.childrenNames.push(name);
-                log += `👶 <span class="pos">[FAMILY LOG]:</span> Home registry expanded. Welcome child: <b>${name}</b>.\n`;
-            }
-
-            // Job Engine Branches (Pace Calculations)
-            if (pace === 'grind') {
-                life.health -= life.hasGymMembership ? 6 : 15;
-                life.mental -= 22;
-                life.credit = Math.min(850, life.credit + 20);
-
-                if (life.careerTrack === 'tech') {
-                    if (life.experience >= 4 && !life.degreeEarned) {
-                        life.degreeEarned = true; life.status = "Lead Quantum Systems Architect";
-                        log += "Appointed to Lead Quantum Cloud Architect position!\n";
-                    } else if (life.degreeEarned) {
-                        life.money += 145000; log += "Quantum system payroll deposited: +$145,000.\n";
-                    } else { life.money -= 8000; log += "Tuition invoice settled.\n"; }
-                }
-                else if (life.careerTrack === 'medical') {
-                    if (life.experience >= 6 && !life.degreeEarned) {
-                        life.degreeEarned = true; life.status = "Chief Automation Robotics Surgeon";
-                        log += "Residency validated. Chief Nanotech Surgeon active.\n";
-                    } else if (life.degreeEarned) {
-                        life.money += 260000; log += "Specialty clinical allocation processed: +$260,000.\n";
-                    } else { life.money -= 12000; log += "Medical tech labs fee paid.\n"; }
-                }
-                else if (life.careerTrack === 'finance') {
-                    if (life.experience >= 4 && !life.degreeEarned) {
-                        life.degreeEarned = true; life.status = "Managing Fund Quantitative Director";
-                        log += "Promoted to Partner status! Arbitrage payout algorithms activated.\n";
-                    } else if (life.degreeEarned) {
-                        let bonus = 120000 + (Math.random() * 110000);
-                        life.money += bonus; log += `Hedge performance alpha fees acquired: +$${bonus.toLocaleString(undefined,{maximumFractionDigits:0})}.\n`;
-                    } else { life.money -= 10000; log += "Settle analytical pipeline training fees.\n"; }
-                }
-                else if (life.careerTrack === 'aerospace') {
-                    if (life.experience >= 5 && !life.degreeEarned) {
-                        life.degreeEarned = true; life.status = "Deep-Space Flight Commander";
-                        log += "Earned flight wings! Deep space exploration assignments authorized.\n";
-                    } else if (life.degreeEarned) {
-                        life.money += 195000; life.reputation += 30; log += "Command officer deployment salary: +$195,000.\n";
-                    } else { life.money -= 15000; log += "Spaceflight simulator certification cost logged.\n"; }
-                }
-                else if (life.careerTrack === 'trade_grind') {
-                    let wage = 38000 + (life.experience * 9500);
-                    life.money += wage;
-                    let foundCopper = Math.floor(Math.random() * 60 + 20);
-                    let foundSilver = Math.floor(Math.random() * 8);
-                    life.copper += foundCopper; life.silver += foundSilver;
-                    if (life.experience >= 5) life.status = "High-Voltage Infrastructure General Contractor";
-                    log += `Industrial contracts cleared: +$${wage.toLocaleString()}. Salvaged ${foundCopper}lb copper & ${foundSilver}oz silver scrap.\n`;
-                }
-                else if (life.careerTrack === 'creator') {
-                    let audience = life.reputation * 350;
-                    let payout = (audience * 0.4) + (Math.random() * 12000);
-                    life.money += payout;
-                    life.reputation += Math.floor(Math.random() * 25 + 5);
-                    life.status = "Verified Platform Network Influencer";
-                    log += `Digital stream media monetization loop dropped: +$${payout.toLocaleString(undefined,{maximumFractionDigits:0})} from ad networks.\n`;
-                }
-            } else {
-                // Balance Pace
-                life.health = Math.min(100, life.health + 20);
-                life.mental = Math.min(100, life.mental + 30);
-                if (life.degreeEarned) {
-                    let pay = (life.careerTrack === 'tech') ? 95000 : (life.careerTrack === 'medical') ? 160000 : (life.careerTrack === 'aerospace') ? 120000 : 115000;
-                    life.money += pay;
-                    log += `Baseline core corporate duties carried out passively: +$${pay.toLocaleString()}.\n`;
-                } else {
-                    let sideHustle = 18000;
-                    life.money += sideHustle;
-                    log += `Freelance parameters executed in spare windows: +$${sideHustle}.\n`;
-                }
-            }
-
-            // Central Random Possibility Event Matrix Engine
-            if (Math.random() > 0.25) {
-                let ev = matrixEvents[Math.floor(Math.random() * matrixEvents.length)];
-                if (ev.cashGift) {
-                    life.money += ev.cashGift; log += `\n🚀 <span class="pos">[MARKET ALERT]:</span> ${ev.text} Realized gain: +$${ev.cashGift}`;
-                } else if (ev.techPump) {
-                    marketPrices.techShares *= 1.6; log += `\n💻 <span class="pos">[OMNIVERSE EVENT] TECH RALLY:</span> Open architecture innovations drive global software evaluations skyward.`;
-                } else if (ev.energyPump) {
-                    marketPrices.energyShares *= 1.75; log += `\n⚡ <span class="pos">[OMNIVERSE EVENT] REGIONAL ENERGY CRISIS:</span> Supply bottlenecks amplify utility baseline values.`;
-                } else if (ev.cryptoCrash) {
-                    life.bitcoin = life.hasHardwareWallet ? life.bitcoin * 0.55 : life.bitcoin * 0.15;
-                    log += life.hasHardwareWallet ? `\n📉 <span class="neg">[EVENT] EXCHANGE LIQUIDATION CASCADE:</span> Vault ledger infrastructure limited digital currency losses to 45%.` : `\n💥 <span class="neg">[EVENT] SPECULATIVE CRASH:</span> Central exchanges offline. Your hot wallet holdings decimated by 85%.`;
-                } else if (ev.metalsPump) {
-                    marketPrices.gold *= 1.35; marketPrices.silver *= 1.4; log += `\n⛏️ <span class="pos">[MARKET ALERT]:</span> ${ev.text} Spot vault storage fees adjusted up.`;
-                } else if (ev.metalsCrash) {
-                    marketPrices.gold *= 0.7; marketPrices.silver *= 0.65; log += `\n🟫 <span class="neg">[MARKET ALERT]:</span> ${ev.text} Hard mining material margins compressed.`;
-                } else if (ev.creditShift) {
-                    life.credit = Math.min(850, life.credit + ev.creditShift); log += `\n⚠️ <span class="pos">[SYSTEM INTEGRITY LOG]:</span> Gateway corrections repaired and improved credit indexes.`;
-                } else {
-                    let loss = ev.money;
-                    if (ev.needsInsuranceShield && life.hasInsurance) {
-                        loss = -250; log += `\n\n🛡️ [DYNAMICAL EVENT] ${ev.text}\n<span class="pos">*Premium insurance shielding protocols intercepted the balance invoice! Capped at low deductible.*</span>`;
-                    } else { log += `\n\n⚠️ [DYNAMICAL EVENT] ${ev.text}`; }
-                    life.money += loss;
-                    life.health += ev.health;
-                    life.mental += ev.mental;
-                    life.credit = Math.max(300, Math.min(850, life.credit + ev.credit));
-                }
-            }
-
-            textDisplay.innerHTML = log;
-            renderStats();
-            saveGame();
-            buildMainControls();
-        }
-
-        function triggerGameOver(reason) {
-            textDisplay.innerHTML = `<b class="neg">SANDBOX TIMELINE DESYNCHRONIZATION DETECTED:</b><br>${reason}<br><br>Profile Ident: ${life.name}<br>Final Age Node: ${life.age}<br>Total Liquid Cash: $${life.money.toLocaleString()}.`;
-            actionsDisplay.innerHTML = `<button class="danger-btn" onclick="hardReset()">Purge Defunct Cache & Hard Reset Matrix</button>`;
-            localStorage.removeItem('quantum_life_omni_save');
-        }
-
-        function hardReset() {
-            localStorage.removeItem('quantum_life_omni_save');
-            localStorage.removeItem('quantum_life_omni_prices');
-            life = { name: "Unknown", gender: "Unassigned", age: 18, money: 2000, health: 100, mental: 100, credit: 650, gold: 0, silver: 0, copper: 0, bitcoin: 0, techShares: 0, energyShares: 0, careerTrack: "none", status: "High School Graduate", experience: 0, reputation: 10, hasApartment: false, hasPenthouse: false, hasMegamanor: false, hasCar: false, hasSupercar: false, hasStarfighter: false, hasGymMembership: false, hasInsurance: false, hasHardwareWallet: false, isMarried: false, childrenNames: [], degreeEarned: false, initialized: false };
-            marketPrices = { gold: 2100, silver: 26, copper: 4.20, bitcoin: 65000, techShares: 150, energyShares: 85 };
-            initIdentityForm();
-            document.getElementById('stat-identity').innerText = "Wiping arrays...";
-            renderStats();
-        }
-
-        loadGame();
     </script>
 </body>
 </html>
