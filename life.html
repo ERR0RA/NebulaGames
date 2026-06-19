@@ -15,6 +15,7 @@
             --color-down: #ff3b30;
             --ui-blue: #007aff;
             --border-tint: rgba(255, 255, 255, 0.06);
+            --line-sr: #ffd700;
         }
 
         * {
@@ -114,7 +115,7 @@
             font-size: 0.85rem;
         }
 
-        /* Interactive Dynamic Charts Studio Section */
+        /* Chart Window Area */
         .chart-module {
             background: #0b0e14;
             padding: 12px;
@@ -159,22 +160,70 @@
             color: white;
         }
 
-        /* Procedural CSS Candlestick Display Box Component */
+        /* Dynamic Grid Chart with Side-Price Scales & Line Support Layers */
+        .chart-wrapper {
+            display: flex;
+            position: relative;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
         .candlestick-canvas {
-            height: 110px;
+            height: 160px;
+            flex-grow: 1;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
             padding: 10px 5px;
-            background: rgba(255,255,255,0.01);
-            border-radius: 8px;
-            border: 1px dashed rgba(255,255,255,0.05);
             position: relative;
+            z-index: 2;
+        }
+
+        /* Y-Axis Price Bar on Right Side */
+        .price-y-axis {
+            width: 65px;
+            border-left: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 8px 4px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.2);
+            z-index: 3;
+            user-select: none;
+        }
+
+        /* Horizontal Support/Resistance Lines overlay rules */
+        .sr-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed var(--line-sr);
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.65;
+        }
+
+        .sr-label {
+            position: absolute;
+            right: 68px;
+            background: var(--line-sr);
+            color: #000;
+            font-size: 0.6rem;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            transform: translateY(-50%);
+            z-index: 4;
         }
 
         .candle-stick {
             flex-grow: 1;
-            max-width: 12px;
+            max-width: 14px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -191,19 +240,19 @@
 
         .candle-body {
             width: 100%;
-            border-radius: 2px;
+            border-radius: 1px;
             position: absolute;
         }
 
         .candle-stick.bullish { color: var(--color-up); }
         .candle-stick.bearish { color: var(--color-down); }
 
-        /* Market Board Items */
+        /* Watchlist Row Blocks */
         .market-body {
             padding: 15px;
             flex-grow: 1;
             overflow-y: auto;
-            max-height: 250px;
+            max-height: 240px;
         }
 
         .instrument-card {
@@ -289,11 +338,11 @@
         <div id="setup-screen">
             <div>
                 <div style="font-size: 1.5rem; font-weight: 800; margin-bottom: 5px;">Apex Pro Trading Desk</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted);">Enter starting capital balance. All performance saves dynamically.</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Enter starting capital balance. All performance saves dynamically in GBP.</div>
             </div>
             
             <div class="setup-input-group">
-                <label>Starting Investment Cash (USD)</label>
+                <label>Starting Investment Cash (£)</label>
                 <input type="number" id="input-starting-cash" value="25000">
             </div>
 
@@ -307,16 +356,16 @@
                     <span style="font-size: 0.65rem; background: rgba(0,234,116,0.15); color: var(--color-up); padding:2px 6px; border-radius:10px; font-weight:bold;">✓ AUTO-SAVING</span>
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Portfolio Value</div>
-                <div class="portfolio-value" id="val-portfolio">$25,000.00</div>
+                <div class="portfolio-value" id="val-portfolio">£25,000.00</div>
                 
                 <div class="header-stats-row">
                     <div>
                         <span style="color: var(--text-muted); font-size:0.75rem;">Free Funds:</span>
-                        <span id="val-cash" style="font-weight: bold;">$25,000.00</span>
+                        <span id="val-cash" style="font-weight: bold;">£25,000.00</span>
                     </div>
                     <div>
                         <span style="color: var(--text-muted); font-size:0.75rem;">Invested Assets:</span>
-                        <span id="val-invested" style="font-weight: bold;">$0.00</span>
+                        <span id="val-invested" style="font-weight: bold;">£0.00</span>
                     </div>
                 </div>
             </div>
@@ -332,7 +381,22 @@
                         <button class="tf-btn active" id="tf-3y" onclick="changeTimeframe('3Y')">3Y</button>
                     </div>
                 </div>
-                <div class="candlestick-canvas" id="candle-render-box"></div>
+
+                <div class="chart-wrapper">
+                    <div id="resistance-line" class="sr-line" style="border-color: #ff5252;"></div>
+                    <div id="resistance-tag" class="sr-label" style="background: #ff5252; color: #fff;">RES</div>
+
+                    <div id="support-line" class="sr-line" style="border-color: #00ea74;"></div>
+                    <div id="support-tag" class="sr-label" style="background: #00ea74; color: #000;">SUPP</div>
+
+                    <div class="candlestick-canvas" id="candle-render-box"></div>
+                    
+                    <div class="price-y-axis" id="y-axis-scale">
+                        <span id="y-max">£0</span>
+                        <span id="y-mid">£0</span>
+                        <span id="y-min">£0</span>
+                    </div>
+                </div>
             </div>
 
             <div class="market-body">
@@ -340,7 +404,7 @@
             </div>
 
             <div class="app-footer">
-                <div class="log-ticker" id="app-log">Select asset lines to preview historical candlestick modules.</div>
+                <div class="log-ticker" id="app-log">Select asset lines to preview historical candlestick modules with real-time support levels.</div>
                 <button class="main-action-btn" onclick="advanceMarketCycle()">Process Live Market Tick 🔄</button>
             </div>
         </div>
@@ -352,18 +416,18 @@
         let selectedAssetId = "gold";
         let currentTimeframe = "3Y";
 
-        // Structured historical framework records matrix to handle 1D, 1W, 1M, 1Y, and 3Y chart data paths
+        // Balanced real-world asset matrix configured in GBP (£) values
         let marketData = [
-            { id: "gold", symbol: "GC", name: "Gold Spot (oz)", price: 2340.00, held: 0, changePct: 0.45 },
-            { id: "silver", symbol: "SI", name: "Silver Spot (oz)", price: 29.10, held: 0, changePct: -1.20 },
-            { id: "copper", symbol: "HG", name: "Copper High-Grade (lb)", price: 4.65, held: 0, changePct: 0.85 },
-            { id: "oil", symbol: "CL", name: "Crude Oil Barrel (bbl)", price: 78.40, held: 0, changePct: -2.10 },
-            { id: "btc", symbol: "BTC", name: "Bitcoin Block Asset", price: 66400.00, held: 0, changePct: 3.12 }
+            { id: "gold", symbol: "GOLD", name: "Gold Spot (oz)", price: 1845.00, held: 0, changePct: 0.32 },
+            { id: "silver", symbol: "SLVR", name: "Silver Spot (oz)", price: 23.10, held: 0, changePct: -1.05 },
+            { id: "copper", symbol: "CPPR", name: "Copper High-Grade (lb)", price: 3.65, held: 0, changePct: 0.75 },
+            { id: "oil", symbol: "CRUDE", name: "Crude Oil Barrel (bbl)", price: 62.40, held: 0, changePct: -1.85 },
+            { id: "btc", symbol: "BTC", name: "Bitcoin Core Token", price: 52400.00, held: 0, changePct: 2.85 }
         ];
 
         function loadSavedProfile() {
-            const saveProfile = localStorage.getItem('apex_profile_save_v1');
-            const saveMarket = localStorage.getItem('apex_market_save_v1');
+            const saveProfile = localStorage.getItem('apex_gbp_profile_v2');
+            const saveMarket = localStorage.getItem('apex_gbp_market_v2');
             if (saveProfile && saveMarket) {
                 account = JSON.parse(saveProfile);
                 marketData = JSON.parse(saveMarket);
@@ -385,8 +449,8 @@
         }
 
         function saveState() {
-            localStorage.setItem('apex_profile_save_v1', JSON.stringify(account));
-            localStorage.setItem('apex_market_save_v1', JSON.stringify(marketData));
+            localStorage.setItem('apex_gbp_profile_v2', JSON.stringify(account));
+            localStorage.setItem('apex_gbp_market_v2', JSON.stringify(marketData));
         }
 
         function renderApp() {
@@ -394,9 +458,9 @@
             marketData.forEach(a => investedValue += (a.held * a.price));
             let totalPortfolioValue = account.cash + investedValue;
 
-            document.getElementById('val-portfolio').innerText = "$" + totalPortfolioValue.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
-            document.getElementById('val-cash').innerText = "$" + account.cash.toLocaleString(undefined,{minimumFractionDigits:2});
-            document.getElementById('val-invested').innerText = "$" + investedValue.toLocaleString(undefined,{minimumFractionDigits:2});
+            document.getElementById('val-portfolio').innerText = "£" + totalPortfolioValue.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+            document.getElementById('val-cash').innerText = "£" + account.cash.toLocaleString(undefined,{minimumFractionDigits:2});
+            document.getElementById('val-invested').innerText = "£" + investedValue.toLocaleString(undefined,{minimumFractionDigits:2});
 
             const container = document.getElementById('market-list');
             container.innerHTML = "";
@@ -415,7 +479,7 @@
                         </div>
                         <div class="right-info">
                             <div class="price-block">
-                                <div class="asset-price">$${asset.price.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                                <div class="asset-price">£${asset.price.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</div>
                                 <div class="asset-chg ${changeClass}">${sign}${asset.changePct.toFixed(2)}%</div>
                             </div>
                             <div class="action-buttons">
@@ -446,7 +510,7 @@
         }
 
         function executeTrade(e, id, side) {
-            e.stopPropagation(); // Stops row select execution conflicts
+            e.stopPropagation(); 
             let asset = marketData.find(a => a.id === id);
             if (!asset) return;
 
@@ -480,8 +544,8 @@
                 let open = currentSeedPrice + (Math.random() * volatilityMultiplier * direction);
                 let close = open + (Math.random() * volatilityMultiplier * (Math.random() > 0.5 ? 1 : -1));
                 
-                let high = Math.max(open, close) + (Math.random() * (volatilityMultiplier / 2));
-                let low = Math.min(open, close) - (Math.random() * (volatilityMultiplier / 2));
+                let high = Math.max(open, close) + (Math.random() * (volatilityMultiplier / 1.5));
+                let low = Math.min(open, close) - (Math.random() * (volatilityMultiplier / 1.5));
                 
                 candles.push({ open, close, high, low });
                 currentSeedPrice = close;
@@ -494,15 +558,15 @@
             canvas.innerHTML = "";
 
             let barCount = 14; 
-            let variance = 10;
-            if (currentTimeframe === '1D') { barCount = 6; variance = 2; }
-            if (currentTimeframe === '1W') { barCount = 7; variance = 5; }
-            if (currentTimeframe === '1M') { barCount = 12; variance = 12; }
-            if (currentTimeframe === '1Y') { barCount = 16; variance = 45; }
-            if (currentTimeframe === '3Y') { barCount = 22; variance = 110; }
+            let variance = 8;
+            if (currentTimeframe === '1D') { barCount = 8; variance = 1.5; }
+            if (currentTimeframe === '1W') { barCount = 9; variance = 4; }
+            if (currentTimeframe === '1M') { barCount = 12; variance = 10; }
+            if (currentTimeframe === '1Y') { barCount = 18; variance = 40; }
+            if (currentTimeframe === '3Y') { barCount = 24; variance = 95; }
 
             let priceProfile = marketData.find(a => a.id === selectedAssetId);
-            if(priceProfile.id === 'btc') variance *= 20; // Scale scaling factor to fit high crypto evaluation profiles
+            if(priceProfile.id === 'btc') variance *= 22; 
 
             let candles = generateProceduralCandles(barCount, variance);
 
@@ -511,6 +575,24 @@
             let absoluteMax = Math.max(...allHighs);
             let absoluteMin = Math.min(...allLows);
             let absoluteRange = absoluteMax - absoluteMin || 1;
+
+            // Update Y-Axis Scale Values on Right Panel
+            document.getElementById('y-max').innerText = "£" + absoluteMax.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('y-mid').innerText = "£" + ((absoluteMax + absoluteMin) / 2).toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('y-min').innerText = "£" + absoluteMin.toLocaleString(undefined, {maximumFractionDigits: 0});
+
+            // Calculate support/resistance levels inside the candle window
+            let supportPrice = absoluteMin + (absoluteRange * 0.12);
+            let resistancePrice = absoluteMax - (absoluteRange * 0.12);
+
+            let supportPercentTop = ((absoluteMax - supportPrice) / absoluteRange) * 100;
+            let resistancePercentTop = ((absoluteMax - resistancePrice) / absoluteRange) * 100;
+
+            // Apply style positions to markers lines elements
+            document.getElementById('support-line').style.top = supportPercentTop + "%";
+            document.getElementById('support-tag').style.top = supportPercentTop + "%";
+            document.getElementById('resistance-line').style.top = resistancePercentTop + "%";
+            document.getElementById('resistance-tag').style.top = resistancePercentTop + "%";
 
             candles.forEach(candle => {
                 let bull = candle.close >= candle.open;
@@ -521,7 +603,7 @@
                 let wickTop = ((absoluteMax - candle.high) / absoluteRange) * 100;
                 let wickHeight = ((candle.high - candle.low) / absoluteRange) * 100;
 
-                bodyHeight = Math.max(bodyHeight, 4); 
+                bodyHeight = Math.max(bodyHeight, 3); 
 
                 let candleElement = `
                     <div class="candle-stick ${typeClass}">
