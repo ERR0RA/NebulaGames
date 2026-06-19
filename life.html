@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apex Invest Pro: Real-Time Market Simulator</title>
+    <title>Apex Invest Pro: Live Chart Simulator</title>
     <style>
         :root {
             --bg-main: #0b0e14;
@@ -46,25 +46,12 @@
             border: 1px solid var(--border-tint);
         }
 
-        /* Initial Setup Overlay screen style */
         #setup-screen {
             padding: 30px 20px;
             text-align: center;
             display: flex;
             flex-direction: column;
             gap: 15px;
-        }
-
-        .setup-title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-bottom: 5px;
-        }
-
-        .setup-subtitle {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 15px;
         }
 
         .setup-input-group {
@@ -89,16 +76,14 @@
             color: white;
             font-size: 1.1rem;
             outline: none;
-            font-weight: bold;
         }
 
-        /* Portfolio Screen Styles */
         #main-brokerage-screen {
             display: none;
         }
 
         .app-header {
-            padding: 20px;
+            padding: 15px 20px;
             background: linear-gradient(180deg, rgba(20,25,35,1) 0%, rgba(11,14,20,1) 100%);
             border-bottom: 1px solid var(--border-tint);
         }
@@ -107,89 +92,118 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .brand-name {
             font-weight: 800;
             font-size: 1.1rem;
-            letter-spacing: -0.5px;
             color: var(--ui-blue);
         }
 
-        .sync-badge {
-            background: rgba(0, 234, 116, 0.12);
-            color: var(--color-up);
-            font-size: 0.68rem;
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .sync-dot {
-            width: 6px;
-            height: 6px;
-            background-color: var(--color-up);
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .portfolio-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
         .portfolio-value {
-            font-size: 2.3rem;
+            font-size: 2rem;
             font-weight: 700;
-            letter-spacing: -1px;
             margin: 2px 0;
         }
 
         .header-stats-row {
             display: flex;
             gap: 25px;
-            margin-top: 12px;
+            margin-top: 8px;
             font-size: 0.85rem;
         }
 
-        .stat-item {
+        /* Interactive Dynamic Charts Studio Section */
+        .chart-module {
+            background: #0b0e14;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-tint);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .chart-title {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .timeframe-selector {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-input);
+            padding: 3px;
+            border-radius: 6px;
+        }
+
+        .tf-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: auto;
+        }
+
+        .tf-btn.active {
+            background: var(--ui-blue);
+            color: white;
+        }
+
+        /* Procedural CSS Candlestick Display Box Component */
+        .candlestick-canvas {
+            height: 110px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: 10px 5px;
+            background: rgba(255,255,255,0.01);
+            border-radius: 8px;
+            border: 1px dashed rgba(255,255,255,0.05);
+            position: relative;
+        }
+
+        .candle-stick {
+            flex-grow: 1;
+            max-width: 12px;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            height: 100%;
         }
 
-        .stat-val {
-            font-weight: 600;
-            margin-top: 2px;
+        .candle-wick {
+            width: 2px;
+            background-color: currentColor;
+            position: absolute;
         }
 
-        /* Market Board and Watchlists */
+        .candle-body {
+            width: 100%;
+            border-radius: 2px;
+            position: absolute;
+        }
+
+        .candle-stick.bullish { color: var(--color-up); }
+        .candle-stick.bearish { color: var(--color-down); }
+
+        /* Market Board Items */
         .market-body {
             padding: 15px;
             flex-grow: 1;
             overflow-y: auto;
-            max-height: 420px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .section-title {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 700;
+            max-height: 250px;
         }
 
         .instrument-card {
@@ -197,26 +211,16 @@
             justify-content: space-between;
             align-items: center;
             background: rgba(255, 255, 255, 0.02);
-            padding: 12px 14px;
+            padding: 10px 14px;
             border-radius: 12px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             border: 1px solid var(--border-tint);
+            cursor: pointer;
         }
 
-        .left-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .asset-symbol {
-            font-weight: 700;
-            font-size: 0.95rem;
-        }
-
-        .asset-name {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+        .instrument-card.selected {
+            border-color: var(--ui-blue);
+            background: rgba(0, 122, 255, 0.05);
         }
 
         .right-info {
@@ -229,16 +233,6 @@
             text-align: right;
         }
 
-        .asset-price {
-            font-weight: 700;
-            font-size: 0.95rem;
-        }
-
-        .asset-chg {
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
         .action-buttons {
             display: flex;
             gap: 4px;
@@ -246,8 +240,8 @@
 
         .order-btn {
             border: none;
-            padding: 8px 14px;
-            border-radius: 8px;
+            padding: 6px 12px;
+            border-radius: 6px;
             font-size: 0.75rem;
             font-weight: 700;
             cursor: pointer;
@@ -255,11 +249,9 @@
 
         .order-btn.buy { background-color: rgba(0, 234, 116, 0.15); color: var(--color-up); }
         .order-btn.sell { background-color: rgba(255, 59, 48, 0.15); color: var(--color-down); }
-        .order-btn:hover { opacity: 0.8; }
 
-        /* App Footer Logs & Live Operations */
         .app-footer {
-            padding: 15px;
+            padding: 12px;
             background: #0b0e14;
             border-top: 1px solid var(--border-tint);
         }
@@ -267,9 +259,9 @@
         .log-ticker {
             background: rgba(0,0,0,0.2);
             font-size: 0.8rem;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 12px;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
             color: var(--text-muted);
             border-left: 3px solid var(--ui-blue);
         }
@@ -278,15 +270,13 @@
             background: var(--ui-blue);
             color: white;
             border: none;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 10px;
             font-size: 0.95rem;
             font-weight: 700;
             cursor: pointer;
             width: 100%;
         }
-
-        .main-action-btn:hover { background: #0062cc; }
         
         .up-flash { color: var(--color-up); }
         .down-flash { color: var(--color-down); }
@@ -298,164 +288,264 @@
         
         <div id="setup-screen">
             <div>
-                <div class="setup-title">Welcome to Apex Invest</div>
-                <div class="setup-subtitle">Configure your starting portfolio variables below.</div>
+                <div style="font-size: 1.5rem; font-weight: 800; margin-bottom: 5px;">Apex Pro Trading Desk</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Enter starting capital balance. All performance saves dynamically.</div>
             </div>
             
             <div class="setup-input-group">
-                <label>Starting Cash Balance (USD)</label>
-                <input type="number" id="input-starting-cash" value="10000" min="100" max="10000000">
+                <label>Starting Investment Cash (USD)</label>
+                <input type="number" id="input-starting-cash" value="25000">
             </div>
 
-            <button class="main-action-btn" style="margin-top: 10px;" onclick="initializeBrokerage()">Launch Portfolio</button>
+            <button class="main-action-btn" onclick="initializeBrokerage()">Open Simulation Studio</button>
         </div>
 
         <div id="main-brokerage-screen">
             <div class="app-header">
                 <div class="brand-row">
                     <span class="brand-name">APEX INVEST</span>
-                    <span class="sync-badge"><span class="sync-dot"></span> REAL-WORLD SYNC</span>
+                    <span style="font-size: 0.65rem; background: rgba(0,234,116,0.15); color: var(--color-up); padding:2px 6px; border-radius:10px; font-weight:bold;">✓ AUTO-SAVING</span>
                 </div>
-                
-                <div class="portfolio-label">Account Value</div>
-                <div class="portfolio-value" id="val-portfolio">$10,000.00</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Portfolio Value</div>
+                <div class="portfolio-value" id="val-portfolio">$25,000.00</div>
                 
                 <div class="header-stats-row">
-                    <div class="stat-item">
-                        <span class="portfolio-label">Free Cash</span>
-                        <span class="stat-val" id="val-cash">$10,000.00</span>
+                    <div>
+                        <span style="color: var(--text-muted); font-size:0.75rem;">Free Funds:</span>
+                        <span id="val-cash" style="font-weight: bold;">$25,000.00</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="portfolio-label">Invested</span>
-                        <span class="stat-val" id="val-invested">$0.00</span>
+                    <div>
+                        <span style="color: var(--text-muted); font-size:0.75rem;">Invested Assets:</span>
+                        <span id="val-invested" style="font-weight: bold;">$0.00</span>
                     </div>
                 </div>
             </div>
 
-            <div class="market-body">
-                <div class="section-header">
-                    <div class="section-title">Instruments & Watchlist</div>
+            <div class="chart-module">
+                <div class="chart-header">
+                    <span class="chart-title" id="active-chart-title">GOLD (oz) Historical Feed</span>
+                    <div class="timeframe-selector">
+                        <button class="tf-btn" id="tf-1d" onclick="changeTimeframe('1D')">Today</button>
+                        <button class="tf-btn" id="tf-1w" onclick="changeTimeframe('1W')">1W</button>
+                        <button class="tf-btn" id="tf-1m" onclick="changeTimeframe('1M')">1M</button>
+                        <button class="tf-btn" id="tf-1y" onclick="changeTimeframe('1Y')">1Y</button>
+                        <button class="tf-btn active" id="tf-3y" onclick="changeTimeframe('3Y')">3Y</button>
+                    </div>
                 </div>
+                <div class="candlestick-canvas" id="candle-render-box"></div>
+            </div>
+
+            <div class="market-body">
                 <div id="market-list"></div>
             </div>
 
             <div class="app-footer">
-                <div class="log-ticker" id="app-log">
-                    Account configured successfully. Multi-market positions are open with real-world price indexing rules active.
-                </div>
-                <button class="main-action-btn" onclick="triggerPriceFluctuations()">Refresh Prices (Simulate Feed) 🔄</button>
+                <div class="log-ticker" id="app-log">Select asset lines to preview historical candlestick modules.</div>
+                <button class="main-action-btn" onclick="advanceMarketCycle()">Process Live Market Tick 🔄</button>
             </div>
         </div>
 
     </div>
 
     <script>
-        let account = {
-            cash: 10000
-        };
+        let account = { cash: 25000 };
+        let selectedAssetId = "gold";
+        let currentTimeframe = "3Y";
 
-        // Complete accurate real-world baseline pricing anchor parameters
+        // Structured historical framework records matrix to handle 1D, 1W, 1M, 1Y, and 3Y chart data paths
         let marketData = [
-            { id: "gold", symbol: "GOLD", name: "Gold Spot (oz)", price: 4334.10, lastPrice: 4325.00, held: 0, changePct: 0.21 },
-            { id: "silver", symbol: "SLVR", name: "Silver Spot (oz)", price: 67.22, lastPrice: 68.50, held: 0, changePct: -1.86 },
-            { id: "btc", symbol: "BTC", name: "Bitcoin Core Token", price: 65000.00, lastPrice: 64100.00, held: 0, changePct: 1.40 },
-            { id: "appl", symbol: "AAPL", name: "Apple Inc.", price: 182.40, lastPrice: 183.10, held: 0, changePct: -0.38 },
-            { id: "tsla", symbol: "TSLA", name: "Tesla Inc.", price: 174.50, lastPrice: 171.20, held: 0, changePct: 1.92 },
-            { id: "nvda", symbol: "NVDA", name: "NVIDIA Corp.", price: 912.00, lastPrice: 898.00, held: 0, changePct: 1.55 },
-            { id: "amzn", symbol: "AMZN", name: "Amazon.com Inc.", price: 185.10, lastPrice: 186.20, held: 0, changePct: -0.59 }
+            { id: "gold", symbol: "GC", name: "Gold Spot (oz)", price: 2340.00, held: 0, changePct: 0.45 },
+            { id: "silver", symbol: "SI", name: "Silver Spot (oz)", price: 29.10, held: 0, changePct: -1.20 },
+            { id: "copper", symbol: "HG", name: "Copper High-Grade (lb)", price: 4.65, held: 0, changePct: 0.85 },
+            { id: "oil", symbol: "CL", name: "Crude Oil Barrel (bbl)", price: 78.40, held: 0, changePct: -2.10 },
+            { id: "btc", symbol: "BTC", name: "Bitcoin Block Asset", price: 66400.00, held: 0, changePct: 3.12 }
         ];
 
-        function initializeBrokerage() {
-            const chosenCash = parseFloat(document.getElementById('input-starting-cash').value);
-            if (isNaN(chosenCash) || chosenCash < 100) {
-                alert("Please enter a valid amount of cash (Minimum $100).");
-                return;
+        function loadSavedProfile() {
+            const saveProfile = localStorage.getItem('apex_profile_save_v1');
+            const saveMarket = localStorage.getItem('apex_market_save_v1');
+            if (saveProfile && saveMarket) {
+                account = JSON.parse(saveProfile);
+                marketData = JSON.parse(saveMarket);
+                document.getElementById('setup-screen').style.display = 'none';
+                document.getElementById('main-brokerage-screen').style.display = 'block';
+                renderApp();
             }
+        }
+
+        function initializeBrokerage() {
+            const fundingInput = parseFloat(document.getElementById('input-starting-cash').value);
+            if (isNaN(fundingInput) || fundingInput < 10) return;
+            account.cash = fundingInput;
             
-            account.cash = chosenCash;
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('main-brokerage-screen').style.display = 'block';
-            
+            saveState();
             renderApp();
+        }
+
+        function saveState() {
+            localStorage.setItem('apex_profile_save_v1', JSON.stringify(account));
+            localStorage.setItem('apex_market_save_v1', JSON.stringify(marketData));
         }
 
         function renderApp() {
             let investedValue = 0;
-            marketData.forEach(asset => {
-                investedValue += asset.held * asset.price;
-            });
+            marketData.forEach(a => investedValue += (a.held * a.price));
             let totalPortfolioValue = account.cash + investedValue;
 
-            document.getElementById('val-portfolio').innerText = "$" + totalPortfolioValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('val-cash').innerText = "$" + account.cash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('val-invested').innerText = "$" + investedValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('val-portfolio').innerText = "$" + totalPortfolioValue.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+            document.getElementById('val-cash').innerText = "$" + account.cash.toLocaleString(undefined,{minimumFractionDigits:2});
+            document.getElementById('val-invested').innerText = "$" + investedValue.toLocaleString(undefined,{minimumFractionDigits:2});
 
-            const listContainer = document.getElementById('market-list');
-            listContainer.innerHTML = "";
+            const container = document.getElementById('market-list');
+            container.innerHTML = "";
 
             marketData.forEach(asset => {
+                let activeSelectionClass = asset.id === selectedAssetId ? "selected" : "";
                 let changeClass = asset.changePct >= 0 ? "up-flash" : "down-flash";
-                let changeSign = asset.changePct >= 0 ? "+" : "";
-                let displayHeldText = asset.held > 0 ? `Holdings: ${asset.held}` : "No Positions";
+                let sign = asset.changePct >= 0 ? "+" : "";
+                let displayHoldings = asset.held > 0 ? `Held: ${asset.held}` : "No Positions";
 
-                const cardHTML = `
-                    <div class="instrument-card">
+                let cardHTML = `
+                    <div class="instrument-card ${activeSelectionClass}" onclick="setSelectedAsset('${asset.id}')">
                         <div class="left-info">
                             <span class="asset-symbol">${asset.symbol}</span>
-                            <span class="asset-name">${asset.name} • <b style="color:var(--text-main);">${displayHeldText}</b></span>
+                            <span class="asset-name">${asset.name} • <b>${displayHoldings}</b></span>
                         </div>
                         <div class="right-info">
                             <div class="price-block">
-                                <div class="asset-price">$${asset.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                                <div class="asset-chg ${changeClass}">${changeSign}${asset.changePct.toFixed(2)}%</div>
+                                <div class="asset-price">$${asset.price.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+                                <div class="asset-chg ${changeClass}">${sign}${asset.changePct.toFixed(2)}%</div>
                             </div>
                             <div class="action-buttons">
-                                <button class="order-btn buy" onclick="executeOrder('${asset.id}', 'BUY')">BUY</button>
-                                <button class="order-btn sell" onclick="executeOrder('${asset.id}', 'SELL')">SELL</button>
+                                <button class="order-btn buy" onclick="executeTrade(event, '${asset.id}', 'BUY')">BUY</button>
+                                <button class="order-btn sell" onclick="executeTrade(event, '${asset.id}', 'SELL')">SELL</button>
                             </div>
                         </div>
                     </div>
                 `;
-                listContainer.insertAdjacentHTML('beforeend', cardHTML);
+                container.insertAdjacentHTML('beforeend', cardHTML);
             });
+
+            renderCandlestickGraphic();
         }
 
-        function executeOrder(assetId, side) {
-            let asset = marketData.find(a => a.id === assetId);
+        function setSelectedAsset(id) {
+            selectedAssetId = id;
+            let asset = marketData.find(a => a.id === id);
+            document.getElementById('active-chart-title').innerText = `${asset.name} Historical Engine`;
+            renderApp();
+        }
+
+        function changeTimeframe(tf) {
+            currentTimeframe = tf;
+            document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tf-${tf.toLowerCase()}`).classList.add('active');
+            renderCandlestickGraphic();
+        }
+
+        function executeTrade(e, id, side) {
+            e.stopPropagation(); // Stops row select execution conflicts
+            let asset = marketData.find(a => a.id === id);
             if (!asset) return;
 
             if (side === 'BUY') {
                 if (account.cash < asset.price) {
-                    document.getElementById('app-log').innerText = `⚠️ Order Rejected: Insufficient balance to buy 1 unit of ${asset.symbol}.`;
+                    document.getElementById('app-log').innerText = "⚠️ Transaction Terminated: Insufficient available account balance.";
                     return;
                 }
                 account.cash -= asset.price;
                 asset.held += 1;
-                document.getElementById('app-log').innerText = `✓ Buy Order Filled: 1 unit of ${asset.symbol} added to positions.`;
-            } else if (side === 'SELL') {
+                document.getElementById('app-log').innerText = `✓ Market Order Executed: Purchased 1 unit of ${asset.symbol}.`;
+            } else {
                 if (asset.held < 1) {
-                    document.getElementById('app-log').innerText = `⚠️ Order Rejected: You don't have any open shares of ${asset.symbol} to liquidate.`;
+                    document.getElementById('app-log').innerText = "⚠️ Transaction Terminated: Liquid holdings inside target position read zero.";
                     return;
                 }
                 asset.held -= 1;
                 account.cash += asset.price;
-                document.getElementById('app-log').innerText = `✓ Sell Order Filled: Liquidated 1 share of ${asset.symbol}.`;
+                document.getElementById('app-log').innerText = `✓ Market Order Executed: Cleared 1 unit of ${asset.symbol}.`;
             }
+            saveState();
             renderApp();
         }
 
-        // Live simulation framework component to update real-world indexes
-        function triggerPriceFluctuations() {
-            marketData.forEach(asset => {
-                asset.lastPrice = asset.price;
-                // Live micro deviation adjustment around real data points
-                let shift = (Math.random() * 1.6 - 0.8); 
-                asset.changePct += shift;
-                asset.price = Math.max(1, asset.price + (asset.price * (shift / 100)));
+        function generateProceduralCandles(count, volatilityMultiplier) {
+            let candles = [];
+            let currentSeedPrice = marketData.find(a => a.id === selectedAssetId).price;
+            
+            for(let i = 0; i < count; i++) {
+                let direction = Math.random() > 0.48 ? 1 : -1;
+                let open = currentSeedPrice + (Math.random() * volatilityMultiplier * direction);
+                let close = open + (Math.random() * volatilityMultiplier * (Math.random() > 0.5 ? 1 : -1));
+                
+                let high = Math.max(open, close) + (Math.random() * (volatilityMultiplier / 2));
+                let low = Math.min(open, close) - (Math.random() * (volatilityMultiplier / 2));
+                
+                candles.push({ open, close, high, low });
+                currentSeedPrice = close;
+            }
+            return candles;
+        }
+
+        function renderCandlestickGraphic() {
+            const canvas = document.getElementById('candle-render-box');
+            canvas.innerHTML = "";
+
+            let barCount = 14; 
+            let variance = 10;
+            if (currentTimeframe === '1D') { barCount = 6; variance = 2; }
+            if (currentTimeframe === '1W') { barCount = 7; variance = 5; }
+            if (currentTimeframe === '1M') { barCount = 12; variance = 12; }
+            if (currentTimeframe === '1Y') { barCount = 16; variance = 45; }
+            if (currentTimeframe === '3Y') { barCount = 22; variance = 110; }
+
+            let priceProfile = marketData.find(a => a.id === selectedAssetId);
+            if(priceProfile.id === 'btc') variance *= 20; // Scale scaling factor to fit high crypto evaluation profiles
+
+            let candles = generateProceduralCandles(barCount, variance);
+
+            let allHighs = candles.map(c => c.high);
+            let allLows = candles.map(c => c.low);
+            let absoluteMax = Math.max(...allHighs);
+            let absoluteMin = Math.min(...allLows);
+            let absoluteRange = absoluteMax - absoluteMin || 1;
+
+            candles.forEach(candle => {
+                let bull = candle.close >= candle.open;
+                let typeClass = bull ? "bullish" : "bearish";
+
+                let bodyTop = ((absoluteMax - Math.max(candle.open, candle.close)) / absoluteRange) * 100;
+                let bodyHeight = (Math.abs(candle.open - candle.close) / absoluteRange) * 100;
+                let wickTop = ((absoluteMax - candle.high) / absoluteRange) * 100;
+                let wickHeight = ((candle.high - candle.low) / absoluteRange) * 100;
+
+                bodyHeight = Math.max(bodyHeight, 4); 
+
+                let candleElement = `
+                    <div class="candle-stick ${typeClass}">
+                        <div class="candle-wick" style="top: ${wickTop}%; height: ${wickHeight}%;"></div>
+                        <div class="candle-body" style="top: ${bodyTop}%; height: ${bodyHeight}%; background-color: currentColor;"></div>
+                    </div>
+                `;
+                canvas.insertAdjacentHTML('beforeend', candleElement);
             });
-            document.getElementById('app-log').innerText = "🔄 Real-time price tracking nodes updated with live market adjustments.";
+        }
+
+        function advanceMarketCycle() {
+            marketData.forEach(asset => {
+                let factor = (Math.random() * 2.2) - 1.1; 
+                asset.changePct = factor * 3;
+                asset.price = Math.max(0.20, asset.price + (asset.price * (asset.changePct / 100)));
+            });
+            document.getElementById('app-log').innerText = "🔄 Real-time data feed connection pulsed. Timelines updated across all assets.";
+            saveState();
             renderApp();
         }
+
+        loadSavedProfile();
+        renderApp();
     </script>
 </body>
 </html>
