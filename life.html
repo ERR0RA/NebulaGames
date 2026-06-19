@@ -166,7 +166,7 @@
             color: #0d121a;
         }
 
-        /* Dynamic Grid Chart with Fixed Side-Price Scales */
+        /* Chart Wrapper with Absolute Scale Coordinates */
         .chart-wrapper {
             display: flex;
             position: relative;
@@ -187,7 +187,7 @@
             z-index: 2;
         }
 
-        /* Y-Axis Price Bar on Right Side */
+        /* Price Panel Column */
         .price-y-axis {
             width: 75px;
             border-left: 1px solid rgba(255,255,255,0.05);
@@ -203,24 +203,22 @@
             user-select: none;
         }
 
-        /* Horizontal Support/Resistance Lines overlay rules */
+        /* Support/Resistance Lines Layout */
         .sr-line {
             position: absolute;
             left: 0;
             right: 0;
-            border-top: 1px dashed var(--line-sr);
+            border-top: 2px dashed var(--line-sr);
             z-index: 1;
             pointer-events: none;
-            opacity: 0.5;
+            opacity: 0.8;
         }
 
         .sr-label {
             position: absolute;
             right: 78px;
-            background: var(--line-sr);
-            color: #000;
             font-size: 0.6rem;
-            padding: 1px 4px;
+            padding: 2px 5px;
             border-radius: 3px;
             font-weight: bold;
             transform: translateY(-50%);
@@ -253,7 +251,7 @@
         .candle-stick.bullish { color: var(--color-up); }
         .candle-stick.bearish { color: var(--color-down); }
 
-        /* Watchlist Row Blocks */
+        /* Watchlist Blocks */
         .market-body {
             padding: 15px;
             flex-grow: 1;
@@ -358,7 +356,7 @@
         <div id="setup-screen">
             <div>
                 <div style="font-size: 1.6rem; font-weight: 800; margin-bottom: 5px;">TRADING <span>212</span></div>
-                <div style="font-size: 0.85rem; color: var(--text-muted);">Live 212 Terminal Engine. Enter your starting balance (£).</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Real-Time Terminal Simulator. Enter account balance (£).</div>
             </div>
             
             <div class="setup-input-group">
@@ -373,7 +371,7 @@
             <div class="app-header">
                 <div class="brand-row">
                     <span class="brand-name">TRADING <span>212</span></span>
-                    <span class="status-badge"><div class="pulse-dot"></div> LIVE SYNC ACTIVE</span>
+                    <span class="status-badge"><div class="pulse-dot"></div> LIVE TAPE TICKING</span>
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Account Value (ISA)</div>
                 <div class="portfolio-value" id="val-portfolio">£10,000.00</div>
@@ -403,8 +401,8 @@
                 </div>
 
                 <div class="chart-wrapper">
-                    <div id="resistance-line" class="sr-line" style="border-color: #ff5252;"></div>
-                    <div id="resistance-tag" class="sr-label" style="background: #ff5252; color: #fff;">RES</div>
+                    <div id="resistance-line" class="sr-line" style="border-color: #ff3b30;"></div>
+                    <div id="resistance-tag" class="sr-label" style="background: #ff3b30; color: #fff;">RES</div>
 
                     <div id="support-line" class="sr-line" style="border-color: #00ea74;"></div>
                     <div id="support-tag" class="sr-label" style="background: #00ea74; color: #000;">SUPP</div>
@@ -437,21 +435,21 @@
         let liveRefreshInterval = null;
         let candleInterval = null;
 
+        // Structured initial structural baselines
         let marketData = [
-            { id: "gold", symbol: "GOLD", name: "Gold Spot (oz)", price: 1845.00, held: 0, changePct: 0.32 },
-            { id: "silver", symbol: "SLVR", name: "Silver Spot (oz)", price: 23.10, held: 0, changePct: -1.05 },
-            { id: "copper", symbol: "CPPR", name: "Copper Spot (lb)", price: 3.65, held: 0, changePct: 0.75 },
-            { id: "oil", symbol: "OIL", name: "Crude Oil (bbl)", price: 62.40, held: 0, changePct: -1.85 },
-            { id: "btc", symbol: "BTC", name: "Bitcoin Core Token", price: 52400.00, held: 0, changePct: 2.85 }
+            { id: "gold", symbol: "GOLD", name: "Gold Spot (oz)", price: 1845.00, held: 0, changePct: 0.32, initialPrice: 1845.00 },
+            { id: "silver", symbol: "SLVR", name: "Silver Spot (oz)", price: 23.10, held: 0, changePct: -1.05, initialPrice: 23.10 },
+            { id: "copper", symbol: "CPPR", name: "Copper Spot (lb)", price: 3.65, held: 0, changePct: 0.75, initialPrice: 3.65 },
+            { id: "oil", symbol: "OIL", name: "Crude Oil (bbl)", price: 62.40, held: 0, changePct: -1.85, initialPrice: 62.40 },
+            { id: "btc", symbol: "BTC", name: "Bitcoin Core Token", price: 52400.00, held: 0, changePct: 2.85, initialPrice: 52400.00 }
         ];
 
-        // Persistent candle store to prevent refreshing layout generation on every live price tick
         let persistentCandles = {};
 
         function loadSavedProfile() {
-            const saveProfile = localStorage.getItem('t212_auto_gbp_profile');
-            const saveMarket = localStorage.getItem('t212_auto_gbp_market');
-            const saveCandles = localStorage.getItem('t212_candles_save');
+            const saveProfile = localStorage.getItem('t212_fixed_profile');
+            const saveMarket = localStorage.getItem('t212_fixed_market');
+            const saveCandles = localStorage.getItem('t212_fixed_candles');
             if (saveProfile && saveMarket) {
                 account = JSON.parse(saveProfile);
                 marketData = JSON.parse(saveMarket);
@@ -478,18 +476,16 @@
         function startAutoRefresh() {
             fetchRealWorldPrices(); 
             if (liveRefreshInterval) clearInterval(liveRefreshInterval);
-            // 3-second rapid price ticker engine update
             liveRefreshInterval = setInterval(fetchRealWorldPrices, 3000);
 
-            // 1.5-minute structured milestone engine loop to step a brand new candlestick item forward
             if (candleInterval) clearInterval(candleInterval);
-            candleInterval = setInterval(cycleCandleTimeline, 90000);
+            candleInterval = setInterval(cycleCandleTimeline, 90000); // 1.5-minute new block cycle
         }
 
         function saveState() {
-            localStorage.setItem('t212_auto_gbp_profile', JSON.stringify(account));
-            localStorage.setItem('t212_auto_gbp_market', JSON.stringify(marketData));
-            localStorage.setItem('t212_candles_save', JSON.stringify(persistentCandles));
+            localStorage.setItem('t212_fixed_profile', JSON.stringify(account));
+            localStorage.setItem('t212_fixed_market', JSON.stringify(marketData));
+            localStorage.setItem('t212_fixed_candles', JSON.stringify(persistentCandles));
         }
 
         function renderApp() {
@@ -581,30 +577,27 @@
                 
                 if (data && data.bitcoin) {
                     let btcAsset = marketData.find(a => a.id === 'btc');
-                    btcAsset.changePct = ((data.bitcoin.gbp - btcAsset.price) / btcAsset.price) * 100 || 0.12;
+                    btcAsset.changePct = ((data.bitcoin.gbp - btcAsset.initialPrice) / btcAsset.initialPrice) * 100;
                     btcAsset.price = data.bitcoin.gbp;
                 }
 
-                // Modify current selected live candle parameters dynamically with changing ticker updates
                 marketData.forEach(asset => {
                     if (asset.id !== 'btc') {
-                        let dynamicFluctuation = (Math.random() * 0.2 - 0.1);
-                        asset.changePct += dynamicFluctuation;
+                        let dynamicFluctuation = (Math.random() * 0.1 - 0.05);
                         asset.price = Math.max(1, asset.price + (asset.price * (dynamicFluctuation / 100)));
+                        asset.changePct = ((asset.price - asset.initialPrice) / asset.initialPrice) * 100;
                     }
-                    
-                    // Live-update the final bar on screen to reflect the real price moving up and down
                     updateCurrentCandlePrice(asset.id, asset.price);
                 });
 
-                document.getElementById('app-log').innerText = "Trading 212 Stream Connected: Valuation feed active.";
+                document.getElementById('app-log').innerText = "Trading 212 Engine Live Sync: Connected to public execution tape.";
                 saveState();
                 renderApp();
             } catch (err) {
                 marketData.forEach(asset => {
-                    let randFactor = (Math.random() * 0.3 - 0.15);
-                    asset.changePct += randFactor;
+                    let randFactor = (Math.random() * 0.14 - 0.07);
                     asset.price = Math.max(1, asset.price + (asset.price * (randFactor / 100)));
+                    asset.changePct = ((asset.price - asset.initialPrice) / asset.initialPrice) * 100;
                     updateCurrentCandlePrice(asset.id, asset.price);
                 });
                 renderApp();
@@ -625,7 +618,7 @@
             let key = assetId + "_" + currentTimeframe;
             if (!persistentCandles[key] || persistentCandles[key].length === 0) {
                 let params = getBarParameters();
-                let basePrice = marketData.find(a => a.id === assetId).price;
+                let basePrice = marketData.find(a => a.id === assetId).initialPrice;
                 let candles = [];
                 
                 for(let i = 0; i < params.barCount; i++) {
@@ -656,7 +649,6 @@
             });
         }
 
-        // Autonomous milestone shift: pushes a clean candle onto arrays every 1-2 minutes
         function cycleCandleTimeline() {
             let timeframes = ['1D', '1W', '1M', '1Y', '3Y'];
             marketData.forEach(asset => {
@@ -666,19 +658,16 @@
                         let activeArr = persistentCandles[key];
                         let finalCandle = activeArr[activeArr.length - 1];
                         
-                        // Push new bar duplicating previous close coordinates
                         activeArr.push({
                             open: finalCandle.close,
                             close: finalCandle.close,
                             high: finalCandle.close,
                             low: finalCandle.close
                         });
-                        // Prevent infinite arrays filling buffer bounds
                         if (activeArr.length > 35) activeArr.shift();
                     }
                 });
             });
-            document.getElementById('app-log').innerText = "Interval cycle completed: Standard new chart block logged.";
             saveState();
             renderApp();
         }
@@ -688,32 +677,39 @@
             canvas.innerHTML = "";
 
             let candles = checkGenerateBaseCandles(selectedAssetId);
+            let asset = marketData.find(a => a.id === selectedAssetId);
 
-            let allHighs = candles.map(c => c.high);
-            let allLows = candles.map(c => c.low);
-            let absoluteMax = Math.max(...allHighs);
-            let absoluteMin = Math.min(...allLows);
-            let absoluteRange = absoluteMax - absoluteMin || 1;
+            // Establish static chart boundaries based on initial historical context prices
+            let initialHighs = candles.slice(0, -1).map(c => c.high);
+            let initialLows = candles.slice(0, -1).map(c => c.low);
+            let baseMax = Math.max(...initialHighs);
+            let baseMin = Math.min(...initialLows);
+            let baseRange = baseMax - baseMin || 1;
 
-            let displayMax = absoluteMax;
-            let displayMin = absoluteMin;
-            let currentLivePrice = marketData.find(a => a.id === selectedAssetId).price;
+            // Strict historical static Support/Resistance mapping coordinates
+            let fixedResistance = baseMax - (baseRange * 0.15);
+            let fixedSupport = baseMin + (baseRange * 0.15);
 
-            let standardResistance = absoluteMax - (absoluteRange * 0.15);
-            let standardSupport = absoluteMin + (absoluteRange * 0.15);
+            // No automatic scaling zooms! Grid remains strictly identical unless extreme breakout occurs
+            let finalMax = baseMax;
+            let finalMin = baseMin;
 
-            // Constant boundary checks: keeps grid side values locked until current price breaches barriers
-            if (currentLivePrice > standardResistance) displayMax = currentLivePrice * 1.04;
-            if (currentLivePrice < standardSupport) displayMin = currentLivePrice * 0.96;
+            if (asset.price > fixedResistance) {
+                finalMax = asset.price * 1.05;
+            }
+            if (asset.price < fixedSupport) {
+                finalMin = asset.price * 0.95;
+            }
 
-            let adjustedRange = displayMax - displayMin || 1;
+            let viewRange = finalMax - finalMin || 1;
 
-            document.getElementById('y-max').innerText = "£" + displayMax.toLocaleString(undefined, {maximumFractionDigits: 0});
-            document.getElementById('y-mid').innerText = "£" + ((displayMax + displayMin) / 2).toLocaleString(undefined, {maximumFractionDigits: 0});
-            document.getElementById('y-min').innerText = "£" + displayMin.toLocaleString(undefined, {maximumFractionDigits: 0});
+            // Output side value displays
+            document.getElementById('y-max').innerText = "£" + finalMax.toLocaleString(undefined, {maximumFractionDigits: 2});
+            document.getElementById('y-mid').innerText = "£" + ((finalMax + finalMin) / 2).toLocaleString(undefined, {maximumFractionDigits: 2});
+            document.getElementById('y-min').innerText = "£" + finalMin.toLocaleString(undefined, {maximumFractionDigits: 2});
 
-            let supportPercentTop = ((displayMax - standardSupport) / adjustedRange) * 100;
-            let resistancePercentTop = ((displayMax - standardResistance) / adjustedRange) * 100;
+            let supportPercentTop = ((finalMax - fixedSupport) / viewRange) * 100;
+            let resistancePercentTop = ((finalMax - fixedResistance) / viewRange) * 100;
 
             document.getElementById('support-line').style.top = supportPercentTop + "%";
             document.getElementById('support-tag').style.top = supportPercentTop + "%";
@@ -724,12 +720,12 @@
                 let bull = candle.close >= candle.open;
                 let typeClass = bull ? "bullish" : "bearish";
 
-                let bodyTop = ((displayMax - Math.max(candle.open, candle.close)) / adjustedRange) * 100;
-                let bodyHeight = (Math.abs(candle.open - candle.close) / adjustedRange) * 100;
-                let wickTop = ((displayMax - candle.high) / adjustedRange) * 100;
-                let wickHeight = ((candle.high - candle.low) / adjustedRange) * 100;
+                let bodyTop = ((finalMax - Math.max(candle.open, candle.close)) / viewRange) * 100;
+                let bodyHeight = (Math.abs(candle.open - candle.close) / viewRange) * 100;
+                let wickTop = ((finalMax - candle.high) / viewRange) * 100;
+                let wickHeight = ((candle.high - candle.low) / viewRange) * 100;
 
-                bodyHeight = Math.max(bodyHeight, 3); 
+                bodyHeight = Math.max(bodyHeight, 2.5); 
 
                 let candleElement = `
                     <div class="candle-stick ${typeClass}">
