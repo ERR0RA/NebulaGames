@@ -140,13 +140,13 @@ document.getElementById('gameMode').addEventListener('change', function() {
 function getBotSettings(setting) {
     let color = '#f00';
     let profile = 'default';
-    let speed = 1;
+    let speed = 3; // High-speed base movement
     
-    if (setting === 'ultimate') { color = '#ff3333'; profile = 'ultimate'; speed = 1.2; }
-    else if (setting === 'error') { color = '#00ffff'; profile = 'error'; }
-    else if (setting === 'failed') { color = '#d97706'; profile = 'failed'; speed = 0.8; }
-    else if (setting === 'destroyer') { color = '#ea580c'; profile = 'destroyer'; speed = 1.1; }
-    else if (setting === 'void') { color = '#a855f7'; profile = 'void'; speed = 1.0; }
+    if (setting === 'ultimate') { color = '#ff3333'; profile = 'ultimate'; speed = 4; }
+    else if (setting === 'error') { color = '#00ffff'; profile = 'error'; speed = 3; }
+    else if (setting === 'failed') { color = '#d97706'; profile = 'failed'; speed = 2; }
+    else if (setting === 'destroyer') { color = '#ea580c'; profile = 'destroyer'; speed = 3.5; }
+    else if (setting === 'void') { color = '#a855f7'; profile = 'void'; speed = 3; }
     return { color, profile, speed };
 }
 
@@ -192,8 +192,8 @@ function reset() {
     }
 
     players = [
-        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, shield: false, baseSpeed: 1, speedBuffTimer: 0, isBot: false, profile: 'player' },
-        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, shield: false, baseSpeed: 1, speedBuffTimer: 0, isBot: false, profile: 'player' },
+        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, shield: false, baseSpeed: 3, speedBuffTimer: 0, isBot: false, profile: 'player' },
+        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, shield: false, baseSpeed: 3, speedBuffTimer: 0, isBot: false, profile: 'player' },
         { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: b2.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, shield: false, baseSpeed: b2.speed, speedBuffTimer: 0, isBot: true, profile: b2.profile, isAltColor: false }
     ];
 
@@ -337,15 +337,15 @@ function update() {
 
     if (document.getElementById('usePowerUps').checked) {
         powerupTimer++;
-        if (powerupTimer > 200) { spawnPowerUp(); powerupTimer = 0; }
+        if (powerupTimer > 160) { spawnPowerUp(); powerupTimer = 0; }
     }
 
     // Process Bot Decisional logic loop
     players.forEach(p => {
         if (p.active && p.alive && p.isBot) {
             let target = null;
-            let minDist = (p.profile === 'ultimate') ? 400 : 250; 
-            if (p.profile === 'destroyer') minDist = 450; 
+            let minDist = (p.profile === 'ultimate') ? 500 : 300; 
+            if (p.profile === 'destroyer') minDist = 550; 
 
             powerups.forEach(pu => {
                 let d = Math.hypot(p.x - pu.x, p.y - pu.y);
@@ -364,24 +364,24 @@ function update() {
                 return false;
             };
 
-            let turnChance = 0.12;
-            if (p.profile === 'ultimate') turnChance = 0.18;
-            if (p.profile === 'destroyer') turnChance = 0.28; 
-            if (p.profile === 'error') turnChance = 0.45;
+            let turnChance = 0.20;
+            if (p.profile === 'ultimate') turnChance = 0.30;
+            if (p.profile === 'destroyer') turnChance = 0.40; 
+            if (p.profile === 'error') turnChance = 0.50;
 
             if (target && Math.random() < turnChance) {
                 if (Math.abs(p.x - target.x) > 10 && p.dy !== 0) {
                     let newDx = p.x < target.x ? UNIT : -UNIT;
-                    if (!checkAhead(newDx, 0, 15)) { p.dx = newDx; p.dy = 0; }
+                    if (!checkAhead(newDx, 0, 20)) { p.dx = newDx; p.dy = 0; }
                 } else if (Math.abs(p.y - target.y) > 10 && p.dx !== 0) {
                     let newDy = p.y < target.y ? UNIT : -UNIT;
-                    if (!checkAhead(0, newDy, 15)) { p.dx = 0; p.dy = newDy; }
+                    if (!checkAhead(0, newDy, 20)) { p.dx = 0; p.dy = newDy; }
                 }
             }
 
-            let lookAheadDist = 10;
-            if (p.profile === 'ultimate') lookAheadDist = 16;
-            if (p.profile === 'destroyer') lookAheadDist = 14;
+            let lookAheadDist = 20;
+            if (p.profile === 'ultimate') lookAheadDist = 30;
+            if (p.profile === 'destroyer') lookAheadDist = 25;
 
             if (checkAhead(p.dx, p.dy, lookAheadDist) || (Math.random() < (p.profile === 'error' ? 0.05 : 0.005))) {
                 const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}]
@@ -391,43 +391,42 @@ function update() {
                 let bestDir = null, maxDist = -1;
                 dirs.forEach(d => {
                     let dCount = 0;
-                    let cap = (p.profile === 'ultimate' || p.profile === 'destroyer') ? 60 : 35;
+                    let cap = (p.profile === 'ultimate' || p.profile === 'destroyer') ? 80 : 50;
                     while(dCount < cap && !checkCollision(p.x + d.dx*(dCount+1), p.y + d.dy*(dCount+1), p)) { dCount++; }
                     if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
                 });
                 if (bestDir) { p.dx = bestDir.dx; p.dy = bestDir.dy; }
             }
-            p.isBoosting = (p.boost > 0 && !checkAhead(p.dx, p.dy, 40) && p.profile !== 'failed');
+            p.isBoosting = (p.boost > 0 && !checkAhead(p.dx, p.dy, 50) && p.profile !== 'failed');
         }
     });
 
-    // Process Movement physics loop
+    // High-speed movement iteration loop
     players.forEach(p => {
         if (!p.active || !p.alive) return;
         if (p.ghost > 0) p.ghost--;
         
-        let spd = (p.isBoosting && p.boost > 0) ? 2 : 1;
-        
-        let currentMult = p.baseSpeed;
+        let boostMult = (p.isBoosting && p.boost > 0) ? 1.5 : 1.0;
+        let speedVal = p.baseSpeed * boostMult;
+
         if (p.speedBuffTimer > 0) {
             p.speedBuffTimer--;
-            currentMult *= (p.profile === 'ultimate' || p.profile === 'destroyer') ? 2.5 : 2;
+            speedVal *= 1.5;
         }
 
         if (p.profile === 'error') {
-            currentMult *= (glitchTick % 20 < 5) ? 1.8 : (glitchTick % 30 === 0 ? 0.5 : 1);
+            speedVal *= (glitchTick % 20 < 5) ? 1.6 : (glitchTick % 30 === 0 ? 0.8 : 1);
         }
 
-        spd *= currentMult;
-        
         if (p.isBoosting && p.boost > 0) {
             p.boost -= 2.0;
             if (p.boost < 0) p.boost = 0;
         } else if (p.boost < 100) {
-            p.boost += 0.2;
+            p.boost += 0.3;
         }
         
-        for (let i = 0; i < spd; i++) {
+        let steps = Math.round(speedVal);
+        for (let i = 0; i < steps; i++) {
             p.x += p.dx; p.y += p.dy;
             if (checkCollision(p.x, p.y, p)) { 
                 p.alive = false; 
