@@ -192,9 +192,9 @@ function reset() {
     }
 
     players = [
-        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, shield: false, speedMult: 1, isBot: false, profile: 'player' },
-        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, shield: false, speedMult: 1, isBot: false, profile: 'player' },
-        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: b2.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, shield: false, speedMult: b2.speed, isBot: true, profile: b2.profile, isAltColor: false }
+        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, shield: false, baseSpeed: 1, speedBuffTimer: 0, isBot: false, profile: 'player' },
+        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, shield: false, baseSpeed: 1, speedBuffTimer: 0, isBot: false, profile: 'player' },
+        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: b2.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, shield: false, baseSpeed: b2.speed, speedBuffTimer: 0, isBot: true, profile: b2.profile, isAltColor: false }
     ];
 
     document.getElementById('lbl-p1').innerText = (mode === 'bvb') ? bot1Label : "P1 ENERGY";
@@ -211,7 +211,7 @@ function reset() {
 
     if (mode === 'bvb') {
         players[0].active = true; players[0].isBot = true; players[0].team = 'green_bot';
-        players[0].color = b1.color; players[0].profile = b1.profile; players[0].speedMult = b1.speed;
+        players[0].color = b1.color; players[0].profile = b1.profile; players[0].baseSpeed = b1.speed;
         players[1].active = false; players[2].active = true; players[2].team = 'red_bot';
         if (isSameBot) players[2].isAltColor = true;
 
@@ -313,10 +313,7 @@ function applyPowerUp(player, type) {
     if (type === 'ghost') player.ghost = 200;
     if (type === 'shield') player.shield = true;
     if (type === 'battery') player.boost = Math.min(100, player.boost + 50);
-    if (type === 'speed') {
-        player.speedMult = (player.profile === 'ultimate' || player.profile === 'destroyer') ? 2.5 : 2;
-        setTimeout(() => { player.speedMult = (player.profile === 'ultimate') ? 1.2 : (player.profile === 'destroyer' ? 1.1 : (player.profile === 'failed' ? 0.8 : 1)); }, 4000);
-    }
+    if (type === 'speed') player.speedBuffTimer = 240;
     if (type === 'clear') {
         grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
         players.forEach(p => p.trail = []);
@@ -410,10 +407,18 @@ function update() {
         if (p.ghost > 0) p.ghost--;
         
         let spd = (p.isBoosting && p.boost > 0) ? 2 : 1;
-        if (p.profile === 'error') {
-            p.speedMult = (glitchTick % 20 < 5) ? 1.8 : (glitchTick % 30 === 0 ? 0.5 : 1);
+        
+        let currentMult = p.baseSpeed;
+        if (p.speedBuffTimer > 0) {
+            p.speedBuffTimer--;
+            currentMult *= (p.profile === 'ultimate' || p.profile === 'destroyer') ? 2.5 : 2;
         }
-        spd *= p.speedMult;
+
+        if (p.profile === 'error') {
+            currentMult *= (glitchTick % 20 < 5) ? 1.8 : (glitchTick % 30 === 0 ? 0.5 : 1);
+        }
+
+        spd *= currentMult;
         
         if (p.isBoosting && p.boost > 0) {
             p.boost -= 2.0;
@@ -527,7 +532,6 @@ function draw() {
         ctx.shadowBlur = 15; ctx.shadowColor = col;
         ctx.fillRect(pu.x - scale/2, pu.y - scale/2, scale, scale);
         
-        // Internal design symbol marker inside powerup
         ctx.fillStyle = '#000';
         ctx.fillRect(pu.x - 2, pu.y - 2, 4, 4);
         ctx.restore();
@@ -569,7 +573,6 @@ function draw() {
             
             ctx.fillRect(headX, headY, UNIT, UNIT);
 
-            // Draw visible active Shield ring bubble 
             if (p.shield) {
                 ctx.strokeStyle = '#f0f';
                 ctx.lineWidth = 2;
