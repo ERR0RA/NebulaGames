@@ -16,6 +16,7 @@
       --bg0: #050608; --bg1: #0a0e17; --bg2: #120a1c;
       --secondary: #00d9ff; --secondary-glow: rgba(0,217,255,.20);
       --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      --shatter-hue: 0deg;
     }
 
     /* PREMIUM SYNTH THEMES */
@@ -45,7 +46,7 @@
     body.custom-cursor a, body.custom-cursor button { cursor: none; }
 
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s ease; }
-    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas, body[data-bg="stars"] #bgCanvas, body[data-bg="aurora"] #bgCanvas { opacity: 0.65; }
+    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas, body[data-bg="stars"] #bgCanvas, body[data-bg="aurora"] #bgCanvas, body[data-bg="shattered"] #bgCanvas { opacity: 0.85; }
 
     /* NEON ENGINE */
     body[data-bg="neon"]::before {
@@ -58,19 +59,15 @@
     @keyframes neonPulse { 0% { opacity: 0.5; filter: blur(40px); } 100% { opacity: 0.8; filter: blur(20px); } }
     body[data-bg="neon"] { background: linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 50%, var(--bg2) 100%); }
 
-    /* GLITCH ENGINE */
-    body[data-bg="glitch"] { background: var(--bg0); }
-    body[data-bg="glitch"]::after {
-      content: ""; position: fixed; inset: 0; z-index: -1;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
-      background-size: 100% 4px, 3px 100%; pointer-events: none;
+    /* SHATTERED ENGINE (CHANGING NEON COLORS) */
+    body[data-bg="shattered"] {
+      background: #020305;
+      animation: shatterHueShift 10s infinite linear;
     }
-    body[data-bg="glitch"]::before {
-      content: ""; position: fixed; inset: 0; z-index: -1;
-      background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px);
-      animation: scanline 12s linear infinite;
+    @keyframes shatterHueShift {
+      0% { --shatter-hue: 0deg; }
+      100% { --shatter-hue: 360deg; }
     }
-    @keyframes scanline { 0% { transform: translateY(0); } 100% { transform: translateY(100vh); } }
 
     /* HARDWARE CURSOR TRACER */
     .cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s ease; }
@@ -156,6 +153,7 @@
     .game-link:hover { border-color: var(--primary); box-shadow: 0 12px 30px var(--primary-glow); transform: translateY(-6px); background: rgba(255,255,255,0.05); }
     
     .tag-badge { position: absolute; top: 12px; right: 12px; font-size: 9px; background: var(--primary); color: black; padding: 3px 10px; border-radius: 8px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; box-shadow: 0 2px 8px var(--primary-glow); }
+    .timer-badge { position: absolute; top: 12px; left: 12px; font-size: 9px; background: rgba(0, 217, 255, 0.2); color: #00d9ff; border: 1px solid #00d9ff; padding: 3px 8px; border-radius: 8px; font-weight: 700; font-family: "Fira Code", monospace; }
     .game-title { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.2px; text-align: center; margin-top: 10px; }
 
     /* METRIC TRACKING STRUCTURES */
@@ -205,6 +203,7 @@
       .link-container { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 0 10px; }
       .game-link { min-height: 110px; padding: 12px; border-radius: 16px; }
       .tag-badge { top: 8px; right: 8px; font-size: 8px; padding: 1px 6px; }
+      .timer-badge { top: 8px; left: 8px; font-size: 8px; padding: 1px 5px; }
       .game-title { font-size: 0.9rem; margin-top: 5px; }
       header { padding-top: 30px; }
       .events-panel { padding: 24px; width: 94%; }
@@ -343,7 +342,7 @@
       </div>
       <div class="panel">
         <button class="bg-btn" id="bg-neon" onclick="setBg('neon')">NEON</button>
-        <button class="bg-btn" id="bg-glitch" onclick="setBg('glitch')">GLITCH</button>
+        <button class="bg-btn" id="bg-shattered" onclick="setBg('shattered')">SHATTERED</button>
         <button class="bg-btn" id="bg-matrix" onclick="setBg('matrix')">MATRIX</button>
         <button class="bg-btn" id="bg-warp" onclick="setBg('warp')">WARP</button>
         <button class="bg-btn" id="bg-stars" onclick="setBg('stars')">STARS</button>
@@ -353,20 +352,20 @@
   </div>
 
   <script>
-    // CORE CATALOG DATA LAYER
+    // CORE CATALOG DATA LAYER (Supports optional 'timer' field in seconds)
     const games = [
-      { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
-      { name: "Neon Snake", url: "snake.html", tag: "Ultimate" },
+      { name: "Minesweeper", url: "minesweeper.html", tag: "best", timer: 300 },
+      { name: "Neon Snake", url: "snake.html", tag: "Ultimate", timer: 180 },
       { name: "Sparx Solver Neon", url: "downloads/Sparx%20Neon%20Fixed.zip", tag: "DOWNLOAD" },
-      { name: "Master Armory", url: "masterarmory.html", tag: "best" },
+      { name: "Master Armory", url: "masterarmory.html", tag: "best", timer: 600 },
       { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
-      { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
+      { name: "Neon Slash", url: "Neon-Slash.html", tag: "", timer: 120 },
       { name: "Elemental", url: "elemental.html", tag: "" },
       { name: "Neon King", url: "Neon-King.html", tag: "" },
-      { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
+      { name: "Block Breaker", url: "blockbreaker.html", tag: "", timer: 240 },
       { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
       { name: "Neon Slamz", url: "Neon-Slams.html", tag: "" },
-      { name: "Neon Trail", url: "neon-trail.html", tag: "Ultimate" },
+      { name: "Neon Trail", url: "neon-trail.html", tag: "Ultimate", timer: 150 },
       { name: "Neon Run", url: "ai.html", tag: "" },
       { name: "Basketball", url: "basketball.html", tag: "" },
       { name: "Football", url: "football.html", tag: "" },
@@ -386,14 +385,12 @@
         dot.style.left = `${e.clientX}px`;
         dot.style.top = `${e.clientY}px`;
         
-        // Fast tracking fallback handler loop for the ring smoothing frame interpolation
         ring.animate({
           left: `${e.clientX}px`,
           top: `${e.clientY}px`
         }, { duration: 120, fill: "forwards" });
       });
 
-      // Global interactive listener matrix hooks
       document.addEventListener("mouseover", (e) => {
         if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.t-btn')) {
           ring.classList.add('hovering');
@@ -406,12 +403,13 @@
       });
     }
 
-    // MATRIX RENDERING STAGE SETUP
+    // MATRIX & CANVAS RENDERING STAGE SETUP
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
     let width, height, columns, drops, starArray = [];
     let auroraWaves = [];
-    let animationFrameId;
+    let shards = [];
+    let neonHue = 0;
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -436,6 +434,36 @@
         { yBase: height * 0.50, amplitude: 50, speed: 0.002, phase: 1.5, length: 0.0010 },
         { yBase: height * 0.65, amplitude: 40, speed: 0.003, phase: 3.0, length: 0.0008 }
       ];
+
+      // SHATTERED BACKGROUND SHARDS GENERATION
+      shards = [];
+      const numShards = 35;
+      for (let i = 0; i < numShards; i++) {
+        const cx = Math.random() * width;
+        const cy = Math.random() * height;
+        const pts = [];
+        const numPts = 3 + Math.floor(Math.random() * 3);
+        const radius = 30 + Math.random() * 80;
+        
+        for (let j = 0; j < numPts; j++) {
+          const angle = (j / numPts) * Math.PI * 2 + Math.random() * 0.5;
+          pts.push({
+            x: Math.cos(angle) * radius,
+            y: Math.sin(angle) * radius
+          });
+        }
+        
+        shards.push({
+          x: cx,
+          y: cy,
+          vx: (Math.random() - 0.5) * 0.6,
+          vy: (Math.random() - 0.5) * 0.6,
+          pts: pts,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 0.01,
+          hueOffset: Math.random() * 60
+        });
+      }
     }
 
     function draw() {
@@ -527,7 +555,47 @@
           ctx.restore();
         });
       }
-      animationFrameId = requestAnimationFrame(draw);
+      else if (mode === 'shattered') {
+        neonHue = (neonHue + 0.5) % 360;
+        
+        shards.forEach(s => {
+          s.x += s.vx;
+          s.y += s.vy;
+          s.rot += s.vRot;
+
+          if (s.x < -100) s.x = width + 100;
+          if (s.x > width + 100) s.x = -100;
+          if (s.y < -100) s.y = height + 100;
+          if (s.y > height + 100) s.y = -100;
+
+          ctx.save();
+          ctx.translate(s.x, s.y);
+          ctx.rotate(s.rot);
+
+          const currentHue = (neonHue + s.hueOffset) % 360;
+          const strokeColor = `hsl(${currentHue}, 100%, 60%)`;
+          const fillColor = `hsla(${currentHue}, 100%, 50%, 0.04)`;
+
+          ctx.beginPath();
+          ctx.moveTo(s.pts[0].x, s.pts[0].y);
+          for (let i = 1; i < s.pts.length; i++) {
+            ctx.lineTo(s.pts[i].x, s.pts[i].y);
+          }
+          ctx.closePath();
+
+          ctx.fillStyle = fillColor;
+          ctx.fill();
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 1.5;
+          ctx.shadowColor = strokeColor;
+          ctx.shadowBlur = 12;
+          ctx.stroke();
+
+          ctx.restore();
+        });
+      }
+
+      requestAnimationFrame(draw);
     }
 
     // NAVIGATION SWITCH LOGIC MESH
@@ -588,6 +656,33 @@
       });
     }
 
+    // TIMER FORMATTER UTILITY
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    // START TIMER COUNTDOWNS
+    function initTimers() {
+      document.querySelectorAll('.timer-badge').forEach(badge => {
+        let totalSeconds = parseInt(badge.getAttribute('data-seconds'), 10);
+        if (isNaN(totalSeconds) || totalSeconds <= 0) return;
+
+        const interval = setInterval(() => {
+          totalSeconds--;
+          if (totalSeconds <= 0) {
+            clearInterval(interval);
+            badge.innerText = "EXPIRED";
+            badge.style.color = "#ff3b3b";
+            badge.style.borderColor = "#ff3b3b";
+          } else {
+            badge.innerText = formatTime(totalSeconds);
+          }
+        }, 1000);
+      });
+    }
+
     // ASYNC LOAD INJECTION PROCESSOR
     window.addEventListener('DOMContentLoaded', () => {
       const savedTheme = localStorage.getItem('nebula-theme');
@@ -595,26 +690,30 @@
 
       if (!savedTheme && !savedBg) {
         setTheme('crimson');
-        setBg('warp');
+        setBg('shattered');
       } else {
         if(savedTheme) setTheme(savedTheme);
-        setBg(savedBg || 'neon');
+        setBg(savedBg || 'shattered');
       }
 
-      // Catalog compilation parser
-      document.getElementById("gameGrid").innerHTML = games.map(g => `
-        <a href="${g.url}" class="game-link" target="_blank">
-          ${g.tag ? `<span class="tag-badge">${g.tag}</span>` : ''}
-          <span class="game-title">${g.name}</span>
-        </a>
-      `).join('');
+      // Catalog compilation parser with timer logic (renders timer badge only if timer is a valid number)
+      document.getElementById("gameGrid").innerHTML = games.map(g => {
+        const hasTimer = typeof g.timer === 'number' && !isNaN(g.timer) && g.timer > 0;
+        return `
+          <a href="${g.url}" class="game-link" target="_blank">
+            ${hasTimer ? `<span class="timer-badge" data-seconds="${g.timer}">${formatTime(g.timer)}</span>` : ''}
+            ${g.tag ? `<span class="tag-badge">${g.tag}</span>` : ''}
+            <span class="game-title">${g.name}</span>
+          </a>
+        `;
+      }).join('');
 
       bindCardEffects();
+      initTimers();
       window.addEventListener('resize', resize);
       resize(); 
       draw();
 
-      // Standard operational startup sequence delay framework
       setTimeout(() => {
         const splash = document.getElementById('splashOverlay');
         const mainContent = document.getElementById('mainAppContent');
