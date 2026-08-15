@@ -46,7 +46,7 @@
     body.custom-cursor a, body.custom-cursor button { cursor: none; }
 
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 1s ease; }
-    body[data-bg="matrix"] #bgCanvas, body[data-bg="warp"] #bgCanvas, body[data-bg="stars"] #bgCanvas, body[data-bg="aurora"] #bgCanvas, body[data-bg="shattered"] #bgCanvas { opacity: 0.85; }
+    body[data-bg="matrix"] #bgCanvas, body[data-bg="grid"] #bgCanvas, body[data-bg="plasma"] #bgCanvas, body[data-bg="aurora"] #bgCanvas, body[data-bg="shattered"] #bgCanvas { opacity: 0.85; }
 
     /* NEON ENGINE */
     body[data-bg="neon"]::before {
@@ -342,8 +342,8 @@
         <button class="bg-btn" id="bg-neon" onclick="setBg('neon')">NEON</button>
         <button class="bg-btn" id="bg-shattered" onclick="setBg('shattered')">SHATTERED</button>
         <button class="bg-btn" id="bg-matrix" onclick="setBg('matrix')">MATRIX</button>
-        <button class="bg-btn" id="bg-warp" onclick="setBg('warp')">WARP</button>
-        <button class="bg-btn" id="bg-stars" onclick="setBg('stars')">STARS</button>
+        <button class="bg-btn" id="bg-grid" onclick="setBg('grid')">GRID</button>
+        <button class="bg-btn" id="bg-plasma" onclick="setBg('plasma')">PLASMA</button>
         <button class="bg-btn" id="bg-aurora" onclick="setBg('aurora')">AURORA</button>
       </div>
     </div>
@@ -426,9 +426,11 @@
     // MATRIX & CANVAS RENDERING STAGE SETUP
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
-    let width, height, columns, drops, starArray = [];
+    let width, height, columns, drops;
     let auroraWaves = [];
     let shards = [];
+    let gridOffset = 0;
+    let plasmaTime = 0;
     let neonHue = 0;
 
     function resize() {
@@ -436,18 +438,6 @@
       height = canvas.height = window.innerHeight;
       columns = Math.floor(width / 20) + 1;
       drops = Array(columns).fill(1);
-      
-      starArray = [];
-      for(let i=0; i<150; i++) {
-        starArray.push({
-          x: Math.random() * width, 
-          y: Math.random() * height,
-          z: Math.random() * width,
-          size: Math.random() * 1.8 + 0.2, 
-          speed: Math.random() * 0.4 + 0.05, 
-          opacity: Math.random()
-        });
-      }
       
       auroraWaves = [
         { yBase: height * 0.25, amplitude: 60, speed: 0.008, phase: 0, length: 0.002, color: '#00ffcc' },
@@ -505,39 +495,85 @@
           drops[i]++;
         });
       } 
-      else if (mode === 'stars') {
-        starArray.forEach(s => {
-          ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity})`;
-          ctx.beginPath(); 
-          ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); 
-          ctx.fill();
-          s.y += s.speed; 
-          if(s.y > height) s.y = 0;
-        });
-      }
-      else if (mode === 'warp') {
-        const centerX = width / 2;
-        const centerY = height / 2;
+      else if (mode === 'grid') {
+        ctx.fillStyle = '#030408';
+        ctx.fillRect(0, 0, width, height);
+        
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#00ff88';
+        const horizonY = height * 0.5;
 
-        starArray.forEach(s => {
-          s.z -= 8;
-          if (s.z <= 0) {
-            s.z = width;
-            s.x = centerX + (Math.random() - 0.5) * 200;
-            s.y = centerY + (Math.random() - 0.5) * 200;
+        // Glowing Horizon Line
+        ctx.save();
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = primaryColor;
+        ctx.shadowBlur = 30;
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(width, horizonY);
+        ctx.stroke();
+        ctx.restore();
+
+        // 3D Perspective Floor Grid
+        gridOffset = (gridOffset + 1.5) % 40;
+        
+        ctx.save();
+        ctx.strokeStyle = primaryColor;
+        ctx.globalAlpha = 0.4;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = primaryColor;
+        ctx.shadowBlur = 8;
+
+        // Perspective vertical lines
+        const fov = 300;
+        const numLines = 30;
+        for (let i = -numLines; i <= numLines; i++) {
+          const x = (width / 2) + i * 40;
+          ctx.beginPath();
+          ctx.moveTo(width / 2 + i * 2, horizonY);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+
+        // Animated horizontal floor lines
+        for (let y = horizonY; y < height; y += (y - horizonY + 10) * 0.15) {
+          const lineY = y + (gridOffset * ((y - horizonY) / height));
+          if (lineY > horizonY && lineY < height) {
+            ctx.beginPath();
+            ctx.moveTo(0, lineY);
+            ctx.lineTo(width, lineY);
+            ctx.stroke();
           }
-          
-          const x = (s.x - centerX) * (width / s.z) + centerX;
-          const y = (s.y - centerY) * (width / s.z) + centerY;
-          const size = (1 - s.z / width) * 5;
-          
-          if (x >= 0 && x <= width && y >= 0 && y <= height) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${1 - s.z / width})`; 
-            ctx.beginPath(); 
-            ctx.arc(x, y, Math.max(0.2, size), 0, Math.PI * 2); 
-            ctx.fill();
-          }
-        });
+        }
+        ctx.restore();
+      }
+      else if (mode === 'plasma') {
+        plasmaTime += 0.02;
+        ctx.fillStyle = '#030308';
+        ctx.fillRect(0, 0, width, height);
+        
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#00ff88';
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          const cx = width / 2 + Math.sin(plasmaTime * 0.8 + i) * (width * 0.25);
+          const cy = height / 2 + Math.cos(plasmaTime * 0.6 + i * 2) * (height * 0.25);
+          const radius = Math.min(width, height) * (0.35 + Math.sin(plasmaTime + i) * 0.1);
+
+          let grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, radius);
+          grad.addColorStop(0, primaryColor);
+          grad.addColorStop(0.5, i % 2 === 0 ? '#ff00d4' : '#00f0ff');
+          grad.addColorStop(1, 'transparent');
+
+          ctx.fillStyle = grad;
+          ctx.globalAlpha = 0.35;
+          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
       }
       else if (mode === 'aurora') {
         ctx.fillStyle = '#050608';
