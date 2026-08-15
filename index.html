@@ -128,30 +128,6 @@
     .view-section { display: none; opacity: 0; transition: opacity 0.4s ease; }
     .view-section.active-view { display: block; opacity: 1; }
 
-    /* SIDEBAR TIMER CONTROL */
-    .side-timer-panel {
-      position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
-      background: rgba(5, 6, 8, 0.85); border: 1px solid var(--glass-border);
-      border-radius: 20px; padding: 18px 14px; backdrop-filter: blur(20px);
-      z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      display: flex; flex-direction: column; align-items: center; gap: 10px; width: 140px;
-    }
-    .side-timer-panel h4 { margin: 0; font-size: 0.75rem; letter-spacing: 1.5px; color: var(--primary); text-transform: uppercase; font-weight: 800; }
-    .timer-display { font-family: "Fira Code", monospace; font-size: 1.3rem; font-weight: 700; color: #fff; min-height: 28px; }
-    .side-timer-panel input {
-      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-      border-radius: 8px; color: #fff; padding: 6px; font-family: "Fira Code", monospace;
-      font-size: 0.8rem; text-align: center; outline: none;
-    }
-    .side-timer-panel input:focus { border-color: var(--primary); }
-    .side-timer-btn-group { display: flex; gap: 6px; width: 100%; }
-    .side-timer-btn {
-      flex: 1; background: var(--glass-bg); border: 1px solid var(--glass-border);
-      color: #fff; border-radius: 8px; padding: 6px 0; font-size: 0.7rem; font-weight: 700;
-      cursor: pointer; transition: var(--transition);
-    }
-    .side-timer-btn:hover { background: var(--primary); color: #000; }
-
     /* CORE LINK WRAPPERS */
     .search-wrap { width: min(90%, 580px); margin: 30px auto; position: relative; }
     #moduleSearch {
@@ -232,7 +208,6 @@
       .bottom-controls { width: 92%; bottom: 16px; }
       .panel { padding: 6px 12px; gap: 6px; width: 100%; }
       .bg-btn { padding: 6px 12px; font-size: 9px; }
-      .side-timer-panel { right: 10px; top: 120px; transform: none; width: 110px; padding: 10px 8px; }
     }
   </style>
 </head>
@@ -250,17 +225,6 @@
       </div>
     </div>
   </div>
-
-  <aside class="side-timer-panel">
-    <h4>TIMER</h4>
-    <div class="timer-display" id="timerDisplay"></div>
-    <input type="number" id="timerMinutes" placeholder="Mins" min="0">
-    <input type="number" id="timerSeconds" placeholder="Secs" min="0" max="59">
-    <div class="side-timer-btn-group">
-      <button class="side-timer-btn" onclick="startTimer()">START</button>
-      <button class="side-timer-btn" onclick="resetTimer()">RESET</button>
-    </div>
-  </aside>
 
   <div id="mainAppContent">
     <div class="top-nav">
@@ -430,52 +394,6 @@
       renderGames(filtered);
     }
 
-    // DYNAMIC SIDEBAR TIMER ENGINE
-    let countdownInterval = null;
-    let totalSecondsLeft = 0;
-
-    function startTimer() {
-      const minVal = parseInt(document.getElementById('timerMinutes').value, 10) || 0;
-      const secVal = parseInt(document.getElementById('timerSeconds').value, 10) || 0;
-      
-      if (minVal === 0 && secVal === 0) {
-        resetTimer();
-        return;
-      }
-
-      totalSecondsLeft = (minVal * 60) + secVal;
-      clearInterval(countdownInterval);
-      updateTimerDisplay();
-
-      countdownInterval = setInterval(() => {
-        totalSecondsLeft--;
-        if (totalSecondsLeft <= 0) {
-          clearInterval(countdownInterval);
-          totalSecondsLeft = 0;
-        }
-        updateTimerDisplay();
-      }, 1000);
-    }
-
-    function resetTimer() {
-      clearInterval(countdownInterval);
-      totalSecondsLeft = 0;
-      document.getElementById('timerMinutes').value = '';
-      document.getElementById('timerSeconds').value = '';
-      document.getElementById('timerDisplay').innerText = '';
-    }
-
-    function updateTimerDisplay() {
-      const display = document.getElementById('timerDisplay');
-      if (totalSecondsLeft <= 0) {
-        display.innerText = '';
-        return;
-      }
-      const m = Math.floor(totalSecondsLeft / 60);
-      const s = totalSecondsLeft % 60;
-      display.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-    }
-
     // HARDWARE TARGET RECOGNITION
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
     const dot = document.querySelector(".cursor-dot");
@@ -532,9 +450,10 @@
       }
       
       auroraWaves = [
-        { yBase: height * 0.35, amplitude: 35, speed: 0.004, phase: 0, length: 0.0015 },
-        { yBase: height * 0.50, amplitude: 50, speed: 0.002, phase: 1.5, length: 0.0010 },
-        { yBase: height * 0.65, amplitude: 40, speed: 0.003, phase: 3.0, length: 0.0008 }
+        { yBase: height * 0.25, amplitude: 60, speed: 0.008, phase: 0, length: 0.002, color: '#00ffcc' },
+        { yBase: height * 0.45, amplitude: 85, speed: 0.005, phase: 1.5, length: 0.0012, color: '#00ff66' },
+        { yBase: height * 0.60, amplitude: 70, speed: 0.007, phase: 3.0, length: 0.0015, color: '#ff00ff' },
+        { yBase: height * 0.75, amplitude: 90, speed: 0.004, phase: 4.5, length: 0.001, color: '#9900ff' }
       ];
 
       shards = [];
@@ -624,34 +543,39 @@
         ctx.fillStyle = '#050608';
         ctx.fillRect(0, 0, width, height);
         
-        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#00ff88';
-        
-        auroraWaves.forEach((wave, index) => {
+        auroraWaves.forEach((wave) => {
           wave.phase += wave.speed;
           
           ctx.save();
           ctx.globalCompositeOperation = 'screen';
           
-          let gradient = ctx.createLinearGradient(0, 0, 0, height);
+          let gradient = ctx.createLinearGradient(0, wave.yBase - 150, 0, wave.yBase + 250);
           gradient.addColorStop(0, 'transparent');
-          gradient.addColorStop(wave.yBase / height, primaryColor);
-          gradient.addColorStop(Math.min(1, (wave.yBase + 200) / height), 'transparent');
+          gradient.addColorStop(0.4, wave.color);
+          gradient.addColorStop(1, 'transparent');
           
           ctx.fillStyle = gradient;
-          ctx.globalAlpha = 0.10 - (index * 0.02);
+          ctx.globalAlpha = 0.45;
           
           ctx.beginPath();
           ctx.moveTo(0, height);
           
-          for (let x = 0; x <= width; x += 20) {
+          for (let x = 0; x <= width; x += 15) {
             let y = wave.yBase + Math.sin(x * wave.length + wave.phase) * wave.amplitude 
-                             + Math.cos(x * 0.004 - wave.phase * 0.6) * (wave.amplitude * 0.4);
+                             + Math.cos(x * 0.003 - wave.phase * 0.8) * (wave.amplitude * 0.5);
             ctx.lineTo(x, y);
           }
           
           ctx.lineTo(width, height);
           ctx.closePath();
           ctx.fill();
+
+          ctx.strokeStyle = wave.color;
+          ctx.lineWidth = 3;
+          ctx.shadowColor = wave.color;
+          ctx.shadowBlur = 25;
+          ctx.stroke();
+
           ctx.restore();
         });
       }
