@@ -128,6 +128,30 @@
     .view-section { display: none; opacity: 0; transition: opacity 0.4s ease; }
     .view-section.active-view { display: block; opacity: 1; }
 
+    /* SIDEBAR TIMER CONTROL */
+    .side-timer-panel {
+      position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+      background: rgba(5, 6, 8, 0.85); border: 1px solid var(--glass-border);
+      border-radius: 20px; padding: 18px 14px; backdrop-filter: blur(20px);
+      z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; align-items: center; gap: 10px; width: 140px;
+    }
+    .side-timer-panel h4 { margin: 0; font-size: 0.75rem; letter-spacing: 1.5px; color: var(--primary); text-transform: uppercase; font-weight: 800; }
+    .timer-display { font-family: "Fira Code", monospace; font-size: 1.3rem; font-weight: 700; color: #fff; min-height: 28px; }
+    .side-timer-panel input {
+      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+      border-radius: 8px; color: #fff; padding: 6px; font-family: "Fira Code", monospace;
+      font-size: 0.8rem; text-align: center; outline: none;
+    }
+    .side-timer-panel input:focus { border-color: var(--primary); }
+    .side-timer-btn-group { display: flex; gap: 6px; width: 100%; }
+    .side-timer-btn {
+      flex: 1; background: var(--glass-bg); border: 1px solid var(--glass-border);
+      color: #fff; border-radius: 8px; padding: 6px 0; font-size: 0.7rem; font-weight: 700;
+      cursor: pointer; transition: var(--transition);
+    }
+    .side-timer-btn:hover { background: var(--primary); color: #000; }
+
     /* CORE LINK WRAPPERS */
     .search-wrap { width: min(90%, 580px); margin: 30px auto; position: relative; }
     #moduleSearch {
@@ -153,7 +177,6 @@
     .game-link:hover { border-color: var(--primary); box-shadow: 0 12px 30px var(--primary-glow); transform: translateY(-6px); background: rgba(255,255,255,0.05); }
     
     .tag-badge { position: absolute; top: 12px; right: 12px; font-size: 9px; background: var(--primary); color: black; padding: 3px 10px; border-radius: 8px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; box-shadow: 0 2px 8px var(--primary-glow); }
-    .timer-badge { position: absolute; top: 12px; left: 12px; font-size: 9px; background: rgba(0, 217, 255, 0.2); color: #00d9ff; border: 1px solid #00d9ff; padding: 3px 8px; border-radius: 8px; font-weight: 700; font-family: "Fira Code", monospace; }
     .game-title { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.2px; text-align: center; margin-top: 10px; }
 
     /* METRIC TRACKING STRUCTURES */
@@ -203,13 +226,13 @@
       .link-container { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 0 10px; }
       .game-link { min-height: 110px; padding: 12px; border-radius: 16px; }
       .tag-badge { top: 8px; right: 8px; font-size: 8px; padding: 1px 6px; }
-      .timer-badge { top: 8px; left: 8px; font-size: 8px; padding: 1px 5px; }
       .game-title { font-size: 0.9rem; margin-top: 5px; }
       header { padding-top: 30px; }
       .events-panel { padding: 24px; width: 94%; }
       .bottom-controls { width: 92%; bottom: 16px; }
-      .panel { padding: 6px 12px; gap: 6px; width: 100%; justify-content: cubic-bezier; }
+      .panel { padding: 6px 12px; gap: 6px; width: 100%; }
       .bg-btn { padding: 6px 12px; font-size: 9px; }
+      .side-timer-panel { right: 10px; top: 120px; transform: none; width: 110px; padding: 10px 8px; }
     }
   </style>
 </head>
@@ -227,6 +250,17 @@
       </div>
     </div>
   </div>
+
+  <aside class="side-timer-panel">
+    <h4>TIMER</h4>
+    <div class="timer-display" id="timerDisplay"></div>
+    <input type="number" id="timerMinutes" placeholder="Mins" min="0">
+    <input type="number" id="timerSeconds" placeholder="Secs" min="0" max="59">
+    <div class="side-timer-btn-group">
+      <button class="side-timer-btn" onclick="startTimer()">START</button>
+      <button class="side-timer-btn" onclick="resetTimer()">RESET</button>
+    </div>
+  </aside>
 
   <div id="mainAppContent">
     <div class="top-nav">
@@ -352,20 +386,20 @@
   </div>
 
   <script>
-    // CORE CATALOG DATA LAYER (Supports optional 'timer' field in seconds)
+    // CORE CATALOG DATA LAYER
     const games = [
-      { name: "Minesweeper", url: "minesweeper.html", tag: "best", timer: 300 },
-      { name: "Neon Snake", url: "snake.html", tag: "Ultimate", timer: 180 },
+      { name: "Minesweeper", url: "minesweeper.html", tag: "best" },
+      { name: "Neon Snake", url: "snake.html", tag: "Ultimate" },
       { name: "Sparx Solver Neon", url: "downloads/Sparx%20Neon%20Fixed.zip", tag: "DOWNLOAD" },
-      { name: "Master Armory", url: "masterarmory.html", tag: "best", timer: 600 },
+      { name: "Master Armory", url: "masterarmory.html", tag: "best" },
       { name: "Neon Pong", url: "Neon-Pong.html", tag: "best" },
-      { name: "Neon Slash", url: "Neon-Slash.html", tag: "", timer: 120 },
+      { name: "Neon Slash", url: "Neon-Slash.html", tag: "" },
       { name: "Elemental", url: "elemental.html", tag: "" },
       { name: "Neon King", url: "Neon-King.html", tag: "" },
-      { name: "Block Breaker", url: "blockbreaker.html", tag: "", timer: 240 },
+      { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
       { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
       { name: "Neon Slamz", url: "Neon-Slams.html", tag: "" },
-      { name: "Neon Trail", url: "neon-trail.html", tag: "Ultimate", timer: 150 },
+      { name: "Neon Trail", url: "neon-trail.html", tag: "Ultimate" },
       { name: "Neon Run", url: "ai.html", tag: "" },
       { name: "Basketball", url: "basketball.html", tag: "" },
       { name: "Football", url: "football.html", tag: "" },
@@ -373,6 +407,74 @@
       { name: "Gravity Slam", url: "Gravity-Slam.html", tag: "" },
       { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
     ];
+
+    // CATALOG RENDERING
+    function renderGames(list) {
+      const container = document.getElementById('gameGrid');
+      container.innerHTML = '';
+      list.forEach(game => {
+        const card = document.createElement('a');
+        card.className = 'game-link';
+        card.href = game.url;
+        card.innerHTML = `
+          ${game.tag ? `<div class="tag-badge">${game.tag}</div>` : ''}
+          <div class="game-title">${game.name}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterGames() {
+      const term = document.getElementById('moduleSearch').value.toLowerCase();
+      const filtered = games.filter(g => g.name.toLowerCase().includes(term));
+      renderGames(filtered);
+    }
+
+    // DYNAMIC SIDEBAR TIMER ENGINE
+    let countdownInterval = null;
+    let totalSecondsLeft = 0;
+
+    function startTimer() {
+      const minVal = parseInt(document.getElementById('timerMinutes').value, 10) || 0;
+      const secVal = parseInt(document.getElementById('timerSeconds').value, 10) || 0;
+      
+      if (minVal === 0 && secVal === 0) {
+        resetTimer();
+        return;
+      }
+
+      totalSecondsLeft = (minVal * 60) + secVal;
+      clearInterval(countdownInterval);
+      updateTimerDisplay();
+
+      countdownInterval = setInterval(() => {
+        totalSecondsLeft--;
+        if (totalSecondsLeft <= 0) {
+          clearInterval(countdownInterval);
+          totalSecondsLeft = 0;
+        }
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function resetTimer() {
+      clearInterval(countdownInterval);
+      totalSecondsLeft = 0;
+      document.getElementById('timerMinutes').value = '';
+      document.getElementById('timerSeconds').value = '';
+      document.getElementById('timerDisplay').innerText = '';
+    }
+
+    function updateTimerDisplay() {
+      const display = document.getElementById('timerDisplay');
+      if (totalSecondsLeft <= 0) {
+        display.innerText = '';
+        return;
+      }
+      const m = Math.floor(totalSecondsLeft / 60);
+      const s = totalSecondsLeft % 60;
+      display.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
 
     // HARDWARE TARGET RECOGNITION
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
@@ -435,7 +537,6 @@
         { yBase: height * 0.65, amplitude: 40, speed: 0.003, phase: 3.0, length: 0.0008 }
       ];
 
-      // SHATTERED BACKGROUND SHARDS GENERATION
       shards = [];
       const numShards = 35;
       for (let i = 0; i < numShards; i++) {
@@ -454,8 +555,7 @@
         }
         
         shards.push({
-          x: cx,
-          y: cy,
+          x: cx, y: cy,
           vx: (Math.random() - 0.5) * 0.6,
           vy: (Math.random() - 0.5) * 0.6,
           pts: pts,
@@ -631,99 +731,27 @@
       }
     }
 
-    // CARD FILTER LOGIC ENGINE
-    function filterGames() {
-      const val = document.getElementById("moduleSearch").value.toLowerCase().trim();
-      const items = document.querySelectorAll(".game-link");
-      
-      items.forEach(el => {
-        const titleText = el.querySelector(".game-title").innerText.toLowerCase();
-        el.style.display = titleText.includes(val) ? "flex" : "none";
-      });
-    }
-
-    // REACTIONARY HOVER INTERPOLATOR MODULE
-    function bindCardEffects() {
-      if (isTouch) return;
-      document.querySelectorAll('.game-link').forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          card.style.setProperty('--x', `${x}px`);
-          card.style.setProperty('--y', `${y}px`);
-        });
-      });
-    }
-
-    // TIMER FORMATTER UTILITY
-    function formatTime(seconds) {
-      const mins = Math.floor(seconds / 60);
-      const secs = seconds % 60;
-      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    }
-
-    // START TIMER COUNTDOWNS
-    function initTimers() {
-      document.querySelectorAll('.timer-badge').forEach(badge => {
-        let totalSeconds = parseInt(badge.getAttribute('data-seconds'), 10);
-        if (isNaN(totalSeconds) || totalSeconds <= 0) return;
-
-        const interval = setInterval(() => {
-          totalSeconds--;
-          if (totalSeconds <= 0) {
-            clearInterval(interval);
-            badge.innerText = "EXPIRED";
-            badge.style.color = "#ff3b3b";
-            badge.style.borderColor = "#ff3b3b";
-          } else {
-            badge.innerText = formatTime(totalSeconds);
-          }
-        }, 1000);
-      });
-    }
-
-    // ASYNC LOAD INJECTION PROCESSOR
+    // INITIALIZATION PIPELINE
+    window.addEventListener('resize', resize);
     window.addEventListener('DOMContentLoaded', () => {
+      resize();
+      renderGames(games);
+      
+      const savedBg = localStorage.getItem('nebula-bg') || 'neon';
       const savedTheme = localStorage.getItem('nebula-theme');
-      const savedBg = localStorage.getItem('nebula-bg');
+      
+      setBg(savedBg);
+      if (savedTheme) setTheme(savedTheme);
 
-      if (!savedTheme && !savedBg) {
-        setTheme('crimson');
-        setBg('shattered');
-      } else {
-        if(savedTheme) setTheme(savedTheme);
-        setBg(savedBg || 'shattered');
-      }
-
-      // Catalog compilation parser with timer logic (renders timer badge only if timer is a valid number)
-      document.getElementById("gameGrid").innerHTML = games.map(g => {
-        const hasTimer = typeof g.timer === 'number' && !isNaN(g.timer) && g.timer > 0;
-        return `
-          <a href="${g.url}" class="game-link" target="_blank">
-            ${hasTimer ? `<span class="timer-badge" data-seconds="${g.timer}">${formatTime(g.timer)}</span>` : ''}
-            ${g.tag ? `<span class="tag-badge">${g.tag}</span>` : ''}
-            <span class="game-title">${g.name}</span>
-          </a>
-        `;
-      }).join('');
-
-      bindCardEffects();
-      initTimers();
-      window.addEventListener('resize', resize);
-      resize(); 
-      draw();
+      requestAnimationFrame(draw);
 
       setTimeout(() => {
         const splash = document.getElementById('splashOverlay');
-        const mainContent = document.getElementById('mainAppContent');
-        
+        const main = document.getElementById('mainAppContent');
         splash.style.opacity = '0';
         splash.style.visibility = 'hidden';
-        mainContent.style.opacity = '1';
-        
-        setTimeout(() => { splash.remove(); }, 600);
-      }, 2200); 
+        main.style.opacity = '1';
+      }, 1200);
     });
   </script>
 </body>
