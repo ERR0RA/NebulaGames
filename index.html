@@ -65,12 +65,29 @@
     /* SHATTERED ENGINE */
     body[data-bg="shattered"] { background: #010203; }
 
-    /* HARDWARE CURSOR TRACER WITH INTENSE GLOW */
-    .cursor-dot, .cursor-ring { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s ease; }
+    /* DYNAMIC GROWING CURSOR BLACK HOLE */
+    .cursor-dot, .cursor-ring { 
+      position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10000; 
+      transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s ease; 
+    }
     body.custom-cursor .cursor-dot, body.custom-cursor .cursor-ring { opacity: 1; }
-    .cursor-dot { width: 6px; height: 6px; background: #ffffff; border-radius: 50%; box-shadow: 0 0 10px #fff, 0 0 20px var(--primary), 0 0 30px var(--primary); }
-    .cursor-ring { width: 34px; height: 34px; border: 2px solid var(--primary); border-radius: 50%; box-shadow: 0 0 15px var(--primary-glow); transition: width 0.15s ease, height 0.15s ease, border-color 0.3s, box-shadow 0.3s; }
-    body.custom-cursor .cursor-ring.hovering { width: 52px; height: 52px; background: rgba(255,255,255,0.08); border-color: #fff; box-shadow: 0 0 25px var(--primary-glow), 0 0 40px var(--primary); }
+    
+    .cursor-dot { 
+      width: 16px; height: 16px; background: #000000; border-radius: 50%; 
+      box-shadow: 0 0 0 2px var(--primary), 0 0 12px var(--primary-glow), inset 0 0 8px #000;
+      transition: width 0.1s ease-out, height 0.1s ease-out;
+    }
+    
+    .cursor-ring { 
+      width: 38px; height: 38px; border: 2px solid var(--secondary); border-radius: 50%; 
+      box-shadow: 0 0 15px var(--secondary-glow), inset 0 0 10px var(--primary-glow); 
+      transition: width 0.1s ease-out, height 0.1s ease-out, border-color 0.3s, box-shadow 0.3s; 
+      animation: cursorSpin 6s linear infinite;
+    }
+    @keyframes cursorSpin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
 
     /* SPLASH OVERLAY */
     #splashOverlay {
@@ -457,24 +474,43 @@
 
     if (!isTouch) {
       document.body.classList.add('custom-cursor');
-      document.addEventListener("mouseover", (e) => {
-        if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.t-btn')) {
-          ring.classList.add('hovering');
-        }
-      });
-      document.addEventListener("mouseout", (e) => {
-        if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.t-btn')) {
-          ring.classList.remove('hovering');
-        }
-      });
     }
 
     // RENDERING ENGINE
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
     let width, height, columns, drops;
-    let auroraWaves = [], shards = [], voidParticles = [];
+    let auroraWaves = [], shards = [];
     let novaAngle = 0, neonHue = 0;
+
+    // GROWING MOUSE BLACK HOLE STATE
+    const voidState = {
+      cursorMass: 0,
+      baseRadius: 16,
+      currentRadius: 16,
+      maxRadius: 120,
+      orbs: [],
+      maxOrbs: 180,
+      spawnTimer: 0
+    };
+
+    function createVoidOrb(w, h) {
+      const edge = Math.floor(Math.random() * 4);
+      let x, y;
+
+      if (edge === 0) { x = Math.random() * w; y = -20; }
+      else if (edge === 1) { x = w + 20; y = Math.random() * h; }
+      else if (edge === 2) { x = Math.random() * w; y = h + 20; }
+      else { x = -20; y = Math.random() * h; }
+
+      return {
+        x, y,
+        size: Math.random() * 3 + 1.5,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.5) * 1.5,
+        alpha: Math.random() * 0.5 + 0.4
+      };
+    }
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -505,18 +541,6 @@
           hueOffset: Math.random() * 60
         });
       }
-
-      voidParticles = [];
-      for (let i = 0; i < 90; i++) {
-        voidParticles.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          size: Math.random() * 2 + 1,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          alpha: Math.random() * 0.6 + 0.2
-        });
-      }
     }
 
     function draw() {
@@ -540,28 +564,44 @@
         });
       } 
       else if (mode === 'void') {
-        ctx.fillStyle = '#020305';
+        ctx.fillStyle = '#010204';
         ctx.fillRect(0, 0, width, height);
 
-        voidParticles.forEach(p => {
+        // Continuous particle spawning
+        voidState.spawnTimer++;
+        if (voidState.spawnTimer % 4 === 0 && voidState.orbs.length < voidState.maxOrbs) {
+          voidState.orbs.push(createVoidOrb(width, height));
+        }
+
+        const pullRadius = Math.max(250, voidState.currentRadius * 5);
+
+        for (let i = voidState.orbs.length - 1; i >= 0; i--) {
+          const p = voidState.orbs[i];
+          
           let dx = mousePos.x - p.x;
           let dy = mousePos.y - p.y;
-          let dist = Math.sqrt(dx * dx + dy * dy);
+          let dist = Math.hypot(dx, dy);
 
-          if (dist < 180) {
+          if (dist < pullRadius) {
             let angle = Math.atan2(dy, dx);
-            let force = (180 - dist) / 180;
-            p.vx += Math.cos(angle) * force * 0.3;
-            p.vy += Math.sin(angle) * force * 0.3;
+            let gravity = ((pullRadius - dist) / pullRadius) * 1.8;
+            
+            // Inward gravity pull combined with dynamic swirling vortex
+            p.vx += Math.cos(angle) * gravity + Math.cos(angle + Math.PI / 2) * gravity * 0.8;
+            p.vy += Math.sin(angle) * gravity + Math.sin(angle + Math.PI / 2) * gravity * 0.8;
           }
 
-          p.x += p.vx; p.y += p.vy;
-          p.vx *= 0.95; p.vy *= 0.95;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vx *= 0.95;
+          p.vy *= 0.95;
 
-          if (p.x < 0) p.x = width;
-          if (p.x > width) p.x = 0;
-          if (p.y < 0) p.y = height;
-          if (p.y > height) p.y = 0;
+          // Consumption logic: When absorbed by cursor black hole
+          if (dist < voidState.currentRadius / 2 + 5) {
+            voidState.cursorMass += 1;
+            voidState.orbs.splice(i, 1);
+            continue;
+          }
 
           ctx.save();
           ctx.beginPath();
@@ -569,10 +609,44 @@
           ctx.fillStyle = primaryColor;
           ctx.globalAlpha = p.alpha;
           ctx.shadowColor = primaryColor;
-          ctx.shadowBlur = 15;
+          ctx.shadowBlur = 8;
           ctx.fill();
           ctx.restore();
-        });
+        }
+
+        // Calculate and smoothly update cursor size based on consumed mass
+        const targetRadius = Math.min(voidState.maxRadius, voidState.baseRadius + Math.pow(voidState.cursorMass, 0.55) * 3);
+        voidState.currentRadius += (targetRadius - voidState.currentRadius) * 0.1;
+
+        // Sync DOM cursor sizes dynamically
+        if (!isTouch) {
+          const dotSize = voidState.currentRadius;
+          const ringSize = voidState.currentRadius * 2.2;
+          dot.style.width = `${dotSize}px`;
+          dot.style.height = `${dotSize}px`;
+          ring.style.width = `${ringSize}px`;
+          ring.style.height = `${ringSize}px`;
+        }
+
+        // Draw dynamic gravitational accretion glow behind the mouse cursor
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(mousePos.x, mousePos.y, voidState.currentRadius * 2, 0, Math.PI * 2);
+        ctx.fillStyle = secondaryColor;
+        ctx.globalAlpha = 0.15;
+        ctx.shadowColor = secondaryColor;
+        ctx.shadowBlur = 35;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(mousePos.x, mousePos.y, voidState.currentRadius * 1.2, 0, Math.PI * 2);
+        ctx.strokeStyle = primaryColor;
+        ctx.lineWidth = 2.5;
+        ctx.globalAlpha = 0.6;
+        ctx.shadowColor = primaryColor;
+        ctx.shadowBlur = 20;
+        ctx.stroke();
+        ctx.restore();
       }
       else if (mode === 'supernova') {
         novaAngle += 0.005;
@@ -683,6 +757,14 @@
           ctx.stroke();
           ctx.restore();
         });
+      }
+
+      // Reset cursor sizes when leaving Void mode
+      if (mode !== 'void' && !isTouch) {
+        dot.style.width = `16px`;
+        dot.style.height = `16px`;
+        ring.style.width = `38px`;
+        ring.style.height = `38px`;
       }
 
       requestAnimationFrame(draw);
