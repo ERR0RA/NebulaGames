@@ -17,11 +17,15 @@
             margin: 0; 
             overflow: hidden; 
             touch-action: none; 
-            gap: 20px;
+            position: relative;
         }
 
-        /* Side Customization Panel */
+        /* Fixed Side Customization Panel */
         #skin-panel {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
             background: #111;
             border: 2px solid #0f0;
             padding: 15px;
@@ -58,6 +62,13 @@
             cursor: not-allowed;
             border-color: #555;
             color: #555;
+        }
+
+        #main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         #wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
@@ -105,9 +116,9 @@
         .ctrl-btn:active { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
         #btn-boost { grid-column: 3; background: rgba(255, 0, 0, 0.1); border-color: #f00; color: #f00; }
         
-        @media (max-width: 900px) {
+        @media (max-width: 1100px) {
             body { flex-direction: column; overflow-y: auto; height: auto; padding: 20px 0; }
-            #skin-panel { width: 80vw; }
+            #skin-panel { position: static; transform: none; width: 80vw; margin-bottom: 15px; }
         }
         @media (pointer: coarse) {
             #mobile-controls { display: grid; }
@@ -127,9 +138,15 @@
         <div class="skin-select-wrapper">
             <select id="p1Skin">
                 <option value="neon_green">Neon Green</option>
+                <option value="hyper_blue">Hyper Blue</option>
                 <option value="cyber_yellow">Cyber Yellow</option>
                 <option value="plasma_pink">Plasma Pink</option>
                 <option value="solar_orange">Solar Orange</option>
+                <option value="acid_lime">Acid Lime</option>
+                <option value="electric_cyan">Electric Cyan</option>
+                <option value="violet_flare">Violet Flare</option>
+                <option value="crimson_red">Crimson Red</option>
+                <option value="pure_white">Pure White</option>
             </select>
             <div id="p1Preview" class="color-preview"></div>
         </div>
@@ -140,15 +157,22 @@
         <div class="skin-select-wrapper">
             <select id="p2Skin">
                 <option value="hyper_blue">Hyper Blue</option>
+                <option value="neon_green">Neon Green</option>
                 <option value="cyber_yellow">Cyber Yellow</option>
                 <option value="plasma_pink">Plasma Pink</option>
                 <option value="solar_orange">Solar Orange</option>
+                <option value="acid_lime">Acid Lime</option>
+                <option value="electric_cyan">Electric Cyan</option>
+                <option value="violet_flare">Violet Flare</option>
+                <option value="crimson_red">Crimson Red</option>
+                <option value="pure_white">Pure White</option>
             </select>
             <div id="p2Preview" class="color-preview"></div>
         </div>
     </div>
 </div>
 
+<!-- Centered Main Content -->
 <div id="main-content">
     <div id="ui">
         <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
@@ -210,13 +234,18 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const UNIT = 5;
 
-// Skin Definitions
+// Expanded Skin Definitions
 const SKINS = {
     neon_green: { name: 'Neon Green', color: '#00ff00', fillGradient: 'linear-gradient(90deg, #050, #0f0)' },
     hyper_blue: { name: 'Hyper Blue', color: '#0066ff', fillGradient: 'linear-gradient(90deg, #005, #00f)' },
     cyber_yellow: { name: 'Cyber Yellow', color: '#ffe600', fillGradient: 'linear-gradient(90deg, #550, #ff0)' },
     plasma_pink: { name: 'Plasma Pink', color: '#ff00ff', fillGradient: 'linear-gradient(90deg, #505, #f0f)' },
-    solar_orange: { name: 'Solar Orange', color: '#ff6600', fillGradient: 'linear-gradient(90deg, #520, #f60)' }
+    solar_orange: { name: 'Solar Orange', color: '#ff6600', fillGradient: 'linear-gradient(90deg, #520, #f60)' },
+    acid_lime: { name: 'Acid Lime', color: '#a6ff00', fillGradient: 'linear-gradient(90deg, #350, #a6ff00)' },
+    electric_cyan: { name: 'Electric Cyan', color: '#00ffff', fillGradient: 'linear-gradient(90deg, #055, #00ffff)' },
+    violet_flare: { name: 'Violet Flare', color: '#9933ff', fillGradient: 'linear-gradient(90deg, #305, #9933ff)' },
+    crimson_red: { name: 'Crimson Red', color: '#ff0033', fillGradient: 'linear-gradient(90deg, #500, #ff0033)' },
+    pure_white: { name: 'Pure White', color: '#ffffff', fillGradient: 'linear-gradient(90deg, #555, #ffffff)' }
 };
 
 let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0};
@@ -226,7 +255,7 @@ let bot1Label = "BOT 1", bot2Label = "BOT 2";
 let particles = [];
 let screenShake = 0;
 
-// Update dropdowns & prevent duplicate skins between P1 and P2
+// Dynamic option disabling based on current selection
 function updateSkinOptions() {
     const p1Select = document.getElementById('p1Skin');
     const p2Select = document.getElementById('p2Skin');
