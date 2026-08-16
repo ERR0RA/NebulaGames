@@ -255,7 +255,6 @@ let bot1Label = "BOT 1", bot2Label = "BOT 2";
 let particles = [];
 let screenShake = 0;
 
-// Dynamic option disabling based on current selection
 function updateSkinOptions() {
     const p1Select = document.getElementById('p1Skin');
     const p2Select = document.getElementById('p2Skin');
@@ -295,11 +294,12 @@ function getBotSettings(setting) {
     let profile = 'default';
     let speed = 2;
     
-    if (setting === 'ultimate') { color = '#ff3333'; profile = 'ultimate'; speed = 2.5; }
-    else if (setting === 'error') { color = '#00ffff'; profile = 'error'; speed = 2; }
+    // Ultimate and Void slightly dialled down in speed
+    if (setting === 'ultimate') { color = '#ff3333'; profile = 'ultimate'; speed = 2.1; }
+    else if (setting === 'error') { color = '#00ffff'; profile = 'error'; speed = 1.9; }
     else if (setting === 'failed') { color = '#d97706'; profile = 'failed'; speed = 1.5; }
     else if (setting === 'destroyer') { color = '#ea580c'; profile = 'destroyer'; speed = 2.2; }
-    else if (setting === 'void') { color = '#a855f7'; profile = 'void'; speed = 2; }
+    else if (setting === 'void') { color = '#a855f7'; profile = 'void'; speed = 1.8; }
     return { color, profile, speed };
 }
 
@@ -499,12 +499,15 @@ function update() {
         if (powerupTimer > 180) { spawnPowerUp(); powerupTimer = 0; }
     }
 
-    // Process Bot Decisional logic loop
     players.forEach(p => {
         if (p.active && p.alive && p.isBot) {
             let target = null;
-            let minDist = (p.profile === 'ultimate') ? 350 : 220; 
-            if (p.profile === 'destroyer') minDist = 400; 
+            
+            // Adjusted target detection distances
+            let minDist = 220;
+            if (p.profile === 'ultimate') minDist = 260; 
+            if (p.profile === 'void') minDist = 180;
+            if (p.profile === 'destroyer') minDist = 400; // Destroyer remains aggressive
 
             powerups.forEach(pu => {
                 let d = Math.hypot(p.x - pu.x, p.y - pu.y);
@@ -523,10 +526,12 @@ function update() {
                 return false;
             };
 
+            // Dialled down turn chances slightly for Ultimate, Void, and ERR0R
             let turnChance = 0.15;
-            if (p.profile === 'ultimate') turnChance = 0.22;
+            if (p.profile === 'ultimate') turnChance = 0.16;
+            if (p.profile === 'void') turnChance = 0.12;
             if (p.profile === 'destroyer') turnChance = 0.32; 
-            if (p.profile === 'error') turnChance = 0.45;
+            if (p.profile === 'error') turnChance = 0.28;
 
             if (target && Math.random() < turnChance) {
                 if (Math.abs(p.x - target.x) > 10 && p.dy !== 0) {
@@ -538,11 +543,13 @@ function update() {
                 }
             }
 
+            // Lowered lookahead reaction boundaries
             let lookAheadDist = 14;
-            if (p.profile === 'ultimate') lookAheadDist = 20;
+            if (p.profile === 'ultimate') lookAheadDist = 15;
+            if (p.profile === 'void') lookAheadDist = 12;
             if (p.profile === 'destroyer') lookAheadDist = 18;
 
-            if (checkAhead(p.dx, p.dy, lookAheadDist) || (Math.random() < (p.profile === 'error' ? 0.05 : 0.005))) {
+            if (checkAhead(p.dx, p.dy, lookAheadDist) || (Math.random() < (p.profile === 'error' ? 0.03 : 0.005))) {
                 const dirs = [{dx:0,dy:-UNIT}, {dx:0,dy:UNIT}, {dx:-UNIT,dy:0}, {dx:UNIT,dy:0}]
                     .filter(d => !(d.dx === -p.dx && d.dy === -p.dy))
                     .sort(() => Math.random() - 0.5); 
@@ -550,7 +557,7 @@ function update() {
                 let bestDir = null, maxDist = -1;
                 dirs.forEach(d => {
                     let dCount = 0;
-                    let cap = (p.profile === 'ultimate' || p.profile === 'destroyer') ? 60 : 40;
+                    let cap = (p.profile === 'ultimate') ? 45 : (p.profile === 'destroyer' ? 60 : 35);
                     while(dCount < cap && !checkCollision(p.x + d.dx*(dCount+1), p.y + d.dy*(dCount+1), p)) { dCount++; }
                     if (dCount > maxDist) { maxDist = dCount; bestDir = d; }
                 });
@@ -560,7 +567,6 @@ function update() {
         }
     });
 
-    // Speed movement iteration
     players.forEach(p => {
         if (!p.active || !p.alive) return;
         if (p.ghost > 0) p.ghost--;
@@ -574,7 +580,7 @@ function update() {
         }
 
         if (p.profile === 'error') {
-            speedVal *= (glitchTick % 20 < 5) ? 1.5 : (glitchTick % 30 === 0 ? 0.7 : 1);
+            speedVal *= (glitchTick % 20 < 5) ? 1.2 : (glitchTick % 30 === 0 ? 0.8 : 1);
         }
 
         if (p.isBoosting && p.boost > 0) {
