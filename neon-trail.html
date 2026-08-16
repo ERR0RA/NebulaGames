@@ -5,10 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=none">
     <title>NEON-GRID | OVERDRIVE</title>
     <style>
-        body { background: #050505; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
+        body { 
+            background: #050505; 
+            color: #0f0; 
+            font-family: 'Courier New', monospace; 
+            display: flex; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+            touch-action: none; 
+            gap: 20px;
+        }
+
+        /* Side Customization Panel */
+        #skin-panel {
+            background: #111;
+            border: 2px solid #0f0;
+            padding: 15px;
+            width: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: inset 0 0 10px rgba(0,255,0,0.2);
+            z-index: 10;
+        }
+        .skin-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .skin-group label {
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .skin-select-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-preview {
+            width: 18px;
+            height: 18px;
+            border: 1px solid #fff;
+            box-shadow: 0 0 5px currentColor;
+            flex-shrink: 0;
+        }
+        select:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: #555;
+            color: #555;
+        }
+
         #wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
-        canvas { border: 4px solid #0f0; background: #000; max-width: 95vw; max-height: 60vh; box-shadow: 0 0 30px rgba(0, 255, 0, 0.3); touch-action: none; }
-        #ui { text-align: center; width: 800px; max-width: 95vw; margin-bottom: 10px; }
+        canvas { border: 4px solid #0f0; background: #000; max-width: 75vw; max-height: 60vh; box-shadow: 0 0 30px rgba(0, 255, 0, 0.3); touch-action: none; }
+        #ui { text-align: center; width: 800px; max-width: 75vw; margin-bottom: 10px; }
         .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; box-shadow: inset 0 0 10px rgba(0,255,0,0.2); }
         .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; gap: 10px; }
         .meter-container { width: 32%; background: #222; border: 2px solid #333; height: 16px; position: relative; border-radius: 3px; overflow: hidden; }
@@ -18,7 +72,8 @@
         #p2-fill { background: linear-gradient(90deg, #005, #00f); } 
         #p3-fill { background: linear-gradient(90deg, #500, #f00); }
         #msg { position: absolute; font-size: 3rem; font-weight: bold; top: 45%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 0 0 15px #000; z-index: 100; text-align: center; width: 100%; letter-spacing: 4px; }
-        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px 15px; cursor: pointer; font-weight: bold; font-family: 'Courier New', monospace; transition: all 0.2s; }
+        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 8px 10px; cursor: pointer; font-weight: bold; font-family: 'Courier New', monospace; transition: all 0.2s; width: 100%; }
+        .setup-panel select, .setup-panel button { width: auto; }
         button:hover { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
         .toggle-label { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
         #score { margin-bottom: 5px; font-size: 1.2rem; letter-spacing: 2px; font-weight: bold; text-shadow: 0 0 8px rgba(0,255,0,0.5); }
@@ -50,6 +105,10 @@
         .ctrl-btn:active { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
         #btn-boost { grid-column: 3; background: rgba(255, 0, 0, 0.1); border-color: #f00; color: #f00; }
         
+        @media (max-width: 900px) {
+            body { flex-direction: column; overflow-y: auto; height: auto; padding: 20px 0; }
+            #skin-panel { width: 80vw; }
+        }
         @media (pointer: coarse) {
             #mobile-controls { display: grid; }
             .setup-panel { padding: 8px; font-size: 0.8rem; }
@@ -59,58 +118,91 @@
 </head>
 <body>
 
-<div id="ui">
-    <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
-    <div class="meters">
-        <div class="meter-container" id="p1-ui"><div id="p1-fill" class="fill"></div><div class="label-overlay" id="lbl-p1">P1 ENERGY</div></div>
-        <div class="meter-container" id="p2-ui"><div id="p2-fill" class="fill"></div><div class="label-overlay" id="lbl-p2">P2 ENERGY</div></div>
-        <div class="meter-container" id="bot-ui"><div id="p3-fill" class="fill"></div><div class="label-overlay" id="lbl-b3">BOT ENERGY</div></div>
+<!-- Left Customization Panel -->
+<div id="skin-panel">
+    <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #0f0; padding-bottom: 5px; margin-bottom: 5px;">CUSTOMIZE SKINS</div>
+    
+    <div class="skin-group">
+        <label for="p1Skin">P1 SKIN:</label>
+        <div class="skin-select-wrapper">
+            <select id="p1Skin">
+                <option value="neon_green">Neon Green</option>
+                <option value="cyber_yellow">Cyber Yellow</option>
+                <option value="plasma_pink">Plasma Pink</option>
+                <option value="solar_orange">Solar Orange</option>
+            </select>
+            <div id="p1Preview" class="color-preview"></div>
+        </div>
     </div>
-    <div class="setup-panel">
-        <select id="gameMode">
-            <option value="pvpve">2 Humans vs Bot</option>
-            <option value="pve">1 Human vs Bot</option>
-            <option value="pvp">Human vs Human</option>
-            <option value="bvb">Bot vs Bot (Spectate)</option>
-        </select>
-        
-        <select id="botType2" style="display: none;">
-            <option value="default">BOT 1: Default</option>
-            <option value="failed">BOT 1: Failed</option>
-            <option value="void">BOT 1: V0ID</option>
-            <option value="ultimate">BOT 1: Ultimate</option>
-            <option value="destroyer">BOT 1: Destroyer</option>
-            <option value="error">BOT 1: ERR0R</option>
-        </select>
 
-        <select id="botType">
-            <option value="default">BOT: Default</option>
-            <option value="failed">BOT: Failed</option>
-            <option value="void">BOT: V0ID</option>
-            <option value="ultimate">BOT: Ultimate</option>
-            <option value="destroyer">BOT: Destroyer</option>
-            <option value="error">BOT: ERR0R</option>
-        </select>
-        
-        <label class="toggle-label">
-            <input type="checkbox" id="usePowerUps" checked> POWER-UPS
-        </label>
-        <button id="startBtn">ENGAGE</button>
+    <div class="skin-group">
+        <label for="p2Skin">P2 SKIN:</label>
+        <div class="skin-select-wrapper">
+            <select id="p2Skin">
+                <option value="hyper_blue">Hyper Blue</option>
+                <option value="cyber_yellow">Cyber Yellow</option>
+                <option value="plasma_pink">Plasma Pink</option>
+                <option value="solar_orange">Solar Orange</option>
+            </select>
+            <div id="p2Preview" class="color-preview"></div>
+        </div>
     </div>
 </div>
 
-<div id="wrapper">
-    <div id="msg"></div>
-    <canvas id="game" width="800" height="600"></canvas>
-</div>
+<div id="main-content">
+    <div id="ui">
+        <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
+        <div class="meters">
+            <div class="meter-container" id="p1-ui"><div id="p1-fill" class="fill"></div><div class="label-overlay" id="lbl-p1">P1 ENERGY</div></div>
+            <div class="meter-container" id="p2-ui"><div id="p2-fill" class="fill"></div><div class="label-overlay" id="lbl-p2">P2 ENERGY</div></div>
+            <div class="meter-container" id="bot-ui"><div id="p3-fill" class="fill"></div><div class="label-overlay" id="lbl-b3">BOT ENERGY</div></div>
+        </div>
+        <div class="setup-panel">
+            <select id="gameMode">
+                <option value="pvpve">2 Humans vs Bot</option>
+                <option value="pve">1 Human vs Bot</option>
+                <option value="pvp">Human vs Human</option>
+                <option value="bvb">Bot vs Bot (Spectate)</option>
+            </select>
+            
+            <select id="botType2" style="display: none;">
+                <option value="default">BOT 1: Default</option>
+                <option value="failed">BOT 1: Failed</option>
+                <option value="void">BOT 1: V0ID</option>
+                <option value="ultimate">BOT 1: Ultimate</option>
+                <option value="destroyer">BOT 1: Destroyer</option>
+                <option value="error">BOT 1: ERR0R</option>
+            </select>
 
-<div id="mobile-controls">
-    <div></div>
-    <div class="ctrl-btn" id="btn-up">▲</div>
-    <div class="ctrl-btn" id="btn-boost">B</div>
-    <div class="ctrl-btn" id="btn-left">◀</div>
-    <div class="ctrl-btn" id="btn-down">▼</div>
-    <div class="ctrl-btn" id="btn-right">▶</div>
+            <select id="botType">
+                <option value="default">BOT: Default</option>
+                <option value="failed">BOT: Failed</option>
+                <option value="void">BOT: V0ID</option>
+                <option value="ultimate">BOT: Ultimate</option>
+                <option value="destroyer">BOT: Destroyer</option>
+                <option value="error">BOT: ERR0R</option>
+            </select>
+            
+            <label class="toggle-label">
+                <input type="checkbox" id="usePowerUps" checked> POWER-UPS
+            </label>
+            <button id="startBtn">ENGAGE</button>
+        </div>
+    </div>
+
+    <div id="wrapper">
+        <div id="msg"></div>
+        <canvas id="game" width="800" height="600"></canvas>
+    </div>
+
+    <div id="mobile-controls">
+        <div></div>
+        <div class="ctrl-btn" id="btn-up">▲</div>
+        <div class="ctrl-btn" id="btn-boost">B</div>
+        <div class="ctrl-btn" id="btn-left">◀</div>
+        <div class="ctrl-btn" id="btn-down">▼</div>
+        <div class="ctrl-btn" id="btn-right">▶</div>
+    </div>
 </div>
 
 <script>
@@ -118,12 +210,44 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const UNIT = 5;
 
+// Skin Definitions
+const SKINS = {
+    neon_green: { name: 'Neon Green', color: '#00ff00', fillGradient: 'linear-gradient(90deg, #050, #0f0)' },
+    hyper_blue: { name: 'Hyper Blue', color: '#0066ff', fillGradient: 'linear-gradient(90deg, #005, #00f)' },
+    cyber_yellow: { name: 'Cyber Yellow', color: '#ffe600', fillGradient: 'linear-gradient(90deg, #550, #ff0)' },
+    plasma_pink: { name: 'Plasma Pink', color: '#ff00ff', fillGradient: 'linear-gradient(90deg, #505, #f0f)' },
+    solar_orange: { name: 'Solar Orange', color: '#ff6600', fillGradient: 'linear-gradient(90deg, #520, #f60)' }
+};
+
 let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0};
 let powerupTimer = 0;
 let glitchTick = 0;
 let bot1Label = "BOT 1", bot2Label = "BOT 2";
 let particles = [];
 let screenShake = 0;
+
+// Update dropdowns & prevent duplicate skins between P1 and P2
+function updateSkinOptions() {
+    const p1Select = document.getElementById('p1Skin');
+    const p2Select = document.getElementById('p2Skin');
+    const p1Val = p1Select.value;
+    const p2Val = p2Select.value;
+
+    Array.from(p1Select.options).forEach(opt => {
+        opt.disabled = (opt.value === p2Val);
+    });
+    Array.from(p2Select.options).forEach(opt => {
+        opt.disabled = (opt.value === p1Val);
+    });
+
+    document.getElementById('p1Preview').style.backgroundColor = SKINS[p1Val].color;
+    document.getElementById('p1Preview').style.color = SKINS[p1Val].color;
+    document.getElementById('p2Preview').style.backgroundColor = SKINS[p2Val].color;
+    document.getElementById('p2Preview').style.color = SKINS[p2Val].color;
+}
+
+document.getElementById('p1Skin').addEventListener('change', updateSkinOptions);
+document.getElementById('p2Skin').addEventListener('change', updateSkinOptions);
 
 document.getElementById('gameMode').addEventListener('change', function() {
     const b1Menu = document.getElementById('botType2');
@@ -140,7 +264,7 @@ document.getElementById('gameMode').addEventListener('change', function() {
 function getBotSettings(setting) {
     let color = '#f00';
     let profile = 'default';
-    let speed = 2; // Balanced medium speed
+    let speed = 2;
     
     if (setting === 'ultimate') { color = '#ff3333'; profile = 'ultimate'; speed = 2.5; }
     else if (setting === 'error') { color = '#00ffff'; profile = 'error'; speed = 2; }
@@ -170,6 +294,11 @@ function reset() {
     const botSetting = document.getElementById('botType').value;
     const bot2Setting = document.getElementById('botType2').value;
     
+    const p1SkinKey = document.getElementById('p1Skin').value;
+    const p2SkinKey = document.getElementById('p2Skin').value;
+    const p1Skin = SKINS[p1SkinKey];
+    const p2Skin = SKINS[p2SkinKey];
+
     grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
     powerups = [];
     particles = [];
@@ -192,8 +321,8 @@ function reset() {
     }
 
     players = [
-        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: '#0f0', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false, profile: 'player' },
-        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: '#00f', trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false, profile: 'player' },
+        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: p1Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false, profile: 'player' },
+        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: p2Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false, profile: 'player' },
         { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: b2.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, shield: false, baseSpeed: b2.speed, speedBuffTimer: 0, isBot: true, profile: b2.profile, isAltColor: false }
     ];
 
@@ -225,7 +354,8 @@ function reset() {
         
         document.getElementById('score').innerText = `${bot1Label}: ${score.p1} | ${bot2Label}: ${score.bot}`;
     } else {
-        document.getElementById('p1-fill').style.background = 'linear-gradient(90deg, #050, #0f0)';
+        document.getElementById('p1-fill').style.background = p1Skin.fillGradient;
+        document.getElementById('p2-fill').style.background = p2Skin.fillGradient;
         document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
     }
 
@@ -401,7 +531,7 @@ function update() {
         }
     });
 
-    // Balanced medium speed movement iteration
+    // Speed movement iteration
     players.forEach(p => {
         if (!p.active || !p.alive) return;
         if (p.ghost > 0) p.ghost--;
@@ -486,7 +616,6 @@ function drawGridBackground() {
 function draw() {
     ctx.save();
     
-    // Apply camera screen shake 
     if (screenShake > 0) {
         let dx = (Math.random() - 0.5) * screenShake;
         let dy = (Math.random() - 0.5) * screenShake;
@@ -500,7 +629,6 @@ function draw() {
     
     drawGridBackground();
     
-    // Update and draw system particles
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         p.x += p.vx; p.y += p.vy;
@@ -516,7 +644,6 @@ function draw() {
         ctx.restore();
     }
 
-    // Render powerups
     powerups.forEach(pu => {
         pu.pulse += 0.1;
         let scale = 12 + Math.sin(pu.pulse) * 2;
@@ -536,7 +663,6 @@ function draw() {
         ctx.restore();
     });
 
-    // Render players
     players.forEach(p => {
         if (!p.active) return;
         
@@ -589,6 +715,7 @@ function draw() {
     requestAnimationFrame(draw);
 }
 
+updateSkinOptions();
 reset();
 draw();
 </script>
