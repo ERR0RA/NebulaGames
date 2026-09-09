@@ -231,6 +231,9 @@
             <label class="toggle-label">
                 <input type="checkbox" id="usePowerUps" checked> POWER-UPS
             </label>
+            <label class="toggle-label">
+                <input type="checkbox" id="useSlowMo"> SLOW-MO
+            </label>
             <button id="startBtn">ENGAGE</button>
         </div>
     </div>
@@ -281,6 +284,7 @@ let glitchTick = 0;
 let bot1Label = "BOT 1", bot2Label = "BOT 2";
 let particles = [];
 let screenShake = 0;
+let slowMoTick = 0;
 
 function updateSkinOptions() {
     const p1Select = document.getElementById('p1Skin');
@@ -543,6 +547,13 @@ function spawnPowerUp() {
 
 function update() {
     if (!gameActive) return;
+    
+    // Slow-Mo Toggle: Update logic every 2nd frame when enabled
+    if (document.getElementById('useSlowMo').checked) {
+        slowMoTick++;
+        if (slowMoTick % 2 !== 0) return;
+    }
+
     glitchTick++;
 
     if (document.getElementById('usePowerUps').checked) {
@@ -696,116 +707,138 @@ function drawGridBackground() {
     }
 }
 
-function draw() {
-    ctx.save();
-    
-    if (screenShake > 0) {
-        let dx = (Math.random() - 0.5) * screenShake;
-        let dy = (Math.random() - 0.5) * screenShake;
-        ctx.translate(dx, dy);
-        screenShake *= 0.9;
-        if (screenShake < 0.5) screenShake = 0;
-    }
+function drawPowerUps() {
+    powerups.forEach(pu => {
+        pu.pulse = (pu.pulse || 0) + 0.1;
+        const scale = 1 + Math.sin(pu.pulse) * 0.15;
+        
+        ctx.save();
+        ctx.translate(pu.x, pu.y);
+        ctx.scale(scale, scale);
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        
+        if (pu.type === 'ghost') ctx.fillStyle = '#a855f7';
+        else if (pu.type === 'speed') ctx.fillStyle = '#eab308';
+        else if (pu.type === 'clear') ctx.fillStyle = '#ef4444';
+        else if (pu.type === 'shield') ctx.fillStyle = '#3b82f6';
+        else if (pu.type === 'battery') ctx.fillStyle = '#22c55e';
+        
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        let label = pu.type[0].toUpperCase();
+        ctx.fillText(label, 0, 0);
+        
+        ctx.restore();
+    });
+}
 
-    ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    drawGridBackground();
-    
+function drawParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i];
-        p.x += p.vx; p.y += p.vy;
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
         p.alpha -= p.decay;
-        if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+        
+        if (p.alpha <= 0) {
+            particles.splice(i, 1);
+            continue;
+        }
+        
         ctx.save();
         ctx.globalAlpha = p.alpha;
         ctx.fillStyle = p.color;
-        ctx.shadowBlur = 10; ctx.shadowColor = p.color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     }
+}
 
-    powerups.forEach(pu => {
-        pu.pulse += 0.1;
-        let scale = 12 + Math.sin(pu.pulse) * 2;
-        let col = '#fff';
-        if (pu.type === 'speed') col = '#ff0';
-        if (pu.type === 'clear') col = '#0ff';
-        if (pu.type === 'shield') col = '#f0f';
-        if (pu.type === 'battery') col = '#0f0';
+function render() {
+    ctx.save();
+    
+    // Apply screen shake effect on explosions/powerups
+    if (screenShake > 0) {
+        const dx = (Math.random() - 0.5) * screenShake;
+        const dy = (Math.random() - 0.5) * screenShake;
+        ctx.translate(dx, dy);
+        screenShake *= 0.85;
+        if (screenShake < 0.5) screenShake = 0;
+    }
 
-        ctx.save();
-        ctx.fillStyle = col;
-        ctx.shadowBlur = 15; ctx.shadowColor = col;
-        ctx.fillRect(pu.x - scale/2, pu.y - scale/2, scale, scale);
-        
-        ctx.fillStyle = '#000';
-        ctx.fillRect(pu.x - 2, pu.y - 2, 4, 4);
-        ctx.restore();
-    });
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    drawGridBackground();
+    drawPowerUps();
 
     players.forEach(p => {
         if (!p.active) return;
         
-        const botSkinKey = document.getElementById('botSkin').value;
-        const isDefaultBotColor = (botSkinKey === 'default');
+        // Draw Bike Trails
+        ctx.lineWidth = UNIT;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = p.color;
 
-        p.trail.forEach(t => {
-            if (t.isGhost) { ctx.fillStyle = '#222'; }
-            else if (p.isAltColor) { ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 5 === 0) ? '#22c55e' : '#14532d'; }
-            else if (p.isBot && !isDefaultBotColor) { ctx.fillStyle = p.color; }
-            else if (p.profile === 'ultimate') { ctx.fillStyle = (Math.floor(t.x + t.y) % 15 < 7) ? '#ff1a1a' : '#2b0000'; }
-            else if (p.profile === 'destroyer') { ctx.fillStyle = (Math.floor(t.x/5 + t.cycle/2) % 4 === 0) ? '#eab308' : '#ea580c'; }
-            else if (p.profile === 'void') { ctx.fillStyle = (Math.floor(t.y/6 + t.cycle/4) % 3 === 0) ? '#4c1d95' : '#7e22ce'; }
-            else if (p.profile === 'failed') { ctx.fillStyle = (Math.floor(t.x + t.y) % 8 < 3) ? '#78350f' : ((t.cycle % 40 < 5) ? '#000' : '#b45309'); }
-            else if (p.profile === 'error') {
-                let colors = ['#00ffff', '#ff00ff', '#ffffff', '#222'];
-                ctx.fillStyle = colors[(t.cycle + Math.floor(t.x/5)) % colors.length];
-            } else { ctx.fillStyle = p.color; }
-            
-            ctx.fillRect(t.x, t.y, UNIT, UNIT);
-        });
+        for (let i = 0; i < p.trail.length; i++) {
+            const pt = p.trail[i];
+            if (pt.isGhost) continue;
 
+            ctx.strokeStyle = p.color;
+            if (p.profile === 'error' && pt.cycle % 10 === 0) {
+                ctx.strokeStyle = '#fff';
+            }
+
+            ctx.beginPath();
+            ctx.rect(pt.x - UNIT/2, pt.y - UNIT/2, UNIT, UNIT);
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.fill();
+        }
+
+        // Draw Player Head/Bike
         if (p.alive) {
             ctx.save();
-            let headX = p.x; let headY = p.y;
+            ctx.translate(p.x, p.y);
             
-            if (p.profile === 'error' && glitchTick % 12 < 2) {
-                headX += (Math.random() > 0.5 ? 4 : -4); headY += (Math.random() > 0.5 ? 4 : -4);
-            }
-
-            if (p.ghost > 0) { ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 15; }
-            else if (p.isAltColor) { ctx.fillStyle = '#4ade80'; ctx.shadowColor = '#22c55e'; ctx.shadowBlur = 18; }
-            else if (p.isBot && !isDefaultBotColor) { ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 15; }
-            else if (p.profile === 'ultimate') { ctx.fillStyle = '#ff1a1a'; ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 18; }
-            else if (p.profile === 'destroyer') { ctx.fillStyle = '#ff4500'; ctx.shadowColor = '#ff4500'; ctx.shadowBlur = 22; }
-            else if (p.profile === 'void') { ctx.fillStyle = '#d946ef'; ctx.shadowColor = '#c084fc'; ctx.shadowBlur = 15; }
-            else { ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 12; }
-            
-            ctx.fillRect(headX, headY, UNIT, UNIT);
+            ctx.fillStyle = "#fff";
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 12;
+            ctx.fillRect(-UNIT, -UNIT, UNIT * 2, UNIT * 2);
 
             if (p.shield) {
-                ctx.strokeStyle = '#f0f';
+                ctx.strokeStyle = "#3b82f6";
                 ctx.lineWidth = 2;
-                ctx.shadowBlur = 10; ctx.shadowColor = '#f0f';
                 ctx.beginPath();
-                ctx.arc(headX + UNIT/2, headY + UNIT/2, UNIT * 2.5, 0, Math.PI * 2);
+                ctx.arc(0, 0, UNIT * 2.5, 0, Math.PI * 2);
                 ctx.stroke();
             }
+
             ctx.restore();
         }
     });
-    
+
+    drawParticles();
     ctx.restore();
-    update();
-    requestAnimationFrame(draw);
 }
 
+function gameLoop() {
+    update();
+    render();
+    requestAnimationFrame(gameLoop);
+}
+
+// Initial Setup
 updateSkinOptions();
 reset();
-draw();
+gameLoop();
 </script>
 </body>
 </html>
