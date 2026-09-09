@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON SNAKE: SINGULARITY</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <title>NEON SNAKE: SINGULARITY EX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --pink: #ff0055; }
+        :root { --neon: #00f2ff; --pink: #ff0055; --gold: #ffaa00; --purple: #b026ff; }
         body { 
             margin: 0; background: #000; color: var(--neon); 
             font-family: 'Orbitron', sans-serif; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             height: 100vh; overflow: hidden; touch-action: none;
         }
-        #game-container { position: relative; border: 3px solid var(--neon); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
+        #game-container { position: relative; border: 3px solid var(--neon); box-shadow: 0 0 20px rgba(0, 242, 255, 0.25); }
         canvas { display: block; background: #050508; }
-        #hud { width: 600px; display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 900; align-items: center; }
+        #hud { width: 600px; display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 900; align-items: center; font-size: 0.95rem; }
         
         /* Options Menu Styling */
         #options-trigger { 
@@ -26,25 +26,28 @@
         #menu-overlay {
             position: absolute; inset: 0; background: rgba(0,0,0,0.95);
             display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 50;
-            border: 1px solid var(--neon);
+            border: 1px solid var(--neon); padding: 20px;
         }
 
         #over { 
-            position: absolute; inset: 0; background: rgba(0,0,0,0.9); 
+            position: absolute; inset: 0; background: rgba(0,0,0,0.92); 
             display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; 
         }
 
-        .setting-row { margin: 15px 0; display: flex; align-items: center; gap: 20px; width: 80%; justify-content: space-between; }
-        button { background: transparent; border: 2px solid var(--neon); color: var(--neon); padding: 10px 20px; font-family: 'Orbitron'; cursor: pointer; font-weight: 900; transition: 0.2s; }
+        .setting-row { margin: 10px 0; display: flex; align-items: center; gap: 20px; width: 85%; justify-content: space-between; }
+        select, input[type="checkbox"] { background:#000; color:var(--neon); border:1px solid var(--neon); padding:6px; font-family: 'Orbitron'; }
+        button { background: transparent; border: 2px solid var(--neon); color: var(--neon); padding: 10px 20px; font-family: 'Orbitron'; cursor: pointer; font-weight: 900; transition: 0.2s; margin-top: 10px; }
         button:hover { background: var(--neon); color: #000; }
-        input[type="checkbox"] { transform: scale(1.5); accent-color: var(--neon); }
+        input[type="checkbox"] { transform: scale(1.3); accent-color: var(--neon); }
+        .shield-badge { color: var(--purple); display: none; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div>SCORE: <span id="sc">0</span></div>
+    <div>SCORE: <span id="sc">0</span> | BEST: <span id="high-score" style="color:var(--gold)">0</span></div>
     <div id="status" style="color:#ffaa00">STABLE</div>
+    <div id="shield-hud" class="shield-badge">🛡️ SHIELD READY</div>
     <div id="options-trigger" onclick="toggleMenu()">⚙️</div>
 </div>
 
@@ -54,12 +57,20 @@
     <div id="menu-overlay">
         <h2>SYSTEM CONFIG</h2>
         <div class="setting-row">
-            <span>NEON GLOW (LAGGY)</span>
+            <span>SNAKE MATRIX SHAPE</span>
+            <select id="snakeShape">
+                <option value="square" selected>SQUARES</option>
+                <option value="circle">CIRCLES</option>
+                <option value="triangle">TRIANGLES</option>
+            </select>
+        </div>
+        <div class="setting-row">
+            <span>NEON GLOW EFFECT</span>
             <input type="checkbox" id="glowToggle" checked>
         </div>
         <div class="setting-row">
-            <span>DIFFICULTY</span>
-            <select id="speedBase" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:5px;">
+            <span>DIFFICULTY MODE</span>
+            <select id="speedBase">
                 <option value="130">NOVICE</option>
                 <option value="100" selected>ELITE</option>
                 <option value="70">SINGULARITY</option>
@@ -69,8 +80,9 @@
     </div>
 
     <div id="over">
-        <h1 style="color:var(--pink)">CORE DESYNC</h1>
-        <button onclick="location.reload()">RE-SYNC</button>
+        <h1 style="color:var(--pink); margin-bottom: 5px;">CORE DESYNC</h1>
+        <p style="margin-bottom: 20px;">FINAL SCORE: <span id="final-score">0</span></p>
+        <button onclick="resetGame()">RE-SYNC SYSTEM</button>
     </div>
 </div>
 
@@ -78,43 +90,69 @@
     const canvas = document.getElementById('c');
     const ctx = canvas.getContext('2d');
     const scoreEl = document.getElementById('sc');
+    const highScoreEl = document.getElementById('high-score');
+    const finalScoreEl = document.getElementById('final-score');
     const statusEl = document.getElementById('status');
+    const shieldHud = document.getElementById('shield-hud');
     const glowToggle = document.getElementById('glowToggle');
     const speedSelect = document.getElementById('speedBase');
+    const shapeSelect = document.getElementById('snakeShape');
     
     const GS = 24; const TC = 25; 
     canvas.width = canvas.height = GS * TC;
 
-    let snake = [{x:12, y:12}, {x:11, y:12}, {x:10, y:12}];
-    let food = {x: 5, y: 5, type: 'pink', spawnTime: Date.now()};
-    let dx = 1, dy = 0;
-    let inputQueue = [];
-    let score = 0;
-    let lastTime = 0;
-    let speed = 100;
-    let particles = [];
-    let foodLife = 5000;
-    let isPaused = false;
+    let snake, food, obstacles, portals, dx, dy, inputQueue, score, highScore, lastTime, speed, particles, isPaused, hasShield, shakeTime;
 
     const FOOD_TYPES = {
-        pink: { color: '#ff0055', score: 10, grow: 1 },
-        lime: { color: '#22ff00', score: 25, grow: 1 },
-        gold: { color: '#ffaa00', score: 50, grow: 3 }
+        pink:   { color: '#ff0055', score: 10, grow: 1 },
+        lime:   { color: '#22ff00', score: 25, grow: 1 },
+        gold:   { color: '#ffaa00', score: 50, grow: 3 },
+        shrink: { color: '#00f2ff', score: 35, grow: -2 }, // Cyan: shrink powerup
+        shield: { color: '#b026ff', score: 15, grow: 1 }   // Purple: shield powerup
     };
 
     const zone = { x1: 7, y1: 7, x2: 17, y2: 17 };
 
+    // Load High Score
+    highScore = parseInt(localStorage.getItem('neon_snake_high') || '0');
+    highScoreEl.innerText = highScore;
+
+    function resetGame() {
+        snake = [{x:12, y:12}, {x:11, y:12}, {x:10, y:12}];
+        dx = 1; dy = 0;
+        inputQueue = [];
+        score = 0;
+        lastTime = 0;
+        speed = parseInt(speedSelect.value);
+        particles = [];
+        obstacles = [];
+        portals = [];
+        hasShield = false;
+        shakeTime = 0;
+        isPaused = false;
+
+        scoreEl.innerText = '0';
+        shieldHud.style.display = 'none';
+        document.getElementById('over').style.display = 'none';
+        
+        spawnFood();
+        spawnObstacles();
+        spawnPortals();
+    }
+
     function toggleMenu() {
         isPaused = !isPaused;
         document.getElementById('menu-overlay').style.display = isPaused ? 'flex' : 'none';
-        if (!isPaused) speed = parseInt(speedSelect.value) - (score/20);
+        if (!isPaused) speed = parseInt(speedSelect.value) - Math.floor(score/20);
     }
 
-    function createExplosion(x, y, color) {
-        for(let i=0; i<12; i++) {
+    function triggerShake() { shakeTime = 10; }
+
+    function createExplosion(x, y, color, count = 12) {
+        for(let i=0; i<count; i++) {
             particles.push({
                 x: x * GS + GS/2, y: y * GS + GS/2,
-                vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8,
+                vx: (Math.random()-0.5)*9, vy: (Math.random()-0.5)*9,
                 life: 1.0, c: color
             });
         }
@@ -135,24 +173,57 @@
         }
     };
 
+    function getRandomGridPos() {
+        return { x: Math.floor(Math.random()*TC), y: Math.floor(Math.random()*TC) };
+    }
+
+    function isOccupied(pos) {
+        return snake.some(s => s.x === pos.x && s.y === pos.y) ||
+               obstacles.some(o => o.x === pos.x && o.y === pos.y) ||
+               portals.some(p => p.x === pos.x && p.y === pos.y);
+    }
+
     function spawnFood() {
+        let pos;
+        do { pos = getRandomGridPos(); } while(isOccupied(pos));
+        
         const rand = Math.random();
-        let type = rand > 0.9 ? 'gold' : (rand > 0.7 ? 'lime' : 'pink');
-        food = {
-            x: Math.floor(Math.random()*TC),
-            y: Math.floor(Math.random()*TC),
-            type: type,
-            spawnTime: Date.now()
-        };
-        if(snake.some(s => s.x === food.x && s.y === food.y)) spawnFood();
+        let type = 'pink';
+        if (rand > 0.92) type = 'shield';
+        else if (rand > 0.82) type = 'shrink';
+        else if (rand > 0.70) type = 'gold';
+        else if (rand > 0.45) type = 'lime';
+
+        food = { ...pos, type, spawnTime: Date.now() };
+    }
+
+    function spawnObstacles() {
+        obstacles = [];
+        if (score < 40) return; // Delay obstacle spawning until late-game
+        const count = Math.min(6, Math.floor(score / 50));
+        for (let i = 0; i < count; i++) {
+            let pos;
+            do { pos = getRandomGridPos(); } while(isOccupied(pos));
+            obstacles.push(pos);
+        }
+    }
+
+    function spawnPortals() {
+        portals = [];
+        if (score >= 60) {
+            let p1, p2;
+            do { p1 = getRandomGridPos(); } while(isOccupied(p1));
+            do { p2 = getRandomGridPos(); } while(isOccupied(p2));
+            portals = [p1, p2];
+        }
     }
 
     function update(t) {
         requestAnimationFrame(update);
         if (isPaused) return;
-        
-        if(Date.now() - food.spawnTime > foodLife) {
-            createExplosion(food.x, food.y, '#ffffff');
+
+        if(Date.now() - food.spawnTime > 6000) {
+            createExplosion(food.x, food.y, '#ffffff', 6);
             spawnFood();
         }
 
@@ -166,18 +237,52 @@
 
         let head = {x: snake[0].x + dx, y: snake[0].y + dy};
 
-        if(head.x<0 || head.x>=TC || head.y<0 || head.y>=TC || snake.some(s=>s.x===head.x && s.y===head.y)) {
-            document.getElementById('over').style.display = 'flex';
-            isPaused = true;
-            return;
+        // Portal Teleportation
+        if (portals.length === 2) {
+            if (head.x === portals[0].x && head.y === portals[0].y) {
+                head = { x: portals[1].x + dx, y: portals[1].y + dy };
+                createExplosion(portals[0].x, portals[0].y, '#00f2ff');
+            } else if (head.x === portals[1].x && head.y === portals[1].y) {
+                head = { x: portals[0].x + dx, y: portals[0].y + dy };
+                createExplosion(portals[1].x, portals[1].y, '#00f2ff');
+            }
+        }
+
+        // Collision Checks
+        const wallCollide = head.x<0 || head.x>=TC || head.y<0 || head.y>=TC;
+        const selfCollide = snake.some(s=>s.x===head.x && s.y===head.y);
+        const obstacleCollide = obstacles.some(o=>o.x===head.x && o.y===head.y);
+
+        if(wallCollide || selfCollide || obstacleCollide) {
+            if (hasShield) {
+                hasShield = false;
+                shieldHud.style.display = 'none';
+                triggerShake();
+                createExplosion(snake[0].x, snake[0].y, '#b026ff', 20);
+                // Bounce back / absorb crash step
+                return;
+            } else {
+                triggerShake();
+                finalScoreEl.innerText = score;
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('neon_snake_high', highScore);
+                    highScoreEl.innerText = highScore;
+                }
+                document.getElementById('over').style.display = 'flex';
+                isPaused = true;
+                return;
+            }
         }
 
         snake.unshift(head);
 
+        // Food Collection Logic
         if(head.x === food.x && head.y === food.y) {
             const fData = FOOD_TYPES[food.type];
             let points = fData.score;
             
+            // Speed Zone Check
             if(head.x >= zone.x1 && head.x <= zone.x2 && head.y >= zone.y1 && head.y <= zone.y2) {
                 points *= 2;
                 statusEl.innerText = "OVERLOAD x2!";
@@ -187,12 +292,29 @@
                 statusEl.style.color = "#ffaa00";
             }
 
+            if (food.type === 'shield') {
+                hasShield = true;
+                shieldHud.style.display = 'inline-block';
+            }
+
             score += points;
             scoreEl.innerText = score;
-            speed = Math.max(40, speed - 1);
-            createExplosion(food.x, food.y, fData.color);
-            for(let i=0; i<fData.grow-1; i++) snake.push({...snake[snake.length-1]});
+            speed = Math.max(35, speed - 1);
+            
+            createExplosion(food.x, food.y, fData.color, 16);
+            
+            // Handle Growth / Shrinking
+            if (fData.grow < 0) {
+                for (let i = 0; i < Math.abs(fData.grow); i++) {
+                    if (snake.length > 2) snake.pop();
+                }
+            } else {
+                for(let i=0; i<fData.grow-1; i++) snake.push({...snake[snake.length-1]});
+            }
+
             spawnFood();
+            spawnObstacles();
+            spawnPortals();
         } else {
             snake.pop();
         }
@@ -200,21 +322,69 @@
         draw();
     }
 
+    function drawSegment(x, y, shape, size, color, isHead) {
+        ctx.fillStyle = color;
+        const px = x * GS;
+        const py = y * GS;
+        const cx = px + GS / 2;
+        const cy = py + GS / 2;
+
+        ctx.beginPath();
+        if (shape === 'circle') {
+            ctx.arc(cx, cy, (GS - 4) / 2, 0, Math.PI * 2);
+        } else if (shape === 'triangle') {
+            ctx.moveTo(cx, py + 2);
+            ctx.lineTo(px + GS - 2, py + GS - 2);
+            ctx.lineTo(px + 2, py + GS - 2);
+            ctx.closePath();
+        } else { // default square
+            ctx.roundRect(px + 2, py + 2, GS - 4, GS - 4, isHead ? 6 : 4);
+        }
+        ctx.fill();
+    }
+
     function draw() {
-        // Use a solid clear for performance
+        ctx.save();
+
+        // Screen Shake
+        if (shakeTime > 0) {
+            const dx = (Math.random() - 0.5) * 8;
+            const dy = (Math.random() - 0.5) * 8;
+            ctx.translate(dx, dy);
+            shakeTime--;
+        }
+
         ctx.fillStyle = '#050508';
         ctx.fillRect(0,0,canvas.width,canvas.height);
 
-        // Grid Speed Zone
-        ctx.strokeStyle = 'rgba(0, 242, 255, 0.1)';
+        // Speed Zone Grid
+        ctx.strokeStyle = 'rgba(0, 242, 255, 0.15)';
         ctx.setLineDash([5, 5]);
         ctx.strokeRect(zone.x1*GS, zone.y1*GS, (zone.x2-zone.x1+1)*GS, (zone.y2-zone.y1+1)*GS);
         ctx.setLineDash([]);
 
         const useGlow = glowToggle.checked;
+        const shape = shapeSelect.value;
         const fData = FOOD_TYPES[food.type];
-        const pulse = Math.sin(Date.now() / 150) * 5;
+        const pulse = Math.sin(Date.now() / 150) * 4;
         
+        // Draw Obstacles (Hazard Nodes)
+        obstacles.forEach(o => {
+            if(useGlow) { ctx.shadowBlur = 10; ctx.shadowColor = '#ff0000'; }
+            ctx.fillStyle = '#ff0033';
+            ctx.fillRect(o.x*GS + 4, o.y*GS + 4, GS - 8, GS - 8);
+        });
+
+        // Draw Portals
+        portals.forEach(p => {
+            if(useGlow) { ctx.shadowBlur = 12; ctx.shadowColor = '#00f2ff'; }
+            ctx.strokeStyle = '#00f2ff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(p.x*GS + GS/2, p.y*GS + GS/2, GS/2 - 3, 0, Math.PI*2);
+            ctx.stroke();
+        });
+
         // Draw Food
         if(useGlow) {
             ctx.shadowBlur = 15 + pulse;
@@ -222,28 +392,25 @@
         }
         ctx.fillStyle = fData.color;
         ctx.beginPath();
-        ctx.arc(food.x*GS + GS/2, food.y*GS + GS/2, GS/2 - 5, 0, Math.PI*2);
+        ctx.arc(food.x*GS + GS/2, food.y*GS + GS/2, GS/2 - 4, 0, Math.PI*2);
         ctx.fill();
 
         // Draw Snake
         snake.forEach((s, i) => {
             const hue = (Date.now() / 30 + i * 10) % 360;
+            const color = i === 0 ? '#ffffff' : `hsl(${hue}, 80%, 50%)`;
+            
             if(useGlow && i === 0) {
                 ctx.shadowBlur = 15;
-                ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
+                ctx.shadowColor = hasShield ? '#b026ff' : `hsl(${hue}, 100%, 50%)`;
             } else {
                 ctx.shadowBlur = 0;
             }
-            ctx.fillStyle = i === 0 ? '#fff' : `hsl(${hue}, 70%, 50%)`;
             
-            // Draw rounded segments
-            const r = 4;
-            ctx.beginPath();
-            ctx.roundRect(s.x*GS+2, s.y*GS+2, GS-4, GS-4, 6);
-            ctx.fill();
+            drawSegment(s.x, s.y, shape, GS, color, i === 0);
         });
 
-        // Optimized Particles
+        // Particle Rendering
         ctx.shadowBlur = 0;
         for(let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
@@ -257,9 +424,10 @@
             ctx.fillRect(p.x, p.y, 3, 3);
         }
         ctx.globalAlpha = 1;
+        ctx.restore();
     }
 
-    spawnFood();
+    resetGame();
     requestAnimationFrame(update);
 </script>
 </body>
