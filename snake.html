@@ -3,627 +3,749 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON-GRID | OVERDRIVE</title>
+    <title>NEON SNAKE: SINGULARITY EX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        :root { --neon: #00f2ff; --pink: #ff0055; --gold: #ffaa00; --purple: #b026ff; --green: #00ff66; }
+        * { box-sizing: border-box; user-select: none; }
         body { 
-            background: #050505; 
-            color: #0f0; 
-            font-family: 'Courier New', monospace; 
-            display: flex; 
-            flex-direction: row; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            margin: 0; 
-            overflow: hidden; 
-            touch-action: none; 
-            position: relative;
+            margin: 0; background: #030305; color: var(--neon); 
+            font-family: 'Orbitron', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; width: 100vw; overflow: hidden; touch-action: none;
         }
-
-        #skin-panel {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #111;
-            border: 2px solid #0f0;
-            padding: 15px;
-            width: 220px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: inset 0 0 10px rgba(0,255,0,0.2);
-            z-index: 10;
+        #hud { 
+            width: 100%; max-width: 900px; display: flex; justify-content: space-between; 
+            padding: 10px 15px; font-weight: 900; align-items: center; font-size: clamp(0.7rem, 2vw, 0.95rem); 
         }
-        .skin-group { display: flex; flex-direction: column; gap: 4px; }
-        .skin-group label { font-size: 0.8rem; font-weight: bold; }
-        .skin-select-wrapper { display: flex; align-items: center; gap: 8px; }
-        .color-preview { width: 18px; height: 18px; border: 1px solid #fff; box-shadow: 0 0 5px currentColor; flex-shrink: 0; }
-        select:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; color: #555; }
-
-        #main-content { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
-        canvas { border: 4px solid #0f0; background: #000; max-width: 75vw; max-height: 60vh; box-shadow: 0 0 30px rgba(0, 255, 0, 0.3); touch-action: none; }
-        #ui { text-align: center; width: 800px; max-width: 75vw; margin-bottom: 10px; }
-        .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; box-shadow: inset 0 0 10px rgba(0,255,0,0.2); }
-        .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; gap: 10px; }
-        .meter-container { width: 32%; background: #222; border: 2px solid #333; height: 16px; position: relative; border-radius: 3px; overflow: hidden; }
-        .fill { height: 100%; width: 100%; transition: width 0.05s linear; }
-        .label-overlay { position: absolute; width: 100%; text-align: center; font-size: 0.7rem; font-weight: bold; color: #fff; top: 1px; text-shadow: 1px 1px 2px #000; }
-        #p1-fill { background: linear-gradient(90deg, #050, #0f0); } 
-        #p2-fill { background: linear-gradient(90deg, #005, #00f); } 
-        #p3-fill { background: linear-gradient(90deg, #500, #f00); }
-        #msg { position: absolute; font-size: 2.5rem; font-weight: bold; top: 45%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 0 0 15px #000; z-index: 100; text-align: center; width: 100%; letter-spacing: 2px; }
-        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 8px 10px; cursor: pointer; font-weight: bold; font-family: 'Courier New', monospace; transition: all 0.2s; width: 100%; }
-        .setup-panel select, .setup-panel button { width: auto; }
-        button:hover { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
-        .toggle-label { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
-        #score { margin-bottom: 5px; font-size: 1.2rem; letter-spacing: 2px; font-weight: bold; text-shadow: 0 0 8px rgba(0,255,0,0.5); }
-
-        #mobile-controls { display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; width: 100%; max-width: 400px; padding: 10px; }
-        .ctrl-btn { width: 65px; height: 65px; background: rgba(0, 255, 0, 0.05); border: 2px solid #0f0; color: #0f0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; user-select: none; -webkit-user-select: none; touch-action: none; border-radius: 8px; }
-        .ctrl-btn:active { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
-        #btn-boost { grid-column: 3; background: rgba(255, 0, 0, 0.1); border-color: #f00; color: #f00; }
+        #game-container { 
+            position: relative; border: 3px solid var(--neon); 
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.3); 
+            display: flex; justify-content: center; align-items: center;
+        }
+        canvas { display: block; background: #050508; }
         
-        @media (max-width: 1100px) {
-            body { flex-direction: column; overflow-y: auto; height: auto; padding: 20px 0; }
-            #skin-panel { position: static; transform: none; width: 80vw; margin-bottom: 15px; }
+        #options-trigger { cursor: pointer; font-size: 1.4rem; transition: 0.3s; z-index: 100; }
+        #options-trigger:hover { transform: rotate(90deg); color: #fff; }
+        
+        #menu-overlay, #mode-select-overlay, #customization-overlay {
+            position: absolute; inset: 0; background: rgba(3, 3, 5, 0.96);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50;
+            border: 1px solid var(--neon); padding: 20px; text-align: center; overflow-y: auto;
         }
-        @media (pointer: coarse) {
-            #mobile-controls { display: grid; }
-            .setup-panel { padding: 8px; font-size: 0.8rem; }
-            button, select { padding: 6px; }
+
+        #menu-overlay, #customization-overlay { display: none; }
+
+        #over { 
+            position: absolute; inset: 0; background: rgba(0,0,0,0.92); 
+            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; 
         }
+
+        .setting-row { margin: 8px 0; display: flex; align-items: center; gap: 15px; width: 90%; max-width: 450px; justify-content: space-between; font-size: 0.85rem; }
+        select, input[type="checkbox"] { background:#000; color:var(--neon); border:1px solid var(--neon); padding:6px; font-family: 'Orbitron'; border-radius: 4px; }
+        button { background: transparent; border: 2px solid var(--neon); color: var(--neon); padding: 8px 16px; font-family: 'Orbitron'; cursor: pointer; font-weight: 900; transition: 0.2s; margin-top: 8px; border-radius: 4px; }
+        button:hover { background: var(--neon); color: #000; }
+        .mode-btn { width: 220px; margin: 8px 0; font-size: 0.95rem; }
+        .controls-info { font-size: 0.7rem; color: #888; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div id="skin-panel">
-    <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #0f0; padding-bottom: 5px;">CUSTOMIZE SKINS</div>
-    <div class="skin-group">
-        <label for="p1Skin">P1 SKIN:</label>
-        <div class="skin-select-wrapper">
-            <select id="p1Skin">
-                <option value="neon_green">Neon Green</option>
-                <option value="hyper_blue">Hyper Blue</option>
-                <option value="cyber_yellow">Cyber Yellow</option>
-                <option value="plasma_pink">Plasma Pink</option>
-                <option value="solar_orange">Solar Orange</option>
-                <option value="acid_lime">Acid Lime</option>
-                <option value="electric_cyan">Electric Cyan</option>
-                <option value="violet_flare">Violet Flare</option>
-                <option value="crimson_red">Crimson Red</option>
-                <option value="pure_white">Pure White</option>
-            </select>
-            <div id="p1Preview" class="color-preview"></div>
-        </div>
+<div id="hud">
+    <div id="p1-score-display">P1: <span id="sc">0</span> | BEST: <span id="high-score" style="color:var(--gold)">0</span></div>
+    <div id="p2-score-display" style="display:none;">P2: <span id="sc2">0</span></div>
+    <div id="status" style="color:var(--gold)">STABLE</div>
+    <div>
+        <span id="p1-status-badges"></span>
+        <span id="p2-status-badges"></span>
     </div>
-    <div class="skin-group">
-        <label for="p2Skin">P2 SKIN:</label>
-        <div class="skin-select-wrapper">
-            <select id="p2Skin">
-                <option value="hyper_blue">Hyper Blue</option>
-                <option value="neon_green">Neon Green</option>
-                <option value="cyber_yellow">Cyber Yellow</option>
-                <option value="plasma_pink">Plasma Pink</option>
-                <option value="solar_orange">Solar Orange</option>
-                <option value="acid_lime">Acid Lime</option>
-                <option value="electric_cyan">Electric Cyan</option>
-                <option value="violet_flare">Violet Flare</option>
-                <option value="crimson_red">Crimson Red</option>
-                <option value="pure_white">Pure White</option>
-            </select>
-            <div id="p2Preview" class="color-preview"></div>
-        </div>
-    </div>
-    <div class="skin-group">
-        <label for="botSkin">BOT SKIN:</label>
-        <div class="skin-select-wrapper">
-            <select id="botSkin">
-                <option value="default">Default Profile Color</option>
-                <option value="supernova">★ Supernova Gold</option>
-                <option value="toxic_neon">★ Toxic Neon</option>
-                <option value="void_purple">★ Void Purple</option>
-                <option value="matrix_red">★ Matrix Red</option>
-                <option value="neon_green">Neon Green</option>
-                <option value="hyper_blue">Hyper Blue</option>
-                <option value="cyber_yellow">Cyber Yellow</option>
-                <option value="plasma_pink">Plasma Pink</option>
-                <option value="solar_orange">Solar Orange</option>
-                <option value="electric_cyan">Electric Cyan</option>
-                <option value="pure_white">Pure White</option>
-            </select>
-            <div id="botPreview" class="color-preview"></div>
-        </div>
-    </div>
+    <div id="options-trigger" onclick="toggleMenu()">⚙️</div>
 </div>
 
-<div id="main-content">
-    <div id="ui">
-        <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
-        <div class="meters">
-            <div class="meter-container" id="p1-ui"><div id="p1-fill" class="fill"></div><div class="label-overlay" id="lbl-p1">P1 ENERGY</div></div>
-            <div class="meter-container" id="p2-ui"><div id="p2-fill" class="fill"></div><div class="label-overlay" id="lbl-p2">P2 ENERGY</div></div>
-            <div class="meter-container" id="bot-ui"><div id="p3-fill" class="fill"></div><div class="label-overlay" id="lbl-b3">BOT ENERGY</div></div>
-        </div>
-        <div class="setup-panel">
-            <select id="gameMode">
-                <option value="pvpve">2 Humans vs Bot</option>
-                <option value="pve">1 Human vs Bot</option>
-                <option value="pvp">Human vs Human</option>
-                <option value="bvb">Bot vs Bot (Spectate)</option>
-            </select>
-            
-            <select id="botType2" style="display: none;">
-                <option value="default">BOT 1: Default</option>
-                <option value="failed">BOT 1: Failed</option>
-                <option value="void">BOT 1: V0ID</option>
-                <option value="ultimate">BOT 1: Ultimate</option>
-                <option value="destroyer">BOT 1: Destroyer</option>
-                <option value="error">BOT 1: ERR0R</option>
-            </select>
-
-            <select id="botType">
-                <option value="default">BOT: Default</option>
-                <option value="failed">BOT: Failed</option>
-                <option value="void">BOT: V0ID</option>
-                <option value="ultimate">BOT: Ultimate</option>
-                <option value="destroyer">BOT: Destroyer</option>
-                <option value="error">BOT: ERR0R</option>
-            </select>
-            
-            <label class="toggle-label">
-                <input type="checkbox" id="usePowerUps" checked> POWER-UPS
-            </label>
-            <label class="toggle-label">
-                <input type="checkbox" id="useSlowMo"> SLOW-MO
-            </label>
-            <button id="startBtn">ENGAGE</button>
+<div id="game-container">
+    <canvas id="c"></canvas>
+    
+    <div id="mode-select-overlay">
+        <h2>NEON SNAKE: EX</h2>
+        <button class="mode-btn" onclick="selectMode(1)">1 PLAYER SOLO</button>
+        <button class="mode-btn" onclick="selectMode(2)" style="border-color: var(--pink); color: var(--pink);">2 PLAYERS VS</button>
+        <button class="mode-btn" onclick="openCustomization()" style="border-color: var(--gold); color: var(--gold);">CUSTOMIZE SKINS</button>
+        <div class="controls-info">
+            P1: WASD / Arrows | P2: Arrow Keys
         </div>
     </div>
 
-    <div id="wrapper">
-        <div id="msg"></div>
-        <canvas id="game" width="800" height="600"></canvas>
+    <div id="customization-overlay">
+        <h2>SKIN & TRAIL CONFIG</h2>
+        <div class="setting-row">
+            <span>P1 SKIN:</span>
+            <select id="p1SkinSelect" onchange="updateSkinSelection()"></select>
+        </div>
+        <div class="setting-row" id="p2SkinRow">
+            <span>P2 SKIN:</span>
+            <select id="p2SkinSelect" onchange="updateSkinSelection()"></select>
+        </div>
+        <div class="setting-row">
+            <span>TRAIL EFFECT:</span>
+            <select id="trailSelect" onchange="saveCustomization()">
+                <option value="dust">NEON DUST</option>
+                <option value="stars">STARS</option>
+                <option value="bubbles">BUBBLES</option>
+                <option value="sparks">SPARKS</option>
+            </select>
+        </div>
+        <button onclick="closeCustomization()">SAVE & BACK</button>
     </div>
 
-    <div id="mobile-controls">
-        <div></div>
-        <div class="ctrl-btn" id="btn-up">▲</div>
-        <div class="ctrl-btn" id="btn-boost">B</div>
-        <div class="ctrl-btn" id="btn-left">◀</div>
-        <div class="ctrl-btn" id="btn-down">▼</div>
-        <div class="ctrl-btn" id="btn-right">▶</div>
+    <div id="menu-overlay">
+        <h2>SYSTEM CONFIG</h2>
+        <div class="setting-row">
+            <span>SNAKE MATRIX SHAPE</span>
+            <select id="snakeShape">
+                <option value="square" selected>SQUARES</option>
+                <option value="circle">CIRCLES</option>
+                <option value="triangle">TRIANGLES</option>
+            </select>
+        </div>
+        <div class="setting-row">
+            <span>NEON GLOW EFFECT</span>
+            <input type="checkbox" id="glowToggle" checked>
+        </div>
+        <div class="setting-row">
+            <span>DIFFICULTY MODE</span>
+            <select id="speedBase">
+                <option value="130">NOVICE</option>
+                <option value="100" selected>ELITE</option>
+                <option value="70">SINGULARITY</option>
+            </select>
+        </div>
+        <button onclick="toggleMenu()">RESUME</button>
+        <button onclick="showModeSelect()" style="border-color: var(--pink); color: var(--pink);">MAIN MENU</button>
+    </div>
+
+    <div id="over">
+        <h1 id="over-title" style="color:var(--pink); margin-bottom: 5px;">CORE DESYNC</h1>
+        <p id="over-msg" style="margin-bottom: 20px;">FINAL SCORE: <span id="final-score">0</span></p>
+        <button onclick="resetGame()">RE-SYNC SYSTEM</button>
+        <button onclick="showModeSelect()" style="border-color: var(--pink); color: var(--pink);">MAIN MENU</button>
     </div>
 </div>
 
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const UNIT = 5;
-const MAX_TRAIL_LENGTH = 600;
-
-const SKINS = {
-    neon_green: { name: 'Neon Green', color: '#00ff00' },
-    hyper_blue: { name: 'Hyper Blue', color: '#0066ff' },
-    cyber_yellow: { name: 'Cyber Yellow', color: '#ffe600' },
-    plasma_pink: { name: 'Plasma Pink', color: '#ff00ff' },
-    solar_orange: { name: 'Solar Orange', color: '#ff6600' },
-    acid_lime: { name: 'Acid Lime', color: '#a6ff00' },
-    electric_cyan: { name: 'Electric Cyan', color: '#00ffff' },
-    violet_flare: { name: 'Violet Flare', color: '#9933ff' },
-    crimson_red: { name: 'Crimson Red', color: '#ff0033' },
-    pure_white: { name: 'Pure White', color: '#ffffff' },
-    supernova: { name: 'Supernova Gold', color: '#ffd700' },
-    toxic_neon: { name: 'Toxic Neon', color: '#39ff14' },
-    void_purple: { name: 'Void Purple', color: '#8a2be2' },
-    matrix_red: { name: 'Matrix Red', color: '#ff0055' }
-};
-
-let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0};
-let powerupTimer = 0;
-let bot1Label = "BOT 1", bot2Label = "BOT 2";
-let particles = [];
-let slowMoTick = 0;
-
-function updateSkinOptions() {
-    const p1Val = document.getElementById('p1Skin').value;
-    const p2Val = document.getElementById('p2Skin').value;
-    const botVal = document.getElementById('botSkin').value;
-
-    document.getElementById('p1Preview').style.backgroundColor = SKINS[p1Val].color;
-    document.getElementById('p2Preview').style.backgroundColor = SKINS[p2Val].color;
-    document.getElementById('botPreview').style.backgroundColor = (botVal === 'default') ? '#555' : SKINS[botVal].color;
-}
-
-document.getElementById('p1Skin').addEventListener('change', updateSkinOptions);
-document.getElementById('p2Skin').addEventListener('change', updateSkinOptions);
-document.getElementById('botSkin').addEventListener('change', updateSkinOptions);
-
-document.getElementById('gameMode').addEventListener('change', function() {
-    const b1Menu = document.getElementById('botType2');
-    const mainBotMenu = document.getElementById('botType');
-    if (this.value === 'bvb') {
-        b1Menu.style.display = 'inline-block';
-        mainBotMenu.options[0].text = "BOT 2: Default";
-    } else {
-        b1Menu.style.display = 'none';
-        mainBotMenu.options[0].text = "BOT: Default";
-    }
-});
-
-function getBotSettings(setting) {
-    let color = '#f00', profile = 'default', speed = 2;
-    if (setting === 'ultimate') { color = '#ff3333'; profile = 'ultimate'; speed = 2.1; }
-    else if (setting === 'error') { color = '#00ffff'; profile = 'error'; speed = 1.9; }
-    else if (setting === 'failed') { color = '#d97706'; profile = 'failed'; speed = 1.5; }
-    else if (setting === 'destroyer') { color = '#ea580c'; profile = 'destroyer'; speed = 2.2; }
-    else if (setting === 'void') { color = '#a855f7'; profile = 'void'; speed = 1.8; }
-    return { color, profile, speed };
-}
-
-function createExplosion(x, y, color) {
-    for (let i = 0; i < 35; i++) {
-        particles.push({
-            x: x, y: y,
-            vx: (Math.random() - 0.5) * 10,
-            vy: (Math.random() - 0.5) * 10,
-            radius: Math.random() * 4 + 1,
-            color: color,
-            alpha: 1,
-            decay: Math.random() * 0.03 + 0.02
-        });
-    }
-}
-
-function markGrid(x, y, id) {
-    let ix = Math.floor(x);
-    let iy = Math.floor(y);
-    for (let dx = -2; dx <= 2; dx++) {
-        for (let dy = -2; dy <= 2; dy++) {
-            let gx = ix + dx;
-            let gy = iy + dy;
-            if (gx >= 0 && gx < canvas.width && gy >= 0 && gy < canvas.height) {
-                grid[gx][gy] = id;
-            }
-        }
-    }
-}
-
-function clearGrid(x, y, id) {
-    let ix = Math.floor(x);
-    let iy = Math.floor(y);
-    for (let dx = -2; dx <= 2; dx++) {
-        for (let dy = -2; dy <= 2; dy++) {
-            let gx = ix + dx;
-            let gy = iy + dy;
-            if (gx >= 0 && gx < canvas.width && gy >= 0 && gy < canvas.height) {
-                if (grid[gx][gy] === id) grid[gx][gy] = null;
-            }
-        }
-    }
-}
-
-function reset() {
-    const mode = document.getElementById('gameMode').value;
-    const botSetting = document.getElementById('botType').value;
-    const bot2Setting = document.getElementById('botType2').value;
-    const botSkinKey = document.getElementById('botSkin').value;
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+    const scoreEl = document.getElementById('sc');
+    const scoreEl2 = document.getElementById('sc2');
+    const highScoreEl = document.getElementById('high-score');
+    const finalScoreEl = document.getElementById('final-score');
+    const statusEl = document.getElementById('status');
+    const p1Badges = document.getElementById('p1-status-badges');
+    const p2Badges = document.getElementById('p2-status-badges');
+    const glowToggle = document.getElementById('glowToggle');
+    const speedSelect = document.getElementById('speedBase');
+    const shapeSelect = document.getElementById('snakeShape');
+    const p2ScoreDisplay = document.getElementById('p2-score-display');
+    const overTitle = document.getElementById('over-title');
+    const overMsg = document.getElementById('over-msg');
     
-    const p1Skin = SKINS[document.getElementById('p1Skin').value];
-    const p2Skin = SKINS[document.getElementById('p2Skin').value];
+    const p1SkinSelect = document.getElementById('p1SkinSelect');
+    const p2SkinSelect = document.getElementById('p2SkinSelect');
+    const trailSelect = document.getElementById('trailSelect');
 
-    grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
-    powerups = [];
-    particles = [];
-    powerupTimer = 0;
-    
-    let b2 = getBotSettings(botSetting);
-    let b1 = getBotSettings(bot2Setting);
-
-    let b1ProfileName = bot2Setting.toUpperCase();
-    let b2ProfileName = botSetting.toUpperCase();
-    
-    const isSameBot = (botSetting === bot2Setting);
-    bot1Label = isSameBot ? b1ProfileName + " 1" : b1ProfileName;
-    bot2Label = isSameBot ? b2ProfileName + " 2" : b2ProfileName;
-
-    let finalBot2Color = (botSkinKey !== 'default') ? SKINS[botSkinKey].color : b2.color;
-    let finalBot1Color = (botSkinKey !== 'default') ? SKINS[botSkinKey].color : b1.color;
-
-    players = [
-        { id: 0, x: 150, y: 300, dx: UNIT, dy: 0, color: p1Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false },
-        { id: 1, x: 150, y: 450, dx: UNIT, dy: 0, color: p2Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false },
-        { id: 2, x: 650, y: 300, dx: -UNIT, dy: 0, color: finalBot2Color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), ghost: 0, shield: false, baseSpeed: b2.speed, speedBuffTimer: 0, isBot: true }
+    const SKINS = [
+        { id: 'cyan', name: 'NEON CYAN', color: '#00f2ff' },
+        { id: 'pink', name: 'VAPOR PINK', color: '#ff0055' },
+        { id: 'green', name: 'MATRIX GREEN', color: '#00ff66' },
+        { id: 'gold', name: 'SOLAR GOLD', color: '#ffaa00' },
+        { id: 'purple', name: 'PLASMA VIOLET', color: '#b026ff' }
     ];
 
-    document.getElementById('lbl-p1').innerText = (mode === 'bvb') ? bot1Label : "P1 ENERGY";
-    document.getElementById('lbl-p2').innerText = "P2 ENERGY";
-    document.getElementById('lbl-b3').innerText = (mode === 'bvb') ? bot2Label : (mode === 'pvp' ? "P2 ENERGY" : "BOT ENERGY");
+    const TC = 25; 
+    let GS = 24; 
 
-    if (mode === 'bvb') {
-        players[0].active = true; players[0].isBot = true;
-        players[0].color = finalBot1Color; players[0].baseSpeed = b1.speed;
-        players[1].active = false; players[2].active = true;
-        document.getElementById('score').innerText = `${bot1Label}: ${score.p1} | ${bot2Label}: ${score.bot}`;
-    } else {
-        document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
+    let gameMode = 1;
+    let player1, player2;
+    let food, obstacles, portals, score, score2, highScore, lastTime, speed, particles, isPaused, shakeTime;
+
+    const FOOD_TYPES = {
+        pink:   { color: '#ff0055', score: 10, grow: 1 },
+        lime:   { color: '#22ff00', score: 25, grow: 1 },
+        gold:   { color: '#ffaa00', score: 50, grow: 3 },
+        shrink: { color: '#00f2ff', score: 35, grow: -2 },
+        shield: { color: '#b026ff', score: 15, grow: 1 },
+        freeze: { color: '#00ffff', score: 20, grow: 1 },
+        ghost:  { color: '#ffffff', score: 20, grow: 1 },
+        magnet: { color: '#ff5500', score: 20, grow: 1 }
+    };
+
+    const zone = { x1: 7, y1: 7, x2: 17, y2: 17 };
+
+    function resizeCanvas() {
+        const padding = 40;
+        const maxW = window.innerWidth - padding;
+        const maxH = window.innerHeight - 120;
+        const size = Math.max(280, Math.min(maxW, maxH, 700));
+        
+        canvas.width = canvas.height = size;
+        GS = size / TC;
+        container.style.width = `${size}px`;
+        container.style.height = `${size}px`;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function initSkinDropdowns() {
+        p1SkinSelect.innerHTML = '';
+        p2SkinSelect.innerHTML = '';
+        SKINS.forEach(skin => {
+            p1SkinSelect.innerHTML += `<option value="${skin.id}">${skin.name}</option>`;
+            p2SkinSelect.innerHTML += `<option value="${skin.id}">${skin.name}</option>`;
+        });
+
+        const p1Skin = localStorage.getItem('neon_p1_skin') || 'cyan';
+        let p2Skin = localStorage.getItem('neon_p2_skin') || 'pink';
+        if (p1Skin === p2Skin) p2Skin = SKINS.find(s => s.id !== p1Skin).id;
+
+        p1SkinSelect.value = p1Skin;
+        p2SkinSelect.value = p2Skin;
+        trailSelect.value = localStorage.getItem('neon_trail') || 'dust';
+        updateSkinSelection();
     }
 
-    document.getElementById('p1-ui').style.visibility = players[0].active ? "visible" : "hidden";
-    document.getElementById('p2-ui').style.visibility = players[1].active ? "visible" : "hidden";
-    document.getElementById('bot-ui').style.visibility = players[2].active ? "visible" : "hidden";
-    
-    document.getElementById('msg').innerHTML = mode === 'bvb' ? `<span style="color:#0ff">${bot1Label}</span> VS <span style="color:#f00">${bot2Label}</span>` : "<span style='color:#0f0'>READY...</span>";
-    gameActive = false;
-    setTimeout(() => { document.getElementById('msg').innerText = ""; gameActive = true; }, 1000);
-}
-
-document.getElementById('startBtn').onclick = (e) => { e.target.blur(); reset(); };
-
-// Controls Setup
-window.addEventListener('keydown', e => {
-    if (!gameActive) return;
-    
-    // Player 1 WASD
-    if (!players[0].isBot && players[0].alive) {
-        if ((e.key === 'w' || e.key === 'W') && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
-        if ((e.key === 's' || e.key === 'S') && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
-        if ((e.key === 'a' || e.key === 'A') && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
-        if ((e.key === 'd' || e.key === 'D') && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
-        if (e.key === 'Shift') players[0].isBoosting = true;
-    }
-
-    // Player 2 Arrow Keys
-    if (!players[1].isBot && players[1].alive && players[1].active) {
-        if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
-        if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
-        if (e.key === 'ArrowLeft' && players[1].dx === 0) { players[1].dx = -UNIT; players[1].dy = 0; }
-        if (e.key === 'ArrowRight' && players[1].dx === 0) { players[1].dx = UNIT; players[1].dy = 0; }
-        if (e.key === 'Control' || e.key === 'Enter') players[1].isBoosting = true;
-    }
-});
-
-window.addEventListener('keyup', e => {
-    if (e.key === 'Shift') players[0].isBoosting = false;
-    if (e.key === 'Control' || e.key === 'Enter') players[1].isBoosting = false;
-});
-
-// Mobile Controls
-const bindBtn = (id, action) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('touchstart', (e) => { e.preventDefault(); action(true); });
-    el.addEventListener('touchend', (e) => { e.preventDefault(); action(false); });
-    el.addEventListener('mousedown', (e) => { e.preventDefault(); action(true); });
-    el.addEventListener('mouseup', (e) => { e.preventDefault(); action(false); });
-};
-
-bindBtn('btn-up', () => { if (players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; } });
-bindBtn('btn-down', () => { if (players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; } });
-bindBtn('btn-left', () => { if (players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; } });
-bindBtn('btn-right', () => { if (players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; } });
-bindBtn('btn-boost', (pressed) => { players[0].isBoosting = pressed; });
-
-function checkCollision(x, y, self) {
-    if (x <= 5 || x >= canvas.width - 5 || y <= 5 || y >= canvas.height - 5) return true;
-    
-    for (let i = powerups.length - 1; i >= 0; i--) {
-        const pu = powerups[i];
-        if (Math.hypot(x - pu.x, y - pu.y) < 15) {
-            applyPowerUp(self, pu.type);
-            powerups.splice(i, 1);
+    function updateSkinSelection() {
+        if (p1SkinSelect.value === p2SkinSelect.value) {
+            const alt = SKINS.find(s => s.id !== p1SkinSelect.value);
+            p2SkinSelect.value = alt.id;
         }
-    }
-    
-    const hitId = grid[Math.floor(x)][Math.floor(y)];
-    if (hitId === null) return false;
-    if (self.ghost > 0) return false;
-    
-    if (self.shield) { self.shield = false; return false; }
-    return true;
-}
-
-function applyPowerUp(player, type) {
-    if (type === 'ghost') player.ghost = 180;
-    if (type === 'shield') player.shield = true;
-    if (type === 'battery') player.boost = Math.min(100, player.boost + 50);
-    if (type === 'speed') player.speedBuffTimer = 200;
-    if (type === 'clear') {
-        grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
-        players.forEach(p => p.trail = []);
-    }
-}
-
-function spawnPowerUp() {
-    if (powerups.length > 4) return;
-    const types = ['ghost', 'speed', 'clear', 'shield', 'battery'];
-    powerups.push({
-        x: Math.random() * (canvas.width - 100) + 50,
-        y: Math.random() * (canvas.height - 100) + 50,
-        type: types[Math.floor(Math.random() * types.length)]
-    });
-}
-
-function update() {
-    if (!gameActive) return;
-    
-    if (document.getElementById('useSlowMo').checked) {
-        slowMoTick++;
-        if (slowMoTick % 2 !== 0) return;
+        saveCustomization();
     }
 
-    if (document.getElementById('usePowerUps').checked) {
-        powerupTimer++;
-        if (powerupTimer > 200) { spawnPowerUp(); powerupTimer = 0; }
+    function saveCustomization() {
+        localStorage.setItem('neon_p1_skin', p1SkinSelect.value);
+        localStorage.setItem('neon_p2_skin', p2SkinSelect.value);
+        localStorage.setItem('neon_trail', trailSelect.value);
     }
 
-    // Particle Handling
-    for (let i = particles.length - 1; i >= 0; i--) {
-        particles[i].x += particles[i].vx;
-        particles[i].y += particles[i].vy;
-        particles[i].alpha -= particles[i].decay;
-        if (particles[i].alpha <= 0) particles.splice(i, 1);
+    function openCustomization() {
+        document.getElementById('mode-select-overlay').style.display = 'none';
+        document.getElementById('customization-overlay').style.display = 'flex';
     }
 
-    // Bot Pathfinding
-    players.forEach(p => {
-        if (p.active && p.alive && p.isBot) {
-            const lookAhead = (dx, dy, dist) => {
-                for (let i = 1; i <= dist; i++) {
-                    if (checkCollision(p.x + dx * i, p.y + dy * i, p)) return true;
-                }
-                return false;
+    function closeCustomization() {
+        document.getElementById('customization-overlay').style.display = 'none';
+        document.getElementById('mode-select-overlay').style.display = 'flex';
+    }
+
+    highScore = parseInt(localStorage.getItem('neon_snake_high') || '0');
+    highScoreEl.innerText = highScore;
+
+    function selectMode(mode) {
+        gameMode = mode;
+        document.getElementById('mode-select-overlay').style.display = 'none';
+        p2ScoreDisplay.style.display = gameMode === 2 ? 'block' : 'none';
+        resetGame();
+    }
+
+    function showModeSelect() {
+        isPaused = true;
+        document.getElementById('menu-overlay').style.display = 'none';
+        document.getElementById('over').style.display = 'none';
+        document.getElementById('customization-overlay').style.display = 'none';
+        document.getElementById('mode-select-overlay').style.display = 'flex';
+    }
+
+    function getPlayerColor(skinId) {
+        return (SKINS.find(s => s.id === skinId) || SKINS[0]).color;
+    }
+
+    function resetGame() {
+        const p1Skin = localStorage.getItem('neon_p1_skin') || 'cyan';
+        const p2Skin = localStorage.getItem('neon_p2_skin') || 'pink';
+
+        player1 = {
+            snake: [{x:5, y:12}, {x:4, y:12}, {x:3, y:12}],
+            dx: 1, dy: 0,
+            inputQueue: [],
+            hasShield: false,
+            freezeTime: 0,
+            ghostTime: 0,
+            magnetTime: 0,
+            alive: true,
+            color: getPlayerColor(p1Skin)
+        };
+
+        if (gameMode === 2) {
+            player2 = {
+                snake: [{x:19, y:12}, {x:20, y:12}, {x:21, y:12}],
+                dx: -1, dy: 0,
+                inputQueue: [],
+                hasShield: false,
+                freezeTime: 0,
+                ghostTime: 0,
+                magnetTime: 0,
+                alive: true,
+                color: getPlayerColor(p2Skin)
             };
+            if (player2.color === player1.color) {
+                player2.color = SKINS.find(s => s.color !== player1.color).color;
+            }
+        } else {
+            player2 = null;
+        }
 
-            if (lookAhead(p.dx, p.dy, 8)) {
-                const directions = [
-                    { dx: 0, dy: -UNIT },
-                    { dx: 0, dy: UNIT },
-                    { dx: -UNIT, dy: 0 },
-                    { dx: UNIT, dy: 0 }
-                ].filter(d => !(d.dx === -p.dx && d.dy === -p.dy));
+        score = 0; score2 = 0;
+        lastTime = 0;
+        speed = parseInt(speedSelect.value);
+        particles = []; obstacles = []; portals = [];
+        shakeTime = 0; isPaused = false;
 
-                let safestDir = null;
-                let maxClearance = -1;
+        scoreEl.innerText = '0';
+        if (scoreEl2) {
+            scoreEl2.innerText = '0';
+            scoreEl2.parentElement.style.color = player2 ? player2.color : '#fff';
+        }
+        
+        updateBadgesHUD();
+        document.getElementById('over').style.display = 'none';
+        
+        spawnFood();
+        spawnObstacles();
+        spawnPortals();
+    }
 
-                directions.forEach(d => {
-                    let clearance = 0;
-                    while (clearance < 25 && !checkCollision(p.x + d.dx * (clearance + 1), p.y + d.dy * (clearance + 1), p)) {
-                        clearance++;
-                    }
-                    if (clearance > maxClearance) {
-                        maxClearance = clearance;
-                        safestDir = d;
-                    }
-                });
+    function toggleMenu() {
+        if (document.getElementById('mode-select-overlay').style.display === 'flex') return;
+        isPaused = !isPaused;
+        document.getElementById('menu-overlay').style.display = isPaused ? 'flex' : 'none';
+    }
 
-                if (safestDir) {
-                    p.dx = safestDir.dx;
-                    p.dy = safestDir.dy;
+    function triggerShake() { shakeTime = 10; }
+
+    function createTrailParticle(x, y, color) {
+        const type = trailSelect.value;
+        let vx = (Math.random() - 0.5) * 3;
+        let vy = (Math.random() - 0.5) * 3;
+        let life = 0.8;
+
+        if (type === 'stars') { vx *= 1.5; vy *= 1.5; }
+        else if (type === 'bubbles') { vy = -Math.random() * 2; }
+        else if (type === 'sparks') { life = 0.5; }
+
+        particles.push({ x: x * GS + GS/2, y: y * GS + GS/2, vx, vy, life, c: color, type });
+    }
+
+    function createExplosion(x, y, color, count = 12) {
+        for(let i=0; i<count; i++) {
+            particles.push({
+                x: x * GS + GS/2, y: y * GS + GS/2,
+                vx: (Math.random()-0.5)*9, vy: (Math.random()-0.5)*9,
+                life: 1.0, c: color, type: 'spark'
+            });
+        }
+    }
+
+    window.addEventListener('keydown', e => {
+        const k = e.key.toLowerCase();
+        if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'w', 'a', 's', 'd'].includes(k)) {
+            e.preventDefault();
+        }
+        if (isPaused) return;
+
+        let p1Next = null;
+        if (k === 'w') p1Next = {dx:0, dy:-1};
+        else if (k === 's') p1Next = {dx:0, dy:1};
+        else if (k === 'a') p1Next = {dx:-1, dy:0};
+        else if (k === 'd') p1Next = {dx:1, dy:0};
+
+        if (gameMode === 1 && !p1Next) {
+            if (k === 'arrowup') p1Next = {dx:0, dy:-1};
+            else if (k === 'arrowdown') p1Next = {dx:0, dy:1};
+            else if (k === 'arrowleft') p1Next = {dx:-1, dy:0};
+            else if (k === 'arrowright') p1Next = {dx:1, dy:0};
+        }
+
+        if (p1Next && player1 && player1.alive) {
+            const last = player1.inputQueue.length ? player1.inputQueue[player1.inputQueue.length-1] : {dx: player1.dx, dy: player1.dy};
+            if (p1Next.dx !== -last.dx || p1Next.dy !== -last.dy) {
+                if (player1.inputQueue.length < 2) player1.inputQueue.push(p1Next);
+            }
+        }
+
+        if (gameMode === 2 && player2 && player2.alive) {
+            let p2Next = null;
+            if (k === 'arrowup') p2Next = {dx:0, dy:-1};
+            else if (k === 'arrowdown') p2Next = {dx:0, dy:1};
+            else if (k === 'arrowleft') p2Next = {dx:-1, dy:0};
+            else if (k === 'arrowright') p2Next = {dx:1, dy:0};
+
+            if (p2Next) {
+                const last = player2.inputQueue.length ? player2.inputQueue[player2.inputQueue.length-1] : {dx: player2.dx, dy: player2.dy};
+                if (p2Next.dx !== -last.dx || p2Next.dy !== -last.dy) {
+                    if (player2.inputQueue.length < 2) player2.inputQueue.push(p2Next);
                 }
             }
         }
     });
 
-    // Movement & Collision Logic
-    players.forEach(p => {
-        if (!p.active || !p.alive) return;
-        if (p.ghost > 0) p.ghost--;
-
-        let speedMultiplier = (p.isBoosting && p.boost > 0) ? 1.5 : 1.0;
-        if (p.speedBuffTimer > 0) { p.speedBuffTimer--; speedMultiplier *= 1.25; }
-
-        if (p.isBoosting && p.boost > 0) {
-            p.boost -= 1.2;
-        } else if (p.boost < 100) {
-            p.boost += 0.3;
-        }
-
-        let steps = Math.round(speedMultiplier);
-        for (let i = 0; i < steps; i++) {
-            p.x += p.dx; 
-            p.y += p.dy;
-
-            if (checkCollision(p.x, p.y, p)) { 
-                p.alive = false; 
-                createExplosion(p.x, p.y, p.color);
-                checkWinner(); 
-                return; 
-            }
-
-            markGrid(p.x, p.y, p.id);
-            p.trail.push({ x: p.x, y: p.y });
-
-            if (p.trail.length > MAX_TRAIL_LENGTH) {
-                let tail = p.trail.shift();
-                clearGrid(tail.x, tail.y, p.id);
-            }
-        }
-    });
-
-    document.getElementById('p1-fill').style.width = players[0].boost + "%";
-    document.getElementById('p2-fill').style.width = players[1].boost + "%";
-    document.getElementById('p3-fill').style.width = players[2].boost + "%";
-}
-
-function checkWinner() {
-    const mode = document.getElementById('gameMode').value;
-    const p1 = players[0], p2 = players[1], bot = players[2];
-
-    if (mode === 'pvp') {
-        if (!p1.alive && !p2.alive) endGame("DOUBLE CRASH!");
-        else if (!p1.alive) { score.p2++; endGame("PLAYER 2 VICTORIOUS"); }
-        else if (!p2.alive) { score.p1++; endGame("PLAYER 1 VICTORIOUS"); }
-    } else if (mode === 'bvb') {
-        if (!p1.alive && !bot.alive) endGame("GRID LOCKOUT!");
-        else if (!p1.alive) { score.bot++; endGame(`${bot2Label} DOMINATES`); }
-        else if (!bot.alive) { score.p1++; endGame(`${bot1Label} DOMINATES`); }
-    } else {
-        const humansAlive = (p1.active && p1.alive) || (p2.active && p2.alive);
-        if (!humansAlive) { score.bot++; endGame(`${bot2Label} WINS`); }
-        else if (bot.active && !bot.alive) { score.p1++; endGame("HUMANS WIN"); }
+    function getRandomGridPos() {
+        return { x: Math.floor(Math.random()*TC), y: Math.floor(Math.random()*TC) };
     }
-}
 
-function endGame(txt) {
-    gameActive = false;
-    document.getElementById('msg').innerHTML = `<span style="color:#fff; background:#000; padding:10px; border:2px solid #0f0">${txt}</span>`;
-}
+    function isOccupied(pos) {
+        const inP1 = player1 && player1.alive && player1.snake.some(s => s.x === pos.x && s.y === pos.y);
+        const inP2 = player2 && player2.alive && player2.snake.some(s => s.x === pos.x && s.y === pos.y);
+        const inObstacle = obstacles.some(o => o.x === pos.x && o.y === pos.y);
+        const inPortal = portals.some(p => p.x === pos.x && p.y === pos.y);
+        return inP1 || inP2 || inObstacle || inPortal;
+    }
 
-function render() {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    function spawnFood() {
+        let pos;
+        do { pos = getRandomGridPos(); } while(isOccupied(pos));
+        
+        const rand = Math.random();
+        let type = 'pink';
+        if (rand > 0.92) type = 'shield';
+        else if (rand > 0.84) type = 'ghost';
+        else if (rand > 0.76) type = 'freeze';
+        else if (rand > 0.68) type = 'magnet';
+        else if (rand > 0.58) type = 'shrink';
+        else if (rand > 0.45) type = 'gold';
+        else if (rand > 0.25) type = 'lime';
 
-    // Powerups
-    powerups.forEach(pu => {
-        ctx.fillStyle = '#ff0';
+        food = { ...pos, type, spawnTime: Date.now() };
+    }
+
+    function spawnObstacles() {
+        obstacles = [];
+        const currentScore = score + score2;
+        if (currentScore < 40) return;
+        const count = Math.min(6, Math.floor(currentScore / 50));
+        for (let i = 0; i < count; i++) {
+            let pos;
+            do { pos = getRandomGridPos(); } while(isOccupied(pos));
+            obstacles.push(pos);
+        }
+    }
+
+    function spawnPortals() {
+        portals = [];
+        if ((score + score2) >= 60) {
+            let p1Pos, p2Pos;
+            do { p1Pos = getRandomGridPos(); } while(isOccupied(p1Pos));
+            do { p2Pos = getRandomGridPos(); } while(isOccupied(p2Pos));
+            portals = [p1Pos, p2Pos];
+        }
+    }
+
+    function updateBadgesHUD() {
+        const buildBadges = (p, prefix) => {
+            if (!p || !p.alive) return '';
+            let html = '';
+            if (p.hasShield) html += `🛡️ `;
+            if (p.ghostTime > 0) html += `👻 `;
+            if (p.freezeTime > 0) html += `❄️ `;
+            if (p.magnetTime > 0) html += `🧲 `;
+            return html ? `<span style="color:${p.color}">${prefix}: ${html}</span> ` : '';
+        };
+        p1Badges.innerHTML = buildBadges(player1, 'P1');
+        p2Badges.innerHTML = buildBadges(player2, 'P2');
+    }
+
+    function movePlayer(p) {
+        if (!p || !p.alive) return null;
+
+        if (p.freezeTime > 0) {
+            p.freezeStep = (p.freezeStep || 0) + 1;
+            if (p.freezeStep % 2 !== 0) return null;
+        }
+
+        if (p.inputQueue.length) {
+            const move = p.inputQueue.shift();
+            p.dx = move.dx; p.dy = move.dy;
+        }
+
+        let head = {x: p.snake[0].x + p.dx, y: p.snake[0].y + p.dy};
+
+        // Wrap-around screen bounds
+        if (head.x < 0) head.x = TC - 1;
+        if (head.x >= TC) head.x = 0;
+        if (head.y < 0) head.y = TC - 1;
+        if (head.y >= TC) head.y = 0;
+
+        if (p.magnetTime > 0 && food) {
+            if (Math.abs(food.x - head.x) <= 3 && Math.abs(food.y - head.y) <= 3) {
+                if (food.x < head.x) food.x++;
+                else if (food.x > head.x) food.x--;
+                if (food.y < head.y) food.y++;
+                else if (food.y > head.y) food.y--;
+            }
+        }
+
+        if (portals.length === 2) {
+            if (head.x === portals[0].x && head.y === portals[0].y) {
+                head = { x: portals[1].x + p.dx, y: portals[1].y + p.dy };
+                createExplosion(portals[0].x, portals[0].y, '#00f2ff');
+            } else if (head.x === portals[1].x && head.y === portals[1].y) {
+                head = { x: portals[0].x + p.dx, y: portals[0].y + p.dy };
+                createExplosion(portals[1].x, portals[1].y, '#00f2ff');
+            }
+        }
+        return head;
+    }
+
+    function killPlayer(p) {
+        if (!p || !p.alive) return;
+        p.alive = false;
+        triggerShake();
+        p.snake.forEach(s => createExplosion(s.x, s.y, p.color, 4));
+    }
+
+    function update(t) {
+        requestAnimationFrame(update);
+        if (isPaused) return;
+
+        if (food && Date.now() - food.spawnTime > 6000) {
+            createExplosion(food.x, food.y, '#ffffff', 6);
+            spawnFood();
+        }
+
+        if (t - lastTime < speed) return;
+        lastTime = t;
+
+        [player1, player2].forEach(p => {
+            if (p) {
+                if (p.ghostTime > 0) p.ghostTime--;
+                if (p.freezeTime > 0) p.freezeTime--;
+                if (p.magnetTime > 0) p.magnetTime--;
+            }
+        });
+        updateBadgesHUD();
+
+        const h1 = movePlayer(player1);
+        const h2 = player2 ? movePlayer(player2) : null;
+
+        const checkCollisions = (p, head, otherP) => {
+            if (!p || !p.alive || !head) return false;
+
+            const selfCollide = p.snake.slice(1).some(s => s.x === head.x && s.y === head.y);
+            const obstacleCollide = obstacles.some(o => o.x === head.x && o.y === head.y);
+            const enemyCollide = otherP && otherP.alive && otherP.snake.some(s => s.x === head.x && s.y === head.y);
+
+            if (p.ghostTime > 0) return false;
+
+            if (selfCollide || obstacleCollide || enemyCollide) {
+                if (p.hasShield) {
+                    p.hasShield = false;
+                    triggerShake();
+                    createExplosion(p.snake[0].x, p.snake[0].y, '#b026ff', 15);
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        };
+
+        const p1Dead = checkCollisions(player1, h1, player2);
+        const p2Dead = checkCollisions(player2, h2, player1);
+        const headOn = h1 && h2 && h1.x === h2.x && h1.y === h2.y;
+
+        if (p1Dead || headOn) killPlayer(player1);
+        if (p2Dead || headOn) killPlayer(player2);
+
+        [{p: player1, head: h1, isP1: true}, {p: player2, head: h2, isP1: false}].forEach(item => {
+            const p = item.p; const head = item.head;
+            if (!p || !p.alive || !head) return;
+
+            p.snake.unshift(head);
+            createTrailParticle(head.x, head.y, p.color);
+
+            if (food && head.x === food.x && head.y === food.y) {
+                const fData = FOOD_TYPES[food.type];
+                let points = fData.score;
+
+                if (head.x >= zone.x1 && head.x <= zone.x2 && head.y >= zone.y1 && head.y <= zone.y2) {
+                    points *= 2;
+                    statusEl.innerText = "OVERLOAD x2!";
+                    statusEl.style.color = "var(--neon)";
+                } else {
+                    statusEl.innerText = "STABLE";
+                    statusEl.style.color = "var(--gold)";
+                }
+
+                if (food.type === 'shield') p.hasShield = true;
+                if (food.type === 'freeze') {
+                    const opponent = item.isP1 ? player2 : player1;
+                    if (opponent) opponent.freezeTime = 20;
+                    else p.freezeTime = 20;
+                }
+                if (food.type === 'ghost') p.ghostTime = 25;
+                if (food.type === 'magnet') p.magnetTime = 30;
+
+                if (item.isP1) { score += points; scoreEl.innerText = score; }
+                else { score2 += points; scoreEl2.innerText = score2; }
+
+                speed = Math.max(35, speed - 1);
+                createExplosion(food.x, food.y, fData.color, 16);
+
+                if (fData.grow < 0) {
+                    for (let i = 0; i < Math.abs(fData.grow); i++) {
+                        if (p.snake.length > 2) p.snake.pop();
+                    }
+                } else {
+                    for (let i = 0; i < fData.grow - 1; i++) p.snake.push({...p.snake[p.snake.length-1]});
+                }
+
+                spawnFood();
+                spawnObstacles();
+                spawnPortals();
+            } else {
+                p.snake.pop();
+            }
+        });
+
+        if (gameMode === 1 && player1 && !player1.alive) handleGameOver();
+        else if (gameMode === 2 && ((player1 && !player1.alive) || (player2 && !player2.alive))) handleGameOver();
+
+        draw();
+    }
+
+    function handleGameOver() {
+        isPaused = true;
+        if (gameMode === 1) {
+            finalScoreEl.innerText = score;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('neon_snake_high', highScore);
+                highScoreEl.innerText = highScore;
+            }
+            overTitle.innerText = "CORE DESYNC";
+            overMsg.innerHTML = `FINAL SCORE: <span>${score}</span>`;
+        } else {
+            overTitle.innerText = "MATCH OVER";
+            const p1A = player1 && player1.alive;
+            const p2A = player2 && player2.alive;
+            if (!p1A && !p2A) {
+                overMsg.innerHTML = `MUTUAL DESTRUCTION!<br>P1: ${score} | P2: ${score2}`;
+            } else if (!p1A) {
+                overMsg.innerHTML = `<span style="color:${player2.color}">PLAYER 2 WINS!</span><br>P1: ${score} | P2: ${score2}`;
+            } else {
+                overMsg.innerHTML = `<span style="color:${player1.color}">PLAYER 1 WINS!</span><br>P1: ${score} | P2: ${score2}`;
+            }
+        }
+        document.getElementById('over').style.display = 'flex';
+    }
+
+    function drawSegment(x, y, shape, color, isHead) {
+        ctx.fillStyle = color;
+        const px = x * GS; const py = y * GS;
+        const cx = px + GS / 2; const cy = py + GS / 2;
+
         ctx.beginPath();
-        ctx.arc(pu.x, pu.y, 6, 0, Math.PI * 2);
+        if (shape === 'circle') {
+            ctx.arc(cx, cy, (GS - 4) / 2, 0, Math.PI * 2);
+        } else if (shape === 'triangle') {
+            ctx.moveTo(cx, py + 2);
+            ctx.lineTo(px + GS - 2, py + GS - 2);
+            ctx.lineTo(px + 2, py + GS - 2);
+            ctx.closePath();
+        } else {
+            ctx.fillRect(px + 2, py + 2, GS - 4, GS - 4);
+            return;
+        }
         ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.stroke();
-    });
+    }
 
-    // Players Trails & Heads
-    players.forEach(p => {
-        if (!p.active || p.trail.length === 0) return;
+    function drawSnakePlayer(p) {
+        if (!p || !p.alive) return;
+        const useGlow = glowToggle.checked;
+        const shape = shapeSelect.value;
 
-        ctx.strokeStyle = p.ghost > 0 ? 'rgba(255,255,255,0.6)' : p.color;
-        ctx.lineWidth = UNIT;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        p.snake.forEach((s, i) => {
+            const color = i === 0 ? '#ffffff' : p.color;
+            if (useGlow && i === 0) {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = p.ghostTime > 0 ? '#ffffff' : (p.hasShield ? '#b026ff' : p.color);
+            } else {
+                ctx.shadowBlur = 0;
+            }
+            drawSegment(s.x, s.y, shape, color, i === 0);
+        });
+    }
 
-        ctx.beginPath();
-        ctx.moveTo(p.trail[0].x, p.trail[0].y);
-        for (let i = 1; i < p.trail.length; i++) {
-            ctx.lineTo(p.trail[i].x, p.trail[i].y);
+    function draw() {
+        ctx.save();
+
+        if (shakeTime > 0) {
+            const dx = (Math.random() - 0.5) * 8;
+            const dy = (Math.random() - 0.5) * 8;
+            ctx.translate(dx, dy);
+            shakeTime--;
         }
-        ctx.stroke();
 
-        if (p.alive) {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(p.x - 3, p.y - 3, UNIT + 2, UNIT + 2);
+        ctx.fillStyle = '#050508';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+
+        ctx.strokeStyle = 'rgba(0, 242, 255, 0.15)';
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(zone.x1*GS, zone.y1*GS, (zone.x2-zone.x1+1)*GS, (zone.y2-zone.y1+1)*GS);
+        ctx.setLineDash([]);
+
+        const useGlow = glowToggle.checked;
+        const pulse = Math.sin(Date.now() / 150) * 4;
+        
+        obstacles.forEach(o => {
+            if(useGlow) { ctx.shadowBlur = 10; ctx.shadowColor = '#ff0000'; }
+            ctx.fillStyle = '#ff0033';
+            ctx.fillRect(o.x*GS + 4, o.y*GS + 4, GS - 8, GS - 8);
+        });
+
+        portals.forEach(p => {
+            if(useGlow) { ctx.shadowBlur = 12; ctx.shadowColor = '#00f2ff'; }
+            ctx.strokeStyle = '#00f2ff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(p.x*GS + GS/2, p.y*GS + GS/2, GS/2 - 3, 0, Math.PI*2);
+            ctx.stroke();
+        });
+
+        if (food) {
+            const fData = FOOD_TYPES[food.type];
+            if(useGlow) {
+                ctx.shadowBlur = 15 + pulse;
+                ctx.shadowColor = fData.color;
+            }
+            ctx.fillStyle = fData.color;
+            ctx.beginPath();
+            ctx.arc(food.x*GS + GS/2, food.y*GS + GS/2, GS/2 - 4, 0, Math.PI*2);
+            ctx.fill();
         }
-    });
 
-    // Particles
-    particles.forEach(pt => {
-        ctx.fillStyle = pt.color;
-        ctx.globalAlpha = pt.alpha;
-        ctx.fillRect(pt.x, pt.y, pt.radius, pt.radius);
-        ctx.globalAlpha = 1.0;
-    });
-}
+        drawSnakePlayer(player1);
+        if (player2) drawSnakePlayer(player2);
 
-function gameLoop() {
-    update();
-    render();
-    requestAnimationFrame(gameLoop);
-}
+        ctx.shadowBlur = 0;
+        for(let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx; p.y += p.vy; p.life -= 0.04;
+            if(p.life <= 0) {
+                particles.splice(i, 1);
+                continue;
+            }
+            ctx.fillStyle = p.c;
+            ctx.globalAlpha = p.life;
+            if (p.type === 'stars') ctx.fillRect(p.x, p.y, 4, 4);
+            else if (p.type === 'bubbles') { ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.stroke(); }
+            else ctx.fillRect(p.x, p.y, 2, 2);
+        }
+        ctx.globalAlpha = 1;
+        ctx.restore();
+    }
 
-updateSkinOptions();
-gameLoop();
+    initSkinDropdowns();
+    showModeSelect();
+    requestAnimationFrame(update);
 </script>
 </body>
 </html>
