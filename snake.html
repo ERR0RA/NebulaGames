@@ -3,264 +3,627 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON SNAKE: SINGULARITY</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <title>NEON-GRID | OVERDRIVE</title>
     <style>
-        :root { --neon: #00f2ff; --pink: #ff0055; }
         body { 
-            margin: 0; background: #000; color: var(--neon); 
-            font-family: 'Orbitron', sans-serif; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; overflow: hidden; touch-action: none;
-        }
-        #game-container { position: relative; border: 3px solid var(--neon); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
-        canvas { display: block; background: #050508; }
-        #hud { width: 600px; display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 900; align-items: center; }
-        
-        /* Options Menu Styling */
-        #options-trigger { 
-            cursor: pointer; font-size: 1.5rem; transition: 0.3s; z-index: 100;
-        }
-        #options-trigger:hover { transform: rotate(90deg); color: #fff; }
-        
-        #menu-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.95);
-            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 50;
-            border: 1px solid var(--neon);
+            background: #050505; 
+            color: #0f0; 
+            font-family: 'Courier New', monospace; 
+            display: flex; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+            touch-action: none; 
+            position: relative;
         }
 
-        #over { 
-            position: absolute; inset: 0; background: rgba(0,0,0,0.9); 
-            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; 
+        #skin-panel {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #111;
+            border: 2px solid #0f0;
+            padding: 15px;
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: inset 0 0 10px rgba(0,255,0,0.2);
+            z-index: 10;
         }
+        .skin-group { display: flex; flex-direction: column; gap: 4px; }
+        .skin-group label { font-size: 0.8rem; font-weight: bold; }
+        .skin-select-wrapper { display: flex; align-items: center; gap: 8px; }
+        .color-preview { width: 18px; height: 18px; border: 1px solid #fff; box-shadow: 0 0 5px currentColor; flex-shrink: 0; }
+        select:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; color: #555; }
 
-        .setting-row { margin: 15px 0; display: flex; align-items: center; gap: 20px; width: 80%; justify-content: space-between; }
-        button { background: transparent; border: 2px solid var(--neon); color: var(--neon); padding: 10px 20px; font-family: 'Orbitron'; cursor: pointer; font-weight: 900; transition: 0.2s; }
-        button:hover { background: var(--neon); color: #000; }
-        input[type="checkbox"] { transform: scale(1.5); accent-color: var(--neon); }
+        #main-content { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 4px solid #0f0; background: #000; max-width: 75vw; max-height: 60vh; box-shadow: 0 0 30px rgba(0, 255, 0, 0.3); touch-action: none; }
+        #ui { text-align: center; width: 800px; max-width: 75vw; margin-bottom: 10px; }
+        .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; box-shadow: inset 0 0 10px rgba(0,255,0,0.2); }
+        .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; gap: 10px; }
+        .meter-container { width: 32%; background: #222; border: 2px solid #333; height: 16px; position: relative; border-radius: 3px; overflow: hidden; }
+        .fill { height: 100%; width: 100%; transition: width 0.05s linear; }
+        .label-overlay { position: absolute; width: 100%; text-align: center; font-size: 0.7rem; font-weight: bold; color: #fff; top: 1px; text-shadow: 1px 1px 2px #000; }
+        #p1-fill { background: linear-gradient(90deg, #050, #0f0); } 
+        #p2-fill { background: linear-gradient(90deg, #005, #00f); } 
+        #p3-fill { background: linear-gradient(90deg, #500, #f00); }
+        #msg { position: absolute; font-size: 2.5rem; font-weight: bold; top: 45%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; text-shadow: 0 0 15px #000; z-index: 100; text-align: center; width: 100%; letter-spacing: 2px; }
+        button, select { background: #000; color: #0f0; border: 1px solid #0f0; padding: 8px 10px; cursor: pointer; font-weight: bold; font-family: 'Courier New', monospace; transition: all 0.2s; width: 100%; }
+        .setup-panel select, .setup-panel button { width: auto; }
+        button:hover { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
+        .toggle-label { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
+        #score { margin-bottom: 5px; font-size: 1.2rem; letter-spacing: 2px; font-weight: bold; text-shadow: 0 0 8px rgba(0,255,0,0.5); }
+
+        #mobile-controls { display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; width: 100%; max-width: 400px; padding: 10px; }
+        .ctrl-btn { width: 65px; height: 65px; background: rgba(0, 255, 0, 0.05); border: 2px solid #0f0; color: #0f0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; user-select: none; -webkit-user-select: none; touch-action: none; border-radius: 8px; }
+        .ctrl-btn:active { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
+        #btn-boost { grid-column: 3; background: rgba(255, 0, 0, 0.1); border-color: #f00; color: #f00; }
+        
+        @media (max-width: 1100px) {
+            body { flex-direction: column; overflow-y: auto; height: auto; padding: 20px 0; }
+            #skin-panel { position: static; transform: none; width: 80vw; margin-bottom: 15px; }
+        }
+        @media (pointer: coarse) {
+            #mobile-controls { display: grid; }
+            .setup-panel { padding: 8px; font-size: 0.8rem; }
+            button, select { padding: 6px; }
+        }
     </style>
 </head>
 <body>
 
-<div id="hud">
-    <div>SCORE: <span id="sc">0</span></div>
-    <div id="status" style="color:#ffaa00">STABLE</div>
-    <div id="options-trigger" onclick="toggleMenu()">⚙️</div>
+<div id="skin-panel">
+    <div style="font-weight: bold; text-align: center; border-bottom: 1px solid #0f0; padding-bottom: 5px;">CUSTOMIZE SKINS</div>
+    <div class="skin-group">
+        <label for="p1Skin">P1 SKIN:</label>
+        <div class="skin-select-wrapper">
+            <select id="p1Skin">
+                <option value="neon_green">Neon Green</option>
+                <option value="hyper_blue">Hyper Blue</option>
+                <option value="cyber_yellow">Cyber Yellow</option>
+                <option value="plasma_pink">Plasma Pink</option>
+                <option value="solar_orange">Solar Orange</option>
+                <option value="acid_lime">Acid Lime</option>
+                <option value="electric_cyan">Electric Cyan</option>
+                <option value="violet_flare">Violet Flare</option>
+                <option value="crimson_red">Crimson Red</option>
+                <option value="pure_white">Pure White</option>
+            </select>
+            <div id="p1Preview" class="color-preview"></div>
+        </div>
+    </div>
+    <div class="skin-group">
+        <label for="p2Skin">P2 SKIN:</label>
+        <div class="skin-select-wrapper">
+            <select id="p2Skin">
+                <option value="hyper_blue">Hyper Blue</option>
+                <option value="neon_green">Neon Green</option>
+                <option value="cyber_yellow">Cyber Yellow</option>
+                <option value="plasma_pink">Plasma Pink</option>
+                <option value="solar_orange">Solar Orange</option>
+                <option value="acid_lime">Acid Lime</option>
+                <option value="electric_cyan">Electric Cyan</option>
+                <option value="violet_flare">Violet Flare</option>
+                <option value="crimson_red">Crimson Red</option>
+                <option value="pure_white">Pure White</option>
+            </select>
+            <div id="p2Preview" class="color-preview"></div>
+        </div>
+    </div>
+    <div class="skin-group">
+        <label for="botSkin">BOT SKIN:</label>
+        <div class="skin-select-wrapper">
+            <select id="botSkin">
+                <option value="default">Default Profile Color</option>
+                <option value="supernova">★ Supernova Gold</option>
+                <option value="toxic_neon">★ Toxic Neon</option>
+                <option value="void_purple">★ Void Purple</option>
+                <option value="matrix_red">★ Matrix Red</option>
+                <option value="neon_green">Neon Green</option>
+                <option value="hyper_blue">Hyper Blue</option>
+                <option value="cyber_yellow">Cyber Yellow</option>
+                <option value="plasma_pink">Plasma Pink</option>
+                <option value="solar_orange">Solar Orange</option>
+                <option value="electric_cyan">Electric Cyan</option>
+                <option value="pure_white">Pure White</option>
+            </select>
+            <div id="botPreview" class="color-preview"></div>
+        </div>
+    </div>
 </div>
 
-<div id="game-container">
-    <canvas id="c"></canvas>
-    
-    <div id="menu-overlay">
-        <h2>SYSTEM CONFIG</h2>
-        <div class="setting-row">
-            <span>NEON GLOW (LAGGY)</span>
-            <input type="checkbox" id="glowToggle" checked>
+<div id="main-content">
+    <div id="ui">
+        <div id="score">P1: 0 | P2: 0 | BOT: 0</div>
+        <div class="meters">
+            <div class="meter-container" id="p1-ui"><div id="p1-fill" class="fill"></div><div class="label-overlay" id="lbl-p1">P1 ENERGY</div></div>
+            <div class="meter-container" id="p2-ui"><div id="p2-fill" class="fill"></div><div class="label-overlay" id="lbl-p2">P2 ENERGY</div></div>
+            <div class="meter-container" id="bot-ui"><div id="p3-fill" class="fill"></div><div class="label-overlay" id="lbl-b3">BOT ENERGY</div></div>
         </div>
-        <div class="setting-row">
-            <span>DIFFICULTY</span>
-            <select id="speedBase" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:5px;">
-                <option value="130">NOVICE</option>
-                <option value="100" selected>ELITE</option>
-                <option value="70">SINGULARITY</option>
+        <div class="setup-panel">
+            <select id="gameMode">
+                <option value="pvpve">2 Humans vs Bot</option>
+                <option value="pve">1 Human vs Bot</option>
+                <option value="pvp">Human vs Human</option>
+                <option value="bvb">Bot vs Bot (Spectate)</option>
             </select>
+            
+            <select id="botType2" style="display: none;">
+                <option value="default">BOT 1: Default</option>
+                <option value="failed">BOT 1: Failed</option>
+                <option value="void">BOT 1: V0ID</option>
+                <option value="ultimate">BOT 1: Ultimate</option>
+                <option value="destroyer">BOT 1: Destroyer</option>
+                <option value="error">BOT 1: ERR0R</option>
+            </select>
+
+            <select id="botType">
+                <option value="default">BOT: Default</option>
+                <option value="failed">BOT: Failed</option>
+                <option value="void">BOT: V0ID</option>
+                <option value="ultimate">BOT: Ultimate</option>
+                <option value="destroyer">BOT: Destroyer</option>
+                <option value="error">BOT: ERR0R</option>
+            </select>
+            
+            <label class="toggle-label">
+                <input type="checkbox" id="usePowerUps" checked> POWER-UPS
+            </label>
+            <label class="toggle-label">
+                <input type="checkbox" id="useSlowMo"> SLOW-MO
+            </label>
+            <button id="startBtn">ENGAGE</button>
         </div>
-        <button onclick="toggleMenu()">SAVE & RESUME</button>
     </div>
 
-    <div id="over">
-        <h1 style="color:var(--pink)">CORE DESYNC</h1>
-        <button onclick="location.reload()">RE-SYNC</button>
+    <div id="wrapper">
+        <div id="msg"></div>
+        <canvas id="game" width="800" height="600"></canvas>
+    </div>
+
+    <div id="mobile-controls">
+        <div></div>
+        <div class="ctrl-btn" id="btn-up">▲</div>
+        <div class="ctrl-btn" id="btn-boost">B</div>
+        <div class="ctrl-btn" id="btn-left">◀</div>
+        <div class="ctrl-btn" id="btn-down">▼</div>
+        <div class="ctrl-btn" id="btn-right">▶</div>
     </div>
 </div>
 
 <script>
-    const canvas = document.getElementById('c');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('sc');
-    const statusEl = document.getElementById('status');
-    const glowToggle = document.getElementById('glowToggle');
-    const speedSelect = document.getElementById('speedBase');
-    
-    const GS = 24; const TC = 25; 
-    canvas.width = canvas.height = GS * TC;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const UNIT = 5;
+const MAX_TRAIL_LENGTH = 600;
 
-    let snake = [{x:12, y:12}, {x:11, y:12}, {x:10, y:12}];
-    let food = {x: 5, y: 5, type: 'pink', spawnTime: Date.now()};
-    let dx = 1, dy = 0;
-    let inputQueue = [];
-    let score = 0;
-    let lastTime = 0;
-    let speed = 100;
-    let particles = [];
-    let foodLife = 5000;
-    let isPaused = false;
+const SKINS = {
+    neon_green: { name: 'Neon Green', color: '#00ff00' },
+    hyper_blue: { name: 'Hyper Blue', color: '#0066ff' },
+    cyber_yellow: { name: 'Cyber Yellow', color: '#ffe600' },
+    plasma_pink: { name: 'Plasma Pink', color: '#ff00ff' },
+    solar_orange: { name: 'Solar Orange', color: '#ff6600' },
+    acid_lime: { name: 'Acid Lime', color: '#a6ff00' },
+    electric_cyan: { name: 'Electric Cyan', color: '#00ffff' },
+    violet_flare: { name: 'Violet Flare', color: '#9933ff' },
+    crimson_red: { name: 'Crimson Red', color: '#ff0033' },
+    pure_white: { name: 'Pure White', color: '#ffffff' },
+    supernova: { name: 'Supernova Gold', color: '#ffd700' },
+    toxic_neon: { name: 'Toxic Neon', color: '#39ff14' },
+    void_purple: { name: 'Void Purple', color: '#8a2be2' },
+    matrix_red: { name: 'Matrix Red', color: '#ff0055' }
+};
 
-    const FOOD_TYPES = {
-        pink: { color: '#ff0055', score: 10, grow: 1 },
-        lime: { color: '#22ff00', score: 25, grow: 1 },
-        gold: { color: '#ffaa00', score: 50, grow: 3 }
-    };
+let grid, players, powerups = [], gameActive = false, score = {p1:0, p2:0, bot:0};
+let powerupTimer = 0;
+let bot1Label = "BOT 1", bot2Label = "BOT 2";
+let particles = [];
+let slowMoTick = 0;
 
-    const zone = { x1: 7, y1: 7, x2: 17, y2: 17 };
+function updateSkinOptions() {
+    const p1Val = document.getElementById('p1Skin').value;
+    const p2Val = document.getElementById('p2Skin').value;
+    const botVal = document.getElementById('botSkin').value;
 
-    function toggleMenu() {
-        isPaused = !isPaused;
-        document.getElementById('menu-overlay').style.display = isPaused ? 'flex' : 'none';
-        if (!isPaused) speed = parseInt(speedSelect.value) - (score/20);
+    document.getElementById('p1Preview').style.backgroundColor = SKINS[p1Val].color;
+    document.getElementById('p2Preview').style.backgroundColor = SKINS[p2Val].color;
+    document.getElementById('botPreview').style.backgroundColor = (botVal === 'default') ? '#555' : SKINS[botVal].color;
+}
+
+document.getElementById('p1Skin').addEventListener('change', updateSkinOptions);
+document.getElementById('p2Skin').addEventListener('change', updateSkinOptions);
+document.getElementById('botSkin').addEventListener('change', updateSkinOptions);
+
+document.getElementById('gameMode').addEventListener('change', function() {
+    const b1Menu = document.getElementById('botType2');
+    const mainBotMenu = document.getElementById('botType');
+    if (this.value === 'bvb') {
+        b1Menu.style.display = 'inline-block';
+        mainBotMenu.options[0].text = "BOT 2: Default";
+    } else {
+        b1Menu.style.display = 'none';
+        mainBotMenu.options[0].text = "BOT: Default";
     }
+});
 
-    function createExplosion(x, y, color) {
-        for(let i=0; i<12; i++) {
-            particles.push({
-                x: x * GS + GS/2, y: y * GS + GS/2,
-                vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8,
-                life: 1.0, c: color
-            });
-        }
-    }
+function getBotSettings(setting) {
+    let color = '#f00', profile = 'default', speed = 2;
+    if (setting === 'ultimate') { color = '#ff3333'; profile = 'ultimate'; speed = 2.1; }
+    else if (setting === 'error') { color = '#00ffff'; profile = 'error'; speed = 1.9; }
+    else if (setting === 'failed') { color = '#d97706'; profile = 'failed'; speed = 1.5; }
+    else if (setting === 'destroyer') { color = '#ea580c'; profile = 'destroyer'; speed = 2.2; }
+    else if (setting === 'void') { color = '#a855f7'; profile = 'void'; speed = 1.8; }
+    return { color, profile, speed };
+}
 
-    window.onkeydown = e => {
-        if (isPaused) return;
-        const k = e.key.toLowerCase();
-        let next = null;
-        if(k === 'w' || k === 'arrowup') next = {x:0, y:-1};
-        else if(k === 's' || k === 'arrowdown') next = {x:0, y:1};
-        else if(k === 'a' || k === 'arrowleft') next = {x:-1, y:0};
-        else if(k === 'd' || k === 'arrowright') next = {x:1, y:0};
-        
-        if(next) {
-            const last = inputQueue.length ? inputQueue[inputQueue.length-1] : {dx, dy};
-            if(next.x !== -last.dx || next.y !== -last.dy) inputQueue.push({dx: next.x, dy: next.y});
-        }
-    };
-
-    function spawnFood() {
-        const rand = Math.random();
-        let type = rand > 0.9 ? 'gold' : (rand > 0.7 ? 'lime' : 'pink');
-        food = {
-            x: Math.floor(Math.random()*TC),
-            y: Math.floor(Math.random()*TC),
-            type: type,
-            spawnTime: Date.now()
-        };
-        if(snake.some(s => s.x === food.x && s.y === food.y)) spawnFood();
-    }
-
-    function update(t) {
-        requestAnimationFrame(update);
-        if (isPaused) return;
-        
-        if(Date.now() - food.spawnTime > foodLife) {
-            createExplosion(food.x, food.y, '#ffffff');
-            spawnFood();
-        }
-
-        if(t - lastTime < speed) return;
-        lastTime = t;
-
-        if(inputQueue.length) {
-            const move = inputQueue.shift();
-            dx = move.dx; dy = move.dy;
-        }
-
-        let head = {x: snake[0].x + dx, y: snake[0].y + dy};
-
-        if(head.x<0 || head.x>=TC || head.y<0 || head.y>=TC || snake.some(s=>s.x===head.x && s.y===head.y)) {
-            document.getElementById('over').style.display = 'flex';
-            isPaused = true;
-            return;
-        }
-
-        snake.unshift(head);
-
-        if(head.x === food.x && head.y === food.y) {
-            const fData = FOOD_TYPES[food.type];
-            let points = fData.score;
-            
-            if(head.x >= zone.x1 && head.x <= zone.x2 && head.y >= zone.y1 && head.y <= zone.y2) {
-                points *= 2;
-                statusEl.innerText = "OVERLOAD x2!";
-                statusEl.style.color = "var(--neon)";
-            } else {
-                statusEl.innerText = "STABLE";
-                statusEl.style.color = "#ffaa00";
-            }
-
-            score += points;
-            scoreEl.innerText = score;
-            speed = Math.max(40, speed - 1);
-            createExplosion(food.x, food.y, fData.color);
-            for(let i=0; i<fData.grow-1; i++) snake.push({...snake[snake.length-1]});
-            spawnFood();
-        } else {
-            snake.pop();
-        }
-
-        draw();
-    }
-
-    function draw() {
-        // Use a solid clear for performance
-        ctx.fillStyle = '#050508';
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-
-        // Grid Speed Zone
-        ctx.strokeStyle = 'rgba(0, 242, 255, 0.1)';
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(zone.x1*GS, zone.y1*GS, (zone.x2-zone.x1+1)*GS, (zone.y2-zone.y1+1)*GS);
-        ctx.setLineDash([]);
-
-        const useGlow = glowToggle.checked;
-        const fData = FOOD_TYPES[food.type];
-        const pulse = Math.sin(Date.now() / 150) * 5;
-        
-        // Draw Food
-        if(useGlow) {
-            ctx.shadowBlur = 15 + pulse;
-            ctx.shadowColor = fData.color;
-        }
-        ctx.fillStyle = fData.color;
-        ctx.beginPath();
-        ctx.arc(food.x*GS + GS/2, food.y*GS + GS/2, GS/2 - 5, 0, Math.PI*2);
-        ctx.fill();
-
-        // Draw Snake
-        snake.forEach((s, i) => {
-            const hue = (Date.now() / 30 + i * 10) % 360;
-            if(useGlow && i === 0) {
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
-            } else {
-                ctx.shadowBlur = 0;
-            }
-            ctx.fillStyle = i === 0 ? '#fff' : `hsl(${hue}, 70%, 50%)`;
-            
-            // Draw rounded segments
-            const r = 4;
-            ctx.beginPath();
-            ctx.roundRect(s.x*GS+2, s.y*GS+2, GS-4, GS-4, 6);
-            ctx.fill();
+function createExplosion(x, y, color) {
+    for (let i = 0; i < 35; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 10,
+            vy: (Math.random() - 0.5) * 10,
+            radius: Math.random() * 4 + 1,
+            color: color,
+            alpha: 1,
+            decay: Math.random() * 0.03 + 0.02
         });
+    }
+}
 
-        // Optimized Particles
-        ctx.shadowBlur = 0;
-        for(let i = particles.length - 1; i >= 0; i--) {
-            const p = particles[i];
-            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
-            if(p.life <= 0) {
-                particles.splice(i, 1);
-                continue;
+function markGrid(x, y, id) {
+    let ix = Math.floor(x);
+    let iy = Math.floor(y);
+    for (let dx = -2; dx <= 2; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
+            let gx = ix + dx;
+            let gy = iy + dy;
+            if (gx >= 0 && gx < canvas.width && gy >= 0 && gy < canvas.height) {
+                grid[gx][gy] = id;
             }
-            ctx.fillStyle = p.c;
-            ctx.globalAlpha = p.life;
-            ctx.fillRect(p.x, p.y, 3, 3);
         }
-        ctx.globalAlpha = 1;
+    }
+}
+
+function clearGrid(x, y, id) {
+    let ix = Math.floor(x);
+    let iy = Math.floor(y);
+    for (let dx = -2; dx <= 2; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
+            let gx = ix + dx;
+            let gy = iy + dy;
+            if (gx >= 0 && gx < canvas.width && gy >= 0 && gy < canvas.height) {
+                if (grid[gx][gy] === id) grid[gx][gy] = null;
+            }
+        }
+    }
+}
+
+function reset() {
+    const mode = document.getElementById('gameMode').value;
+    const botSetting = document.getElementById('botType').value;
+    const bot2Setting = document.getElementById('botType2').value;
+    const botSkinKey = document.getElementById('botSkin').value;
+    
+    const p1Skin = SKINS[document.getElementById('p1Skin').value];
+    const p2Skin = SKINS[document.getElementById('p2Skin').value];
+
+    grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
+    powerups = [];
+    particles = [];
+    powerupTimer = 0;
+    
+    let b2 = getBotSettings(botSetting);
+    let b1 = getBotSettings(bot2Setting);
+
+    let b1ProfileName = bot2Setting.toUpperCase();
+    let b2ProfileName = botSetting.toUpperCase();
+    
+    const isSameBot = (botSetting === bot2Setting);
+    bot1Label = isSameBot ? b1ProfileName + " 1" : b1ProfileName;
+    bot2Label = isSameBot ? b2ProfileName + " 2" : b2ProfileName;
+
+    let finalBot2Color = (botSkinKey !== 'default') ? SKINS[botSkinKey].color : b2.color;
+    let finalBot1Color = (botSkinKey !== 'default') ? SKINS[botSkinKey].color : b1.color;
+
+    players = [
+        { id: 0, x: 150, y: 300, dx: UNIT, dy: 0, color: p1Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false },
+        { id: 1, x: 150, y: 450, dx: UNIT, dy: 0, color: p2Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false },
+        { id: 2, x: 650, y: 300, dx: -UNIT, dy: 0, color: finalBot2Color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), ghost: 0, shield: false, baseSpeed: b2.speed, speedBuffTimer: 0, isBot: true }
+    ];
+
+    document.getElementById('lbl-p1').innerText = (mode === 'bvb') ? bot1Label : "P1 ENERGY";
+    document.getElementById('lbl-p2').innerText = "P2 ENERGY";
+    document.getElementById('lbl-b3').innerText = (mode === 'bvb') ? bot2Label : (mode === 'pvp' ? "P2 ENERGY" : "BOT ENERGY");
+
+    if (mode === 'bvb') {
+        players[0].active = true; players[0].isBot = true;
+        players[0].color = finalBot1Color; players[0].baseSpeed = b1.speed;
+        players[1].active = false; players[2].active = true;
+        document.getElementById('score').innerText = `${bot1Label}: ${score.p1} | ${bot2Label}: ${score.bot}`;
+    } else {
+        document.getElementById('score').innerText = `P1: ${score.p1} | P2: ${score.p2} | BOT: ${score.bot}`;
     }
 
-    spawnFood();
-    requestAnimationFrame(update);
+    document.getElementById('p1-ui').style.visibility = players[0].active ? "visible" : "hidden";
+    document.getElementById('p2-ui').style.visibility = players[1].active ? "visible" : "hidden";
+    document.getElementById('bot-ui').style.visibility = players[2].active ? "visible" : "hidden";
+    
+    document.getElementById('msg').innerHTML = mode === 'bvb' ? `<span style="color:#0ff">${bot1Label}</span> VS <span style="color:#f00">${bot2Label}</span>` : "<span style='color:#0f0'>READY...</span>";
+    gameActive = false;
+    setTimeout(() => { document.getElementById('msg').innerText = ""; gameActive = true; }, 1000);
+}
+
+document.getElementById('startBtn').onclick = (e) => { e.target.blur(); reset(); };
+
+// Controls Setup
+window.addEventListener('keydown', e => {
+    if (!gameActive) return;
+    
+    // Player 1 WASD
+    if (!players[0].isBot && players[0].alive) {
+        if ((e.key === 'w' || e.key === 'W') && players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; }
+        if ((e.key === 's' || e.key === 'S') && players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; }
+        if ((e.key === 'a' || e.key === 'A') && players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; }
+        if ((e.key === 'd' || e.key === 'D') && players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; }
+        if (e.key === 'Shift') players[0].isBoosting = true;
+    }
+
+    // Player 2 Arrow Keys
+    if (!players[1].isBot && players[1].alive && players[1].active) {
+        if (e.key === 'ArrowUp' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = -UNIT; }
+        if (e.key === 'ArrowDown' && players[1].dy === 0) { players[1].dx = 0; players[1].dy = UNIT; }
+        if (e.key === 'ArrowLeft' && players[1].dx === 0) { players[1].dx = -UNIT; players[1].dy = 0; }
+        if (e.key === 'ArrowRight' && players[1].dx === 0) { players[1].dx = UNIT; players[1].dy = 0; }
+        if (e.key === 'Control' || e.key === 'Enter') players[1].isBoosting = true;
+    }
+});
+
+window.addEventListener('keyup', e => {
+    if (e.key === 'Shift') players[0].isBoosting = false;
+    if (e.key === 'Control' || e.key === 'Enter') players[1].isBoosting = false;
+});
+
+// Mobile Controls
+const bindBtn = (id, action) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); action(true); });
+    el.addEventListener('touchend', (e) => { e.preventDefault(); action(false); });
+    el.addEventListener('mousedown', (e) => { e.preventDefault(); action(true); });
+    el.addEventListener('mouseup', (e) => { e.preventDefault(); action(false); });
+};
+
+bindBtn('btn-up', () => { if (players[0].dy === 0) { players[0].dx = 0; players[0].dy = -UNIT; } });
+bindBtn('btn-down', () => { if (players[0].dy === 0) { players[0].dx = 0; players[0].dy = UNIT; } });
+bindBtn('btn-left', () => { if (players[0].dx === 0) { players[0].dx = -UNIT; players[0].dy = 0; } });
+bindBtn('btn-right', () => { if (players[0].dx === 0) { players[0].dx = UNIT; players[0].dy = 0; } });
+bindBtn('btn-boost', (pressed) => { players[0].isBoosting = pressed; });
+
+function checkCollision(x, y, self) {
+    if (x <= 5 || x >= canvas.width - 5 || y <= 5 || y >= canvas.height - 5) return true;
+    
+    for (let i = powerups.length - 1; i >= 0; i--) {
+        const pu = powerups[i];
+        if (Math.hypot(x - pu.x, y - pu.y) < 15) {
+            applyPowerUp(self, pu.type);
+            powerups.splice(i, 1);
+        }
+    }
+    
+    const hitId = grid[Math.floor(x)][Math.floor(y)];
+    if (hitId === null) return false;
+    if (self.ghost > 0) return false;
+    
+    if (self.shield) { self.shield = false; return false; }
+    return true;
+}
+
+function applyPowerUp(player, type) {
+    if (type === 'ghost') player.ghost = 180;
+    if (type === 'shield') player.shield = true;
+    if (type === 'battery') player.boost = Math.min(100, player.boost + 50);
+    if (type === 'speed') player.speedBuffTimer = 200;
+    if (type === 'clear') {
+        grid = Array(canvas.width).fill().map(() => Array(canvas.height).fill(null));
+        players.forEach(p => p.trail = []);
+    }
+}
+
+function spawnPowerUp() {
+    if (powerups.length > 4) return;
+    const types = ['ghost', 'speed', 'clear', 'shield', 'battery'];
+    powerups.push({
+        x: Math.random() * (canvas.width - 100) + 50,
+        y: Math.random() * (canvas.height - 100) + 50,
+        type: types[Math.floor(Math.random() * types.length)]
+    });
+}
+
+function update() {
+    if (!gameActive) return;
+    
+    if (document.getElementById('useSlowMo').checked) {
+        slowMoTick++;
+        if (slowMoTick % 2 !== 0) return;
+    }
+
+    if (document.getElementById('usePowerUps').checked) {
+        powerupTimer++;
+        if (powerupTimer > 200) { spawnPowerUp(); powerupTimer = 0; }
+    }
+
+    // Particle Handling
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].x += particles[i].vx;
+        particles[i].y += particles[i].vy;
+        particles[i].alpha -= particles[i].decay;
+        if (particles[i].alpha <= 0) particles.splice(i, 1);
+    }
+
+    // Bot Pathfinding
+    players.forEach(p => {
+        if (p.active && p.alive && p.isBot) {
+            const lookAhead = (dx, dy, dist) => {
+                for (let i = 1; i <= dist; i++) {
+                    if (checkCollision(p.x + dx * i, p.y + dy * i, p)) return true;
+                }
+                return false;
+            };
+
+            if (lookAhead(p.dx, p.dy, 8)) {
+                const directions = [
+                    { dx: 0, dy: -UNIT },
+                    { dx: 0, dy: UNIT },
+                    { dx: -UNIT, dy: 0 },
+                    { dx: UNIT, dy: 0 }
+                ].filter(d => !(d.dx === -p.dx && d.dy === -p.dy));
+
+                let safestDir = null;
+                let maxClearance = -1;
+
+                directions.forEach(d => {
+                    let clearance = 0;
+                    while (clearance < 25 && !checkCollision(p.x + d.dx * (clearance + 1), p.y + d.dy * (clearance + 1), p)) {
+                        clearance++;
+                    }
+                    if (clearance > maxClearance) {
+                        maxClearance = clearance;
+                        safestDir = d;
+                    }
+                });
+
+                if (safestDir) {
+                    p.dx = safestDir.dx;
+                    p.dy = safestDir.dy;
+                }
+            }
+        }
+    });
+
+    // Movement & Collision Logic
+    players.forEach(p => {
+        if (!p.active || !p.alive) return;
+        if (p.ghost > 0) p.ghost--;
+
+        let speedMultiplier = (p.isBoosting && p.boost > 0) ? 1.5 : 1.0;
+        if (p.speedBuffTimer > 0) { p.speedBuffTimer--; speedMultiplier *= 1.25; }
+
+        if (p.isBoosting && p.boost > 0) {
+            p.boost -= 1.2;
+        } else if (p.boost < 100) {
+            p.boost += 0.3;
+        }
+
+        let steps = Math.round(speedMultiplier);
+        for (let i = 0; i < steps; i++) {
+            p.x += p.dx; 
+            p.y += p.dy;
+
+            if (checkCollision(p.x, p.y, p)) { 
+                p.alive = false; 
+                createExplosion(p.x, p.y, p.color);
+                checkWinner(); 
+                return; 
+            }
+
+            markGrid(p.x, p.y, p.id);
+            p.trail.push({ x: p.x, y: p.y });
+
+            if (p.trail.length > MAX_TRAIL_LENGTH) {
+                let tail = p.trail.shift();
+                clearGrid(tail.x, tail.y, p.id);
+            }
+        }
+    });
+
+    document.getElementById('p1-fill').style.width = players[0].boost + "%";
+    document.getElementById('p2-fill').style.width = players[1].boost + "%";
+    document.getElementById('p3-fill').style.width = players[2].boost + "%";
+}
+
+function checkWinner() {
+    const mode = document.getElementById('gameMode').value;
+    const p1 = players[0], p2 = players[1], bot = players[2];
+
+    if (mode === 'pvp') {
+        if (!p1.alive && !p2.alive) endGame("DOUBLE CRASH!");
+        else if (!p1.alive) { score.p2++; endGame("PLAYER 2 VICTORIOUS"); }
+        else if (!p2.alive) { score.p1++; endGame("PLAYER 1 VICTORIOUS"); }
+    } else if (mode === 'bvb') {
+        if (!p1.alive && !bot.alive) endGame("GRID LOCKOUT!");
+        else if (!p1.alive) { score.bot++; endGame(`${bot2Label} DOMINATES`); }
+        else if (!bot.alive) { score.p1++; endGame(`${bot1Label} DOMINATES`); }
+    } else {
+        const humansAlive = (p1.active && p1.alive) || (p2.active && p2.alive);
+        if (!humansAlive) { score.bot++; endGame(`${bot2Label} WINS`); }
+        else if (bot.active && !bot.alive) { score.p1++; endGame("HUMANS WIN"); }
+    }
+}
+
+function endGame(txt) {
+    gameActive = false;
+    document.getElementById('msg').innerHTML = `<span style="color:#fff; background:#000; padding:10px; border:2px solid #0f0">${txt}</span>`;
+}
+
+function render() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Powerups
+    powerups.forEach(pu => {
+        ctx.fillStyle = '#ff0';
+        ctx.beginPath();
+        ctx.arc(pu.x, pu.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+    });
+
+    // Players Trails & Heads
+    players.forEach(p => {
+        if (!p.active || p.trail.length === 0) return;
+
+        ctx.strokeStyle = p.ghost > 0 ? 'rgba(255,255,255,0.6)' : p.color;
+        ctx.lineWidth = UNIT;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(p.trail[0].x, p.trail[0].y);
+        for (let i = 1; i < p.trail.length; i++) {
+            ctx.lineTo(p.trail[i].x, p.trail[i].y);
+        }
+        ctx.stroke();
+
+        if (p.alive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(p.x - 3, p.y - 3, UNIT + 2, UNIT + 2);
+        }
+    });
+
+    // Particles
+    particles.forEach(pt => {
+        ctx.fillStyle = pt.color;
+        ctx.globalAlpha = pt.alpha;
+        ctx.fillRect(pt.x, pt.y, pt.radius, pt.radius);
+        ctx.globalAlpha = 1.0;
+    });
+}
+
+function gameLoop() {
+    update();
+    render();
+    requestAnimationFrame(gameLoop);
+}
+
+updateSkinOptions();
+gameLoop();
 </script>
 </body>
 </html>
