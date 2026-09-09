@@ -46,9 +46,7 @@
         button { background: transparent; border: 2px solid var(--neon); color: var(--neon); padding: 8px 16px; font-family: 'Orbitron'; cursor: pointer; font-weight: 900; transition: 0.2s; margin-top: 8px; border-radius: 4px; }
         button:hover { background: var(--neon); color: #000; }
         .mode-btn { width: 220px; margin: 8px 0; font-size: 0.95rem; }
-        .badge { display: none; font-size: 0.8rem; margin-right: 5px; }
         .controls-info { font-size: 0.7rem; color: #888; margin-top: 10px; }
-        .skin-preview { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -183,12 +181,11 @@
 
     const zone = { x1: 7, y1: 7, x2: 17, y2: 17 };
 
-    // Screen resizing calculation
     function resizeCanvas() {
         const padding = 40;
         const maxW = window.innerWidth - padding;
         const maxH = window.innerHeight - 120;
-        const size = Math.min(maxW, maxH, 700);
+        const size = Math.max(280, Math.min(maxW, maxH, 700));
         
         canvas.width = canvas.height = size;
         GS = size / TC;
@@ -198,7 +195,6 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Populate Skin Choices
     function initSkinDropdowns() {
         p1SkinSelect.innerHTML = '';
         p2SkinSelect.innerHTML = '';
@@ -207,7 +203,6 @@
             p2SkinSelect.innerHTML += `<option value="${skin.id}">${skin.name}</option>`;
         });
 
-        // Load saved customizations
         const p1Skin = localStorage.getItem('neon_p1_skin') || 'cyan';
         let p2Skin = localStorage.getItem('neon_p2_skin') || 'pink';
         if (p1Skin === p2Skin) p2Skin = SKINS.find(s => s.id !== p1Skin).id;
@@ -358,12 +353,19 @@
         if (isPaused) return;
 
         let p1Next = null;
-        if (k === 'w' || (gameMode === 1 && k === 'arrowup')) p1Next = {x:0, y:-1};
-        else if (k === 's' || (gameMode === 1 && k === 'arrowdown')) p1Next = {x:0, y:1};
-        else if (k === 'a' || (gameMode === 1 && k === 'arrowleft')) p1Next = {x:-1, y:0};
-        else if (k === 'd' || (gameMode === 1 && k === 'arrowright')) p1Next = {x:1, y:0};
+        if (k === 'w') p1Next = {x:0, y:-1};
+        else if (k === 's') p1Next = {x:0, y:1};
+        else if (k === 'a') p1Next = {x:-1, y:0};
+        else if (k === 'd') p1Next = {x:1, y:0};
 
-        if (p1Next && player1.alive) {
+        if (gameMode === 1 && !p1Next) {
+            if (k === 'arrowup') p1Next = {x:0, y:-1};
+            else if (k === 'arrowdown') p1Next = {x:0, y:1};
+            else if (k === 'arrowleft') p1Next = {x:-1, y:0};
+            else if (k === 'arrowright') p1Next = {x:1, y:0};
+        }
+
+        if (p1Next && player1 && player1.alive) {
             const last = player1.inputQueue.length ? player1.inputQueue[player1.inputQueue.length-1] : {dx: player1.dx, dy: player1.dy};
             if (p1Next.x !== -last.dx || p1Next.y !== -last.dy) {
                 if (player1.inputQueue.length < 2) player1.inputQueue.push(p1Next);
@@ -391,7 +393,7 @@
     }
 
     function isOccupied(pos) {
-        const inP1 = player1.alive && player1.snake.some(s => s.x === pos.x && s.y === pos.y);
+        const inP1 = player1 && player1.alive && player1.snake.some(s => s.x === pos.x && s.y === pos.y);
         const inP2 = player2 && player2.alive && player2.snake.some(s => s.x === pos.x && s.y === pos.y);
         const inObstacle = obstacles.some(o => o.x === pos.x && o.y === pos.y);
         const inPortal = portals.some(p => p.x === pos.x && p.y === pos.y);
@@ -452,9 +454,8 @@
     }
 
     function movePlayer(p) {
-        if (!p.alive) return null;
+        if (!p || !p.alive) return null;
 
-        // Freeze effect slows movement down
         if (p.freezeTime > 0) {
             p.freezeStep = (p.freezeStep || 0) + 1;
             if (p.freezeStep % 2 !== 0) return null;
@@ -467,15 +468,12 @@
 
         let head = {x: p.snake[0].x + p.dx, y: p.snake[0].y + p.dy};
 
-        // Ghost Mode Wraps Walls
-        if (p.ghostTime > 0) {
-            if (head.x < 0) head.x = TC - 1;
-            if (head.x >= TC) head.x = 0;
-            if (head.y < 0) head.y = TC - 1;
-            if (head.y >= TC) head.y = 0;
-        }
+        // Wrap-around screen bounds
+        if (head.x < 0) head.x = TC - 1;
+        if (head.x >= TC) head.x = 0;
+        if (head.y < 0) head.y = TC - 1;
+        if (head.y >= TC) head.y = 0;
 
-        // Magnet Power Pulls Food Closer
         if (p.magnetTime > 0 && food) {
             if (Math.abs(food.x - head.x) <= 3 && Math.abs(food.y - head.y) <= 3) {
                 if (food.x < head.x) food.x++;
@@ -485,7 +483,6 @@
             }
         }
 
-        // Portals
         if (portals.length === 2) {
             if (head.x === portals[0].x && head.y === portals[0].y) {
                 head = { x: portals[1].x + p.dx, y: portals[1].y + p.dy };
@@ -499,6 +496,7 @@
     }
 
     function killPlayer(p) {
+        if (!p || !p.alive) return;
         p.alive = false;
         triggerShake();
         p.snake.forEach(s => createExplosion(s.x, s.y, p.color, 4));
@@ -508,7 +506,7 @@
         requestAnimationFrame(update);
         if (isPaused) return;
 
-        if (Date.now() - food.spawnTime > 6000) {
+        if (food && Date.now() - food.spawnTime > 6000) {
             createExplosion(food.x, food.y, '#ffffff', 6);
             spawnFood();
         }
@@ -516,7 +514,6 @@
         if (t - lastTime < speed) return;
         lastTime = t;
 
-        // Timers tick down
         [player1, player2].forEach(p => {
             if (p) {
                 if (p.ghostTime > 0) p.ghostTime--;
@@ -530,17 +527,15 @@
         const h2 = player2 ? movePlayer(player2) : null;
 
         const checkCollisions = (p, head, otherP) => {
-            if (!p.alive || !head) return false;
+            if (!p || !p.alive || !head) return false;
 
-            const wallCollide = head.x < 0 || head.x >= TC || head.y < 0 || head.y >= TC;
-            const selfCollide = p.snake.some(s => s.x === head.x && s.y === head.y);
+            const selfCollide = p.snake.slice(1).some(s => s.x === head.x && s.y === head.y);
             const obstacleCollide = obstacles.some(o => o.x === head.x && o.y === head.y);
             const enemyCollide = otherP && otherP.alive && otherP.snake.some(s => s.x === head.x && s.y === head.y);
 
-            // Ghost Mode bypasses physical obstacles & self/enemy collision
-            if (p.ghostTime > 0 && !wallCollide) return false;
+            if (p.ghostTime > 0) return false;
 
-            if (wallCollide || selfCollide || obstacleCollide || enemyCollide) {
+            if (selfCollide || obstacleCollide || enemyCollide) {
                 if (p.hasShield) {
                     p.hasShield = false;
                     triggerShake();
@@ -559,7 +554,6 @@
         if (p1Dead || headOn) killPlayer(player1);
         if (p2Dead || headOn) killPlayer(player2);
 
-        // Move players
         [{p: player1, head: h1, isP1: true}, {p: player2, head: h2, isP1: false}].forEach(item => {
             const p = item.p; const head = item.head;
             if (!p || !p.alive || !head) return;
@@ -567,7 +561,7 @@
             p.snake.unshift(head);
             createTrailParticle(head.x, head.y, p.color);
 
-            if (head.x === food.x && head.y === food.y) {
+            if (food && head.x === food.x && head.y === food.y) {
                 const fData = FOOD_TYPES[food.type];
                 let points = fData.score;
 
@@ -580,7 +574,6 @@
                     statusEl.style.color = "var(--gold)";
                 }
 
-                // Power-up assignments
                 if (food.type === 'shield') p.hasShield = true;
                 if (food.type === 'freeze') {
                     const opponent = item.isP1 ? player2 : player1;
@@ -612,8 +605,8 @@
             }
         });
 
-        if (gameMode === 1 && !player1.alive) handleGameOver();
-        else if (gameMode === 2 && (!player1.alive || !player2.alive)) handleGameOver();
+        if (gameMode === 1 && player1 && !player1.alive) handleGameOver();
+        else if (gameMode === 2 && ((player1 && !player1.alive) || (player2 && !player2.alive))) handleGameOver();
 
         draw();
     }
@@ -631,9 +624,11 @@
             overMsg.innerHTML = `FINAL SCORE: <span>${score}</span>`;
         } else {
             overTitle.innerText = "MATCH OVER";
-            if (!player1.alive && !player2.alive) {
+            const p1A = player1 && player1.alive;
+            const p2A = player2 && player2.alive;
+            if (!p1A && !p2A) {
                 overMsg.innerHTML = `MUTUAL DESTRUCTION!<br>P1: ${score} | P2: ${score2}`;
-            } else if (!player1.alive) {
+            } else if (!p1A) {
                 overMsg.innerHTML = `<span style="color:${player2.color}">PLAYER 2 WINS!</span><br>P1: ${score} | P2: ${score2}`;
             } else {
                 overMsg.innerHTML = `<span style="color:${player1.color}">PLAYER 1 WINS!</span><br>P1: ${score} | P2: ${score2}`;
@@ -656,7 +651,8 @@
             ctx.lineTo(px + 2, py + GS - 2);
             ctx.closePath();
         } else {
-            ctx.roundRect(px + 2, py + 2, GS - 4, GS - 4, isHead ? 6 : 4);
+            ctx.fillRect(px + 2, py + 2, GS - 4, GS - 4);
+            return;
         }
         ctx.fill();
     }
@@ -691,24 +687,20 @@
         ctx.fillStyle = '#050508';
         ctx.fillRect(0,0,canvas.width,canvas.height);
 
-        // Speed Zone Grid
         ctx.strokeStyle = 'rgba(0, 242, 255, 0.15)';
         ctx.setLineDash([5, 5]);
         ctx.strokeRect(zone.x1*GS, zone.y1*GS, (zone.x2-zone.x1+1)*GS, (zone.y2-zone.y1+1)*GS);
         ctx.setLineDash([]);
 
         const useGlow = glowToggle.checked;
-        const fData = FOOD_TYPES[food.type];
         const pulse = Math.sin(Date.now() / 150) * 4;
         
-        // Draw Obstacles
         obstacles.forEach(o => {
             if(useGlow) { ctx.shadowBlur = 10; ctx.shadowColor = '#ff0000'; }
             ctx.fillStyle = '#ff0033';
             ctx.fillRect(o.x*GS + 4, o.y*GS + 4, GS - 8, GS - 8);
         });
 
-        // Draw Portals
         portals.forEach(p => {
             if(useGlow) { ctx.shadowBlur = 12; ctx.shadowColor = '#00f2ff'; }
             ctx.strokeStyle = '#00f2ff';
@@ -718,21 +710,21 @@
             ctx.stroke();
         });
 
-        // Draw Food
-        if(useGlow) {
-            ctx.shadowBlur = 15 + pulse;
-            ctx.shadowColor = fData.color;
+        if (food) {
+            const fData = FOOD_TYPES[food.type];
+            if(useGlow) {
+                ctx.shadowBlur = 15 + pulse;
+                ctx.shadowColor = fData.color;
+            }
+            ctx.fillStyle = fData.color;
+            ctx.beginPath();
+            ctx.arc(food.x*GS + GS/2, food.y*GS + GS/2, GS/2 - 4, 0, Math.PI*2);
+            ctx.fill();
         }
-        ctx.fillStyle = fData.color;
-        ctx.beginPath();
-        ctx.arc(food.x*GS + GS/2, food.y*GS + GS/2, GS/2 - 4, 0, Math.PI*2);
-        ctx.fill();
 
-        // Draw Snakes
         drawSnakePlayer(player1);
         if (player2) drawSnakePlayer(player2);
 
-        // Render Trail Particles
         ctx.shadowBlur = 0;
         for(let i = particles.length - 1; i >= 0; i--) {
             const p = particles[i];
