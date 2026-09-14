@@ -1,428 +1,633 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master of the Board: Wooden Tic-Tac-Toe</title>
-    <style>
-        :root {
-            /* Wooden Theme Palette */
-            --bg-texture: url('https://www.transparenttextures.com/patterns/p4.png');
-            --bg-color: #3e2723; /* Darker bark base */
-            --board-bark: #5d4037; /* Lighter bark for standard board */
-            --subgrid-bark: #795548; /* Contrast for ultimate subgrids */
-            --cell-wood: #a1887f; /* Lighter carved wood */
-            --cell-wood-hover: #bcaaa4;
-            --control-wood: #8d6e63;
-            --text-engraved: #f5eadd; /* Light wood pulp/engraving fill */
-            --accent-wood: #bf360c; /* To highlight the active subgrid */
-            
-            /* Symbol Colors - Classic Red/Blue ink but on wood */
-            --x-color: #c62828;
-            --o-color: #1565c0;
-            
-            /* Font (a slightly rustic but readable sans-serif) */
-            --game-font: 'Georgia', serif;
-        }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Master of the Board</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap');
 
-        body {
-            font-family: var(--game-font);
-            background-color: var(--bg-color);
-            background-image: var(--bg-texture);
-            color: var(--text-engraved);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            /* Engraved text effect */
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.7), 0 0 0 transparent; 
-        }
+    :root {
+      --ink: #28170f;
+      --paper: #f5ead5;
+      --gold: #e8ae55;
+      --red: #bd3b35;
+      --blue: #296b87;
+      --cream: #fff8eb;
+    }
 
-        h1 {
-            color: var(--x-color);
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+    * { box-sizing: border-box; }
 
-        .controls {
-            background-color: var(--control-wood);
-            padding: 15px 20px;
-            border-radius: 6px;
-            box-shadow: inset 1px 1px 4px rgba(0,0,0,0.5), 2px 2px 8px rgba(0,0,0,0.3);
-            margin-bottom: 25px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid #4e342e;
-        }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--paper);
+      background:
+        radial-gradient(circle at 12% 10%, #70412d 0 1px, transparent 1.5px) 0 0 / 9px 9px,
+        linear-gradient(135deg, #1f100b, #4b281b 52%, #25130d);
+      font-family: "DM Mono", monospace;
+    }
 
-        select, button {
-            padding: 10px 15px;
-            border-radius: 4px;
-            border: 1px solid #6d4c41;
-            background-color: var(--cell-wood);
-            color: #3e2723;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: var(--game-font);
-            font-size: 0.95rem;
-            /* Wood button depth */
-            box-shadow: 1px 1px 2px rgba(0,0,0,0.4), inset -1px -1px 1px rgba(255,255,255,0.2);
-            transition: transform 0.1s, box-shadow 0.1s;
-        }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .22;
+      background: repeating-linear-gradient(
+        104deg,
+        transparent 0 22px,
+        rgba(255,225,175,.18) 23px,
+        transparent 25px 55px
+      );
+      mix-blend-mode: soft-light;
+    }
 
-        select:focus, button:hover {
-            background-color: var(--cell-wood-hover);
-        }
+    main {
+      width: min(100%, 1050px);
+      margin: auto;
+      padding: clamp(22px, 4vw, 54px) 20px 42px;
+      position: relative;
+    }
 
-        button:active {
-            transform: translateY(1px);
-            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5);
-        }
+    .masthead {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
 
-        #status {
-            font-size: 1.6rem;
-            margin-bottom: 20px;
-            font-weight: bold;
-            height: 2.2rem;
-        }
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: .18em;
+      font-size: .73rem;
+    }
 
-        /* --- Standard Grid Styling --- */
-        .game-container {
-            display: grid;
-            gap: 6px;
-            background-color: var(--board-bark);
-            padding: 12px;
-            border-radius: 8px;
-            /* Board bevel */
-            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.7), 4px 4px 10px rgba(0,0,0,0.5);
-            border: 1px solid #3e2723;
-        }
+    h1 {
+      margin: 0;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(2.25rem, 6vw, 4.8rem);
+      line-height: .93;
+      letter-spacing: -.05em;
+      text-shadow: 0 3px 0 #180c08;
+    }
 
-        .cell {
-            width: 70px;
-            height: 70px;
-            background-color: var(--cell-wood);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            cursor: pointer;
-            border-radius: 3px;
-            transition: background 0.15s;
-            /* Inset for carved look */
-            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4), 1px 1px 1px rgba(255,255,255,0.1);
-        }
+    .tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #f6d9af;
+      font-size: .74rem;
+      white-space: nowrap;
+    }
 
-        .cell:hover { background-color: var(--cell-wood-hover); }
-        
-        /* Symbol Styling: Carved and Ink-Filled */
-        .cell.x, .cell.o {
-            text-shadow: 1px 1px 0px rgba(255,255,255,0.1), inset -1px -1px 2px rgba(0,0,0,0.8);
-        }
-        .cell.x { color: var(--x-color); }
-        .cell.o { color: var(--o-color); }
+    .tag i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #8dd47d;
+      box-shadow: 0 0 0 4px rgba(141,212,125,.12);
+    }
 
-        /* --- Ultimate Mode Styling --- */
-        .ultimate-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            padding: 15px;
-            background-color: #3e2723; /* Very deep wood for main frame */
-            border-radius: 8px;
-            box-shadow: inset 3px 3px 6px rgba(0,0,0,0.8), 5px 5px 12px rgba(0,0,0,0.6);
-        }
+    .shell {
+      background: linear-gradient(135deg, rgba(255,244,225,.12), rgba(30,12,7,.22));
+      border: 1px solid rgba(245,234,213,.25);
+      border-radius: 22px;
+      box-shadow: 0 28px 70px rgba(0,0,0,.33), inset 0 1px rgba(255,255,255,.16);
+      overflow: hidden;
+    }
 
-        .sub-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-            padding: 8px;
-            background-color: var(--subgrid-bark);
-            border-radius: 5px;
-            position: relative;
-            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.5);
-        }
+    .controls {
+      display: grid;
+      grid-template-columns: 1.2fr repeat(3, 1fr) auto;
+      gap: 10px;
+      padding: 16px;
+      background: rgba(19,8,5,.28);
+      border-bottom: 1px solid rgba(245,234,213,.17);
+    }
 
-        /* Target Subgrid Highlight - Red Hot Iron Look */
-        .sub-grid.active { 
-            box-shadow: 0 0 10px var(--accent-wood);
-            border: 2px solid var(--accent-wood);
-        }
+    label { min-width: 0; }
 
-        /* Large Won Symbol Over Subgrid */
-        .sub-grid.won-x::after, .sub-grid.won-o::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 7rem; z-index: 10; border-radius: 5px;
-            background-color: rgba(62, 39, 35, 0.92); /* Opaque dark wood */
-            /* Large symbol drop shadow */
-            text-shadow: 3px 3px 4px rgba(0,0,0,0.8);
-        }
-        .sub-grid.won-x::after { content: 'X'; color: var(--x-color); }
-        .sub-grid.won-o::after { content: 'O'; color: var(--o-color); }
-    </style>
+    label span {
+      display: block;
+      color: #f2d8b3;
+      font-size: .64rem;
+      text-transform: uppercase;
+      letter-spacing: .11em;
+      margin: 0 0 6px 2px;
+    }
+
+    select,
+    button {
+      appearance: none;
+      width: 100%;
+      min-height: 45px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,248,235,.25);
+      font: 500 .78rem "DM Mono", monospace;
+    }
+
+    select {
+      color: var(--cream);
+      padding: 0 28px 0 12px;
+      background: linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.05));
+      cursor: pointer;
+    }
+
+    option { color: var(--ink); }
+
+    button {
+      align-self: end;
+      width: auto;
+      padding: 0 18px;
+      color: #2d170c;
+      border-color: #ffd187;
+      cursor: pointer;
+      background: linear-gradient(135deg, #f7ce84, #d9943e);
+      box-shadow: inset 0 1px rgba(255,255,255,.65), 0 4px 0 #9b5f23;
+      transition: transform .15s, filter .15s;
+    }
+
+    button:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(3px);
+      box-shadow: none;
+    }
+
+    .play-area {
+      display: grid;
+      place-items: center;
+      min-height: calc(100vh - 315px);
+      padding: clamp(22px, 4vw, 46px);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 13px;
+      margin-bottom: 24px;
+      color: #ffe9c7;
+      border: 1px solid rgba(247,206,132,.38);
+      border-radius: 99px;
+      background: rgba(20,8,5,.32);
+      font-size: .76rem;
+    }
+
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--gold);
+    }
+
+    .game-container {
+      display: grid;
+      gap: 7px;
+      padding: 11px;
+      background: linear-gradient(135deg, #7e4933, #3c1f14);
+      border: 1px solid #af7150;
+      border-radius: 16px;
+      box-shadow:
+        0 18px 34px rgba(0,0,0,.42),
+        inset 0 1px rgba(255,230,191,.25),
+        inset 0 0 0 5px rgba(29,12,7,.36);
+    }
+
+    .cell {
+      width: clamp(63px, 13vw, 104px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 9px;
+      color: var(--ink);
+      background: linear-gradient(135deg, #d8a97c, #b77c55);
+      box-shadow:
+        inset 2px 2px 4px rgba(255,241,209,.3),
+        inset -3px -3px 5px rgba(62,28,16,.35),
+        0 2px 0 rgba(42,16,9,.75);
+      font-family: "Playfair Display", serif;
+      font-size: clamp(2.25rem, 7vw, 4.2rem);
+      line-height: 1;
+      cursor: pointer;
+      transition: transform .15s, filter .15s, background .15s;
+    }
+
+    .cell:hover:not(.x):not(.o) {
+      transform: translateY(-2px);
+      filter: brightness(1.09);
+      background: linear-gradient(135deg, #e6bc91, #c48861);
+    }
+
+    .cell.x {
+      color: var(--red);
+      text-shadow: 1px 1px #f4c0a2, -2px -2px #7a211e;
+    }
+
+    .cell.o {
+      color: var(--blue);
+      text-shadow: 1px 1px #b5d5e0, -2px -2px #164557;
+    }
+
+    .ultimate-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(6px, 1.3vw, 13px);
+      padding: clamp(8px, 1.4vw, 14px);
+      background: linear-gradient(135deg, #6e3c29, #211008);
+      border: 1px solid #a96847;
+      border-radius: 17px;
+      box-shadow:
+        0 18px 34px rgba(0,0,0,.42),
+        inset 0 0 0 5px rgba(0,0,0,.25);
+    }
+
+    .sub-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+      position: relative;
+      padding: 5px;
+      background: #8c553c;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      transition: .2s;
+    }
+
+    .sub-grid .cell {
+      width: clamp(25px, 5.6vw, 47px);
+      border-radius: 4px;
+      font-size: clamp(1rem, 3vw, 1.9rem);
+    }
+
+    .sub-grid.active {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(232,174,85,.25), 0 0 20px rgba(232,174,85,.35);
+    }
+
+    .sub-grid.won-x::after,
+    .sub-grid.won-o::after {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: rgba(39,18,11,.84);
+      font: clamp(3rem, 9vw, 6.5rem)/1 "Playfair Display", serif;
+    }
+
+    .sub-grid.won-x::after {
+      content: "×";
+      color: var(--red);
+    }
+
+    .sub-grid.won-o::after {
+      content: "○";
+      color: var(--blue);
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 22px;
+      color: #d9b68e;
+      font-size: .66rem;
+    }
+
+    @media (max-width: 720px) {
+      .masthead { align-items: start; flex-direction: column; }
+      .controls { grid-template-columns: repeat(2, 1fr); }
+      .controls button { grid-column: span 2; width: 100%; }
+      .play-area { min-height: auto; }
+      .footer { flex-direction: column; }
+    }
+  </style>
 </head>
 <body>
+  <main>
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">A game of foresight</p>
+        <h1>Master of<br>the Board</h1>
+      </div>
+      <div class="tag"><i></i> Ready to play</div>
+    </header>
 
-    <h1>Ultimate Wooden Tic-Tac-Toe</h1>
+    <section class="shell">
+      <div class="controls">
+        <label>
+          <span>Board type</span>
+          <select id="gameMode">
+            <option value="standard">Classic board</option>
+            <option value="ultimate">Ultimate board</option>
+          </select>
+        </label>
 
-    <div class="controls">
-        <select id="gameMode">
-            <option value="standard">Standard Mode</option>
-            <option value="ultimate">Ultimate Mode</option>
-        </select>
+        <label>
+          <span>Grid</span>
+          <select id="gridSize">
+            <option value="3">3 × 3</option>
+            <option value="4">4 × 4</option>
+            <option value="5">5 × 5</option>
+          </select>
+        </label>
 
-        <select id="gridSize">
-            <option value="3">Small (3x3)</option>
-            <option value="4">Medium (4x4)</option>
-            <option value="5">Big (5x5)</option>
-        </select>
+        <label>
+          <span>Players</span>
+          <select id="playerCount">
+            <option value="1">Solo vs bot</option>
+            <option value="2">Two players</option>
+          </select>
+        </label>
 
-        <select id="playerCount">
-            <option value="1">1 Player (vs Bot)</option>
-            <option value="2">2 Players</option>
-        </select>
+        <label>
+          <span>Bot skill</span>
+          <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </label>
 
-        <select id="difficulty">
-            <option value="easy">Easy Bot</option>
-            <option value="medium">Medium Bot</option>
-            <option value="hard">Hard Bot</option>
-        </select>
+        <button id="newGame">New game</button>
+      </div>
 
-        <button onclick="initGame()">Carve New Board</button>
-    </div>
+      <div class="play-area">
+        <div>
+          <div id="status" class="status">Player X's turn</div>
+          <div id="board" class="game-container"></div>
+        </div>
+      </div>
+    </section>
 
-    <div id="status">X's Turn</div>
-    <div id="board" class="game-container"></div>
+    <footer class="footer">
+      <span>Carved for careful thinkers.</span>
+      <span>Choose a square · take the board</span>
+    </footer>
+  </main>
 
-    <script>
-        let board = [];
-        let currentPlayer = 'X';
-        let gameActive = true;
-        let isUltimate = false;
-        let nextSubGrid = -1; // For Ultimate mode
-        let mainBoardWinners = Array(9).fill(null);
+  <script>
+    let board = [];
+    let currentPlayer = "X";
+    let gameActive = true;
+    let isUltimate = false;
+    let nextSubGrid = -1;
+    let mainBoardWinners = Array(9).fill(null);
 
-        const boardElement = document.getElementById('board');
-        const statusElement = document.getElementById('status');
+    const boardElement = document.getElementById("board");
+    const statusElement = document.getElementById("status");
 
-        function initGame() {
-            const mode = document.getElementById('gameMode').value;
-            const size = parseInt(document.getElementById('gridSize').value);
-            isUltimate = (mode === 'ultimate');
-            
-            currentPlayer = 'X';
-            gameActive = true;
-            nextSubGrid = -1;
-            statusElement.innerText = "Player X's Turn";
-            boardElement.innerHTML = '';
-            
-            if (isUltimate) {
-                setupUltimateBoard();
-            } else {
-                setupStandardBoard(size);
-            }
+    const setStatus = text => statusElement.textContent = text;
+
+    function initGame() {
+      const size = +document.getElementById("gridSize").value;
+      isUltimate = document.getElementById("gameMode").value === "ultimate";
+
+      currentPlayer = "X";
+      gameActive = true;
+      nextSubGrid = -1;
+      setStatus("Player X's turn");
+      boardElement.innerHTML = "";
+
+      isUltimate ? setupUltimateBoard() : setupStandardBoard(size);
+    }
+
+    function setupStandardBoard(size) {
+      board = Array(size * size).fill(null);
+      boardElement.className = "game-container";
+      boardElement.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+      for (let i = 0; i < board.length; i++) {
+        const square = createCell(i);
+        square.addEventListener("click", () => handleMove(i));
+        boardElement.append(square);
+      }
+    }
+
+    function createCell(index, subGrid) {
+      const square = document.createElement("button");
+      square.className = "cell";
+      square.type = "button";
+      square.dataset.index = index;
+
+      if (subGrid !== undefined) square.dataset.sub = subGrid;
+
+      return square;
+    }
+
+    function setupUltimateBoard() {
+      board = Array.from({ length: 9 }, () => Array(9).fill(null));
+      mainBoardWinners = Array(9).fill(null);
+
+      boardElement.className = "ultimate-grid";
+
+      for (let i = 0; i < 9; i++) {
+        const grid = document.createElement("div");
+        grid.className = "sub-grid";
+        grid.id = `sub-${i}`;
+
+        for (let j = 0; j < 9; j++) {
+          const square = createCell(j, i);
+          square.addEventListener("click", () => handleUltimateMove(i, j));
+          grid.append(square);
         }
 
-        function setupStandardBoard(size) {
-            board = Array(size * size).fill(null);
-            boardElement.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-            boardElement.className = "game-container";
+        boardElement.append(grid);
+      }
+    }
 
-            for (let i = 0; i < size * size; i++) {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                cell.dataset.index = i;
-                cell.addEventListener('click', () => handleMove(i));
-                boardElement.appendChild(cell);
-            }
+    function renderCell(cell, player) {
+      cell.textContent = player;
+      cell.classList.add(player.toLowerCase());
+    }
+
+    function handleMove(index) {
+      if (board[index] || !gameActive) return;
+
+      makeMove(index);
+
+      if (gameActive && document.getElementById("playerCount").value === "1") {
+        setTimeout(botMove, 420);
+      }
+    }
+
+    function makeMove(index) {
+      board[index] = currentPlayer;
+
+      renderCell(
+        document.querySelector(`[data-index="${index}"]`),
+        currentPlayer
+      );
+
+      if (checkWin(board, currentPlayer)) {
+        setStatus(`Player ${currentPlayer} wins!`);
+        gameActive = false;
+      } else if (board.every(Boolean)) {
+        setStatus("It's a draw.");
+        gameActive = false;
+      } else {
+        currentPlayer = currentPlayer === "X" ? "O" : "X";
+        setStatus(`Player ${currentPlayer}'s turn`);
+      }
+    }
+
+    function handleUltimateMove(subGrid, index) {
+      if (!gameActive) return;
+      if (nextSubGrid !== -1 && subGrid !== nextSubGrid) return;
+      if (board[subGrid][index] || mainBoardWinners[subGrid]) return;
+
+      board[subGrid][index] = currentPlayer;
+
+      renderCell(
+        document.querySelector(`[data-sub="${subGrid}"][data-index="${index}"]`),
+        currentPlayer
+      );
+
+      if (checkWin(board[subGrid], currentPlayer)) {
+        mainBoardWinners[subGrid] = currentPlayer;
+        document
+          .getElementById(`sub-${subGrid}`)
+          .classList.add(`won-${currentPlayer.toLowerCase()}`);
+      }
+
+      if (checkWin(mainBoardWinners, currentPlayer)) {
+        setStatus(`Player ${currentPlayer} wins the ultimate board!`);
+        gameActive = false;
+        return;
+      }
+
+      nextSubGrid = mainBoardWinners[index] ? -1 : index;
+
+      document.querySelectorAll(".sub-grid").forEach(grid => {
+        grid.classList.remove("active");
+      });
+
+      if (nextSubGrid !== -1) {
+        document.getElementById(`sub-${nextSubGrid}`).classList.add("active");
+      }
+
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      setStatus(`Player ${currentPlayer}'s turn`);
+
+      if (
+        gameActive &&
+        document.getElementById("playerCount").value === "1" &&
+        currentPlayer === "O"
+      ) {
+        setTimeout(botMoveUltimate, 520);
+      }
+    }
+
+    function checkWin(gameBoard, player) {
+      const size = Math.sqrt(gameBoard.length);
+
+      for (let i = 0; i < size; i++) {
+        const row = Array.from({ length: size }, (_, j) => gameBoard[i * size + j]);
+        const column = Array.from({ length: size }, (_, j) => gameBoard[j * size + i]);
+
+        if (row.every(value => value === player)) return true;
+        if (column.every(value => value === player)) return true;
+      }
+
+      const diagonalOne = Array.from(
+        { length: size },
+        (_, i) => gameBoard[i * size + i]
+      );
+
+      const diagonalTwo = Array.from(
+        { length: size },
+        (_, i) => gameBoard[i * size + size - 1 - i]
+      );
+
+      return (
+        diagonalOne.every(value => value === player) ||
+        diagonalTwo.every(value => value === player)
+      );
+    }
+
+    function bestMove(gameBoard) {
+      const available = gameBoard
+        .map((value, index) => value ? null : index)
+        .filter(value => value !== null);
+
+      for (const player of ["O", "X"]) {
+        for (const move of available) {
+          const copy = [...gameBoard];
+          copy[move] = player;
+
+          if (checkWin(copy, player)) return move;
         }
+      }
 
-        function setupUltimateBoard() {
-            board = Array(9).fill(null).map(() => Array(9).fill(null));
-            mainBoardWinners = Array(9).fill(null);
-            boardElement.className = "ultimate-grid";
-            boardElement.style.gridTemplateColumns = "repeat(3, 1fr)";
+      return available[Math.floor(Math.random() * available.length)];
+    }
 
-            for (let i = 0; i < 9; i++) {
-                const subGrid = document.createElement('div');
-                subGrid.classList.add('sub-grid');
-                subGrid.id = `sub-${i}`;
-                for (let j = 0; j < 9; j++) {
-                    const cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    cell.dataset.sub = i;
-                    cell.dataset.index = j;
-                    cell.addEventListener('click', () => handleUltimateMove(i, j));
-                    subGrid.appendChild(cell);
-                }
-                boardElement.appendChild(subGrid);
-            }
-        }
+    function botMove() {
+      if (!gameActive) return;
 
-        function handleMove(index) {
-            if (board[index] || !gameActive) return;
+      const difficulty = document.getElementById("difficulty").value;
 
-            makeMove(index);
+      const available = board
+        .map((value, index) => value ? null : index)
+        .filter(value => value !== null);
 
-            if (gameActive && document.getElementById('playerCount').value === "1") {
-                setTimeout(botMove, 500);
-            }
-        }
+      const move =
+        difficulty === "hard" ||
+        (difficulty === "medium" && Math.random() > .48)
+          ? bestMove(board)
+          : available[Math.floor(Math.random() * available.length)];
 
-        function makeMove(index) {
-            board[index] = currentPlayer;
-            const cell = document.querySelector(`[data-index="${index}"]`);
-            cell.innerText = currentPlayer;
-            cell.classList.add(currentPlayer.toLowerCase());
+      if (move !== undefined) makeMove(move);
+    }
 
-            if (checkWin(board, currentPlayer)) {
-                statusElement.innerText = `Player ${currentPlayer} Wins!`;
-                gameActive = false;
-            } else if (board.every(cell => cell !== null)) {
-                statusElement.innerText = "It's a Draw!";
-                gameActive = false;
-            } else {
-                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                statusElement.innerText = `Player ${currentPlayer}'s Turn`;
-            }
-        }
+    function botMoveUltimate() {
+      if (!gameActive) return;
 
-        function handleUltimateMove(subIdx, cellIdx) {
-            if (!gameActive) return;
-            if (nextSubGrid !== -1 && subIdx !== nextSubGrid) return;
-            if (board[subIdx][cellIdx] || mainBoardWinners[subIdx]) return;
+      let subGrid = nextSubGrid;
 
-            board[subIdx][cellIdx] = currentPlayer;
-            const cell = document.querySelector(`[data-sub="${subIdx}"][data-index="${cellIdx}"]`);
-            cell.innerText = currentPlayer;
-            cell.classList.add(currentPlayer.toLowerCase());
+      if (subGrid === -1 || mainBoardWinners[subGrid]) {
+        const availableGrids = mainBoardWinners
+          .map((value, index) => value === null ? index : null)
+          .filter(value => value !== null);
 
-            // Check if subgrid is won
-            if (checkWin(board[subIdx], currentPlayer)) {
-                mainBoardWinners[subIdx] = currentPlayer;
-                document.getElementById(`sub-${subIdx}`).classList.add(`won-${currentPlayer.toLowerCase()}`);
-            }
+        subGrid = availableGrids[
+          Math.floor(Math.random() * availableGrids.length)
+        ];
+      }
 
-            // Check overall game win
-            if (checkWin(mainBoardWinners, currentPlayer)) {
-                statusElement.innerText = `Player ${currentPlayer} Wins the Ultimate Game!`;
-                gameActive = false;
-                document.querySelectorAll('.sub-grid').forEach(g => g.classList.remove('active'));
-                return;
-            }
+      const availableCells = board[subGrid]
+        .map((value, index) => value ? null : index)
+        .filter(value => value !== null);
 
-            // Determine next subgrid
-            nextSubGrid = mainBoardWinners[cellIdx] ? -1 : cellIdx;
-            
-            // UI highlights
-            document.querySelectorAll('.sub-grid').forEach(g => g.classList.remove('active'));
-            if (nextSubGrid !== -1) {
-                document.getElementById(`sub-${nextSubGrid}`).classList.add('active');
-            }
+      let move = bestMove(board[subGrid]);
 
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            statusElement.innerText = `Player ${currentPlayer}'s Turn`;
+      if (!availableCells.includes(move)) move = availableCells[0];
 
-            if (gameActive && document.getElementById('playerCount').value === "1" && currentPlayer === 'O') {
-                setTimeout(botMoveUltimate, 600);
-            }
-        }
+      handleUltimateMove(subGrid, move);
+    }
 
-        // Logic Helpers
-        function checkWin(flatBoard, player) {
-            const size = Math.sqrt(flatBoard.length);
-            // Rows & Cols
-            for (let i = 0; i < size; i++) {
-                let rowCount = 0, colCount = 0;
-                for (let j = 0; j < size; j++) {
-                    if (flatBoard[i * size + j] === player) rowCount++;
-                    if (flatBoard[j * size + i] === player) colCount++;
-                }
-                if (rowCount === size || colCount === size) return true;
-            }
-            // Diagonals
-            let d1 = 0, d2 = 0;
-            for (let i = 0; i < size; i++) {
-                if (flatBoard[i * size + i] === player) d1++;
-                if (flatBoard[i * size + (size - 1 - i)] === player) d2++;
-            }
-            return d1 === size || d2 === size;
-        }
+    document.getElementById("newGame").addEventListener("click", initGame);
 
-        function botMove() {
-            if (!gameActive) return;
-            const diff = document.getElementById('difficulty').value;
-            let move;
+    document.getElementById("gameMode").addEventListener("change", () => {
+      document.getElementById("gridSize").disabled =
+        document.getElementById("gameMode").value === "ultimate";
 
-            if (diff === 'hard') move = getBestMove(board);
-            else if (diff === 'medium' && Math.random() > 0.5) move = getBestMove(board);
-            else {
-                const available = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
-                move = available[Math.floor(Math.random() * available.length)];
-            }
-            if (move !== undefined) makeMove(move);
-        }
+      initGame();
+    });
 
-        function botMoveUltimate() {
-            if (!gameActive) return;
-            let subIdx = nextSubGrid;
-            
-            if (nextSubGrid === -1 || mainBoardWinners[nextSubGrid]) {
-                const availableGrids = mainBoardWinners.map((v, i) => v === null ? i : null).filter(v => v !== null);
-                subIdx = availableGrids[Math.floor(Math.random() * availableGrids.length)];
-            }
-
-            const availableCells = board[subIdx].map((v, i) => v === null ? i : null).filter(v => v !== null);
-            
-            // Basic Hard Logic for subgrid: win or block
-            let chosenCell = availableCells[0]; // Default
-            
-            // Try win sub
-            for (let cell of availableCells) {
-                let copy = [...board[subIdx]];
-                copy[cell] = 'O';
-                if (checkWin(copy, 'O')) { chosenCell = cell; break; }
-            }
-            // Try block sub
-            if (chosenCell === availableCells[0]) {
-                for (let cell of availableCells) {
-                    let copy = [...board[subIdx]];
-                    copy[cell] = 'X';
-                    if (checkWin(copy, 'X')) { chosenCell = cell; break; }
-                }
-            }
-
-            handleUltimateMove(subIdx, chosenCell);
-        }
-
-        // Mini-minimax for "Hard" mode on standard grid
-        function getBestMove(currentBoard) {
-            const available = currentBoard.map((v, i) => v === null ? i : null).filter(v => v !== null);
-            // Simple block/win check
-            for (let m of available) {
-                let copy = [...currentBoard];
-                copy[m] = 'O';
-                if (checkWin(copy, 'O')) return m;
-            }
-            for (let m of available) {
-                let copy = [...currentBoard];
-                copy[m] = 'X';
-                if (checkWin(copy, 'X')) return m;
-            }
-            return available[Math.floor(Math.random() * available.length)];
-        }
-
-        initGame();
-    </script>
+    initGame();
+  </script>
 </body>
 </html>
