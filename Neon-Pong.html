@@ -83,6 +83,7 @@
             transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
+            cursor: pointer;
         }
 
         .cyber-btn:hover {
@@ -131,18 +132,6 @@
             100% { text-shadow: -2px 0 var(--secondary), 2px 0 var(--primary), 0 0 20px rgba(255,0,127,0.8); }
         }
 
-        /* Screen Shake Animation Class */
-        .shake {
-            animation: shake 0.25s cubic-bezier(.36,.07,.19,.97) both;
-        }
-
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0); }
-            20%, 80% { transform: translate3d(4px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
-            40%, 60% { transform: translate3d(6px, 0, 0); }
-        }
-
         /* Canvas Wrapper */
         #game-container {
             position: relative;
@@ -179,6 +168,7 @@
                 <div id="p1-hud-card" class="cyber-panel px-6 py-2 border-l-4 border-cyan-400">
                     <div id="p1-label" class="text-xs text-cyan-400 tracking-widest uppercase font-orbitron">PLAYER 1</div>
                     <div id="p1-score" class="text-4xl font-black font-orbitron text-white">0</div>
+                    <div id="p1-keys-hint" class="text-[10px] text-cyan-300/70 font-orbitron mt-0.5">[W/S OR ARROWS]</div>
                 </div>
             </div>
 
@@ -197,8 +187,21 @@
                 <div id="p2-hud-card" class="cyber-panel px-6 py-2 border-r-4 border-pink-500 text-right">
                     <div id="p2-label" class="text-xs text-pink-500 tracking-widest uppercase font-orbitron">AI (HARD)</div>
                     <div id="p2-score" class="text-4xl font-black font-orbitron text-white">0</div>
+                    <div id="p2-keys-hint" class="text-[10px] text-pink-300/70 font-orbitron mt-0.5 hidden">[UP/DOWN ARROWS]</div>
                 </div>
             </div>
+        </div>
+
+        <!-- Audio Mute & Pause Controls HUD Bar -->
+        <div id="hud-top-actions" class="absolute top-4 right-4 flex gap-2 z-30 hidden">
+            <!-- HUD Mute Toggle Button -->
+            <button id="hud-mute-btn" onclick="SoundEngine.toggleMute()" class="cyber-btn px-3 py-1.5 text-xs flex items-center gap-1">
+                <span id="hud-mute-icon">🔊</span> <span id="hud-mute-text">SOUND ON</span>
+            </button>
+            <!-- Pause Button -->
+            <button id="pause-btn" onclick="Game.togglePause()" class="cyber-btn px-3 py-1.5 text-xs">
+                PAUSE [ESC]
+            </button>
         </div>
 
         <!-- Touch Controls Helpers (Mobile) -->
@@ -210,11 +213,6 @@
                 <div class="text-xs text-pink-500/40 font-orbitron">[ DRAG RIGHT SIDE TO MOVE P2 ]</div>
             </div>
         </div>
-
-        <!-- Pause Button Overlay -->
-        <button id="pause-btn" onclick="Game.togglePause()" class="absolute top-4 right-4 cyber-btn px-3 py-1 text-xs hidden z-30">
-            PAUSE [ESC]
-        </button>
 
         <!-- --- MAIN MENU SYSTEM --- -->
         <div id="main-menu" class="absolute inset-0 flex items-center justify-center p-4 z-40 bg-black/70 backdrop-blur-md">
@@ -283,11 +281,12 @@
 
                     <!-- Audio Toggle & Controls -->
                     <div class="flex flex-col gap-2 p-3 bg-black/40 border border-white/10 rounded justify-center">
-                        <div class="flex justify-between items-center">
-                            <label class="text-xs text-amber-400 font-orbitron font-bold">SYNTH SFX AUDIO</label>
-                            <input type="checkbox" id="audioToggle" checked class="w-5 h-5 accent-cyan-400 cursor-pointer">
+                        <button id="menu-mute-btn" onclick="SoundEngine.toggleMute()" class="cyber-btn py-2 text-xs flex justify-center items-center gap-2">
+                            <span id="menu-mute-icon">🔊</span> <span id="menu-mute-text">SYNTH AUDIO: ON</span>
+                        </button>
+                        <div id="controls-hint-text" class="text-[10px] text-gray-400 text-center mt-1">
+                            1P Controls: WASD or Arrow Keys.<br>2P Controls: P1 (WASD), P2 (Arrow Keys).
                         </div>
-                        <div class="text-[10px] text-gray-400">Controls: P1 (W/S), P2 (UP/DOWN). ESC to Pause.</div>
                     </div>
 
                 </div>
@@ -305,8 +304,11 @@
                 <h2 class="text-3xl font-orbitron font-bold text-amber-400 tracking-wider">SYSTEM PAUSED</h2>
                 <div class="flex flex-col gap-3">
                     <button onclick="Game.togglePause()" class="cyber-btn py-3">RESUME MATCH</button>
-                    <button onclick="Game.restart()" class="cyber-btn cyber-btn-sec py-3">RESTART</button>
-                    <button onclick="Game.toMainMenu()" class="cyber-btn py-3 border-gray-500 hover:bg-gray-700">MAIN MENU</button>
+                    <button onclick="SoundEngine.toggleMute()" class="cyber-btn py-3 cyber-btn-sec flex justify-center items-center gap-2">
+                        <span id="pause-mute-icon">🔊</span> <span id="pause-mute-text">TOGGLE AUDIO</span>
+                    </button>
+                    <button onclick="Game.restart()" class="cyber-btn py-3 border-gray-500 hover:bg-gray-700">RESTART</button>
+                    <button onclick="Game.toMainMenu()" class="cyber-btn py-3 border-red-500/50 text-red-300 hover:bg-red-950/40">MAIN MENU</button>
                 </div>
             </div>
         </div>
@@ -339,7 +341,7 @@
     // --- AUDIO SYNTHESIZER (Web Audio API) ---
     const SoundEngine = {
         ctx: null,
-        enabled: true,
+        muted: false,
 
         init() {
             if (!this.ctx) {
@@ -351,16 +353,43 @@
             }
         },
 
+        toggleMute() {
+            this.muted = !this.muted;
+            this.updateMuteUI();
+            if (!this.muted) {
+                this.init();
+                this.playPowerup();
+            }
+        },
+
+        updateMuteUI() {
+            const icon = this.muted ? '🔇' : '🔊';
+            const hudText = this.muted ? 'MUTED' : 'SOUND ON';
+            const menuText = this.muted ? 'SYNTH AUDIO: OFF' : 'SYNTH AUDIO: ON';
+
+            // HUD
+            document.getElementById('hud-mute-icon').innerText = icon;
+            document.getElementById('hud-mute-text').innerText = hudText;
+            
+            // Menu
+            document.getElementById('menu-mute-icon').innerText = icon;
+            document.getElementById('menu-mute-text').innerText = menuText;
+
+            // Pause
+            document.getElementById('pause-mute-icon').innerText = icon;
+            document.getElementById('pause-mute-text').innerText = this.muted ? 'AUDIO MUTED' : 'AUDIO ACTIVE';
+        },
+
         playHit(freq = 440, duration = 0.08, type = 'square') {
-            if (!this.enabled || !this.ctx) return;
+            if (this.muted || !this.ctx) return;
             try {
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = type;
                 osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(freq * 0.3, this.ctx.currentTime + duration);
+                osc.frequency.exponentialRampToValueAtTime(Math.max(10, freq * 0.3), this.ctx.currentTime + duration);
 
-                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
 
                 osc.connect(gain);
@@ -372,7 +401,7 @@
         },
 
         playPaddleBounce(speedMultiplier = 1) {
-            this.playHit(300 * speedMultiplier, 0.08, 'sawtooth');
+            this.playHit(320 * Math.min(speedMultiplier, 2.5), 0.08, 'sawtooth');
         },
 
         playWallBounce() {
@@ -380,7 +409,7 @@
         },
 
         playScore() {
-            if (!this.enabled || !this.ctx) return;
+            if (this.muted || !this.ctx) return;
             try {
                 const now = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
@@ -403,7 +432,7 @@
         },
 
         playPowerup() {
-            this.playHit(880, 0.2, 'sine');
+            this.playHit(880, 0.18, 'sine');
         }
     };
 
@@ -454,7 +483,6 @@
 
         start() {
             SoundEngine.init();
-            SoundEngine.enabled = document.getElementById('audioToggle').checked;
 
             this.mode = document.getElementById('modeSelect').value;
             this.is2P = document.getElementById('playerConfigSelect').value === '2P';
@@ -491,6 +519,18 @@
             this.popups = [];
             this.spawnBall();
 
+            // Update UI Key Hints according to 1P/2P mode
+            const p1KeysHint = document.getElementById('p1-keys-hint');
+            const p2KeysHint = document.getElementById('p2-keys-hint');
+            if (this.is2P) {
+                p1KeysHint.innerText = '[W/S KEYS]';
+                p2KeysHint.innerText = '[ARROW KEYS]';
+                p2KeysHint.classList.remove('hidden');
+            } else {
+                p1KeysHint.innerText = '[W/S OR ARROWS]';
+                p2KeysHint.classList.add('hidden');
+            }
+
             // Update UI Displays
             document.getElementById('p1-label').innerText = 'PLAYER 1';
             document.getElementById('p2-label').innerText = this.mode === 'BOSS' ? 'KING CORE [BOSS]' : (this.is2P ? 'PLAYER 2' : `AI (${this.aiDiff})`);
@@ -506,12 +546,12 @@
 
             document.getElementById('p1-score').innerText = '0';
 
-            // Show HUD & Touch controls on mobile
+            // Show HUD, Actions & Touch controls on mobile
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('pause-menu').classList.add('hidden');
             document.getElementById('game-over-menu').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
-            document.getElementById('pause-btn').classList.remove('hidden');
+            document.getElementById('hud-top-actions').classList.remove('hidden');
 
             if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
                 document.getElementById('touch-zones').classList.remove('hidden');
@@ -551,7 +591,7 @@
             document.getElementById('pause-menu').classList.add('hidden');
             document.getElementById('game-over-menu').classList.add('hidden');
             document.getElementById('hud').classList.add('hidden');
-            document.getElementById('pause-btn').classList.add('hidden');
+            document.getElementById('hud-top-actions').classList.add('hidden');
             document.getElementById('touch-zones').classList.add('hidden');
         },
 
@@ -565,19 +605,25 @@
             // Handle Screen Shake
             if (this.shakeTime > 0) this.shakeTime--;
 
-            // Update P1 Paddle
-            if (keys['KeyW'] || keys['KeyS'] || touchState.p1Y !== null) {
-                if (keys['KeyW']) this.p1.targetY -= this.p1.speed;
-                if (keys['KeyS']) this.p1.targetY += this.p1.speed;
+            // --- P1 INPUT CONTROLS ---
+            // In Single Player mode: allow BOTH WASD and Arrow Keys for Player 1
+            // In Local 2P mode: P1 gets WASD, P2 gets Arrow Keys
+            let p1Up = keys['KeyW'] || (!this.is2P && keys['ArrowUp']);
+            let p1Down = keys['KeyS'] || (!this.is2P && keys['ArrowDown']);
+
+            if (p1Up || p1Down || touchState.p1Y !== null) {
+                if (p1Up) this.p1.targetY -= this.p1.speed;
+                if (p1Down) this.p1.targetY += this.p1.speed;
                 if (touchState.p1Y !== null) this.p1.targetY = touchState.p1Y - this.p1.h / 2;
             }
-            this.p1.update(this.balls[0]);
+            this.p1.update();
 
-            // Update P2 Paddle / AI
+            // --- P2 PADDLE / AI CONTROLS ---
             if (this.p2) {
                 if (this.p2.isAI) {
                     this.p2.updateAI(this.balls[0]);
                 } else {
+                    // Local 2P Mode: Player 2 uses Arrow Keys exclusively
                     if (keys['ArrowUp']) this.p2.targetY -= this.p2.speed;
                     if (keys['ArrowDown']) this.p2.targetY += this.p2.speed;
                     if (touchState.p2Y !== null) this.p2.targetY = touchState.p2Y - this.p2.h / 2;
@@ -610,7 +656,6 @@
                 });
             });
 
-            // Update Balls Logic
             for (let i = this.balls.length - 1; i >= 0; i--) {
                 const b = this.balls[i];
                 b.update();
@@ -678,7 +723,7 @@
                 }
             }
 
-            // Ensure at least 1 ball exists if all out
+            // Ensure at least 1 ball exists
             if (this.balls.length === 0) {
                 this.spawnBall();
             }
@@ -749,18 +794,18 @@
         draw() {
             ctx.save();
 
-            // Handle Screen Shake offset
+            // Screen Shake offset
             if (this.shakeTime > 0) {
                 let dx = (Math.random() - 0.5) * this.shakeTime;
                 let dy = (Math.random() - 0.5) * this.shakeTime;
                 ctx.translate(dx, dy);
             }
 
-            // Background Fill
+            // Background
             ctx.fillStyle = activeTheme.bg;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Cyber Grid Lines
+            // Cyber Grid Lines
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
             ctx.lineWidth = 1;
             const gridSize = 40;
@@ -846,7 +891,6 @@
 
             let target = ball.y;
 
-            // Prediction logic for higher difficulties
             if (this.aiSpec.predict && ball.vx > 0) {
                 let tx = ball.x;
                 let ty = ball.y;
@@ -860,7 +904,6 @@
                 target = ty;
             }
 
-            // Apply Jitter / Error
             if (Math.random() < this.aiSpec.errorChance) {
                 target += (Math.random() - 0.5) * this.aiSpec.jitter;
             }
@@ -922,7 +965,6 @@
                 this.dir *= -1;
             }
 
-            // Sync Boss HP Bar HUD
             const hpPct = Math.max(0, (this.hp / this.maxHp) * 100);
             document.getElementById('boss-hp-bar').style.width = `${hpPct}%`;
         }
@@ -945,7 +987,6 @@
 
             ctx.fillRect(this.x, this.y, this.w, this.h);
 
-            // Pulsating Shield Line
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 3;
             let pulse = Math.sin(Date.now() / 150) * 6;
@@ -969,7 +1010,6 @@
         }
 
         update() {
-            // Save positions for glow trail
             this.trail.push({ x: this.x, y: this.y });
             if (this.trail.length > 8) this.trail.shift();
 
@@ -978,7 +1018,6 @@
         }
 
         draw() {
-            // Motion Trail
             this.trail.forEach((t, idx) => {
                 let alpha = (idx + 1) / this.trail.length * 0.4;
                 let r = this.radius * ((idx + 1) / this.trail.length);
@@ -988,7 +1027,6 @@
                 ctx.fill();
             });
 
-            // Glowing Outer Ball
             ctx.shadowBlur = 25;
             ctx.shadowColor = this.color;
             ctx.fillStyle = this.color;
@@ -996,7 +1034,6 @@
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Inner Core
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
@@ -1011,7 +1048,7 @@
         constructor(x, y, type) {
             this.x = x;
             this.y = y;
-            this.type = type; // FAST, EXTEND, MULTIBALL
+            this.type = type;
             this.radius = 18;
             this.pulse = 0;
         }
@@ -1095,7 +1132,6 @@
         }
     }
 
-    // --- HELPER UTILS ---
     function hexToRgb(hex) {
         if (!hex || hex[0] !== '#') return '255, 255, 255';
         let c = hex.substring(1);
@@ -1125,10 +1161,18 @@
         onPlayerConfigChange() {
             const is2P = document.getElementById('playerConfigSelect').value === '2P';
             const aiContainer = document.getElementById('ai-diff-container');
+            const hints = document.getElementById('controls-hint-text');
+
             if (is2P || document.getElementById('modeSelect').value === 'BOSS') {
                 aiContainer.classList.add('hidden');
             } else {
                 aiContainer.classList.remove('hidden');
+            }
+
+            if (is2P) {
+                hints.innerHTML = 'P1 Controls: WASD Keys.<br>P2 Controls: Arrow Keys.';
+            } else {
+                hints.innerHTML = '1P Controls: WASD or Arrow Keys.<br>2P Controls: P1 (WASD), P2 (Arrow Keys).';
             }
         },
 
@@ -1176,11 +1220,6 @@
             }
         }
     }
-
-    // Auto-Resize Canvas Resolution aspect ratio
-    window.addEventListener('resize', () => {
-        // Keeps crisp 1280x720 canvas aspect resolution internally
-    });
 </script>
 </body>
 </html>
