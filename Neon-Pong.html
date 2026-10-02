@@ -367,15 +367,10 @@
             const hudText = this.muted ? 'MUTED' : 'SOUND ON';
             const menuText = this.muted ? 'SYNTH AUDIO: OFF' : 'SYNTH AUDIO: ON';
 
-            // HUD
             document.getElementById('hud-mute-icon').innerText = icon;
             document.getElementById('hud-mute-text').innerText = hudText;
-            
-            // Menu
             document.getElementById('menu-mute-icon').innerText = icon;
             document.getElementById('menu-mute-text').innerText = menuText;
-
-            // Pause
             document.getElementById('pause-mute-icon').innerText = icon;
             document.getElementById('pause-mute-text').innerText = this.muted ? 'AUDIO MUTED' : 'AUDIO ACTIVE';
         },
@@ -453,6 +448,296 @@
         HARD:    { speed: 14, jitter: 5,  errorChance: 0.02, reactDelay: 1, predict: true },
         MAXIMUM: { speed: 19, jitter: 0,  errorChance: 0.00, reactDelay: 0, predict: true }
     };
+
+    // --- MENU LOGIC ---
+    const Menu = {
+        onModeChange() {
+            const mode = document.getElementById('modeSelect').value;
+            const scoreContainer = document.getElementById('score-limit-container');
+            const aiContainer = document.getElementById('ai-diff-container');
+
+            if (mode === 'BOSS') {
+                scoreContainer.classList.add('hidden');
+                aiContainer.classList.add('hidden');
+            } else {
+                scoreContainer.classList.remove('hidden');
+                this.onPlayerConfigChange();
+            }
+        },
+
+        onPlayerConfigChange() {
+            const is2P = document.getElementById('playerConfigSelect').value === '2P';
+            const aiContainer = document.getElementById('ai-diff-container');
+            const mode = document.getElementById('modeSelect').value;
+
+            if (is2P || mode === 'BOSS') {
+                aiContainer.classList.add('hidden');
+            } else {
+                aiContainer.classList.remove('hidden');
+            }
+        },
+
+        updateTheme() {
+            const themeKey = document.getElementById('themeSelect').value;
+            activeTheme = PALETTES[themeKey] || PALETTES.CYBERPUNK;
+            document.documentElement.style.setProperty('--primary', activeTheme.primary);
+            document.documentElement.style.setProperty('--secondary', activeTheme.secondary);
+            document.documentElement.style.setProperty('--accent', activeTheme.accent);
+            document.documentElement.style.setProperty('--bg-dark', activeTheme.bg);
+        }
+    };
+
+    // --- GAME OBJECT CLASSES ---
+    class Paddle {
+        constructor(x, y, w, h, color, isAI = false, aiSpec = null) {
+            this.x = x;
+            this.y = y;
+            this.targetY = y;
+            this.w = w;
+            this.h = h;
+            this.color = color;
+            this.speed = 12;
+            this.isAI = isAI;
+            this.aiSpec = aiSpec;
+            this.aiTimer = 0;
+            this.aiOffset = 0;
+        }
+
+        update() {
+            // Clamp target position to canvas edges
+            this.targetY = Math.max(0, Math.min(canvas.height - this.h, this.targetY));
+            
+            // Smooth movement toward target
+            this.y += (this.targetY - this.y) * 0.25;
+
+            // Strict boundary clamping to prevent getting stuck
+            if (this.y < 0) {
+                this.y = 0;
+                this.targetY = 0;
+            }
+            if (this.y + this.h > canvas.height) {
+                this.y = canvas.height - this.h;
+                this.targetY = canvas.height - this.h;
+            }
+        }
+
+        updateAI(ball) {
+            if (!ball) return;
+            this.aiTimer++;
+
+            if (this.aiTimer % (this.aiSpec.reactDelay + 1) === 0) {
+                if (Math.random() < this.aiSpec.errorChance) {
+                    this.aiOffset = (Math.random() - 0.5) * this.aiSpec.jitter * 2;
+                } else {
+                    this.aiOffset = (Math.random() - 0.5) * this.aiSpec.jitter;
+                }
+            }
+
+            let targetCenter = ball.y + this.aiOffset;
+            let currentCenter = this.y + this.h / 2;
+
+            if (Math.abs(targetCenter - currentCenter) > 10) {
+                if (targetCenter > currentCenter) {
+                    this.targetY += this.aiSpec.speed;
+                } else {
+                    this.targetY -= this.aiSpec.speed;
+                }
+            }
+            this.update();
+        }
+
+        checkCollision(ball) {
+            return (
+                ball.x - ball.radius < this.x + this.w &&
+                ball.x + ball.radius > this.x &&
+                ball.y + ball.radius > this.y &&
+                ball.y - ball.radius < this.y + this.h
+            );
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+            ctx.restore();
+        }
+    }
+
+    class BossCore {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.w = 40;
+            this.h = 320;
+            this.maxHp = 200;
+            this.hp = this.maxHp;
+            this.dir = 1;
+            this.speed = 6;
+        }
+
+        update(ball) {
+            this.y += this.speed * this.dir;
+            if (this.y <= 20) {
+                this.y = 20;
+                this.dir = 1;
+            } else if (this.y + this.h >= canvas.height - 20) {
+                this.y = canvas.height - 20 - this.h;
+                this.dir = -1;
+            }
+        }
+
+        takeDamage(amount) {
+            this.hp = Math.max(0, this.hp - amount);
+            const hpBar = document.getElementById('boss-hp-bar');
+            if (hpBar) {
+                const pct = (this.hp / this.maxHp) * 100;
+                hpBar.style.width = `${pct}%`;
+            }
+        }
+
+        checkCollision(ball) {
+            return (
+                ball.x + ball.radius > this.x &&
+                ball.x - ball.radius < this.x + this.w &&
+                ball.y + ball.radius > this.y &&
+                ball.y - ball.radius < this.y + this.h
+            );
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.shadowColor = '#ff0055';
+            ctx.shadowBlur = 25;
+            ctx.fillStyle = '#ff0055';
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+
+            // Core Glow Center
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(this.x + 10, this.y + 10, this.w - 20, this.h - 20);
+            ctx.restore();
+        }
+    }
+
+    class Ball {
+        constructor(x, y, radius, vx, vy, color) {
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.vx = vx;
+            this.vy = vy;
+            this.color = color;
+            this.lastHitSide = null;
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    class PowerUp {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.radius = 18;
+            this.type = type; // EXTEND, FAST, MULTIBALL
+            this.pulse = 0;
+        }
+
+        update() {
+            this.pulse += 0.05;
+        }
+
+        checkCollision(ball) {
+            const dx = ball.x - this.x;
+            const dy = ball.y - this.y;
+            return Math.sqrt(dx * dx + dy * dy) < this.radius + ball.radius;
+        }
+
+        draw(ctx) {
+            ctx.save();
+            const color = this.type === 'EXTEND' ? '#00ff66' : (this.type === 'FAST' ? '#ffe600' : '#ff007f');
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 15 + Math.sin(this.pulse) * 5;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius + Math.sin(this.pulse) * 3, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = color;
+            ctx.font = '10px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.type[0], this.x, this.y);
+            ctx.restore();
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.vx = (Math.random() - 0.5) * 8;
+            this.vy = (Math.random() - 0.5) * 8;
+            this.color = color;
+            this.life = 1.0;
+            this.decay = Math.random() * 0.03 + 0.02;
+            this.size = Math.random() * 4 + 2;
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= this.decay;
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, this.life);
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+            ctx.restore();
+        }
+    }
+
+    class ScorePopup {
+        constructor(x, y, text, color) {
+            this.x = x;
+            this.y = y;
+            this.text = text;
+            this.color = color;
+            this.life = 1.0;
+        }
+
+        update() {
+            this.y -= 1.5;
+            this.life -= 0.02;
+        }
+
+        draw(ctx) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, this.life);
+            ctx.fillStyle = this.color;
+            ctx.font = '16px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.text, this.x, this.y);
+            ctx.restore();
+        }
+    }
 
     // --- CANVAS ENGINE STATE ---
     const canvas = document.getElementById('pongCanvas');
@@ -599,6 +884,51 @@
             this.shakeTime = intensity;
         },
 
+        applyPowerup(type, side) {
+            const targetPaddle = side === 'P1' ? this.p1 : this.p2;
+            if (!targetPaddle) return;
+
+            if (type === 'EXTEND') {
+                targetPaddle.h = Math.min(220, targetPaddle.h + 40);
+            } else if (type === 'FAST') {
+                targetPaddle.speed += 4;
+            } else if (type === 'MULTIBALL') {
+                this.spawnBall(side === 'P1' ? 1 : -1, 12);
+            }
+        },
+
+        spawnImpactParticles(x, y, color, count = 10) {
+            for (let i = 0; i < count; i++) {
+                this.particles.push(new Particle(x, y, color));
+            }
+        },
+
+        onScore(winner) {
+            SoundEngine.playScore();
+            if (winner === 'P1') {
+                this.score.p1++;
+                document.getElementById('p1-score').innerText = this.score.p1;
+                this.popups.push(new ScorePopup(canvas.width / 4, canvas.height / 2, '+1 POINT', activeTheme.primary));
+            } else {
+                this.score.p2++;
+                document.getElementById('p2-score').innerText = this.score.p2;
+                this.popups.push(new ScorePopup((canvas.width / 4) * 3, canvas.height / 2, '+1 POINT', activeTheme.secondary));
+            }
+
+            if (this.mode !== 'BOSS' && (this.score.p1 >= this.scoreLimit || this.score.p2 >= this.scoreLimit)) {
+                const winText = this.score.p1 >= this.scoreLimit ? 'PLAYER 1' : (this.is2P ? 'PLAYER 2' : 'AI ENGINE');
+                this.gameOver(winText, `${winText} WINS THE MATCH!`);
+            }
+        },
+
+        gameOver(winnerName, subText) {
+            this.active = false;
+            document.getElementById('winner-title').innerText = `${winnerName} VICTORY!`;
+            document.getElementById('winner-sub').innerText = subText;
+            document.getElementById('final-score').innerText = `${this.score.p1} - ${this.score.p2}`;
+            document.getElementById('game-over-menu').classList.remove('hidden');
+        },
+
         update() {
             this.frame++;
 
@@ -606,16 +936,13 @@
             if (this.shakeTime > 0) this.shakeTime--;
 
             // --- P1 INPUT CONTROLS ---
-            // In Single Player mode: allow BOTH WASD and Arrow Keys for Player 1
-            // In Local 2P mode: P1 gets WASD, P2 gets Arrow Keys
             let p1Up = keys['KeyW'] || (!this.is2P && keys['ArrowUp']);
             let p1Down = keys['KeyS'] || (!this.is2P && keys['ArrowDown']);
 
-            if (p1Up || p1Down || touchState.p1Y !== null) {
-                if (p1Up) this.p1.targetY -= this.p1.speed;
-                if (p1Down) this.p1.targetY += this.p1.speed;
-                if (touchState.p1Y !== null) this.p1.targetY = touchState.p1Y - this.p1.h / 2;
-            }
+            if (p1Up) this.p1.targetY -= this.p1.speed;
+            if (p1Down) this.p1.targetY += this.p1.speed;
+            if (touchState.p1Y !== null) this.p1.targetY = touchState.p1Y - this.p1.h / 2;
+
             this.p1.update();
 
             // --- P2 PADDLE / AI CONTROLS ---
@@ -623,7 +950,6 @@
                 if (this.p2.isAI) {
                     this.p2.updateAI(this.balls[0]);
                 } else {
-                    // Local 2P Mode: Player 2 uses Arrow Keys exclusively
                     if (keys['ArrowUp']) this.p2.targetY -= this.p2.speed;
                     if (keys['ArrowDown']) this.p2.targetY += this.p2.speed;
                     if (touchState.p2Y !== null) this.p2.targetY = touchState.p2Y - this.p2.h / 2;
@@ -631,7 +957,7 @@
                 }
             }
 
-            // Update Boss Core if present
+            // Update Boss Core
             if (this.boss) {
                 this.boss.update(this.balls[0]);
             }
@@ -678,7 +1004,7 @@
                     b.x = this.p1.x + this.p1.w + b.radius;
                     let deltaY = b.y - (this.p1.y + this.p1.h / 2);
                     b.vy = deltaY * 0.22;
-                    b.vx = Math.abs(b.vx) * 1.05; // Speed up
+                    b.vx = Math.abs(b.vx) * 1.05;
                     b.lastHitSide = 'P1';
                     SoundEngine.playPaddleBounce(Math.abs(b.vx) / 10);
                     this.spawnImpactParticles(b.x, b.y, this.p1.color, 14);
@@ -724,132 +1050,58 @@
             }
 
             // Ensure at least 1 ball exists
-            if (this.balls.length === 0) {
+            if (this.balls.length === 0 && this.active) {
                 this.spawnBall();
             }
 
             // Update Particles
-            this.particles.forEach((p, idx) => {
+            for (let i = this.particles.length - 1; i >= 0; i--) {
+                const p = this.particles[i];
                 p.update();
-                if (p.life <= 0) this.particles.splice(idx, 1);
-            });
+                if (p.life <= 0) this.particles.splice(i, 1);
+            }
 
             // Update Popups
-            this.popups.forEach((pop, idx) => {
+            for (let i = this.popups.length - 1; i >= 0; i--) {
+                const pop = this.popups[i];
                 pop.update();
-                if (pop.life <= 0) this.popups.splice(idx, 1);
-            });
-        },
-
-        applyPowerup(type, side) {
-            const targetPaddle = side === 'P1' ? this.p1 : this.p2;
-            if (type === 'EXTEND' && targetPaddle) {
-                targetPaddle.h = 180;
-                setTimeout(() => { if (targetPaddle) targetPaddle.h = 120; }, 8000);
-            } else if (type === 'FAST') {
-                this.balls.forEach(b => { b.vx *= 1.4; b.vy *= 1.4; });
-            } else if (type === 'MULTIBALL') {
-                this.spawnBall(1, 12);
-            }
-        },
-
-        onScore(winnerSide) {
-            SoundEngine.playScore();
-            this.triggerShake(12);
-
-            if (winnerSide === 'P1') {
-                this.score.p1++;
-                document.getElementById('p1-score').innerText = this.score.p1;
-                this.popups.push(new ScorePopup(canvas.width / 4, canvas.height / 2, '+1 POINT', activeTheme.primary));
-            } else {
-                this.score.p2++;
-                if (this.mode !== 'BOSS') {
-                    document.getElementById('p2-score').innerText = this.score.p2;
-                }
-                this.popups.push(new ScorePopup(3 * canvas.width / 4, canvas.height / 2, '+1 POINT', activeTheme.secondary));
-            }
-
-            // Check Win Condition
-            if (this.score.p1 >= this.scoreLimit) {
-                this.gameOver('PLAYER 1', 'SYSTEM OVERRIDE SUCCESSFUL');
-            } else if (this.score.p2 >= this.scoreLimit) {
-                this.gameOver(this.is2P ? 'PLAYER 2' : `AI (${this.aiDiff})`, 'SYSTEM FAILURE - AI DOMINANCE');
-            }
-        },
-
-        gameOver(winnerName, subText) {
-            this.active = false;
-            document.getElementById('winner-title').innerText = `${winnerName} WINS!`;
-            document.getElementById('winner-sub').innerText = subText;
-            document.getElementById('final-score').innerText = `${this.score.p1} - ${this.score.p2}`;
-            document.getElementById('game-over-menu').classList.remove('hidden');
-        },
-
-        spawnImpactParticles(x, y, color, count = 10) {
-            for (let i = 0; i < count; i++) {
-                this.particles.push(new Particle(x, y, color));
+                if (pop.life <= 0) this.popups.splice(i, 1);
             }
         },
 
         draw() {
             ctx.save();
 
-            // Screen Shake offset
-            if (this.shakeTime > 0) {
-                let dx = (Math.random() - 0.5) * this.shakeTime;
-                let dy = (Math.random() - 0.5) * this.shakeTime;
-                ctx.translate(dx, dy);
-            }
-
-            // Background
+            // Clear Background
             ctx.fillStyle = activeTheme.bg;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Cyber Grid Lines
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-            ctx.lineWidth = 1;
-            const gridSize = 40;
-            for (let x = 0; x < canvas.width; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-            for (let y = 0; y < canvas.height; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
+            // Screen Shake Effect
+            if (this.shakeTime > 0) {
+                const rx = (Math.random() - 0.5) * this.shakeTime;
+                const ry = (Math.random() - 0.5) * this.shakeTime;
+                ctx.translate(rx, ry);
             }
 
             // Center Net Line
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.2)';
-            ctx.lineWidth = 3;
-            ctx.setLineDash([15, 15]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([12, 12]);
             ctx.beginPath();
             ctx.moveTo(canvas.width / 2, 0);
             ctx.lineTo(canvas.width / 2, canvas.height);
             ctx.stroke();
-            ctx.setLineDash([]); // Reset line dash
+            ctx.setLineDash([]);
 
-            // Draw Powerups
-            this.powerups.forEach(pw => pw.draw());
+            // Draw Game Entities
+            if (this.p1) this.p1.draw(ctx);
+            if (this.p2) this.p2.draw(ctx);
+            if (this.boss) this.boss.draw(ctx);
 
-            // Draw Paddles
-            if (this.p1) this.p1.draw();
-            if (this.p2) this.p2.draw();
-
-            // Draw Boss Core
-            if (this.boss) this.boss.draw();
-
-            // Draw Particles
-            this.particles.forEach(p => p.draw());
-
-            // Draw Balls
-            this.balls.forEach(b => b.draw());
-
-            // Draw Popups
-            this.popups.forEach(pop => pop.draw());
+            this.powerups.forEach(pw => pw.draw(ctx));
+            this.balls.forEach(b => b.draw(ctx));
+            this.particles.forEach(p => p.draw(ctx));
+            this.popups.forEach(pop => pop.draw(ctx));
 
             ctx.restore();
         },
@@ -862,331 +1114,7 @@
         }
     };
 
-    // --- PADDLE ENTITY ---
-    class Paddle {
-        constructor(x, y, w, h, color, isAI = false, aiSpec = null) {
-            this.x = x;
-            this.y = y;
-            this.targetY = y;
-            this.w = w;
-            this.h = h;
-            this.color = color;
-            this.speed = 12;
-            this.isAI = isAI;
-            this.aiSpec = aiSpec;
-            this.reactionTimer = 0;
-        }
-
-        update() {
-            this.y += (this.targetY - this.y) * 0.3;
-            this.y = Math.max(10, Math.min(canvas.height - this.h - 10, this.y));
-        }
-
-        updateAI(ball) {
-            if (!ball || !this.aiSpec) return;
-
-            this.reactionTimer++;
-            if (this.reactionTimer < this.aiSpec.reactDelay) return;
-            this.reactionTimer = 0;
-
-            let target = ball.y;
-
-            if (this.aiSpec.predict && ball.vx > 0) {
-                let tx = ball.x;
-                let ty = ball.y;
-                let tvy = ball.vy;
-
-                while (tx < this.x) {
-                    tx += ball.vx;
-                    ty += tvy;
-                    if (ty <= 10 || ty >= canvas.height - 10) tvy *= -1;
-                }
-                target = ty;
-            }
-
-            if (Math.random() < this.aiSpec.errorChance) {
-                target += (Math.random() - 0.5) * this.aiSpec.jitter;
-            }
-
-            if (this.y + this.h / 2 < target - 10) {
-                this.y += this.aiSpec.speed;
-            } else if (this.y + this.h / 2 > target + 10) {
-                this.y -= this.aiSpec.speed;
-            }
-
-            this.y = Math.max(10, Math.min(canvas.height - this.h - 10, this.y));
-            this.targetY = this.y;
-        }
-
-        checkCollision(ball) {
-            return ball.x - ball.radius < this.x + this.w &&
-                   ball.x + ball.radius > this.x &&
-                   ball.y > this.y &&
-                   ball.y < this.y + this.h;
-        }
-
-        draw() {
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = this.color;
-            ctx.fillStyle = this.color;
-
-            // Rounded Neon Paddle
-            ctx.beginPath();
-            ctx.roundRect(this.x, this.y, this.w, this.h, 8);
-            ctx.fill();
-
-            // Inner Highlight Core
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.roundRect(this.x + 3, this.y + 3, this.w - 6, this.h - 6, 4);
-            ctx.fill();
-
-            ctx.shadowBlur = 0;
-        }
-    }
-
-    // --- BOSS CORE ENTITY ---
-    class BossCore {
-        constructor(x, y) {
-            this.x = x;
-            this.y = y;
-            this.w = 40;
-            this.h = 280;
-            this.maxHp = 100;
-            this.hp = 100;
-            this.speed = 4;
-            this.dir = 1;
-            this.color = '#ff0055';
-        }
-
-        update(ball) {
-            this.y += this.speed * this.dir;
-            if (this.y <= 20 || this.y + this.h >= canvas.height - 20) {
-                this.dir *= -1;
-            }
-
-            const hpPct = Math.max(0, (this.hp / this.maxHp) * 100);
-            document.getElementById('boss-hp-bar').style.width = `${hpPct}%`;
-        }
-
-        takeDamage(amount) {
-            this.hp -= amount;
-        }
-
-        checkCollision(ball) {
-            return ball.x + ball.radius > this.x &&
-                   ball.x - ball.radius < this.x + this.w &&
-                   ball.y > this.y &&
-                   ball.y < this.y + this.h;
-        }
-
-        draw() {
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = this.color;
-            ctx.fillStyle = this.color;
-
-            ctx.fillRect(this.x, this.y, this.w, this.h);
-
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 3;
-            let pulse = Math.sin(Date.now() / 150) * 6;
-            ctx.strokeRect(this.x - pulse, this.y - pulse, this.w + pulse * 2, this.h + pulse * 2);
-
-            ctx.shadowBlur = 0;
-        }
-    }
-
-    // --- BALL ENTITY ---
-    class Ball {
-        constructor(x, y, radius, vx, vy, color) {
-            this.x = x;
-            this.y = y;
-            this.radius = radius;
-            this.vx = vx;
-            this.vy = vy;
-            this.color = color;
-            this.trail = [];
-            this.lastHitSide = 'NONE';
-        }
-
-        update() {
-            this.trail.push({ x: this.x, y: this.y });
-            if (this.trail.length > 8) this.trail.shift();
-
-            this.x += this.vx;
-            this.y += this.vy;
-        }
-
-        draw() {
-            this.trail.forEach((t, idx) => {
-                let alpha = (idx + 1) / this.trail.length * 0.4;
-                let r = this.radius * ((idx + 1) / this.trail.length);
-                ctx.fillStyle = `rgba(0, 255, 255, ${alpha})`;
-                ctx.beginPath();
-                ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            ctx.shadowBlur = 25;
-            ctx.shadowColor = this.color;
-            ctx.fillStyle = this.color;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.shadowBlur = 0;
-        }
-    }
-
-    // --- POWERUP ENTITY ---
-    class PowerUp {
-        constructor(x, y, type) {
-            this.x = x;
-            this.y = y;
-            this.type = type;
-            this.radius = 18;
-            this.pulse = 0;
-        }
-
-        update() {
-            this.pulse += 0.05;
-        }
-
-        checkCollision(ball) {
-            let dist = Math.hypot(ball.x - this.x, ball.y - this.y);
-            return dist < ball.radius + this.radius;
-        }
-
-        draw() {
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#ffe600';
-            ctx.fillStyle = '#ffe600';
-
-            let r = this.radius + Math.sin(this.pulse) * 3;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = '#000';
-            ctx.font = '10px Orbitron';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(this.type[0], this.x, this.y);
-
-            ctx.shadowBlur = 0;
-        }
-    }
-
-    // --- PARTICLE ENTITY ---
-    class Particle {
-        constructor(x, y, color) {
-            this.x = x;
-            this.y = y;
-            this.vx = (Math.random() - 0.5) * 12;
-            this.vy = (Math.random() - 0.5) * 12;
-            this.size = Math.random() * 4 + 2;
-            this.color = color;
-            this.life = 1.0;
-            this.decay = Math.random() * 0.04 + 0.02;
-        }
-
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            this.life -= this.decay;
-        }
-
-        draw() {
-            ctx.fillStyle = `rgba(${hexToRgb(this.color)}, ${this.life})`;
-            ctx.fillRect(this.x, this.y, this.size, this.size);
-        }
-    }
-
-    // --- SCORE POPUP TEXT ---
-    class ScorePopup {
-        constructor(x, y, text, color) {
-            this.x = x;
-            this.y = y;
-            this.text = text;
-            this.color = color;
-            this.life = 1.0;
-        }
-
-        update() {
-            this.y -= 1.5;
-            this.life -= 0.02;
-        }
-
-        draw() {
-            ctx.save();
-            ctx.font = '20px Orbitron';
-            ctx.fillStyle = `rgba(${hexToRgb(this.color)}, ${this.life})`;
-            ctx.textAlign = 'center';
-            ctx.fillText(this.text, this.x, this.y);
-            ctx.restore();
-        }
-    }
-
-    function hexToRgb(hex) {
-        if (!hex || hex[0] !== '#') return '255, 255, 255';
-        let c = hex.substring(1);
-        if (c.length === 3) c = c.split('').map(x => x + x).join('');
-        let num = parseInt(c, 16);
-        return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
-    }
-
-    // --- MENU SYSTEM ---
-    const Menu = {
-        onModeChange() {
-            const mode = document.getElementById('modeSelect').value;
-            const scoreContainer = document.getElementById('score-limit-container');
-            const aiContainer = document.getElementById('ai-diff-container');
-
-            if (mode === 'BOSS') {
-                scoreContainer.classList.add('hidden');
-                aiContainer.classList.add('hidden');
-            } else {
-                scoreContainer.classList.remove('hidden');
-                if (document.getElementById('playerConfigSelect').value === '1P') {
-                    aiContainer.classList.remove('hidden');
-                }
-            }
-        },
-
-        onPlayerConfigChange() {
-            const is2P = document.getElementById('playerConfigSelect').value === '2P';
-            const aiContainer = document.getElementById('ai-diff-container');
-            const hints = document.getElementById('controls-hint-text');
-
-            if (is2P || document.getElementById('modeSelect').value === 'BOSS') {
-                aiContainer.classList.add('hidden');
-            } else {
-                aiContainer.classList.remove('hidden');
-            }
-
-            if (is2P) {
-                hints.innerHTML = 'P1 Controls: WASD Keys.<br>P2 Controls: Arrow Keys.';
-            } else {
-                hints.innerHTML = '1P Controls: WASD or Arrow Keys.<br>2P Controls: P1 (WASD), P2 (Arrow Keys).';
-            }
-        },
-
-        updateTheme() {
-            const themeKey = document.getElementById('themeSelect').value;
-            activeTheme = PALETTES[themeKey] || PALETTES.CYBERPUNK;
-            document.documentElement.style.setProperty('--primary', activeTheme.primary);
-            document.documentElement.style.setProperty('--secondary', activeTheme.secondary);
-            document.documentElement.style.setProperty('--accent', activeTheme.accent);
-            document.documentElement.style.setProperty('--bg-dark', activeTheme.bg);
-        }
-    };
-
-    // --- EVENT LISTENERS (Keyboard & Touch) ---
+    // --- INPUT EVENT LISTENERS ---
     window.addEventListener('keydown', e => {
         keys[e.code] = true;
         if (e.code === 'Escape') Game.togglePause();
@@ -1196,12 +1124,10 @@
         keys[e.code] = false;
     });
 
-    // Touch Event Handling
-    const gameContainer = document.getElementById('game-container');
-
-    gameContainer.addEventListener('touchstart', e => handleTouch(e), { passive: false });
-    gameContainer.addEventListener('touchmove', e => handleTouch(e), { passive: false });
-    gameContainer.addEventListener('touchend', () => { touchState = { p1Y: null, p2Y: null }; });
+    // Touch Controls
+    window.addEventListener('touchstart', handleTouch, { passive: false });
+    window.addEventListener('touchmove', handleTouch, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
 
     function handleTouch(e) {
         if (!Game.active) return;
@@ -1209,15 +1135,25 @@
         const rect = canvas.getBoundingClientRect();
         const scaleY = canvas.height / rect.height;
 
-        for (let t of e.touches) {
-            let x = t.clientX - rect.left;
-            let y = (t.clientY - rect.top) * scaleY;
+        touchState.p1Y = null;
+        touchState.p2Y = null;
 
-            if (x < rect.width / 2) {
-                touchState.p1Y = y;
+        for (let i = 0; i < e.touches.length; i++) {
+            const touch = e.touches[i];
+            const canvasY = (touch.clientY - rect.top) * scaleY;
+
+            if (touch.clientX < window.innerWidth / 2) {
+                touchState.p1Y = canvasY;
             } else {
-                touchState.p2Y = y;
+                touchState.p2Y = canvasY;
             }
+        }
+    }
+
+    function handleTouchEnd(e) {
+        if (e.touches.length === 0) {
+            touchState.p1Y = null;
+            touchState.p2Y = null;
         }
     }
 </script>
