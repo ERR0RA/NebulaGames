@@ -3,65 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS-3D: OVERDRIVE</title>
+    <title>NEXUS-3D: HEAVY METAL</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; user-select: none; }
         
         #game-container { position: relative; width: 100vw; height: 100vh; }
         canvas.view { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 
-        /* Retro HUD Overlays */
+        /* Retro HUD */
         #hud {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 10; display: flex; flex-direction: column;
-            justify-content: space-between; padding: 20px; box-sizing: border-box;
+            justify-content: space-between; padding: 20px;
         }
 
-        .hud-top { display: flex; justify-content: space-between; align-items: flex-start; }
-        .hud-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+        .hud-top, .hud-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
 
         .panel {
-            background: rgba(0, 20, 0, 0.75); border: 1px solid #0f0;
-            padding: 10px 15px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            background: rgba(0, 15, 0, 0.85); border: 2px solid #0f0;
+            padding: 10px 15px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            text-shadow: 0 0 5px #0f0;
         }
 
-        .stat-bar { width: 150px; height: 12px; border: 1px solid #0f0; margin-top: 5px; background: #001100; }
-        .stat-fill { height: 100%; background: #0f0; width: 100%; transition: width 0.1s linear; }
+        .stat-bar { width: 160px; height: 12px; border: 1px solid #0f0; margin-top: 4px; background: #001100; }
+        .stat-fill { height: 100%; background: #0f0; width: 100%; transition: width 0.05s linear; }
         .stamina-fill { background: #00ffff; }
 
         #minimap {
-            width: 140px; height: 140px; border: 1px solid #0f0;
-            background: rgba(0,0,0,0.85); box-shadow: 0 0 8px rgba(0,255,0,0.3);
+            width: 150px; height: 150px; border: 2px solid #0f0;
+            background: rgba(0,0,0,0.9); box-shadow: 0 0 10px rgba(0,255,0,0.4);
         }
 
         #timer-box { font-size: 1.4rem; color: #f00; border-color: #f00; text-shadow: 0 0 5px #f00; }
-        #announcer {
-            position: absolute; top: 20%; width: 100%; text-align: center;
-            font-size: 1.8rem; font-weight: bold; color: #fff; text-shadow: 0 0 10px #0f0;
-            opacity: 0; transition: opacity 0.3s ease; pointer-events: none; z-index: 20;
+
+        /* Crosshair */
+        #crosshair {
+            position: absolute; top: 50%; left: 50%; width: 12px; height: 12px;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 15;
         }
+        #crosshair::before, #crosshair::after {
+            content: ''; position: absolute; background: #0f0; box-shadow: 0 0 5px #0f0;
+        }
+        #crosshair::before { top: 5px; left: 0; width: 12px; height: 2px; }
+        #crosshair::after { top: 0; left: 5px; width: 2px; height: 12px; }
+
+        /* Screen Flash Overlays */
+        #damage-flash {
+            position: absolute; inset: 0; background: rgba(255, 0, 0, 0.3);
+            pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.1s ease-out;
+        }
+
+        #announcer {
+            position: absolute; top: 25%; width: 100%; text-align: center;
+            font-size: 2.2rem; font-weight: bold; color: #fff; text-shadow: 0 0 15px #0f0;
+            opacity: 0; transition: opacity 0.2s ease; pointer-events: none; z-index: 20;
+        }
+
+        /* Weapon Display */
+        #weapon-status { font-size: 1.2rem; color: #ff0; text-shadow: 0 0 5px #ff0; }
 
         /* Menus */
         .overlay {
             position: fixed; inset: 0; display: flex; justify-content: center; align-items: center;
-            background: rgba(0, 0, 0, 0.9); z-index: 100; text-align: center;
+            background: rgba(0, 0, 0, 0.92); z-index: 100; text-align: center;
         }
 
         .menu-box {
-            border: 2px solid #0f0; padding: 40px; background: #030a03;
-            box-shadow: 0 0 25px rgba(0, 255, 0, 0.4); max-width: 450px; width: 90%;
+            border: 2px solid #0f0; padding: 40px; background: #020802;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5); max-width: 500px; width: 90%;
         }
 
-        h1 { font-size: 2rem; margin-bottom: 20px; color: #0f0; text-shadow: 0 0 10px #0f0; }
+        h1 { font-size: 2.2rem; margin-bottom: 15px; color: #0f0; text-shadow: 0 0 10px #0f0; }
         p { margin-bottom: 15px; font-size: 0.85rem; color: #aaa; line-height: 1.4; }
 
         .btn {
-            background: #0f0; color: #000; border: none; padding: 12px 20px;
+            background: #0f0; color: #000; border: none; padding: 14px 20px;
             margin: 10px auto; cursor: pointer; font-weight: bold; width: 100%;
-            font-family: monospace; font-size: 1rem; transition: all 0.2s;
+            font-family: monospace; font-size: 1.1rem; transition: all 0.2s;
         }
-        .btn:hover { background: #fff; box-shadow: 0 0 10px #fff; transform: scale(1.02); }
+        .btn:hover { background: #fff; box-shadow: 0 0 15px #fff; transform: scale(1.02); }
 
         .controls-hint {
             margin-top: 15px; border-top: 1px dashed #0f0; padding-top: 10px;
@@ -73,414 +94,130 @@
 
 <div id="game-container">
     <canvas id="view" class="view"></canvas>
-
-    <div id="announcer">POWER-UP ACQUIRED!</div>
+    <div id="crosshair"></div>
+    <div id="damage-flash"></div>
+    <div id="announcer">WEAPON ACQUIRED!</div>
 
     <div id="hud" style="display: none;">
         <div class="hud-top">
             <div class="panel">
                 <div>HEALTH</div>
                 <div class="stat-bar"><div id="hp-bar" class="stat-fill"></div></div>
-                <div style="margin-top: 8px;">STAMINA [SHIFT]</div>
+                <div style="margin-top: 6px;">STAMINA [SHIFT]</div>
                 <div class="stat-bar"><div id="stamina-bar" class="stat-fill stamina-fill"></div></div>
             </div>
             <div id="timer-box" class="panel">
-                SURVIVE: <span id="clock">03:00</span>
+                TIME: <span id="clock">03:00</span>
             </div>
         </div>
 
         <div class="hud-bottom">
             <div class="panel">
-                <div id="active-powerup" style="color:#00ffff; font-weight:bold;">POWER-UP: NONE</div>
-                <div id="score-display">SCORE: 0</div>
+                <div id="weapon-status">GUN: PISTOL [∞]</div>
+                <div id="score-display" style="margin-top: 5px;">KILLS: 0 | SCORE: 0</div>
             </div>
-            <canvas id="minimap" width="140" height="140"></canvas>
+            <canvas id="minimap" width="150" height="150"></canvas>
         </div>
     </div>
 
     <!-- Main Menu -->
     <div id="main-menu" class="overlay">
         <div class="menu-box">
-            <h1>NEXUS: OVERDRIVE</h1>
-            <p>No maze. Open arena. Pillars for cover. Collect power-ups, manage stamina, and survive the hunter Sentinels.</p>
+            <h1>NEXUS: HEAVY METAL</h1>
+            <p>Destructible cover, pathfinding Sentinels, synth audio FX, multiple weapons, and power-ups.</p>
             
-            <button class="btn" onclick="startGame()">START SURVIVAL</button>
+            <button class="btn" onclick="startGame()">ENGAGE COMBAT</button>
 
             <div class="controls-hint">
                 <strong>CONTROLS:</strong><br>
                 • W/A/S/D or Arrows: Move / Rotate<br>
+                • SPACE: Fire Weapon<br>
                 • SHIFT: Sprint (Uses Stamina)<br>
-                • Items: Blue = Speed | Yellow = Invincible | Green = Freeze
+                • 1 / 2 / 3: Switch Weapons (Pistol / Shotgun / Plasma)<br>
+                • Pickups: Yellow = Ammo/Weapon | Cyan = Speed | Green = Nuke
             </div>
         </div>
     </div>
 </div>
 
 <script>
-const canvas = document.getElementById('view');
-const ctx = canvas.getContext('2d');
-const mCtx = document.getElementById('minimap').getContext('2d');
+// --- Web Audio Synth Sound Engine ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-const MAP_SIZE = 32;
-const GAME_DURATION = 180; // 3 minutes
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
 
-let active = false;
-let timeLeft = GAME_DURATION;
-let score = 0;
-let timerId = null;
-let animationId = null;
+    const now = audioCtx.currentTime;
 
-// Map layout: 0 = floor, 1 = perimeter wall, 2 = cover pillar
-let map = [];
+    if (type === 'shoot_pistol') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
+    } else if (type === 'shoot_shotgun') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(20, now + 0.25);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now); osc.stop(now + 0.25);
+    } else if (type === 'shoot_plasma') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now); osc.stop(now + 0.15);
+    } else if (type === 'hit') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.12);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        osc.start(now); osc.stop(now + 0.12);
+    } else if (type === 'pickup') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now); osc.stop(now + 0.15);
+    } else if (type === 'explosion') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.Here are a few ways to upgrade the arena to make it significantly more chaotic and entertaining:
 
-// Player state
-let player = {
-    x: 16.5, y: 16.5, dir: 0,
-    hp: 100, stamina: 100, maxStamina: 100,
-    speed: 0.06, baseSpeed: 0.06,
-    isSprinting: false,
-    invulnerable: false,
-    invulnerableTimer: 0
-};
+---
 
-// Entities
-let bots = [];
-let powerups = [];
-const POWER_TYPES = ['SPEED', 'INVISIBILITY', 'FREEZE'];
+## **1. Weapons & Combat System**
+* **Laser Rifle / Blaster:** Pick up ammo packs scattered across the arena to shoot back at the Sentinels.
+* **Proximity Mines:** Drop mines behind you while fleeing through cover pillars to destroy or stall incoming enemies.
+* **Knockback Blast:** A rechargeable special ability on `SPACEBAR` that pushes Sentinels away when cornered.
 
-const keys = new Set();
-window.addEventListener('keydown', e => {
-    keys.add(e.code);
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","KeyW","KeyS","KeyA","KeyD","ShiftLeft","ShiftRight"].includes(e.code)) {
-        e.preventDefault();
-    }
-});
-window.addEventListener('keyup', e => keys.delete(e.code));
-window.addEventListener('blur', () => keys.clear());
+## **2. Dynamic Arena Hazards**
+* **Shrinking Arena (Battle Royale Style):** Over time, the outer walls move inward, forcing you into closer combat with the Sentinels.
+* **Laser Grid Barriers:** Wall barriers that periodically toggle on and off, forcing you to time your escapes carefully.
+* **Moving Cover Pillars:** Pillars that rise and fall or move along tracks to constantly shift line-of-sight and escape routes.
 
-function generateArena() {
-    map = Array(MAP_SIZE).fill().map(() => Array(MAP_SIZE).fill(0));
-    
-    // Outer walls
-    for (let i = 0; i < MAP_SIZE; i++) {
-        map[0][i] = 1;
-        map[MAP_SIZE - 1][i] = 1;
-        map[i][0] = 1;
-        map[i][MAP_SIZE - 1] = 1;
-    }
+## **3. Enemy Variety & AI Traps**
+* **Stalker Bots:** Fast, low-health Sentinels that attempt to flank you from behind while you focus on heavy Sentinels.
+* **Sniper Sentinels:** Stationary Sentinels mounted on the perimeter that fire laser beams across the arena.
+* **Pincer Movement:** Sentinels communicate to cut off your nearest exit route instead of following directly behind you.
 
-    // Spawn cover pillars in arena (4x4 arrangement with spacing)
-    for (let y = 5; y < MAP_SIZE - 5; y += 6) {
-        for (let x = 5; x < MAP_SIZE - 5; x += 6) {
-            map[y][x] = 2;
-            map[y+1][x] = 2;
-            map[y][x+1] = 2;
-            map[y+1][x+1] = 2;
-        }
-    }
-}
+## **4. Upgrades & Meta-Progression**
+* **Shop / Skill Tree:** Earn credits during survival runs to upgrade base stamina capacity, sprint speed, or power-up duration between matches.
+* **Combo Multipliers:** Earn additional points by narrowly dodging Sentinels or collecting power-ups while low on health.
 
-function spawnPowerup() {
-    if (powerups.length >= 4) return;
-    let rx, ry;
-    do {
-        rx = Math.floor(Math.random() * (MAP_SIZE - 2)) + 1;
-        ry = Math.floor(Math.random() * (MAP_SIZE - 2)) + 1;
-    } while (map[ry][rx] !== 0);
+---
 
-    const type = POWER_TYPES[Math.floor(Math.random() * POWER_TYPES.length)];
-    powerups.push({ x: rx + 0.5, y: ry + 0.5, type: type });
-}
-
-function showAnnouncer(text) {
-    const el = document.getElementById('announcer');
-    el.innerText = text;
-    el.style.opacity = '1';
-    setTimeout(() => { el.style.opacity = '0'; }, 1500);
-}
-
-function startGame() {
-    generateArena();
-    keys.clear();
-    active = true;
-    timeLeft = GAME_DURATION;
-    score = 0;
-
-    player = {
-        x: MAP_SIZE / 2, y: MAP_SIZE / 2, dir: 0,
-        hp: 100, stamina: 100, maxStamina: 100,
-        speed: 0.06, baseSpeed: 0.06,
-        isSprinting: false, invulnerable: false, invulnerableTimer: 0
-    };
-
-    // Spawn initial aggressive Sentinels
-    bots = [
-        { x: 3.5, y: 3.5, speed: 0.04, frozen: 0, color: '#f00' },
-        { x: MAP_SIZE - 3.5, y: MAP_SIZE - 3.5, speed: 0.04, frozen: 0, color: '#f00' }
-    ];
-
-    powerups = [];
-    spawnPowerup(); spawnPowerup();
-
-    document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('hud').style.display = 'flex';
-
-    if (timerId) clearInterval(timerId);
-    if (animationId) cancelAnimationFrame(animationId);
-
-    timerId = setInterval(() => {
-        if (!active) return;
-        timeLeft--;
-        score += 10;
-
-        // Dynamic difficulty: Spawn faster mega bot at half time
-        if (timeLeft === 90) {
-            bots.push({ x: 3.5, y: MAP_SIZE - 3.5, speed: 0.052, frozen: 0, color: '#ff00ff', mega: true });
-            showAnnouncer("WARNING: HUNTER SENTINEL DEPLOYED!");
-        }
-
-        // Periodically spawn powerups
-        if (timeLeft % 12 === 0) spawnPowerup();
-
-        let min = Math.floor(timeLeft / 60), sec = timeLeft % 60;
-        document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0' + sec : sec}`;
-        document.getElementById('score-display').innerText = `SCORE: ${score}`;
-
-        if (timeLeft <= 0) endGame("SURVIVAL SUCCESSFUL! YOU ESCAPED!");
-    }, 1000);
-
-    resize();
-    loop();
-}
-
-function canMove(nx, ny) {
-    let mx = Math.floor(nx), my = Math.floor(ny);
-    return map[my] && map[my][mx] === 0;
-}
-
-function updatePlayer() {
-    // Rotation
-    if (keys.has('KeyA') || keys.has('ArrowLeft')) player.dir -= 0.05;
-    if (keys.has('KeyD') || keys.has('ArrowRight')) player.dir += 0.05;
-
-    // Sprinting mechanics
-    let currentSpeed = player.speed;
-    if (keys.has('ShiftLeft') || keys.has('ShiftRight')) {
-        if (player.stamina > 5) {
-            player.isSprinting = true;
-            currentSpeed *= 1.6;
-            player.stamina = Math.max(0, player.stamina - 0.8);
-        } else {
-            player.isSprinting = false;
-        }
-    } else {
-        player.isSprinting = false;
-        player.stamina = Math.min(player.maxStamina, player.stamina + 0.3);
-    }
-
-    // Movement
-    let moveX = 0, moveY = 0;
-    if (keys.has('KeyW') || keys.has('ArrowUp')) {
-        moveX = Math.cos(player.dir) * currentSpeed;
-        moveY = Math.sin(player.dir) * currentSpeed;
-    } else if (keys.has('KeyS') || keys.has('ArrowDown')) {
-        moveX = -Math.cos(player.dir) * currentSpeed;
-        moveY = -Math.sin(player.dir) * currentSpeed;
-    }
-
-    if (canMove(player.x + moveX, player.y)) player.x += moveX;
-    if (canMove(player.x, player.y + moveY)) player.y += moveY;
-
-    // Check power-up collection
-    for (let i = powerups.length - 1; i >= 0; i--) {
-        let p = powerups[i];
-        if (Math.hypot(player.x - p.x, player.y - p.y) < 0.7) {
-            applyPowerup(p.type);
-            powerups.splice(i, 1);
-        }
-    }
-
-    // Update Timers
-    if (player.invulnerableTimer > 0) {
-        player.invulnerableTimer--;
-        if (player.invulnerableTimer <= 0) {
-            player.invulnerable = false;
-            document.getElementById('active-powerup').innerText = "POWER-UP: NONE";
-        }
-    }
-
-    // Update HUD bars
-    document.getElementById('hp-bar').style.width = player.hp + '%';
-    document.getElementById('stamina-bar').style.width = player.stamina + '%';
-}
-
-function applyPowerup(type) {
-    if (type === 'SPEED') {
-        player.speed = player.baseSpeed * 1.5;
-        setTimeout(() => { player.speed = player.baseSpeed; }, 6000);
-        showAnnouncer("SPEED BOOST ACTIVE!");
-    } else if (type === 'INVISIBILITY') {
-        player.invulnerable = true;
-        player.invulnerableTimer = 360; // ~6 seconds
-        showAnnouncer("INVISIBILITY ACTIVE!");
-    } else if (type === 'FREEZE') {
-        bots.forEach(b => b.frozen = 300); // ~5 seconds
-        showAnnouncer("SENTINELS FROZEN!");
-    }
-    document.getElementById('active-powerup').innerText = `POWER-UP: ${type}`;
-}
-
-function updateBots() {
-    bots.forEach(b => {
-        if (b.frozen > 0) {
-            b.frozen--;
-            return;
-        }
-
-        // Move directly toward player (Simple AI suited for open arenas)
-        let dx = player.x - b.x;
-        let dy = player.y - b.y;
-        let dist = Math.hypot(dx, dy);
-
-        if (dist < 0.6) {
-            if (!player.invulnerable) {
-                player.hp -= 1.5;
-                if (player.hp <= 0) endGame("SYSTEM FAILURE: OVERRUN BY SENTINELS");
-            }
-        }
-
-        if (dist > 0.1) {
-            let stepX = (dx / dist) * b.speed;
-            let stepY = (dy / dist) * b.speed;
-
-            if (canMove(b.x + stepX, b.y)) b.x += stepX;
-            if (canMove(b.x, b.y + stepY)) b.y += stepY;
-        }
-    });
-}
-
-function render() {
-    const w = canvas.width, h = canvas.height;
-
-    // Floor and Ceiling
-    ctx.fillStyle = '#020702'; ctx.fillRect(0, 0, w, h / 2);
-    ctx.fillStyle = '#051105'; ctx.fillRect(0, h / 2, w, h / 2);
-
-    let zBuf = new Array(w).fill(999);
-
-    // Raycasting Walls
-    for (let i = 0; i < w; i++) {
-        let camX = 2 * i / w - 1;
-        let rayAngle = player.dir + camX * 0.5;
-        let rayDirX = Math.cos(rayAngle), rayDirY = Math.sin(rayAngle);
-
-        let d = 0, hit = false, wallType = 0;
-        while (!hit && d < 25) {
-            d += 0.03;
-            let checkX = Math.floor(player.x + rayDirX * d);
-            let checkY = Math.floor(player.y + rayDirY * d);
-
-            if (map[checkY] && map[checkY][checkX] > 0) {
-                hit = true;
-                wallType = map[checkY][checkX];
-            }
-        }
-
-        let correctedD = Math.max(0.001, d * Math.cos(camX * 0.5));
-        zBuf[i] = correctedD;
-
-        let wallH = h / correctedD;
-        ctx.fillStyle = wallType === 1 ? '#005500' : '#00aa55';
-        ctx.fillRect(i, h / 2 - wallH / 2, 1, wallH);
-    }
-
-    // Render Entities (Power-ups & Bots)
-    let entities = [...powerups.map(p => ({ ...p, isItem: true })), ...bots.map(b => ({ ...b, isBot: true }))];
-    
-    // Sort entities from back to front
-    entities.sort((a, b) => Math.hypot(player.x - b.x, player.y - b.y) - Math.hypot(player.x - a.x, player.y - a.y));
-
-    entities.forEach(ent => {
-        let dx = ent.x - player.x, dy = ent.y - player.y;
-        let dist = Math.hypot(dx, dy);
-        if (dist < 0.2) return;
-
-        let angle = Math.atan2(dy, dx) - player.dir;
-        while (angle < -Math.PI) angle += Math.PI * 2;
-        while (angle > Math.PI) angle -= Math.PI * 2;
-
-        if (Math.abs(angle) < 0.7) {
-            let sx = (angle / 1.0 + 0.5) * w;
-            let sh = h / dist;
-            let ix = Math.floor(sx);
-
-            if (ix >= 0 && ix < zBuf.length && dist < zBuf[ix]) {
-                if (ent.isItem) {
-                    ctx.fillStyle = ent.type === 'SPEED' ? '#00ffff' : ent.type === 'INVISIBILITY' ? '#ffff00' : '#00ff00';
-                    ctx.fillRect(sx - sh / 8, h / 2 - sh / 8, sh / 4, sh / 4);
-                } else if (ent.isBot) {
-                    ctx.fillStyle = ent.frozen > 0 ? '#00ffff' : (ent.color || '#f00');
-                    let size = ent.mega ? sh / 1.5 : sh / 2.5;
-                    ctx.fillRect(sx - size / 2, h / 2 - size / 2, size, size);
-                }
-            }
-        }
-    });
-}
-
-function drawMinimap() {
-    mCtx.clearRect(0, 0, 140, 140);
-    let scale = 140 / MAP_SIZE;
-
-    // Draw Map Walls
-    for (let y = 0; y < MAP_SIZE; y++) {
-        for (let x = 0; x < MAP_SIZE; x++) {
-            if (map[y][x] > 0) {
-                mCtx.fillStyle = map[y][x] === 1 ? '#003300' : '#008844';
-                mCtx.fillRect(x * scale, y * scale, scale, scale);
-            }
-        }
-    }
-
-    // Power-ups
-    powerups.forEach(p => {
-        mCtx.fillStyle = '#00ffff';
-        mCtx.fillRect(p.x * scale - 2, p.y * scale - 2, 4, 4);
-    });
-
-    // Bots
-    bots.forEach(b => {
-        mCtx.fillStyle = b.frozen > 0 ? '#00ffff' : '#ff0000';
-        mCtx.fillRect(b.x * scale - 3, b.y * scale - 3, 6, 6);
-    });
-
-    // Player
-    mCtx.fillStyle = player.invulnerable ? '#ffff00' : '#ffffff';
-    mCtx.beginPath();
-    mCtx.arc(player.x * scale, player.y * scale, 4, 0, Math.PI * 2);
-    mCtx.fill();
-}
-
-function loop() {
-    if (!active) return;
-    updatePlayer();
-    updateBots();
-    render();
-    drawMinimap();
-    animationId = requestAnimationFrame(loop);
-}
-
-function endGame(message) {
-    active = false;
-    alert(`${message}\nFINAL SCORE: ${score}`);
-    location.reload();
-}
-
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-</script>
-</body>
-</html>
+<ElicitationsGroup message="Which feature set would you like to add next?">
+  <Elicitation label="Add Shooting & Combat Mechanics" query="Add laser shooting mechanics and Sentinel health bars to the NEXUS: OVERDRIVE game." />
+  <Elicitation label="Add Enemy Types & AI Flanking" query="Add different enemy types like fast Stalkers and Snipers to the NEXUS: OVERDRIVE game." />
+  <Elicitation label="Add Dynamic Hazards & Shrinking Arena" query="Add a shrinking arena and toggling laser hazards to the NEXUS: OVERDRIVE game." />
+</ElicitationsGroup>
