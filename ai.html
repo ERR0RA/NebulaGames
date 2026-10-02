@@ -1,300 +1,486 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>NEXUS-3D | Stable Protocol</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS-3D: OVERDRIVE</title>
     <style>
-        body { margin: 0; background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
-        #container { display: flex; width: 100vw; height: 100vh; }
-        canvas.view { width: 100%; height: 100%; image-rendering: pixelated; background: #000; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
+        
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        canvas.view { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+        /* Retro HUD Overlays */
+        #hud {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 10; display: flex; flex-direction: column;
+            justify-content: space-between; padding: 20px; box-sizing: border-box;
+        }
+
+        .hud-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .hud-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+
+        .panel {
+            background: rgba(0, 20, 0, 0.75); border: 1px solid #0f0;
+            padding: 10px 15px; box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+
+        .stat-bar { width: 150px; height: 12px; border: 1px solid #0f0; margin-top: 5px; background: #001100; }
+        .stat-fill { height: 100%; background: #0f0; width: 100%; transition: width 0.1s linear; }
+        .stamina-fill { background: #00ffff; }
 
         #minimap {
-            position: absolute; top: 15px; left: 15px;
-            border: 1px solid #0f0; background: rgba(0,0,0,0.9); z-index: 30;
-            display: none;
+            width: 140px; height: 140px; border: 1px solid #0f0;
+            background: rgba(0,0,0,0.85); box-shadow: 0 0 8px rgba(0,255,0,0.3);
         }
 
+        #timer-box { font-size: 1.4rem; color: #f00; border-color: #f00; text-shadow: 0 0 5px #f00; }
+        #announcer {
+            position: absolute; top: 20%; width: 100%; text-align: center;
+            font-size: 1.8rem; font-weight: bold; color: #fff; text-shadow: 0 0 10px #0f0;
+            opacity: 0; transition: opacity 0.3s ease; pointer-events: none; z-index: 20;
+        }
+
+        /* Menus */
         .overlay {
             position: fixed; inset: 0; display: flex; justify-content: center; align-items: center;
-            background: #000; z-index: 100; text-align: center;
+            background: rgba(0, 0, 0, 0.9); z-index: 100; text-align: center;
         }
 
-        .menu-box { border: 2px solid #0f0; padding: 30px; background: #050505; box-shadow: 0 0 15px #004400; }
-        .btn { background: #0f0; color: #000; border: none; padding: 12px 25px; margin: 8px; cursor: pointer; font-weight: bold; width: 280px; display: block; font-family: monospace; }
-        .btn:hover { background: #fff; }
-
-        #timer-box {
-            position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8);
-            padding: 10px; border: 1px solid #f00; color: #f00; font-weight: bold;
-            display: none; z-index: 40;
+        .menu-box {
+            border: 2px solid #0f0; padding: 40px; background: #030a03;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.4); max-width: 450px; width: 90%;
         }
 
-        #hud {
-            position: absolute; bottom: 15px; width: 100%; display: none;
-            配送 justify-content: center; pointer-events: none; z-index: 40; gap: 20px;
-        }
+        h1 { font-size: 2rem; margin-bottom: 20px; color: #0f0; text-shadow: 0 0 10px #0f0; }
+        p { margin-bottom: 15px; font-size: 0.85rem; color: #aaa; line-height: 1.4; }
 
-        .stats { background: rgba(0,0,0,0.8); padding: 5px 15px; border: 1px solid #0f0; font-size: 0.8rem; }
+        .btn {
+            background: #0f0; color: #000; border: none; padding: 12px 20px;
+            margin: 10px auto; cursor: pointer; font-weight: bold; width: 100%;
+            font-family: monospace; font-size: 1rem; transition: all 0.2s;
+        }
+        .btn:hover { background: #fff; box-shadow: 0 0 10px #fff; transform: scale(1.02); }
+
+        .controls-hint {
+            margin-top: 15px; border-top: 1px dashed #0f0; padding-top: 10px;
+            font-size: 0.75rem; color: #888; text-align: left;
+        }
     </style>
 </head>
 <body>
 
-<div id="timer-box">EXTRACTION IN: <span id="clock">04:00</span></div>
+<div id="game-container">
+    <canvas id="view" class="view"></canvas>
 
-<div id="container">
-    <canvas id="p1Cam" class="view"></canvas>
-</div>
+    <div id="announcer">POWER-UP ACQUIRED!</div>
 
-<canvas id="minimap" width="110" height="110"></canvas>
+    <div id="hud" style="display: none;">
+        <div class="hud-top">
+            <div class="panel">
+                <div>HEALTH</div>
+                <div class="stat-bar"><div id="hp-bar" class="stat-fill"></div></div>
+                <div style="margin-top: 8px;">STAMINA [SHIFT]</div>
+                <div class="stat-bar"><div id="stamina-bar" class="stat-fill stamina-fill"></div></div>
+            </div>
+            <div id="timer-box" class="panel">
+                SURVIVE: <span id="clock">03:00</span>
+            </div>
+        </div>
 
-<div id="main-menu" class="overlay">
-    <div class="menu-box">
-        <h1>NEXUS_SINGLE_PLAYER</h1>
-        <button class="btn" onclick="init('bot')">SOLO SURVIVAL (1v2 SENTINELS)</button>
-        <button class="btn" onclick="init('bot_tag')">SOLO TAG (RANDOM ROLES)</button>
-        <p id="best-display" style="color:#0f0; font-size: 0.8rem; margin: 10px 0;">BEST SURVIVAL: 0s</p>
-        <p style="color:#00ff00; font-size: 0.7rem; margin-top:10px; font-weight:bold;">SENSORS TUNED: NO HP / INSTANT TAG</p>
+        <div class="hud-bottom">
+            <div class="panel">
+                <div id="active-powerup" style="color:#00ffff; font-weight:bold;">POWER-UP: NONE</div>
+                <div id="score-display">SCORE: 0</div>
+            </div>
+            <canvas id="minimap" width="140" height="140"></canvas>
+        </div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="main-menu" class="overlay">
+        <div class="menu-box">
+            <h1>NEXUS: OVERDRIVE</h1>
+            <p>No maze. Open arena. Pillars for cover. Collect power-ups, manage stamina, and survive the hunter Sentinels.</p>
+            
+            <button class="btn" onclick="startGame()">START SURVIVAL</button>
+
+            <div class="controls-hint">
+                <strong>CONTROLS:</strong><br>
+                • W/A/S/D or Arrows: Move / Rotate<br>
+                • SHIFT: Sprint (Uses Stamina)<br>
+                • Items: Blue = Speed | Yellow = Invincible | Green = Freeze
+            </div>
+        </div>
     </div>
 </div>
 
-<div id="hud">
-    <div id="tagger-status" class="stats" style="color: #f00; font-weight: bold;">STATUS: STANDBY</div>
-    <div id="record-status" class="stats" style="color: #0f0;">BEST: 0s</div>
-</div>
-
 <script>
-const p1c = document.getElementById('p1Cam');
-const ctx1 = p1c.getContext('2d');
+const canvas = document.getElementById('view');
+const ctx = canvas.getContext('2d');
 const mCtx = document.getElementById('minimap').getContext('2d');
 
-const SIZE = 31;
-const START_TIME = 240;
-let world = [];
+const MAP_SIZE = 32;
+const GAME_DURATION = 180; // 3 minutes
+
 let active = false;
-let gameMode = '';
-let timeLeft = START_TIME;
-let megaSpawned = false;
+let timeLeft = GAME_DURATION;
+let score = 0;
 let timerId = null;
 let animationId = null;
 
-// High Score Setup
-let bestSurvival = localStorage.getItem('nexus_best_survival') || 0;
-document.getElementById('best-display').innerText = `BEST SURVIVAL: ${bestSurvival}s`;
-document.getElementById('record-status').innerText = `BEST: ${bestSurvival}s`;
+// Map layout: 0 = floor, 1 = perimeter wall, 2 = cover pillar
+let map = [];
+
+// Player state
+let player = {
+    x: 16.5, y: 16.5, dir: 0,
+    hp: 100, stamina: 100, maxStamina: 100,
+    speed: 0.06, baseSpeed: 0.06,
+    isSprinting: false,
+    invulnerable: false,
+    invulnerableTimer: 0
+};
+
+// Entities
+let bots = [];
+let powerups = [];
+const POWER_TYPES = ['SPEED', 'INVISIBILITY', 'FREEZE'];
 
 const keys = new Set();
-let p1 = { x: 1.5, y: 1.5, dir: 0, role: 'runner' };
-let bots = [];
-
 window.addEventListener('keydown', e => {
     keys.add(e.code);
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","KeyW","KeyS","KeyA","KeyD"].includes(e.code)) e.preventDefault();
-}, { passive: false });
-
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","KeyW","KeyS","KeyA","KeyD","ShiftLeft","ShiftRight"].includes(e.code)) {
+        e.preventDefault();
+    }
+});
 window.addEventListener('keyup', e => keys.delete(e.code));
-function clearKeys() { keys.clear(); }
-window.addEventListener('blur', clearKeys);
+window.addEventListener('blur', () => keys.clear());
 
-function generateMaze() {
-    world = Array(SIZE).fill().map(() => Array(SIZE).fill(1));
-    function walk(x, y) {
-        world[y][x] = 0;
-        let dirs = [[0,-2],[0,2],[-2,0],[2,0]].sort(() => Math.random() - 0.5);
-        for (let [dx, dy] of dirs) {
-            let nx = x + dx, ny = y + dy;
-            if (nx > 0 && nx < SIZE && ny > 0 && ny < SIZE && world[ny][nx] === 1) {
-                world[y + dy / 2][x + dx / 2] = 0;
-                walk(nx, ny);
-            }
+function generateArena() {
+    map = Array(MAP_SIZE).fill().map(() => Array(MAP_SIZE).fill(0));
+    
+    // Outer walls
+    for (let i = 0; i < MAP_SIZE; i++) {
+        map[0][i] = 1;
+        map[MAP_SIZE - 1][i] = 1;
+        map[i][0] = 1;
+        map[i][MAP_SIZE - 1] = 1;
+    }
+
+    // Spawn cover pillars in arena (4x4 arrangement with spacing)
+    for (let y = 5; y < MAP_SIZE - 5; y += 6) {
+        for (let x = 5; x < MAP_SIZE - 5; x += 6) {
+            map[y][x] = 2;
+            map[y+1][x] = 2;
+            map[y][x+1] = 2;
+            map[y+1][x+1] = 2;
         }
     }
-    walk(1, 1);
 }
 
-function getNextStep(bx, by, tx, ty) {
-    let sx = Math.floor(bx), sy = Math.floor(by), ex = Math.floor(tx), ey = Math.floor(ty);
-    if (sx === ex && sy === ey) return { x: tx, y: ty };
-    let q = [[sx, sy]], vis = new Set([sx + ',' + sy]), parent = {};
-    while (q.length > 0) {
-        let [cx, cy] = q.shift();
-        if (cx === ex && cy === ey) break;
-        for (let [dx, dy] of [[0,1],[0,-1],[1,0],[-1,0]]) {
-            let nx = cx + dx, ny = cy + dy, id = nx + ',' + ny;
-            if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && world[ny][nx] === 0 && !vis.has(id)) {
-                vis.add(id); parent[id] = [cx, cy]; q.push([nx, ny]);
-            }
-        }
-    }
-    let path = [], curr = ex + ',' + ey;
-    while (parent[curr]) { path.push(curr); curr = parent[curr][0] + ',' + parent[curr][1]; }
-    if (path.length === 0) return { x: bx, y: by };
-    let n = path.pop().split(',').map(Number);
-    return { x: n[0] + 0.5, y: n[1] + 0.5 };
+function spawnPowerup() {
+    if (powerups.length >= 4) return;
+    let rx, ry;
+    do {
+        rx = Math.floor(Math.random() * (MAP_SIZE - 2)) + 1;
+        ry = Math.floor(Math.random() * (MAP_SIZE - 2)) + 1;
+    } while (map[ry][rx] !== 0);
+
+    const type = POWER_TYPES[Math.floor(Math.random() * POWER_TYPES.length)];
+    powerups.push({ x: rx + 0.5, y: ry + 0.5, type: type });
 }
 
-function canMove(nx, ny) { return world[Math.floor(ny)] && world[Math.floor(ny)][Math.floor(nx)] === 0; }
-
-function movePlayer(p, speed, rotSpeed) {
-    if (keys.has('KeyA') || keys.has('ArrowLeft')) p.dir -= rotSpeed;
-    if (keys.has('KeyD') || keys.has('ArrowRight')) p.dir += rotSpeed;
-    let moveX = 0, moveY = 0;
-    if (keys.has('KeyW') || keys.has('ArrowUp')) {
-        moveX = Math.cos(p.dir) * speed; moveY = Math.sin(p.dir) * speed;
-    } else if (keys.has('KeyS') || keys.has('ArrowDown')) {
-        moveX = -Math.cos(p.dir) * speed; moveY = -Math.sin(p.dir) * speed;
-    }
-    if (canMove(p.x + moveX, p.y)) p.x += moveX;
-    if (canMove(p.x, p.y + moveY)) p.y += moveY;
+function showAnnouncer(text) {
+    const el = document.getElementById('announcer');
+    el.innerText = text;
+    el.style.opacity = '1';
+    setTimeout(() => { el.style.opacity = '0'; }, 1500);
 }
 
-function checkSurvivalRecord() {
-    if (gameMode === 'bot') {
-        let survived = START_TIME - timeLeft;
-        if (survived > bestSurvival) {
-            bestSurvival = survived;
-            localStorage.setItem('nexus_best_survival', bestSurvival);
-            return true;
-        }
-    }
-    return false;
-}
+function startGame() {
+    generateArena();
+    keys.clear();
+    active = true;
+    timeLeft = GAME_DURATION;
+    score = 0;
 
-function endGame(msg) {
-    active = false;
-    let isNewRecord = checkSurvivalRecord();
-    let finalMsg = isNewRecord ? msg + "\nNEW SURVIVAL RECORD: " + bestSurvival + "s" : msg;
-    alert(finalMsg);
-    location.reload();
-}
+    player = {
+        x: MAP_SIZE / 2, y: MAP_SIZE / 2, dir: 0,
+        hp: 100, stamina: 100, maxStamina: 100,
+        speed: 0.06, baseSpeed: 0.06,
+        isSprinting: false, invulnerable: false, invulnerableTimer: 0
+    };
 
-function init(m) {
-    gameMode = m; generateMaze(); clearKeys();
-    active = true; timeLeft = START_TIME; megaSpawned = false; bots = [];
-    p1 = { x: 1.5, y: 1.5, dir: 0, role: 'runner' };
+    // Spawn initial aggressive Sentinels
+    bots = [
+        { x: 3.5, y: 3.5, speed: 0.04, frozen: 0, color: '#f00' },
+        { x: MAP_SIZE - 3.5, y: MAP_SIZE - 3.5, speed: 0.04, frozen: 0, color: '#f00' }
+    ];
+
+    powerups = [];
+    spawnPowerup(); spawnPowerup();
+
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('hud').style.display = 'flex';
 
     if (timerId) clearInterval(timerId);
     if (animationId) cancelAnimationFrame(animationId);
 
-    document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('minimap').style.display = 'block';
-    document.getElementById('hud').style.display = 'flex';
-    document.getElementById('timer-box').style.display = 'block';
-    
-    // Hide record if not in survival mode
-    document.getElementById('record-status').style.display = (m === 'bot') ? 'block' : 'none';
-
-    if (m === 'bot_tag') {
-        let botIsTagger = Math.random() > 0.5;
-        p1.role = botIsTagger ? 'runner' : 'tagger';
-        bots = [{ x: SIZE - 1.5, y: SIZE - 1.5, s: 0.045, role: botIsTagger ? 'tagger' : 'runner', type: 'normal' }];
-        document.getElementById('tagger-status').innerText = `TAGGER: ${botIsTagger ? 'ELITE BOT' : 'YOU'}`;
-    } else if (m === 'bot') {
-        bots = [
-            { x: 1.5, y: SIZE - 1.5, s: 0.025, role: 'tagger', type: 'normal' },
-            { x: SIZE - 1.5, y: 1.5, s: 0.025, role: 'tagger', type: 'normal' }
-        ];
-        document.getElementById('tagger-status').innerText = 'TAGGER: SENTINELS';
-    }
-
     timerId = setInterval(() => {
         if (!active) return;
         timeLeft--;
-        if (gameMode === 'bot' && timeLeft <= 90 && !megaSpawned) {
-            megaSpawned = true;
-            bots.push({ x: 15.5, y: 15.5, s: 0.048, role: 'tagger', type: 'mega' });
-            document.getElementById('tagger-status').innerText = 'WARNING: MEGA BOT ACTIVE';
+        score += 10;
+
+        // Dynamic difficulty: Spawn faster mega bot at half time
+        if (timeLeft === 90) {
+            bots.push({ x: 3.5, y: MAP_SIZE - 3.5, speed: 0.052, frozen: 0, color: '#ff00ff', mega: true });
+            showAnnouncer("WARNING: HUNTER SENTINEL DEPLOYED!");
         }
+
+        // Periodically spawn powerups
+        if (timeLeft % 12 === 0) spawnPowerup();
+
         let min = Math.floor(timeLeft / 60), sec = timeLeft % 60;
         document.getElementById('clock').innerText = `${min}:${sec < 10 ? '0' + sec : sec}`;
-        if (timeLeft <= 0) { endGame('EXTRACTION SUCCESSFUL: YOU SURVIVED'); }
+        document.getElementById('score-display').innerText = `SCORE: ${score}`;
+
+        if (timeLeft <= 0) endGame("SURVIVAL SUCCESSFUL! YOU ESCAPED!");
     }, 1000);
-    resize(); loop();
+
+    resize();
+    loop();
 }
 
-function resize() { p1c.width = window.innerWidth; p1c.height = window.innerHeight; }
-window.addEventListener('resize', resize);
+function canMove(nx, ny) {
+    let mx = Math.floor(nx), my = Math.floor(ny);
+    return map[my] && map[my][mx] === 0;
+}
 
-function render(ctx, p, canvas) {
-    const w = canvas.width, h = canvas.height;
-    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h / 2);
-    ctx.fillStyle = '#050505'; ctx.fillRect(0, h / 2, w, h / 2);
-    let zBuf = new Array(w).fill(30);
-    for (let i = 0; i < w; i++) {
-        let camX = 2 * i / w - 1;
-        let rayDirX = Math.cos(p.dir + camX * 0.6), rayDirY = Math.sin(p.dir + camX * 0.6);
-        let d = 0, hit = false, exactX = p.x, exactY = p.y;
-        while (!hit && d < 20) {
-            d += 0.02; exactX = p.x + rayDirX * d; exactY = p.y + rayDirY * d;
-            let tx = Math.floor(exactX), ty = Math.floor(exactY);
-            if (world[ty] && world[ty][tx] === 1) hit = true;
+function updatePlayer() {
+    // Rotation
+    if (keys.has('KeyA') || keys.has('ArrowLeft')) player.dir -= 0.05;
+    if (keys.has('KeyD') || keys.has('ArrowRight')) player.dir += 0.05;
+
+    // Sprinting mechanics
+    let currentSpeed = player.speed;
+    if (keys.has('ShiftLeft') || keys.has('ShiftRight')) {
+        if (player.stamina > 5) {
+            player.isSprinting = true;
+            currentSpeed *= 1.6;
+            player.stamina = Math.max(0, player.stamina - 0.8);
+        } else {
+            player.isSprinting = false;
         }
-        let correctedD = Math.max(0.001, d * Math.cos(camX * 0.6));
-        zBuf[i] = correctedD;
-        let wallH = h / correctedD;
-        ctx.fillStyle = '#004400'; ctx.fillRect(i, h / 2 - wallH / 2, 1, wallH);
-        let fx = exactX % 1, fy = exactY % 1;
-        if (fx < 0.03 || fx > 0.97 || fy < 0.03 || fy > 0.97) {
-            ctx.fillStyle = '#006600'; ctx.fillRect(i, h / 2 - wallH / 2, 1, wallH);
+    } else {
+        player.isSprinting = false;
+        player.stamina = Math.min(player.maxStamina, player.stamina + 0.3);
+    }
+
+    // Movement
+    let moveX = 0, moveY = 0;
+    if (keys.has('KeyW') || keys.has('ArrowUp')) {
+        moveX = Math.cos(player.dir) * currentSpeed;
+        moveY = Math.sin(player.dir) * currentSpeed;
+    } else if (keys.has('KeyS') || keys.has('ArrowDown')) {
+        moveX = -Math.cos(player.dir) * currentSpeed;
+        moveY = -Math.sin(player.dir) * currentSpeed;
+    }
+
+    if (canMove(player.x + moveX, player.y)) player.x += moveX;
+    if (canMove(player.x, player.y + moveY)) player.y += moveY;
+
+    // Check power-up collection
+    for (let i = powerups.length - 1; i >= 0; i--) {
+        let p = powerups[i];
+        if (Math.hypot(player.x - p.x, player.y - p.y) < 0.7) {
+            applyPowerup(p.type);
+            powerups.splice(i, 1);
         }
     }
-    bots.forEach(t => {
-        let dx = t.x - p.x, dy = t.y - p.y, dist = Math.hypot(dx, dy);
-        if (dist < 0.1) return;
-        let angle = Math.atan2(dy, dx) - p.dir;
-        while (angle < -Math.PI) angle += Math.PI * 2;
-        while (angle > Math.PI) angle -= Math.PI * 2;
-        if (Math.abs(angle) < 0.8) {
-            let sx = (angle / 1.2 + 0.5) * w, sh = h / dist, ix = Math.floor(sx);
-            if (ix >= 0 && ix < zBuf.length && dist < zBuf[ix]) {
-                ctx.fillStyle = (t.type === 'mega') ? '#ff0000' : (t.role === 'tagger' ? '#f55' : '#0f0');
-                let botWidth = (t.type === 'mega') ? sh / 2 : sh / 4;
-                ctx.fillRect(sx - botWidth / 2, h / 2 - sh / 2, botWidth, sh);
-            }
+
+    // Update Timers
+    if (player.invulnerableTimer > 0) {
+        player.invulnerableTimer--;
+        if (player.invulnerableTimer <= 0) {
+            player.invulnerable = false;
+            document.getElementById('active-powerup').innerText = "POWER-UP: NONE";
         }
-    });
+    }
+
+    // Update HUD bars
+    document.getElementById('hp-bar').style.width = player.hp + '%';
+    document.getElementById('stamina-bar').style.width = player.stamina + '%';
+}
+
+function applyPowerup(type) {
+    if (type === 'SPEED') {
+        player.speed = player.baseSpeed * 1.5;
+        setTimeout(() => { player.speed = player.baseSpeed; }, 6000);
+        showAnnouncer("SPEED BOOST ACTIVE!");
+    } else if (type === 'INVISIBILITY') {
+        player.invulnerable = true;
+        player.invulnerableTimer = 360; // ~6 seconds
+        showAnnouncer("INVISIBILITY ACTIVE!");
+    } else if (type === 'FREEZE') {
+        bots.forEach(b => b.frozen = 300); // ~5 seconds
+        showAnnouncer("SENTINELS FROZEN!");
+    }
+    document.getElementById('active-powerup').innerText = `POWER-UP: ${type}`;
 }
 
 function updateBots() {
     bots.forEach(b => {
-        let dist = Math.hypot(p1.x - b.x, p1.y - b.y);
-        if (dist < 0.45) {
-            if (b.role === 'tagger') {
-                endGame(b.type === 'mega' ? 'CRUSHED BY MEGA BOT!' : 'TAGGED BY SENTINEL!');
-            } else if (gameMode === 'bot_tag' && p1.role === 'tagger') {
-                endGame('YOU TAGGED THE BOT! VICTORY');
+        if (b.frozen > 0) {
+            b.frozen--;
+            return;
+        }
+
+        // Move directly toward player (Simple AI suited for open arenas)
+        let dx = player.x - b.x;
+        let dy = player.y - b.y;
+        let dist = Math.hypot(dx, dy);
+
+        if (dist < 0.6) {
+            if (!player.invulnerable) {
+                player.hp -= 1.5;
+                if (player.hp <= 0) endGame("SYSTEM FAILURE: OVERRUN BY SENTINELS");
             }
-        } else {
-            let next = getNextStep(b.x, b.y, p1.x, p1.y);
-            let dx = next.x - b.x, dy = next.y - b.y, d = Math.hypot(dx, dy);
-            if (d > 0.01) { b.x += (dx / d) * b.s; b.y += (dy / d) * b.s; }
+        }
+
+        if (dist > 0.1) {
+            let stepX = (dx / dist) * b.speed;
+            let stepY = (dy / dist) * b.speed;
+
+            if (canMove(b.x + stepX, b.y)) b.x += stepX;
+            if (canMove(b.x, b.y + stepY)) b.y += stepY;
+        }
+    });
+}
+
+function render() {
+    const w = canvas.width, h = canvas.height;
+
+    // Floor and Ceiling
+    ctx.fillStyle = '#020702'; ctx.fillRect(0, 0, w, h / 2);
+    ctx.fillStyle = '#051105'; ctx.fillRect(0, h / 2, w, h / 2);
+
+    let zBuf = new Array(w).fill(999);
+
+    // Raycasting Walls
+    for (let i = 0; i < w; i++) {
+        let camX = 2 * i / w - 1;
+        let rayAngle = player.dir + camX * 0.5;
+        let rayDirX = Math.cos(rayAngle), rayDirY = Math.sin(rayAngle);
+
+        let d = 0, hit = false, wallType = 0;
+        while (!hit && d < 25) {
+            d += 0.03;
+            let checkX = Math.floor(player.x + rayDirX * d);
+            let checkY = Math.floor(player.y + rayDirY * d);
+
+            if (map[checkY] && map[checkY][checkX] > 0) {
+                hit = true;
+                wallType = map[checkY][checkX];
+            }
+        }
+
+        let correctedD = Math.max(0.001, d * Math.cos(camX * 0.5));
+        zBuf[i] = correctedD;
+
+        let wallH = h / correctedD;
+        ctx.fillStyle = wallType === 1 ? '#005500' : '#00aa55';
+        ctx.fillRect(i, h / 2 - wallH / 2, 1, wallH);
+    }
+
+    // Render Entities (Power-ups & Bots)
+    let entities = [...powerups.map(p => ({ ...p, isItem: true })), ...bots.map(b => ({ ...b, isBot: true }))];
+    
+    // Sort entities from back to front
+    entities.sort((a, b) => Math.hypot(player.x - b.x, player.y - b.y) - Math.hypot(player.x - a.x, player.y - a.y));
+
+    entities.forEach(ent => {
+        let dx = ent.x - player.x, dy = ent.y - player.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist < 0.2) return;
+
+        let angle = Math.atan2(dy, dx) - player.dir;
+        while (angle < -Math.PI) angle += Math.PI * 2;
+        while (angle > Math.PI) angle -= Math.PI * 2;
+
+        if (Math.abs(angle) < 0.7) {
+            let sx = (angle / 1.0 + 0.5) * w;
+            let sh = h / dist;
+            let ix = Math.floor(sx);
+
+            if (ix >= 0 && ix < zBuf.length && dist < zBuf[ix]) {
+                if (ent.isItem) {
+                    ctx.fillStyle = ent.type === 'SPEED' ? '#00ffff' : ent.type === 'INVISIBILITY' ? '#ffff00' : '#00ff00';
+                    ctx.fillRect(sx - sh / 8, h / 2 - sh / 8, sh / 4, sh / 4);
+                } else if (ent.isBot) {
+                    ctx.fillStyle = ent.frozen > 0 ? '#00ffff' : (ent.color || '#f00');
+                    let size = ent.mega ? sh / 1.5 : sh / 2.5;
+                    ctx.fillRect(sx - size / 2, h / 2 - size / 2, size, size);
+                }
+            }
         }
     });
 }
 
 function drawMinimap() {
-    mCtx.clearRect(0, 0, 110, 110);
-    let s = 110 / SIZE;
-    for (let y = 0; y < SIZE; y++) {
-        for (let x = 0; x < SIZE; x++) {
-            if (world[y][x]) { mCtx.fillStyle = '#002200'; mCtx.fillRect(x * s, y * s, s, s); }
+    mCtx.clearRect(0, 0, 140, 140);
+    let scale = 140 / MAP_SIZE;
+
+    // Draw Map Walls
+    for (let y = 0; y < MAP_SIZE; y++) {
+        for (let x = 0; x < MAP_SIZE; x++) {
+            if (map[y][x] > 0) {
+                mCtx.fillStyle = map[y][x] === 1 ? '#003300' : '#008844';
+                mCtx.fillRect(x * scale, y * scale, scale, scale);
+            }
         }
     }
-    mCtx.fillStyle = p1.role === 'tagger' ? '#f00' : '#00ff00';
-    mCtx.fillRect(p1.x * s - 1.5, p1.y * s - 1.5, 3, 3);
-    bots.forEach(b => {
-        mCtx.fillStyle = (b.type === 'mega') ? '#f00' : (b.role === 'runner' ? '#0f0' : '#f55');
-        let sz = (b.type === 'mega') ? 5 : 3;
-        mCtx.fillRect(b.x * s - sz/2, b.y * s - sz/2, sz, sz);
+
+    // Power-ups
+    powerups.forEach(p => {
+        mCtx.fillStyle = '#00ffff';
+        mCtx.fillRect(p.x * scale - 2, p.y * scale - 2, 4, 4);
     });
+
+    // Bots
+    bots.forEach(b => {
+        mCtx.fillStyle = b.frozen > 0 ? '#00ffff' : '#ff0000';
+        mCtx.fillRect(b.x * scale - 3, b.y * scale - 3, 6, 6);
+    });
+
+    // Player
+    mCtx.fillStyle = player.invulnerable ? '#ffff00' : '#ffffff';
+    mCtx.beginPath();
+    mCtx.arc(player.x * scale, player.y * scale, 4, 0, Math.PI * 2);
+    mCtx.fill();
 }
 
 function loop() {
     if (!active) return;
-    movePlayer(p1, 0.05, 0.06);
+    updatePlayer();
     updateBots();
-    render(ctx1, p1, p1c);
+    render();
     drawMinimap();
     animationId = requestAnimationFrame(loop);
 }
+
+function endGame(message) {
+    active = false;
+    alert(`${message}\nFINAL SCORE: ${score}`);
+    location.reload();
+}
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
 </script>
 </body>
 </html>
