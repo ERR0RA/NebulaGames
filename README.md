@@ -10,3 +10,4 @@ https://err0ra.github.io/NebulaGames/ - Nebula Games
 <a href="https://github.com/ERR0RA/Nebula/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=ERR0RA/Nebula" />
 </a>
+<p>We do not collect your data at all in the games, accept for payments. You're 100 percent liable for use not us.</p></o>
