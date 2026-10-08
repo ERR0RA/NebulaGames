@@ -6,6 +6,8 @@
     <title>BLOCK BREAKER ULTRA | Nebula Arcade</title>
     <style>
         :root { 
+            --game-width: min(96vw, 720px, calc((100dvh - 110px) * 0.8));
+            
             --neon: #00f2ff; 
             --pink: #ff007f; 
             --gold: #f1c40f; 
@@ -19,12 +21,12 @@
         body {
             background: var(--bg); color: white; margin: 0;
             display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100vh; font-family: 'Courier New', monospace;
+            justify-content: center; height: 100vh; height: 100dvh; font-family: 'Courier New', monospace;
             overflow: hidden; touch-action: none;
         }
 
         #ui { 
-            width: 480px; 
+            width: var(--game-width); 
             display: flex; 
             justify-content: space-between; 
             align-items: center;
@@ -35,7 +37,7 @@
         }
         
         #container { 
-            position: relative; border: 4px solid var(--neon); 
+            position: relative; width: var(--game-width); aspect-ratio: 4 / 5; border: 4px solid var(--neon); 
             box-shadow: 0 0 30px rgba(0, 242, 255, 0.3); border-radius: 8px;
             overflow: hidden; background: #000;
         }
@@ -51,7 +53,7 @@
             z-index: 5;
         }
 
-        canvas { display: block; position: relative; z-index: 1; }
+        canvas { display: block; position: relative; z-index: 1; width: 100%; height: auto; }
 
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -607,7 +609,8 @@
         function movePaddle(clientX) {
             if (gameMode === 2 || !active) return; // Cursor control locks down in local 2P Mode
             const rect = canvas.getBoundingClientRect();
-            p1Paddle.x = (clientX - rect.left) - p1Paddle.w/2;
+            const gameX = (clientX - rect.left) * (canvas.width / rect.width);
+            p1Paddle.x = gameX - p1Paddle.w/2;
             if(p1Paddle.x < 0) p1Paddle.x = 0;
             if(p1Paddle.x + p1Paddle.w > canvas.width) p1Paddle.x = canvas.width - p1Paddle.w;
         }
