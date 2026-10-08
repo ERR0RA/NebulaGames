@@ -43,7 +43,7 @@
 
     <style>
         body {
-            background-color: #090d16;
+            background-color: var(--page-background, #090d16);
             color: #f3f4f6;
             font-family: 'Inter', sans-serif;
             user-select: none;
@@ -58,6 +58,7 @@
         .scanline-bg {
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
             background-size: 100% 4px;
+            background-color: var(--page-background, #090d16);
         }
 
         /* Glassmorphism panels */
@@ -205,6 +206,14 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 NEW PUZZLE
             </button>
+            <label class="sr-only" for="background-theme">Background color</label>
+            <select id="background-theme" onchange="setBackgroundTheme(this.value)" class="glass-btn px-3 py-2 rounded-xl text-xs font-bold font-tech text-cyber-primary" aria-label="Background color">
+                <option value="vanta">Vanta Black</option>
+                <option value="grey">Grey</option>
+                <option value="cherry">Cherry Red</option>
+                <option value="lime">Lime</option>
+                <option value="navy">Navy Blue</option>
+            </select>
         </div>
     </header>
 
@@ -339,6 +348,24 @@
         /* ==========================================================================
            1. SUDOKU GENERATOR & SOLVER (RECURSIVE BACKTRACKING ENGINE)
            ========================================================================== */
+        const backgroundColors = {
+            vanta: '#050505',
+            grey: '#4b5563',
+            cherry: '#7f1d1d',
+            lime: '#365314',
+            navy: '#0b1f3a'
+        };
+
+        function setBackgroundTheme(theme) {
+            if (!backgroundColors[theme]) return;
+            document.documentElement.style.setProperty('--page-background', backgroundColors[theme]);
+            localStorage.setItem('sudokuBackgroundTheme', theme);
+        }
+
+        const savedBackgroundTheme = localStorage.getItem('sudokuBackgroundTheme') || 'vanta';
+        document.getElementById('background-theme').value = savedBackgroundTheme;
+        setBackgroundTheme(savedBackgroundTheme);
+
         class SudokuEngine {
             static generateSolution() {
                 const board = Array.from({ length: 9 }, () => Array(9).fill(0));
