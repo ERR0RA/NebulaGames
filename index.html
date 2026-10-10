@@ -8,13 +8,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;500;700;800&family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #00ff66;
-      --primary-glow: rgba(0, 255, 102, 0.85);
+      --primary: #9d00ff;
+      --primary-glow: rgba(157, 0, 255, 0.85);
       --bg: #030407;
-      --glass-border: rgba(0, 255, 102, 0.25);
-      --glass-bg: rgba(5, 12, 8, 0.4);
+      --glass-border: rgba(157, 0, 255, 0.3);
+      --glass-bg: rgba(10, 5, 20, 0.45);
       --text: #ffffff;
-      --bg0: #020305; --bg1: #050b14; --bg2: #0f0518;
+      --bg0: #030208; --bg1: #080314; --bg2: #120526;
       --secondary: #00f0ff; --secondary-glow: rgba(0, 240, 255, 0.75);
       --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
@@ -45,7 +45,7 @@
     body.custom-cursor a, body.custom-cursor button { cursor: none; }
 
     #bgCanvas { position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0; transition: opacity 0.8s ease; }
-    body[data-bg="matrix"] #bgCanvas, body[data-bg="void"] #bgCanvas, body[data-bg="supernova"] #bgCanvas, body[data-bg="aurora"] #bgCanvas, body[data-bg="shattered"] #bgCanvas { opacity: 0.95; }
+    body[data-bg="nebula"] #bgCanvas, body[data-bg="void"] #bgCanvas, body[data-bg="supernova"] #bgCanvas, body[data-bg="aurora"] #bgCanvas, body[data-bg="shattered"] #bgCanvas { opacity: 0.95; }
 
     /* REAL NEON ENGINE OVERLAY */
     body[data-bg="neon"]::before {
@@ -143,7 +143,7 @@
     }
     .nav-btn:hover { color: #fff; text-shadow: 0 0 10px #fff; }
     .nav-btn.active {
-      background: var(--primary); color: #000; font-weight: 800;
+      background: var(--primary); color: #fff; font-weight: 800;
       box-shadow: 0 0 15px var(--primary), 0 0 30px var(--primary-glow);
     }
 
@@ -185,11 +185,11 @@
     .game-link:hover { 
       border-color: var(--primary); 
       box-shadow: 0 0 15px var(--primary), 0 0 35px var(--primary-glow), inset 0 0 15px var(--primary-glow); 
-      background: rgba(10, 25, 18, 0.5); 
+      background: rgba(25, 10, 35, 0.5); 
     }
     
     .tag-badge { 
-      position: absolute; top: 12px; right: 12px; font-size: 9px; background: var(--primary); color: black; 
+      position: absolute; top: 12px; right: 12px; font-size: 9px; background: var(--primary); color: #fff; 
       padding: 3px 10px; border-radius: 8px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; 
       box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary-glow); 
     }
@@ -201,49 +201,93 @@
       text-shadow: 0 0 8px #fff, 0 0 15px var(--primary);
     }
 
-    /* DONATE PANEL */
+    /* DONATE PANEL & CONTENT */
     .donate-panel {
-      width: min(92%, 800px); margin: 40px auto; 
-      background: rgba(3, 6, 10, 0.6); border: 1.5px solid var(--glass-border);
+      width: min(92%, 850px); margin: 40px auto; 
+      background: rgba(6, 3, 14, 0.65); border: 1.5px solid var(--glass-border);
       border-radius: 28px; padding: 40px; backdrop-filter: blur(30px);
-      box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 25px rgba(0,255,102,0.03);
+      box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 25px rgba(157,0,255,0.05);
       text-align: center;
     }
     .donate-panel h2 {
-      font-size: 2rem; font-weight: 800; margin-top: 0; margin-bottom: 12px;
-      color: #fff; text-shadow: 0 0 10px var(--primary-glow); letter-spacing: -0.5px;
+      font-size: 2.2rem; font-weight: 800; margin-top: 0; margin-bottom: 12px;
+      color: #fff; text-shadow: 0 0 15px var(--primary-glow); letter-spacing: -0.5px;
     }
     .donate-panel p {
-      opacity: 0.85; font-size: 1rem; line-height: 1.6; max-width: 600px; margin: 0 auto 30px auto;
+      opacity: 0.9; font-size: 1rem; line-height: 1.6; max-width: 650px; margin: 0 auto 25px auto;
     }
+    
+    /* DONATION TIERS GRID */
+    .tier-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin: 30px 0;
+    }
+    .tier-card {
+      background: rgba(15, 8, 30, 0.5); border: 1px solid var(--glass-border);
+      padding: 20px; border-radius: 18px; text-align: center; transition: var(--transition);
+    }
+    .tier-card:hover {
+      border-color: var(--secondary); transform: translateY(-4px);
+      box-shadow: 0 0 20px var(--secondary-glow);
+    }
+    .tier-card h4 { margin: 0 0 8px 0; color: var(--secondary); font-size: 1.1rem; text-shadow: 0 0 8px var(--secondary-glow); }
+    .tier-card p { font-size: 0.85rem; opacity: 0.8; margin-bottom: 0; }
+
     .donate-btn {
-      display: inline-block; background: var(--primary); color: #000;
+      display: inline-block; background: var(--primary); color: #fff;
       font-weight: 800; font-size: 1.1rem; padding: 16px 40px; border-radius: 999px;
       text-decoration: none; text-transform: uppercase; letter-spacing: 1.5px;
       box-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary-glow);
-      transition: var(--transition); margin-bottom: 30px;
+      transition: var(--transition); margin-top: 10px; margin-bottom: 15px;
     }
     .donate-btn:hover {
-      transform: scale(1.05); color: #000;
-      box-shadow: 0 0 30px var(--primary), 0 0 60px var(--primary-glow);
+      transform: scale(1.05); color: #fff;
+      box-shadow: 0 0 35px var(--primary), 0 0 70px var(--primary-glow);
     }
-    .stripe-frame {
-      width: 100%; height: 600px; border: 1.5px solid var(--glass-border);
-      border-radius: 20px; background: #ffffff;
+
+    /* CONTRIBUTORS PANEL */
+    .contributors-panel {
+      width: min(92%, 850px); margin: 40px auto; 
+      background: rgba(6, 3, 14, 0.65); border: 1.5px solid var(--glass-border);
+      border-radius: 28px; padding: 40px; backdrop-filter: blur(30px);
+      box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 25px rgba(0,240,255,0.05);
+      text-align: center;
     }
+    .contributors-panel h2 {
+      font-size: 2.2rem; font-weight: 800; margin-top: 0; margin-bottom: 12px;
+      color: #fff; text-shadow: 0 0 15px var(--secondary-glow); letter-spacing: -0.5px;
+    }
+    .contrib-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-top: 30px;
+    }
+    .contrib-card {
+      background: rgba(12, 5, 25, 0.6); border: 1.5px solid var(--glass-border);
+      padding: 28px 20px; border-radius: 22px; backdrop-filter: blur(15px);
+      transition: var(--transition); position: relative; overflow: hidden;
+    }
+    .contrib-card:hover {
+      border-color: var(--primary); transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 0 25px var(--primary-glow);
+    }
+    .contrib-avatar {
+      width: 70px; height: 70px; border-radius: 50%; margin: 0 auto 16px auto;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.5rem; color: #fff;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+    .contrib-name { font-weight: 800; font-size: 1.3rem; margin-bottom: 6px; color: #fff; text-shadow: 0 0 8px #fff; }
+    .contrib-role { font-size: 0.85rem; font-weight: 700; color: var(--secondary); letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 0 8px var(--secondary-glow); }
 
     /* FOOTER & BOTTOM CONTROLS */
     .credits-section { text-align: center; margin-top: 100px; padding: 50px 20px; border-top: 1px solid var(--glass-border); background: rgba(2, 3, 5, 0.85); backdrop-filter: blur(20px); }
     .credits-section p { font-size: 0.85rem; opacity: 0.6; margin: 12px 0; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.6; }
-    .wa-link { color: var(--primary); text-decoration: none; font-weight: 700; transition: var(--transition); border-bottom: 1px dashed var(--primary); padding-bottom: 2px; text-shadow: 0 0 8px var(--primary-glow); }
-    .wa-link:hover { color: #fff; border-color: #fff; text-shadow: 0 0 12px #fff; }
 
     .bottom-controls { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000; align-items: center; width: min(95%, 680px); }
     .panel { background: rgba(2, 4, 7, 0.9); backdrop-filter: blur(25px); border: 1.5px solid var(--glass-border); border-radius: 999px; padding: 8px 16px; display: flex; align-items: center; gap: 8px; max-width: 100%; overflow-x: auto; scrollbar-width: none; box-shadow: 0 0 25px rgba(0,0,0,0.9), 0 0 15px var(--glass-border); }
     .panel::-webkit-scrollbar { display: none; }
     .bg-btn { background: rgba(255,255,255,.05); border: 1px solid transparent; color: rgba(255,255,255,0.7); padding: 8px 16px; border-radius: 999px; font-weight: 700; font-size: 10px; cursor: pointer; transition: var(--transition); letter-spacing: 0.5px; }
     .bg-btn:hover { color: #fff; background: rgba(255,255,255,0.15); text-shadow: 0 0 8px #fff; }
-    .bg-btn.active { background: var(--primary); color: #000; font-weight: 800; box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary-glow); }
+    .bg-btn.active { background: var(--primary); color: #fff; font-weight: 800; box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary-glow); }
     .t-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s; flex-shrink: 0; }
     .t-btn:hover { transform: scale(1.3); box-shadow: 0 0 12px currentColor; }
 
@@ -254,7 +298,7 @@
       .tag-badge { top: 8px; right: 8px; font-size: 8px; padding: 1px 6px; }
       .game-title { font-size: 0.9rem; margin-top: 5px; }
       header { padding-top: 30px; }
-      .donate-panel { padding: 24px; width: 94%; }
+      .donate-panel, .contributors-panel { padding: 24px; width: 94%; }
       .bottom-controls { width: 92%; bottom: 16px; }
       .panel { padding: 6px 12px; gap: 6px; width: 100%; }
       .bg-btn { padding: 6px 12px; font-size: 9px; }
@@ -282,6 +326,7 @@
     <div class="top-nav">
       <button class="nav-btn active" id="btnGames" onclick="switchTab('games')">GAMES</button>
       <button class="nav-btn" id="btnDonate" onclick="switchTab('donate')">DONATE</button>
+      <button class="nav-btn" id="btnContrib" onclick="switchTab('contributors')">CONTRIBUTORS</button>
     </div>
 
     <header>
@@ -300,9 +345,44 @@
       <section id="donateSection" class="view-section">
         <div class="donate-panel">
           <h2>SUPPORT NEBULA HUB</h2>
-          <p>Help keep the servers alive, support ongoing game additions, and power continuous hub performance updates.</p>
+          <p>Your support directly keeps high-speed cloud gaming servers active, funds future game ports, and sustains continuous platform performance upgrades.</p>
+          
+          <div class="tier-grid">
+            <div class="tier-card">
+              <h4>⚡ Server Booster</h4>
+              <p>Helps maintain ultra-low latency & 99.9% uptime across game instances.</p>
+            </div>
+            <div class="tier-card">
+              <h4>🎮 Game Supporter</h4>
+              <p>Powers the integration of new indie & arcade titles into the catalog.</p>
+            </div>
+            <div class="tier-card">
+              <h4>🌌 Cosmos Sponsor</h4>
+              <p>Sustains active development of custom themes, neon engines & visual FX.</p>
+            </div>
+          </div>
+
           <a href="https://buy.stripe.com/00w5kFa3U40ecrX83UdQQ00" target="_blank" rel="noopener noreferrer" class="donate-btn">Donate via Stripe</a>
-          <iframe src="https://buy.stripe.com/00w5kFa3U40ecrX83UdQQ00" class="stripe-frame" title="Stripe Donation"></iframe>
+        </div>
+      </section>
+
+      <section id="contributorsSection" class="view-section">
+        <div class="contributors-panel">
+          <h2>NEBULA CONTRIBUTORS</h2>
+          <p>Meet the visionary minds, developers, and designers behind Nebula's performance and design engine.</p>
+          
+          <div class="contrib-grid">
+            <div class="contrib-card">
+              <div class="contrib-avatar">HK</div>
+              <div class="contrib-name">Harley K</div>
+              <div class="contrib-role">Core Developer</div>
+            </div>
+            <div class="contrib-card">
+              <div class="contrib-avatar">NK</div>
+              <div class="contrib-name">Neel K</div>
+              <div class="contrib-role">Lead Architect</div>
+            </div>
+          </div>
         </div>
       </section>
     </main>
@@ -315,7 +395,7 @@
 
     <div class="bottom-controls">
       <div class="panel">
-        <div class="t-btn" style="background:#00ff66; box-shadow: 0 0 8px #00ff66;" onclick="setTheme('default')" title="Default Green"></div>
+        <div class="t-btn" style="background:#9d00ff; box-shadow: 0 0 8px #9d00ff;" onclick="setTheme('default')" title="Default Violet"></div>
         <div class="t-btn" style="background:#ff00a0; box-shadow: 0 0 8px #ff00a0;" onclick="setTheme('cyber')" title="Cyberpunk"></div>
         <div class="t-btn" style="background:#00f0ff; box-shadow: 0 0 8px #00f0ff;" onclick="setTheme('ocean')" title="Deep Ocean"></div>
         <div class="t-btn" style="background:#ffaa00; box-shadow: 0 0 8px #ffaa00;" onclick="setTheme('amber')" title="Amber Core"></div>
@@ -329,9 +409,9 @@
         <div class="t-btn" style="background:#a6ff00; box-shadow: 0 0 8px #a6ff00;" onclick="setTheme('toxic')" title="Nuclear Radioactive"></div>
       </div>
       <div class="panel">
+        <button class="bg-btn" id="bg-nebula" onclick="setBg('nebula')">NEBULA</button>
         <button class="bg-btn" id="bg-neon" onclick="setBg('neon')">NEON</button>
         <button class="bg-btn" id="bg-shattered" onclick="setBg('shattered')">SHATTERED</button>
-        <button class="bg-btn" id="bg-matrix" onclick="setBg('matrix')">MATRIX</button>
         <button class="bg-btn" id="bg-void" onclick="setBg('void')">VOID</button>
         <button class="bg-btn" id="bg-supernova" onclick="setBg('supernova')">SUPERNOVA</button>
         <button class="bg-btn" id="bg-aurora" onclick="setBg('aurora')">AURORA</button>
@@ -340,7 +420,6 @@
   </div>
 
   <script>
-    // Register the companion service worker for offline use when served over HTTPS or localhost.
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch(() => {}));
     }
@@ -355,7 +434,6 @@
       { name: "Block Breaker", url: "blockbreaker.html", tag: "" },
       { name: "Neon Golf", url: "Neon-Golf.html", tag: "" },
       { name: "Neon Trail", url: "neon-trail.html", tag: "Ultimate" },
-      { name: "Neon Run", url: "ai.html", tag: "" },
       { name: "Tic Tac Toe", url: "tictactoe.html", tag: "" },
       { name: "Neon Hex", url: "Neon-Hex.html", tag: "" }
     ];
@@ -429,8 +507,8 @@
     // RENDERING ENGINE
     const canvas = document.getElementById('bgCanvas');
     const ctx = canvas.getContext('2d');
-    let width, height, columns, drops;
-    let auroraWaves = [], shards = [];
+    let width, height;
+    let auroraWaves = [], shards = [], nebulaDust = [];
     let novaAngle = 0, neonHue = 0;
 
     // GROWING MOUSE BLACK HOLE STATE
@@ -465,14 +543,26 @@
     function resize() {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
-      columns = Math.floor(width / 20) + 1;
-      drops = Array(columns).fill(1);
       
+      // Initialize Nebula Particles
+      nebulaDust = [];
+      for (let i = 0; i < 90; i++) {
+        nebulaDust.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          radius: Math.random() * 120 + 40,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          hue: Math.random() > 0.5 ? 280 : 190, // Purple or Cyan
+          alpha: Math.random() * 0.25 + 0.05
+        });
+      }
+
       auroraWaves = [
-        { yBase: height * 0.25, amplitude: 60, speed: 0.008, phase: 0, length: 0.002, color: '#00ffcc' },
-        { yBase: height * 0.45, amplitude: 85, speed: 0.005, phase: 1.5, length: 0.0012, color: '#00ff66' },
-        { yBase: height * 0.60, amplitude: 70, speed: 0.007, phase: 3.0, length: 0.0015, color: '#ff00ff' },
-        { yBase: height * 0.75, amplitude: 90, speed: 0.004, phase: 4.5, length: 0.001, color: '#9900ff' }
+        { yBase: height * 0.25, amplitude: 60, speed: 0.008, phase: 0, length: 0.002, color: '#a855f7' },
+        { yBase: height * 0.45, amplitude: 85, speed: 0.005, phase: 1.5, length: 0.0012, color: '#00f0ff' },
+        { yBase: height * 0.60, amplitude: 70, speed: 0.007, phase: 3.0, length: 0.0015, color: '#ff00a0' },
+        { yBase: height * 0.75, amplitude: 90, speed: 0.004, phase: 4.5, length: 0.001, color: '#9d00ff' }
       ];
 
       shards = [];
@@ -495,29 +585,37 @@
 
     function draw() {
       const mode = document.body.getAttribute('data-bg');
-      if (mode !== 'matrix') ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, height);
       
-      const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#00ff66';
+      const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#9d00ff';
       const secondaryColor = getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim() || '#00f0ff';
 
-      if (mode === 'matrix') {
-        ctx.fillStyle = 'rgba(2, 3, 5, 0.08)';
+      if (mode === 'nebula') {
+        ctx.fillStyle = '#030208';
         ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = primaryColor;
-        ctx.shadowColor = primaryColor;
-        ctx.shadowBlur = 12;
-        ctx.font = '700 14px monospace';
-        drops.forEach((y, i) => {
-          ctx.fillText(String.fromCharCode(0x30A0 + Math.random() * 96), i * 20, y * 20);
-          if (y * 20 > height && Math.random() > 0.98) drops[i] = 0;
-          drops[i]++;
+
+        nebulaDust.forEach(p => {
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < -150) p.x = width + 150;
+          if (p.x > width + 150) p.x = -150;
+          if (p.y < -150) p.y = height + 150;
+          if (p.y > height + 150) p.y = -150;
+
+          ctx.save();
+          let grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
+          grad.addColorStop(0, `hsla(${p.hue}, 100%, 60%, ${p.alpha})`);
+          grad.addColorStop(1, 'transparent');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
         });
       } 
       else if (mode === 'void') {
         ctx.fillStyle = '#010204';
         ctx.fillRect(0, 0, width, height);
 
-        // Continuous particle spawning
         voidState.spawnTimer++;
         if (voidState.spawnTimer % 4 === 0 && voidState.orbs.length < voidState.maxOrbs) {
           voidState.orbs.push(createVoidOrb(width, height));
@@ -536,7 +634,6 @@
             let angle = Math.atan2(dy, dx);
             let gravity = ((pullRadius - dist) / pullRadius) * 1.8;
             
-            // Inward gravity pull combined with dynamic swirling vortex
             p.vx += Math.cos(angle) * gravity + Math.cos(angle + Math.PI / 2) * gravity * 0.8;
             p.vy += Math.sin(angle) * gravity + Math.sin(angle + Math.PI / 2) * gravity * 0.8;
           }
@@ -546,7 +643,6 @@
           p.vx *= 0.95;
           p.vy *= 0.95;
 
-          // Consumption logic: When absorbed by cursor black hole
           if (dist < voidState.currentRadius / 2 + 5) {
             voidState.cursorMass += 1;
             voidState.orbs.splice(i, 1);
@@ -564,11 +660,9 @@
           ctx.restore();
         }
 
-        // Calculate and smoothly update cursor size based on consumed mass
         const targetRadius = Math.min(voidState.maxRadius, voidState.baseRadius + Math.pow(voidState.cursorMass, 0.55) * 3);
         voidState.currentRadius += (targetRadius - voidState.currentRadius) * 0.1;
 
-        // Sync DOM cursor sizes dynamically
         if (!isTouch) {
           const dotSize = voidState.currentRadius;
           const ringSize = voidState.currentRadius * 2.2;
@@ -578,7 +672,6 @@
           ring.style.height = `${ringSize}px`;
         }
 
-        // Draw dynamic gravitational accretion glow behind the mouse cursor
         ctx.save();
         ctx.beginPath();
         ctx.arc(mousePos.x, mousePos.y, voidState.currentRadius * 2, 0, Math.PI * 2);
@@ -709,7 +802,6 @@
         });
       }
 
-      // Reset cursor sizes when leaving Void mode
       if (mode !== 'void' && !isTouch) {
         dot.style.width = `16px`;
         dot.style.height = `16px`;
@@ -730,6 +822,9 @@
       } else if (view === 'donate') {
         document.getElementById('donateSection').classList.add('active-view');
         document.getElementById('btnDonate').classList.add('active');
+      } else if (view === 'contributors') {
+        document.getElementById('contributorsSection').classList.add('active-view');
+        document.getElementById('btnContrib').classList.add('active');
       }
     }
 
@@ -756,7 +851,7 @@
       resize();
       renderGames(games);
       
-      const savedBg = localStorage.getItem('nebula-bg') || 'neon';
+      const savedBg = localStorage.getItem('nebula-bg') || 'nebula';
       const savedTheme = localStorage.getItem('nebula-theme');
       
       setBg(savedBg);
