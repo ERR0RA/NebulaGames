@@ -72,8 +72,8 @@
         }
 
         #wrapper { position: relative; display: flex; flex-direction: column; align-items: center; }
-        canvas { border: 4px solid #0f0; background: #000; max-width: 75vw; max-height: 60vh; box-shadow: 0 0 30px rgba(0, 255, 0, 0.3); touch-action: none; }
-        #ui { text-align: center; width: 800px; max-width: 75vw; margin-bottom: 10px; }
+        canvas { border: 4px solid #0f0; background: #000; max-width: 90vw; max-height: 75vh; box-shadow: 0 0 30px rgba(0, 255, 0, 0.3); touch-action: none; }
+        #ui { text-align: center; width: 1000px; max-width: 90vw; margin-bottom: 10px; }
         .setup-panel { background: #111; padding: 15px; border: 2px solid #0f0; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; box-shadow: inset 0 0 10px rgba(0,255,0,0.2); }
         .meters { display: flex; justify-content: space-around; width: 100%; margin: 10px 0; gap: 10px; }
         .meter-container { width: 32%; background: #222; border: 2px solid #333; height: 16px; position: relative; border-radius: 3px; overflow: hidden; }
@@ -237,7 +237,7 @@
 
     <div id="wrapper">
         <div id="msg"></div>
-        <canvas id="game" width="800" height="600"></canvas>
+        <canvas id="game" width="1000" height="750"></canvas>
     </div>
 
     <div id="mobile-controls">
@@ -393,9 +393,9 @@ function reset() {
     let finalBot1Color = (botSkinKey !== 'default') ? SKINS[botSkinKey].color : b1.color;
 
     players = [
-        { id: 0, x: 100, y: 200, dx: UNIT, dy: 0, color: p1Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false, profile: 'player' },
-        { id: 1, x: 100, y: 400, dx: UNIT, dy: 0, color: p2Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false, profile: 'player' },
-        { id: 2, x: 700, y: 300, dx: -UNIT, dy: 0, color: finalBot2Color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, shield: false, baseSpeed: b2.speed, speedBuffTimer: 0, isBot: true, profile: b2.profile, isAltColor: false }
+        { id: 0, x: 125, y: 250, dx: UNIT, dy: 0, color: p1Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'bvb'), team: 'human', ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false, profile: 'player' },
+        { id: 1, x: 125, y: 500, dx: UNIT, dy: 0, color: p2Skin.color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode === 'pvpve' || mode === 'pvp'), team: 'human', ghost: 0, shield: false, baseSpeed: 2, speedBuffTimer: 0, isBot: false, profile: 'player' },
+        { id: 2, x: 875, y: 375, dx: -UNIT, dy: 0, color: finalBot2Color, trail: [], boost: 100, isBoosting: false, alive: true, active: (mode !== 'pvp'), team: 'bot', ghost: 0, shield: false, baseSpeed: b2.speed, speedBuffTimer: 0, isBot: true, profile: b2.profile, isAltColor: false }
     ];
 
     document.getElementById('lbl-p1').innerText = (mode === 'bvb') ? bot1Label : "P1 ENERGY";
